@@ -50,7 +50,9 @@ This report does not mark requirements permanently complete because repository g
 - Local HTTP check against `http://127.0.0.1:3000/` - passed with HTTP `200`.
 - Local HTTP check against `http://127.0.0.1:3000/api/health` - passed with HTTP `200`.
 - `git commit -m "Implement sprint 1 platform foundation"` - passed locally.
-- `git push -u origin codex/sprint-1-platform-foundation` - failed because local Git credentials were unavailable: `SEC_E_NO_CREDENTIALS`.
+- Initial `git push -u origin codex/sprint-1-platform-foundation` - failed because local Git credentials were unavailable: `SEC_E_NO_CREDENTIALS`.
+- Escalated `git push -u origin codex/sprint-1-platform-foundation` - passed.
+- Draft pull request creation through the GitHub connector - passed: <https://github.com/carlkanda/diginoces-platform/pull/2>.
 - `npm view next version` - latest stable is `16.2.6`.
 - `npm view next@canary version` / `dependencies.postcss` - current canary is `16.3.0-canary.24` and uses `postcss@8.5.10`; not adopted because canary framework releases are not recommended for this foundation branch without explicit approval.
 
@@ -70,7 +72,6 @@ Failed or blocked:
 
 - `npm audit --omit=dev`: moderate PostCSS advisory transitive through Next.js with no npm fix available.
 - `supabase db lint`: blocked because Docker Desktop is unavailable, so the local Supabase database cannot be started.
-- Draft PR creation: blocked because the branch could not be pushed with the current local Git credentials.
 
 ## Security Checks Performed
 
@@ -96,7 +97,7 @@ Failed or blocked:
 - `npm audit --omit=dev` reports a moderate PostCSS advisory through `next@16.2.6`; npm reports no stable fix. A canary Next.js build has a newer PostCSS dependency but was not adopted without approval.
 - Supabase migration lint/advisor checks require Docker Desktop and a running local Supabase database.
 - Supabase MFA enforcement is represented in role metadata but not enforced until project auth policies are configured.
-- GitHub push/PR creation requires re-authentication. `gh auth status` reported an invalid token for `carlkanda`, and `git push` failed with `SEC_E_NO_CREDENTIALS`.
+- Local `gh auth status` still reports an invalid token for `carlkanda`; the branch push and draft PR were completed through approved Git/GitHub connector paths.
 
 ## Recommended Sprint 2 Scope
 
