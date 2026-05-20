@@ -5,16 +5,19 @@
   "description": "Diginoces wedding guest-management platform",
   "scripts": {
     "dev": "npm --workspace apps/web run dev",
-    "build": "npm --workspace apps/web run build",
-    "lint": "npm --workspace apps/web run lint",
-    "test": "npm --workspace apps/web run test",
-    "typecheck": "npm --workspace apps/web run typecheck"
+    "build": "npm --workspaces --if-present run build",
+    "lint": "npm --workspaces --if-present run lint",
+    "format": "npm --workspaces --if-present run format",
+    "format:check": "npm --workspaces --if-present run format:check",
+    "test": "npm --workspaces --if-present run test",
+    "typecheck": "npm --workspaces --if-present run typecheck",
+    "smoke": "npm --workspace apps/web run test -- --run src/lib/platform/smoke.test.ts"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.9.0"
   }
 }

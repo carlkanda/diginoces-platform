@@ -1,20 +1,31 @@
 # Diginoces Web App
 
-This folder will contain the responsive Next.js web application for the Diginoces platform.
+This folder contains the responsive Next.js web application foundation for the Diginoces platform.
 
 ## Sprint 1 expected setup
 
-The coding agents should initialize this workspace with:
+Sprint 1 initializes this workspace with:
 
 - Next.js;
 - React;
 - TypeScript;
-- Tailwind CSS;
 - linting;
 - test setup;
 - Supabase client foundation;
 - protected route foundation;
 - app shell.
+
+Plain CSS is used for the Sprint 1 shell to avoid introducing a full UI system before the product screens are approved.
+
+## Scripts
+
+```bash
+npm --workspace apps/web run dev
+npm --workspace apps/web run build
+npm --workspace apps/web run lint
+npm --workspace apps/web run typecheck
+npm --workspace apps/web run test
+```
 
 ## Important rule
 

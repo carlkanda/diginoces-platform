@@ -15,8 +15,24 @@ docs/
   backlog/
   technical-design/
   planning/
+  setup/
 ```
 
 ## Build rule
 
 No feature should be implemented unless it is linked to a documented requirement ID, and no requirement should be marked complete unless it has been implemented, tested, and reviewed.
+
+## Sprint 1 foundation
+
+The Sprint 1 web foundation lives in `apps/web` and is wired through npm workspaces.
+
+```bash
+npm install
+npm run dev
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
+
+Local setup details are maintained in `docs/setup/local-development.md`.
