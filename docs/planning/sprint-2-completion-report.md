@@ -4,6 +4,8 @@
 
 Implemented for review on branch `codex/sprint-2-projects-events-foundation`.
 
+Draft pull request: <https://github.com/carlkanda/diginoces-platform/pull/4>.
+
 This report does not mark requirements permanently complete because repository governance still requires review before completion status changes.
 
 ## Requirements Covered
@@ -74,6 +76,9 @@ Existing Sprint 1 smoke tests remain in `apps/web/src/lib/platform/smoke.test.ts
 - In-app browser verification for `http://127.0.0.1:3000/platform/projects` - passed; projects page showed the expected secure Supabase-not-configured state.
 - Local dev server stop check - passed; `http://127.0.0.1:3000` no longer responded after stopping.
 - Secret scan with `rg` for service-role keys, database passwords, WhatsApp tokens, Google secrets, private keys, and OpenAI-style keys - passed with no matches.
+- `git commit -m "Implement sprint 2 projects events foundation"` - passed locally.
+- `git push -u origin codex/sprint-2-projects-events-foundation` - passed.
+- Draft pull request creation through the GitHub connector - passed: <https://github.com/carlkanda/diginoces-platform/pull/4>.
 
 ## Checks Passed Or Failed
 
@@ -119,7 +124,6 @@ Failed or blocked:
 - Review is still required before marking any requirement complete.
 - `npm run db:lint` may require access to the developer's authenticated Supabase CLI profile or `SUPABASE_ACCESS_TOKEN` outside the repository.
 - There are no UI forms yet; project/event creation is available through the foundation API and database model. Rich operational forms can be added after review if kept in scope.
-- Draft PR creation is pending until commit and push complete.
 
 ## Recommended Sprint 3 Scope
 
