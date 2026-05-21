@@ -1,0 +1,15 @@
+Type,Priority,MVP Scope,Status,Owner Agent,Review Agent
+Epic,Must-have,MVP,Draft,Orchestrator Agent,QA/Test Agent
+Feature,Should-have,Post-MVP,Ready for refinement,Product Analyst Agent,Security Agent
+Story,Could-have,Future,Ready for build,Backlog Agent,Orchestrator Agent
+Task,,Deferred,In progress,Architecture Agent,Release Manager Agent
+Bug,,,Blocked,UX/UI Agent,
+Spike,,,Built,Backend Agent,
+Test,,,In QA,Frontend Agent,
+,,,Security review,PDF/QR Agent,
+,,,Accepted,WhatsApp Agent,
+,,,Deferred,Check-in Agent,
+,,,Rejected,Data Agent,
+,,,,Files Agent,
+,,,,AI Agent,
+,,,,Documentation Agent,
