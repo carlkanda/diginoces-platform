@@ -173,28 +173,28 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "project_members_assigned_by_fkey";
+            foreignKeyName: "event_members_assigned_by_fkey";
             columns: ["assigned_by"];
             isOneToOne: false;
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "project_members_project_id_fkey";
-            columns: ["project_id"];
+            foreignKeyName: "event_members_event_id_fkey";
+            columns: ["event_id"];
             isOneToOne: false;
-            referencedRelation: "wedding_projects";
+            referencedRelation: "events";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "project_members_role_id_fkey";
+            foreignKeyName: "event_members_role_id_fkey";
             columns: ["role_id"];
             isOneToOne: false;
             referencedRelation: "roles";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "project_members_user_id_fkey";
+            foreignKeyName: "event_members_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "users";
@@ -249,14 +249,21 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "wedding_projects_created_by_fkey";
+            foreignKeyName: "events_created_by_fkey";
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "wedding_projects_updated_by_fkey";
+            foreignKeyName: "events_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "wedding_projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "events_updated_by_fkey";
             columns: ["updated_by"];
             isOneToOne: false;
             referencedRelation: "users";
@@ -289,43 +296,7 @@ export type Database = {
         Update: {
           is_active?: boolean;
         };
-        Relationships: [
-          {
-            foreignKeyName: "workflow_tasks_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "workflow_tasks_event_id_fkey";
-            columns: ["event_id"];
-            isOneToOne: false;
-            referencedRelation: "events";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "workflow_tasks_event_matches_project";
-            columns: ["event_id", "project_id"];
-            isOneToOne: false;
-            referencedRelation: "events";
-            referencedColumns: ["id", "project_id"];
-          },
-          {
-            foreignKeyName: "workflow_tasks_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "wedding_projects";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "workflow_tasks_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       project_members: {
         Insert: {
@@ -352,7 +323,36 @@ export type Database = {
           status?: Database["public"]["Enums"]["membership_status"];
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "project_members_assigned_by_fkey";
+            columns: ["assigned_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_members_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "wedding_projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_members_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_members_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       wedding_projects: {
         Insert: {
@@ -406,7 +406,22 @@ export type Database = {
           updated_by?: string | null;
           workflow_template_version?: number;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "wedding_projects_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wedding_projects_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       workflow_tasks: {
         Insert: {
@@ -444,7 +459,43 @@ export type Database = {
           updated_at?: string;
           updated_by?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "workflow_tasks_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workflow_tasks_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workflow_tasks_event_matches_project";
+            columns: ["event_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id", "project_id"];
+          },
+          {
+            foreignKeyName: "workflow_tasks_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "wedding_projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workflow_tasks_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: Record<string, never>;

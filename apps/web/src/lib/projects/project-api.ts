@@ -139,5 +139,6 @@ export function handleProjectApiError(error: unknown) {
     return jsonError(500, "server_error", "Unexpected server error.");
   }
 
+  console.error("Unexpected server error:", error);
   return jsonError(500, "server_error", "Unexpected server error.");
 }

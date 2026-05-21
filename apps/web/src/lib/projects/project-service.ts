@@ -68,13 +68,17 @@ export class ProjectValidationError extends Error {
   }
 }
 
-const eventTypes = new Set(eventTypeOptions.map((option) => option.value));
-const projectStatuses = new Set(
-  projectLifecycleOptions.map((option) => option.value),
+const eventTypes = new Set<Database["public"]["Enums"]["event_type"]>(
+  eventTypeOptions.map((option) => option.value),
 );
-const eventStatuses = new Set(
-  eventLifecycleOptions.map((option) => option.value),
-);
+
+const projectStatuses = new Set<
+  Database["public"]["Enums"]["project_lifecycle_status"]
+>(projectLifecycleOptions.map((option) => option.value));
+
+const eventStatuses = new Set<
+  Database["public"]["Enums"]["event_lifecycle_status"]
+>(eventLifecycleOptions.map((option) => option.value));
 
 function asRecord(payload: unknown) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
