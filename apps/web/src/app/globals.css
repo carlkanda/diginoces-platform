@@ -383,9 +383,13 @@ input {
 @media (max-width: 760px) {
   .topbar-inner {
     min-height: 64px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding: 12px 0;
   }
 
   .nav {
+    flex-wrap: wrap;
     gap: 10px;
     font-size: 0.86rem;
   }

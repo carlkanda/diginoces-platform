@@ -32,7 +32,7 @@ This report does not mark requirements permanently complete because repository g
 
 ## Files Created Or Changed
 
-- Supabase migrations: `supabase/migrations/20260521123000_sprint_2_projects_events.sql`, `supabase/migrations/20260521131500_sprint_2_code_generation_lint.sql`, `supabase/migrations/20260521143000_sprint_2_coderabbit_schema_fixes.sql`.
+- Supabase migrations: `supabase/migrations/20260521123000_sprint_2_projects_events.sql`, `supabase/migrations/20260521131500_sprint_2_code_generation_lint.sql`, `supabase/migrations/20260521143000_sprint_2_coderabbit_schema_fixes.sql`, `supabase/migrations/20260521201431_sprint_2_coderabbit_review_fixes.sql`.
 - Scripts: `scripts/supabase-db-lint.mjs`.
 - Database types: `apps/web/src/types/database.ts`.
 - Permission/audit foundations: `apps/web/src/lib/security/permissions.ts`, `apps/web/src/lib/audit/audit-log.ts`.
@@ -48,6 +48,7 @@ This report does not mark requirements permanently complete because repository g
 - `apps/web/src/lib/projects/project-foundation.test.ts`
 - Covers Sprint 2 traceability, project code generation, event code generation, scoped project/event permission behavior, create payload validation, and workflow template scope guards.
 - CodeRabbit follow-up added coverage for invalid code-generation sequences and event permission checks that omit a project ID.
+- Second CodeRabbit follow-up added coverage for nullable PATCH clearing and invalid event date/time payload rejection.
 
 Existing Sprint 1 smoke tests remain in `apps/web/src/lib/platform/smoke.test.ts`.
 
@@ -91,6 +92,21 @@ Existing Sprint 1 smoke tests remain in `apps/web/src/lib/platform/smoke.test.ts
 - Final CodeRabbit follow-up `npm run build` - passed.
 - Final CodeRabbit follow-up `npm audit --omit=dev` - passed with 0 vulnerabilities.
 - Final CodeRabbit follow-up `npm run db:lint` - passed against `public,app_private` with no schema errors found.
+- Second CodeRabbit review-thread fetch via the GitHub CLI workflow - passed and identified 9 unresolved actionable threads.
+- `npx supabase@latest migration new sprint_2_coderabbit_review_fixes` - passed and created `20260521201431_sprint_2_coderabbit_review_fixes.sql`.
+- Second CodeRabbit follow-up `npm run format` - passed.
+- Second CodeRabbit follow-up `npm run typecheck` - passed after aligning preferred-language nullability with the migration.
+- Second CodeRabbit follow-up `npm run test` - passed, 2 files and 13 tests.
+- Second CodeRabbit follow-up `npx supabase@latest db push --linked --dry-run` - passed and identified `20260521201431_sprint_2_coderabbit_review_fixes.sql` as pending.
+- Second CodeRabbit follow-up `npx supabase@latest db push --linked --yes` - passed and applied `20260521201431_sprint_2_coderabbit_review_fixes.sql`.
+- Second CodeRabbit follow-up `npx supabase@latest migration list --linked` - passed and showed local/remote migrations aligned through `20260521201431`.
+- Second CodeRabbit follow-up `npm run db:lint` - passed against `public,app_private` with no schema errors found.
+- Second CodeRabbit follow-up `npm run format:check` - passed.
+- Second CodeRabbit follow-up `npm run lint` - passed.
+- Second CodeRabbit follow-up `npm run build` - passed.
+- Second CodeRabbit follow-up `npm audit --omit=dev` - passed with 0 vulnerabilities.
+- Second CodeRabbit follow-up `git diff --check` - passed with line-ending warnings only.
+- Second CodeRabbit follow-up credential-shaped secret scan excluding `.env.example` placeholders and backlog snapshots - passed with no matches.
 
 ## Checks Passed Or Failed
 
@@ -121,6 +137,10 @@ Failed or blocked:
 - Project/event mutations call backend permission RPCs before writes.
 - Project listing now has an explicit `projects.read` API permission gate before querying.
 - API 500 responses return a generic client-safe error while logging details server-side.
+- Supabase-not-configured API responses return a generic client-safe 503 while logging missing variable names server-side.
+- Project/event audit snapshots redact contact and internal-note fields before writing to `audit_logs`.
+- Workflow task insert/update/delete changes are covered by the project/event audit trigger.
+- Project and event code generators use per-base advisory transaction locks before probing for unique codes.
 - Database RLS is enabled on `wedding_projects`, `events`, `project_members`, `event_members`, and `workflow_tasks`.
 - `workflow_tasks.event_id` is constrained to belong to the same `project_id`.
 - Project/event access helper functions run from `app_private` with constrained public RPC wrappers.

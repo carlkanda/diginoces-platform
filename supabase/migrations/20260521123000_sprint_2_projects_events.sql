@@ -91,7 +91,7 @@ create table if not exists public.wedding_projects (
   bride_name text not null,
   groom_name text not null,
   project_year integer not null default extract(year from now())::integer,
-  preferred_language text not null default 'en',
+  preferred_language text default 'en',
   status public.project_lifecycle_status not null default 'draft',
   primary_contact_name text,
   primary_contact_email text,
@@ -249,7 +249,7 @@ create or replace function app_private.generate_project_code(
 )
 returns text
 language plpgsql
-stable
+volatile
 security definer
 set search_path = public, pg_temp
 as $$
@@ -261,6 +261,7 @@ declare
 begin
   selected_year := coalesce(p_project_year, extract(year from now())::integer);
   base_code := app_private.project_code_prefix(p_bride_name, p_groom_name) || '-' || selected_year::text || '-';
+  perform pg_advisory_xact_lock(hashtext(base_code));
 
   loop
     candidate := base_code || lpad(sequence_number::text, 3, '0');
@@ -300,7 +301,7 @@ create or replace function app_private.generate_event_code(
 )
 returns text
 language plpgsql
-stable
+volatile
 security definer
 set search_path = public, pg_temp
 as $$
@@ -320,6 +321,7 @@ begin
   end if;
 
   base_code := project_code_value || '-' || app_private.event_type_code(p_event_type);
+  perform pg_advisory_xact_lock(hashtext(base_code));
 
   loop
     candidate := case
@@ -684,6 +686,28 @@ grant execute on function public.current_user_has_permission(text, public.role_s
 grant execute on function public.current_user_can_access_project(uuid, text) to authenticated;
 grant execute on function public.current_user_can_access_event(uuid, text) to authenticated;
 
+create or replace function app_private.redact_project_event_audit_snapshot(
+  p_snapshot jsonb
+)
+returns jsonb
+language sql
+immutable
+set search_path = public, pg_temp
+as $$
+  select case
+    when p_snapshot is null then null
+    else p_snapshot
+      - 'internal_notes'
+      - 'preferred_language'
+      - 'primary_contact_email'
+      - 'primary_contact_name'
+      - 'primary_contact_phone'
+      - 'timeline_notes'
+  end;
+$$;
+
+revoke all on function app_private.redact_project_event_audit_snapshot(jsonb) from public;
+
 create or replace function app_private.audit_project_event_change()
 returns trigger
 language plpgsql
@@ -694,10 +718,13 @@ declare
   action_name text;
   changed_object_type text;
   changed_object_id uuid;
+  sanitized_new jsonb;
+  sanitized_old jsonb;
 begin
   changed_object_type := case tg_table_name
     when 'wedding_projects' then 'wedding_project'
-    else 'event'
+    when 'events' then 'event'
+    when 'workflow_tasks' then 'workflow_task'
   end;
 
   changed_object_id := case tg_op
@@ -710,8 +737,19 @@ begin
     when tg_table_name = 'wedding_projects' and tg_op = 'UPDATE' then 'projects.updated'
     when tg_table_name = 'events' and tg_op = 'INSERT' then 'events.created'
     when tg_table_name = 'events' and tg_op = 'UPDATE' then 'events.updated'
+    when tg_table_name = 'workflow_tasks' and tg_op = 'INSERT' then 'workflow_tasks.created'
+    when tg_table_name = 'workflow_tasks' and tg_op = 'UPDATE' then 'workflow_tasks.updated'
+    when tg_table_name = 'workflow_tasks' and tg_op = 'DELETE' then 'workflow_tasks.deleted'
     else lower(tg_table_name || '.' || tg_op)
   end;
+
+  if tg_op in ('UPDATE', 'DELETE') then
+    sanitized_old := app_private.redact_project_event_audit_snapshot(to_jsonb(old));
+  end if;
+
+  if tg_op in ('INSERT', 'UPDATE') then
+    sanitized_new := app_private.redact_project_event_audit_snapshot(to_jsonb(new));
+  end if;
 
   insert into public.audit_logs (
     actor_user_id,
@@ -727,8 +765,8 @@ begin
     action_name,
     changed_object_type,
     changed_object_id,
-    case when tg_op = 'UPDATE' then to_jsonb(old) else null end,
-    case when tg_op in ('INSERT', 'UPDATE') then to_jsonb(new) else null end,
+    sanitized_old,
+    sanitized_new,
     'api'
   );
 
@@ -757,6 +795,24 @@ execute function app_private.audit_project_event_change();
 drop trigger if exists audit_events_update on public.events;
 create trigger audit_events_update
 after update on public.events
+for each row
+execute function app_private.audit_project_event_change();
+
+drop trigger if exists audit_workflow_tasks_insert on public.workflow_tasks;
+create trigger audit_workflow_tasks_insert
+after insert on public.workflow_tasks
+for each row
+execute function app_private.audit_project_event_change();
+
+drop trigger if exists audit_workflow_tasks_update on public.workflow_tasks;
+create trigger audit_workflow_tasks_update
+after update on public.workflow_tasks
+for each row
+execute function app_private.audit_project_event_change();
+
+drop trigger if exists audit_workflow_tasks_delete on public.workflow_tasks;
+create trigger audit_workflow_tasks_delete
+after delete on public.workflow_tasks
 for each row
 execute function app_private.audit_project_event_change();
 

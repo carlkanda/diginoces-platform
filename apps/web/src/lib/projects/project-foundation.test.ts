@@ -12,6 +12,8 @@ import { hasScopedPermission } from "@/lib/projects/project-permissions";
 import {
   parseCreateEventPayload,
   parseCreateProjectPayload,
+  parseUpdateEventPayload,
+  parseUpdateProjectPayload,
   ProjectValidationError,
 } from "@/lib/projects/project-service";
 import type { RoleAssignment } from "@/lib/security/permissions";
@@ -169,6 +171,44 @@ describe("Sprint 2 projects and events foundation", () => {
     expect(() =>
       parseCreateEventPayload({ eventType: "banquet", name: "Banquet" }),
     ).toThrow(ProjectValidationError);
+  });
+
+  it("keeps PATCH payloads explicit so nullable fields can be cleared", () => {
+    expect(
+      parseUpdateProjectPayload({
+        primaryContactEmail: null,
+        timelineNotes: null,
+      }),
+    ).toStrictEqual({
+      primaryContactEmail: null,
+      timelineNotes: null,
+    });
+
+    expect(
+      parseUpdateEventPayload({
+        eventDate: null,
+        startsAt: "09:30",
+        venueName: null,
+      }),
+    ).toStrictEqual({
+      eventDate: null,
+      startsAt: "09:30",
+      venueName: null,
+    });
+  });
+
+  it("rejects invalid event date and time payloads before database writes", () => {
+    expect(() =>
+      parseCreateEventPayload({
+        eventDate: "2026-02-30",
+        eventType: "civil",
+        name: "Civil ceremony",
+      }),
+    ).toThrow(ProjectValidationError);
+
+    expect(() => parseUpdateEventPayload({ startsAt: "25:00" })).toThrow(
+      ProjectValidationError,
+    );
   });
 
   it("limits generated workflow templates to project and event setup tasks", () => {

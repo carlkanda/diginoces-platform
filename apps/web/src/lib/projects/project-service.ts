@@ -24,16 +24,18 @@ export type EventDetails = {
   workflowTasks: WorkflowTaskRow[];
 };
 
+type OptionalNullableText = string | null | undefined;
+
 export type CreateProjectInput = {
   brideName: string;
   groomName: string;
-  internalNotes?: string;
-  preferredLanguage?: string;
-  primaryContactEmail?: string;
-  primaryContactName?: string;
-  primaryContactPhone?: string;
+  internalNotes?: OptionalNullableText;
+  preferredLanguage?: OptionalNullableText;
+  primaryContactEmail?: OptionalNullableText;
+  primaryContactName?: OptionalNullableText;
+  primaryContactPhone?: OptionalNullableText;
   projectYear?: number;
-  timelineNotes?: string;
+  timelineNotes?: OptionalNullableText;
 };
 
 export type UpdateProjectInput = Partial<
@@ -45,13 +47,13 @@ export type UpdateProjectInput = Partial<
 >;
 
 export type CreateEventInput = {
-  endsAt?: string;
-  eventDate?: string;
+  endsAt?: OptionalNullableText;
+  eventDate?: OptionalNullableText;
   eventType: Database["public"]["Enums"]["event_type"];
   name: string;
-  startsAt?: string;
-  venueAddress?: string;
-  venueName?: string;
+  startsAt?: OptionalNullableText;
+  venueAddress?: OptionalNullableText;
+  venueName?: OptionalNullableText;
 };
 
 export type UpdateEventInput = Partial<
@@ -96,9 +98,13 @@ function requiredText(value: unknown, fieldName: string) {
   return value.trim();
 }
 
-function optionalText(value: unknown) {
-  if (value === undefined || value === null) {
+function optionalText(value: unknown): OptionalNullableText {
+  if (value === undefined) {
     return undefined;
+  }
+
+  if (value === null) {
+    return null;
   }
 
   if (typeof value !== "string") {
@@ -107,6 +113,51 @@ function optionalText(value: unknown) {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function optionalDate(value: unknown, fieldName: string): OptionalNullableText {
+  const normalized = optionalText(value);
+
+  if (normalized === undefined || normalized === null) {
+    return normalized;
+  }
+
+  const match = /^(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})$/.exec(
+    normalized,
+  );
+
+  if (!match?.groups) {
+    throw new ProjectValidationError(`${fieldName} must be an ISO date.`);
+  }
+
+  const year = Number(match.groups.year);
+  const month = Number(match.groups.month);
+  const day = Number(match.groups.day);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    throw new ProjectValidationError(`${fieldName} must be a valid ISO date.`);
+  }
+
+  return normalized;
+}
+
+function optionalTime(value: unknown, fieldName: string): OptionalNullableText {
+  const normalized = optionalText(value);
+
+  if (normalized === undefined || normalized === null) {
+    return normalized;
+  }
+
+  if (!/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(normalized)) {
+    throw new ProjectValidationError(`${fieldName} must be a valid time.`);
+  }
+
+  return normalized;
 }
 
 function optionalYear(value: unknown) {
@@ -187,12 +238,20 @@ export function parseUpdateProjectPayload(
       body.status as Database["public"]["Enums"]["project_lifecycle_status"];
   }
 
-  input.internalNotes = optionalText(body.internalNotes);
-  input.preferredLanguage = optionalText(body.preferredLanguage);
-  input.primaryContactEmail = optionalText(body.primaryContactEmail);
-  input.primaryContactName = optionalText(body.primaryContactName);
-  input.primaryContactPhone = optionalText(body.primaryContactPhone);
-  input.timelineNotes = optionalText(body.timelineNotes);
+  const optionalProjectTextFields = [
+    "internalNotes",
+    "preferredLanguage",
+    "primaryContactEmail",
+    "primaryContactName",
+    "primaryContactPhone",
+    "timelineNotes",
+  ] as const;
+
+  for (const field of optionalProjectTextFields) {
+    if (body[field] !== undefined) {
+      input[field] = optionalText(body[field]);
+    }
+  }
 
   return input;
 }
@@ -208,11 +267,11 @@ export function parseCreateEventPayload(payload: unknown): CreateEventInput {
   }
 
   return {
-    endsAt: optionalText(body.endsAt),
-    eventDate: optionalText(body.eventDate),
+    endsAt: optionalTime(body.endsAt, "endsAt"),
+    eventDate: optionalDate(body.eventDate, "eventDate"),
     eventType: body.eventType as Database["public"]["Enums"]["event_type"],
     name: requiredText(body.name, "name"),
-    startsAt: optionalText(body.startsAt),
+    startsAt: optionalTime(body.startsAt, "startsAt"),
     venueAddress: optionalText(body.venueAddress),
     venueName: optionalText(body.venueName),
   };
@@ -260,11 +319,25 @@ export function parseUpdateEventPayload(payload: unknown): UpdateEventInput {
       body.status as Database["public"]["Enums"]["event_lifecycle_status"];
   }
 
-  input.endsAt = optionalText(body.endsAt);
-  input.eventDate = optionalText(body.eventDate);
-  input.startsAt = optionalText(body.startsAt);
-  input.venueAddress = optionalText(body.venueAddress);
-  input.venueName = optionalText(body.venueName);
+  if (body.endsAt !== undefined) {
+    input.endsAt = optionalTime(body.endsAt, "endsAt");
+  }
+
+  if (body.eventDate !== undefined) {
+    input.eventDate = optionalDate(body.eventDate, "eventDate");
+  }
+
+  if (body.startsAt !== undefined) {
+    input.startsAt = optionalTime(body.startsAt, "startsAt");
+  }
+
+  const optionalEventTextFields = ["venueAddress", "venueName"] as const;
+
+  for (const field of optionalEventTextFields) {
+    if (body[field] !== undefined) {
+      input[field] = optionalText(body[field]);
+    }
+  }
 
   return input;
 }
@@ -276,6 +349,41 @@ export async function listProjects(
     .from("wedding_projects")
     .select("*")
     .order("created_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function projectExists(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("wedding_projects")
+    .select("id")
+    .eq("id", projectId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data);
+}
+
+export async function listProjectEvents(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+): Promise<EventRow[]> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("event_date", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
 
   if (error) {
     throw error;
@@ -417,22 +525,57 @@ export async function updateProject(
   input: UpdateProjectInput,
   actorUserId: string,
 ) {
+  const updates: Database["public"]["Tables"]["wedding_projects"]["Update"] = {
+    updated_by: actorUserId,
+  };
+
+  if (input.brideName !== undefined) {
+    updates.bride_name = input.brideName;
+  }
+
+  if (input.groomName !== undefined) {
+    updates.groom_name = input.groomName;
+  }
+
+  if (input.internalNotes !== undefined) {
+    updates.internal_notes = input.internalNotes;
+  }
+
+  if (input.preferredLanguage !== undefined) {
+    updates.preferred_language = input.preferredLanguage;
+  }
+
+  if (input.primaryContactEmail !== undefined) {
+    updates.primary_contact_email = input.primaryContactEmail;
+  }
+
+  if (input.primaryContactName !== undefined) {
+    updates.primary_contact_name = input.primaryContactName;
+  }
+
+  if (input.primaryContactPhone !== undefined) {
+    updates.primary_contact_phone = input.primaryContactPhone;
+  }
+
+  if (input.projectCode !== undefined) {
+    updates.project_code = input.projectCode;
+  }
+
+  if (input.projectYear !== undefined) {
+    updates.project_year = input.projectYear;
+  }
+
+  if (input.status !== undefined) {
+    updates.status = input.status;
+  }
+
+  if (input.timelineNotes !== undefined) {
+    updates.timeline_notes = input.timelineNotes;
+  }
+
   const { data, error } = await supabase
     .from("wedding_projects")
-    .update({
-      bride_name: input.brideName,
-      groom_name: input.groomName,
-      internal_notes: input.internalNotes,
-      preferred_language: input.preferredLanguage,
-      primary_contact_email: input.primaryContactEmail,
-      primary_contact_name: input.primaryContactName,
-      primary_contact_phone: input.primaryContactPhone,
-      project_code: input.projectCode,
-      project_year: input.projectYear,
-      status: input.status,
-      timeline_notes: input.timelineNotes,
-      updated_by: actorUserId,
-    })
+    .update(updates)
     .eq("id", projectId)
     .select("*")
     .single();
@@ -480,20 +623,49 @@ export async function updateEvent(
   input: UpdateEventInput,
   actorUserId: string,
 ) {
+  const updates: Database["public"]["Tables"]["events"]["Update"] = {
+    updated_by: actorUserId,
+  };
+
+  if (input.endsAt !== undefined) {
+    updates.ends_at = input.endsAt;
+  }
+
+  if (input.eventCode !== undefined) {
+    updates.event_code = input.eventCode;
+  }
+
+  if (input.eventDate !== undefined) {
+    updates.event_date = input.eventDate;
+  }
+
+  if (input.eventType !== undefined) {
+    updates.event_type = input.eventType;
+  }
+
+  if (input.name !== undefined) {
+    updates.name = input.name;
+  }
+
+  if (input.startsAt !== undefined) {
+    updates.starts_at = input.startsAt;
+  }
+
+  if (input.status !== undefined) {
+    updates.status = input.status;
+  }
+
+  if (input.venueAddress !== undefined) {
+    updates.venue_address = input.venueAddress;
+  }
+
+  if (input.venueName !== undefined) {
+    updates.venue_name = input.venueName;
+  }
+
   const { data, error } = await supabase
     .from("events")
-    .update({
-      ends_at: input.endsAt,
-      event_code: input.eventCode,
-      event_date: input.eventDate,
-      event_type: input.eventType,
-      name: input.name,
-      starts_at: input.startsAt,
-      status: input.status,
-      updated_by: actorUserId,
-      venue_address: input.venueAddress,
-      venue_name: input.venueName,
-    })
+    .update(updates)
     .eq("id", eventId)
     .select("*")
     .single();

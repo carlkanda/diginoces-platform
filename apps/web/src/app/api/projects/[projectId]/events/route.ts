@@ -7,8 +7,9 @@ import {
 } from "@/lib/projects/project-api";
 import {
   createEvent,
-  getProjectDetails,
+  listProjectEvents,
   parseCreateEventPayload,
+  projectExists,
   ProjectValidationError,
 } from "@/lib/projects/project-service";
 
@@ -39,9 +40,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const { projectId } = await context.params;
     await requireProjectPermission(apiContext, projectId, "events.read");
 
-    const details = await getProjectDetails(apiContext.supabase, projectId);
-
-    if (!details) {
+    if (!(await projectExists(apiContext.supabase, projectId))) {
       return NextResponse.json(
         {
           error: {
@@ -53,9 +52,11 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       );
     }
 
+    const events = await listProjectEvents(apiContext.supabase, projectId);
+
     return NextResponse.json(
       {
-        events: details.events,
+        events,
       },
       {
         headers: {

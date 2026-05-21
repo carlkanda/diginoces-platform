@@ -8,6 +8,9 @@ export type AuditAction =
   | "projects.updated"
   | "events.created"
   | "events.updated"
+  | "workflow_tasks.created"
+  | "workflow_tasks.updated"
+  | "workflow_tasks.deleted"
   | "storage.file_registered"
   | "system.foundation_health_checked";
 

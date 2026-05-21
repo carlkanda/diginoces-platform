@@ -36,10 +36,14 @@ export async function getProjectApiContext() {
   const authContext = await getAuthContext();
 
   if (authContext.status === "not_configured") {
+    console.error(
+      "Missing Supabase configuration:",
+      authContext.missingSupabaseVariables,
+    );
     return jsonError(
       503,
       "supabase_not_configured",
-      `Missing Supabase configuration: ${authContext.missingSupabaseVariables.join(", ")}`,
+      "Service is temporarily unavailable.",
     );
   }
 

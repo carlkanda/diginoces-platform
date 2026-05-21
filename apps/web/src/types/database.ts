@@ -360,7 +360,7 @@ export type Database = {
           created_by?: string | null;
           groom_name: string;
           internal_notes?: string | null;
-          preferred_language?: string;
+          preferred_language?: string | null;
           primary_contact_email?: string | null;
           primary_contact_name?: string | null;
           primary_contact_phone?: string | null;
@@ -378,7 +378,7 @@ export type Database = {
           groom_name: string;
           id: string;
           internal_notes: string | null;
-          preferred_language: string;
+          preferred_language: string | null;
           primary_contact_email: string | null;
           primary_contact_name: string | null;
           primary_contact_phone: string | null;
@@ -394,7 +394,7 @@ export type Database = {
           bride_name?: string;
           groom_name?: string;
           internal_notes?: string | null;
-          preferred_language?: string;
+          preferred_language?: string | null;
           primary_contact_email?: string | null;
           primary_contact_name?: string | null;
           primary_contact_phone?: string | null;

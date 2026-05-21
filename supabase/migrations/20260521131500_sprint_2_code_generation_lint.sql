@@ -8,7 +8,7 @@ create or replace function app_private.generate_project_code(
 )
 returns text
 language plpgsql
-stable
+volatile
 security definer
 set search_path = public, pg_temp
 as $$
@@ -20,6 +20,7 @@ declare
 begin
   selected_year := coalesce(p_project_year, extract(year from now())::integer);
   base_code := app_private.project_code_prefix(p_bride_name, p_groom_name) || '-' || selected_year::text || '-';
+  perform pg_advisory_xact_lock(hashtext(base_code));
 
   loop
     candidate := base_code || lpad(sequence_number::text, 3, '0');
@@ -45,7 +46,7 @@ create or replace function app_private.generate_event_code(
 )
 returns text
 language plpgsql
-stable
+volatile
 security definer
 set search_path = public, pg_temp
 as $$
@@ -65,6 +66,7 @@ begin
   end if;
 
   base_code := project_code_value || '-' || app_private.event_type_code(p_event_type);
+  perform pg_advisory_xact_lock(hashtext(base_code));
 
   loop
     candidate := case
