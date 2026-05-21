@@ -60,6 +60,7 @@ export function hasScopedPermission(
         (assignment.scope === "event" &&
           assignment.scopeId === target.eventId) ||
         (assignment.scope === "project" &&
+          target.projectId != null &&
           assignment.scopeId === target.projectId)
       );
     }

@@ -135,8 +135,10 @@ export function handleProjectApiError(error: unknown) {
   }
 
   if (error instanceof Error) {
-    return jsonError(500, "server_error", error.message);
+    console.error("Internal server error:", error);
+    return jsonError(500, "server_error", "Internal server error");
   }
 
-  return jsonError(500, "server_error", "Unexpected server error.");
+  console.error("Unexpected server error:", error);
+  return jsonError(500, "server_error", "Internal server error");
 }

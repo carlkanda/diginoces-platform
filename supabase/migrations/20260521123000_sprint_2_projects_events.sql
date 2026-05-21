@@ -131,7 +131,7 @@ create table if not exists public.events (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint events_name_not_blank check (length(trim(name)) > 0),
-  constraint events_event_code_format check (event_code ~ '^[A-Z0-9]{3,8}-[0-9]{4}-[0-9]{3,}-[A-Z]{3}(-[0-9]{2})?$'),
+  constraint events_event_code_format check (event_code ~ '^[A-Z0-9]{3,8}-[0-9]{4}-[0-9]{3,}-[A-Z]{3}(-[0-9]{2,})?$'),
   constraint events_time_order check (starts_at is null or ends_at is null or ends_at > starts_at)
 );
 
@@ -198,6 +198,12 @@ create table if not exists public.workflow_tasks (
   constraint workflow_tasks_event_scope_requires_event check (
     (scope = 'event' and event_id is not null)
     or (scope = 'project' and event_id is null)
+  ),
+  constraint workflow_tasks_event_belongs_to_project check (
+    event_id is null or exists (
+      select 1 from public.events e
+      where e.id = event_id and e.project_id = project_id
+    )
   )
 );
 

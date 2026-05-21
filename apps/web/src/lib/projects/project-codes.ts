@@ -39,6 +39,9 @@ export function formatProjectCode({
   sequence = 1,
   year,
 }: ProjectCodeInput) {
+  if (!Number.isInteger(sequence) || sequence <= 0) {
+    throw new RangeError("sequence must be a positive integer");
+  }
   return `${getCoupleCode(brideName, groomName)}-${year}-${String(sequence).padStart(3, "0")}`;
 }
 
@@ -47,6 +50,9 @@ export function formatEventCode({
   projectCode,
   sequence = 1,
 }: EventCodeInput) {
+  if (!Number.isInteger(sequence) || sequence <= 0) {
+    throw new RangeError("sequence must be a positive integer");
+  }
   const baseCode = `${projectCode}-${eventTypeCodeMap[eventType]}`;
 
   if (sequence <= 1) {
