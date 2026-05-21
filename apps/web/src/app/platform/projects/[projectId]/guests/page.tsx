@@ -75,13 +75,16 @@ export default async function ProjectGuestsPage({
     }),
   ]);
 
-  const sideHref = (value: GuestSide | "all") => {
+  const sideHref = (
+    value: GuestSide | "all",
+    nextEventId: string | undefined = eventId,
+  ) => {
     const params = new URLSearchParams();
     if (value !== "all") {
       params.set("side", value);
     }
-    if (eventId) {
-      params.set("eventId", eventId);
+    if (nextEventId) {
+      params.set("eventId", nextEventId);
     }
 
     return `/platform/projects/${projectId}/guests${params.size > 0 ? `?${params.toString()}` : ""}`;
@@ -133,7 +136,7 @@ export default async function ProjectGuestsPage({
         </div>
         {events.length > 0 ? (
           <div className="filter-bar">
-            <Link className="button secondary" href={sideHref(side)}>
+            <Link className="button secondary" href={sideHref(side, undefined)}>
               All events
             </Link>
             {events.map((event) => {

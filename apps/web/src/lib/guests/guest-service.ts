@@ -627,75 +627,32 @@ export async function getGuestDetails(
   };
 }
 
-async function replaceGuestEventAssignments(
+async function replaceGuestFoundationAssignments(
   supabase: SupabaseClient<Database>,
   guest: GuestRow,
   eventIds: string[] | undefined,
-  actorUserId: string,
-) {
-  if (eventIds === undefined) {
-    return;
-  }
-
-  const { error: deleteError } = await supabase
-    .from("guest_event_assignments")
-    .delete()
-    .eq("guest_id", guest.id);
-
-  if (deleteError) {
-    throw deleteError;
-  }
-
-  if (eventIds.length === 0) {
-    return;
-  }
-
-  const { error } = await supabase.from("guest_event_assignments").insert(
-    eventIds.map((eventId) => ({
-      created_by: actorUserId,
-      event_id: eventId,
-      guest_id: guest.id,
-      invited: true,
-      project_id: guest.project_id,
-      updated_by: actorUserId,
-    })),
-  );
-
-  if (error) {
-    throw error;
-  }
-}
-
-async function replaceGuestTagAssignments(
-  supabase: SupabaseClient<Database>,
-  guest: GuestRow,
   tagIds: string[] | undefined,
-  actorUserId: string,
 ) {
-  if (tagIds === undefined) {
+  if (eventIds === undefined && tagIds === undefined) {
     return;
   }
 
-  const { error: deleteError } = await supabase
-    .from("guest_tag_assignments")
-    .delete()
-    .eq("guest_id", guest.id);
+  const assignmentArgs: Database["public"]["Functions"]["replace_guest_foundation_assignments"]["Args"] =
+    {
+      p_guest_id: guest.id,
+    };
 
-  if (deleteError) {
-    throw deleteError;
+  if (eventIds !== undefined) {
+    assignmentArgs.p_event_ids = eventIds;
   }
 
-  if (tagIds.length === 0) {
-    return;
+  if (tagIds !== undefined) {
+    assignmentArgs.p_tag_ids = tagIds;
   }
 
-  const { error } = await supabase.from("guest_tag_assignments").insert(
-    tagIds.map((tagId) => ({
-      created_by: actorUserId,
-      guest_id: guest.id,
-      project_id: guest.project_id,
-      tag_id: tagId,
-    })),
+  const { error } = await supabase.rpc(
+    "replace_guest_foundation_assignments",
+    assignmentArgs,
   );
 
   if (error) {
@@ -730,13 +687,12 @@ export async function createGuest(
     throw error;
   }
 
-  await replaceGuestEventAssignments(
+  await replaceGuestFoundationAssignments(
     supabase,
     data,
     input.eventIds,
-    actorUserId,
+    input.tagIds,
   );
-  await replaceGuestTagAssignments(supabase, data, input.tagIds, actorUserId);
 
   return data;
 }
@@ -794,13 +750,12 @@ export async function updateGuest(
     throw error;
   }
 
-  await replaceGuestEventAssignments(
+  await replaceGuestFoundationAssignments(
     supabase,
     data,
     input.eventIds,
-    actorUserId,
+    input.tagIds,
   );
-  await replaceGuestTagAssignments(supabase, data, input.tagIds, actorUserId);
 
   return data;
 }
@@ -812,26 +767,40 @@ export async function findDuplicateGuests(
   const normalizedName =
     guest.normalized_name ?? normalizeGuestName(guest.display_name);
   const whatsappDigits = normalizeWhatsapp(guest.whatsapp_number);
-  let query = supabase
+
+  const nameResult = await supabase
     .from("guests")
     .select("*")
     .eq("project_id", guest.project_id)
     .neq("id", guest.id)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("normalized_name", normalizedName);
 
-  if (whatsappDigits) {
-    query = query.or(
-      `normalized_name.eq.${normalizedName},normalized_whatsapp.eq.${whatsappDigits}`,
-    );
-  } else {
-    query = query.eq("normalized_name", normalizedName);
+  if (nameResult.error) {
+    throw nameResult.error;
   }
 
-  const { data, error } = await query;
-
-  if (error) {
-    throw error;
+  if (!whatsappDigits) {
+    return nameResult.data;
   }
 
-  return data;
+  const whatsappResult = await supabase
+    .from("guests")
+    .select("*")
+    .eq("project_id", guest.project_id)
+    .neq("id", guest.id)
+    .eq("is_active", true)
+    .eq("normalized_whatsapp", whatsappDigits);
+
+  if (whatsappResult.error) {
+    throw whatsappResult.error;
+  }
+
+  const duplicateRows = new Map<string, GuestRow>();
+
+  for (const row of [...nameResult.data, ...whatsappResult.data]) {
+    duplicateRows.set(row.id, row);
+  }
+
+  return [...duplicateRows.values()];
 }

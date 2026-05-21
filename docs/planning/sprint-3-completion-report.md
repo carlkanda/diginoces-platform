@@ -16,6 +16,7 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 ## Files Created Or Changed
 
 - `supabase/migrations/20260521211837_sprint_3_guest_management_foundation.sql`
+- `supabase/migrations/20260521230555_sprint_3_coderabbit_review_fixes.sql`
 - `apps/web/src/types/database.ts`
 - `apps/web/src/lib/guests/guest-service.ts`
 - `apps/web/src/lib/guests/guest-api.ts`
@@ -57,6 +58,9 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 - `npx.cmd supabase@latest migration list --linked`
 - `npx.cmd supabase@latest db push --linked --yes`
 - `npx.cmd supabase@latest gen types --linked --lang=typescript --schema public`
+- `npx.cmd supabase@latest db push --linked --dry-run` after CodeRabbit fixes
+- `npx.cmd supabase@latest db push --linked --yes` after CodeRabbit fixes
+- `npx.cmd supabase@latest gen types --linked --lang=typescript --schema public` after CodeRabbit fixes
 - `docker version`
 - `npm.cmd run db:lint`
 - `npm.cmd ci`
@@ -80,8 +84,11 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 - `npx.cmd supabase@latest db push --linked --dry-run` passed and reported only `20260521211837_sprint_3_guest_management_foundation.sql` as pending.
 - `npx.cmd supabase@latest db push --linked --yes` passed and applied `20260521211837_sprint_3_guest_management_foundation.sql`.
 - `npm.cmd run db:lint` passed: no schema errors found for `public` and `app_private`.
-- `npx.cmd supabase@latest migration list --linked` passed and showed `20260521211837` present locally and remotely.
+- `npx.cmd supabase@latest migration list --linked` passed and showed `20260521211837` and `20260521230555` present locally and remotely.
 - `npx.cmd supabase@latest gen types --linked --lang=typescript --schema public` passed, and `apps/web/src/types/database.ts` was refreshed from the linked schema.
+- `npx.cmd supabase@latest db push --linked --yes` after CodeRabbit fixes passed and applied `20260521230555_sprint_3_coderabbit_review_fixes.sql`.
+- `npx.cmd supabase@latest gen types --linked --lang=typescript --schema public` after CodeRabbit fixes passed, and `apps/web/src/types/database.ts` was refreshed with `replace_guest_foundation_assignments`.
+- CodeRabbit review fixes were applied for event filter clearing, guest fixture consistency, atomic assignment replacement, safe duplicate queries without `.or()` interpolation, and `guests.deactivate` RLS enforcement.
 - Browser verification passed: home, health, and projects pages rendered content, had no framework error overlay, and reported no browser console errors.
 - `git diff --check` passed.
 - Secret-pattern scan found only documented placeholder variable names, existing service-role SQL grants, and `.env.example` placeholders; no real credentials were found.
@@ -98,6 +105,8 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 - New guest tables in the exposed `public` schema enable RLS.
 - Backend routes call permission RPCs before guest mutations.
 - RLS policies use project permissions and bride/groom/both side checks for guest writes and guest assignment writes.
+- Guest deactivation requires `guests.deactivate` in addition to side-management access.
+- Guest event/tag assignment replacement now runs through an atomic database RPC.
 - Security definer functions are placed in the private `app_private` schema.
 - Guest audit triggers redact direct guest PII fields from audit snapshots.
 - Guest APIs use the authenticated Supabase session and do not use service-role secrets.

@@ -564,7 +564,13 @@ on public.guests
 for update
 to authenticated
 using (app_private.user_can_manage_guest_side((select auth.uid()), project_id, guest_side))
-with check (app_private.user_can_manage_guest_side((select auth.uid()), project_id, guest_side));
+with check (
+  app_private.user_can_manage_guest_side((select auth.uid()), project_id, guest_side)
+  and (
+    is_active
+    or app_private.user_can_access_project((select auth.uid()), project_id, 'guests.deactivate')
+  )
+);
 
 drop policy if exists "Guest event assignments visible to guest readers" on public.guest_event_assignments;
 create policy "Guest event assignments visible to guest readers"

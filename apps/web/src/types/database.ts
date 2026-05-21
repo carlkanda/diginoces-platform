@@ -897,6 +897,14 @@ export type Database = {
         };
         Returns: boolean;
       };
+      replace_guest_foundation_assignments: {
+        Args: {
+          p_event_ids?: string[];
+          p_guest_id: string;
+          p_tag_ids?: string[];
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       audit_source: "api" | "auth" | "system" | "storage";

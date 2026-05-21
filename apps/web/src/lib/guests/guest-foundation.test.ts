@@ -134,7 +134,13 @@ describe("Sprint 3 guest-management foundation", () => {
         id: "66666666-6666-4666-8666-666666666666",
         normalizedName: "mona kanda",
         whatsappNumber: null,
-        eventAssignments: [{ eventId, guestId: baseGuest.id, invited: true }],
+        eventAssignments: [
+          {
+            eventId,
+            guestId: "66666666-6666-4666-8666-666666666666",
+            invited: true,
+          },
+        ],
       },
     ];
 
