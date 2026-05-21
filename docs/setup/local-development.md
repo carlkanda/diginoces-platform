@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide covers Sprint 1 foundation setup for issue `#1`. It does not include guest management, RSVP, invitations, WhatsApp sending, table planning, check-in, contracts, pricing, payments, partner project creation, or full dashboards.
+This guide covers the Sprint 1 foundation setup for issue `#1` and the Sprint 2 project/event foundation for issue `#3`. It does not include guest management, RSVP, invitations, WhatsApp sending, table planning, check-in, contracts, pricing, payments, partner project creation, or full dashboards.
 
 ## Prerequisites
 
@@ -26,7 +26,7 @@ cp .env.example .env.local
 
 Never commit `.env`, `.env.local`, Supabase service-role keys, database passwords, WhatsApp tokens, Google secrets, or private client data.
 
-Required Sprint 1 web variables:
+Required web variables:
 
 ```bash
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -66,6 +66,18 @@ The health endpoint is available at:
 ```text
 http://127.0.0.1:3000/api/health
 ```
+
+Sprint 2 project/event foundation routes:
+
+```text
+http://127.0.0.1:3000/platform/projects
+http://127.0.0.1:3000/api/projects
+http://127.0.0.1:3000/api/projects/{projectId}
+http://127.0.0.1:3000/api/projects/{projectId}/events
+http://127.0.0.1:3000/api/events/{eventId}
+```
+
+The project and event API routes require a Supabase-authenticated session. Mutations also call backend permission RPCs before writing and are protected by database RLS.
 
 ## Supabase
 
@@ -119,7 +131,9 @@ npx supabase@latest migration new descriptive_name
 ## Known Local Notes
 
 - `npx supabase@latest db lint` without flags targets the local database and still requires a local database on `127.0.0.1:54322`.
-- `npm run db:lint` uses `supabase db lint --linked --schema public,private --fail-on error` and does not require Docker once the CLI is authenticated and linked.
+- `npm run db:lint` uses `supabase db lint --linked --schema public,app_private --fail-on error` and does not require Docker once the CLI is authenticated and linked.
 - The linked lint path still requires access to the developer's Supabase CLI login. In sandboxed environments, grant the command access or set `SUPABASE_ACCESS_TOKEN` outside the repository.
 - The Sprint 1 migration enables RLS on all foundation tables and keeps audit logs append-only.
+- The Sprint 2 migration enables RLS on project, event, project member, event member, and workflow task tables.
+- Sprint 2 project/event creation is audited by database triggers. API handlers use the authenticated user's Supabase session and do not require Supabase service-role secrets.
 - The storage adapter is fail-closed until a real provider is configured.

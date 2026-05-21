@@ -127,6 +127,24 @@ input {
   font-size: 1.02rem;
 }
 
+.page-heading,
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.78rem;
+  font-weight: 760;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
 .panel {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -178,7 +196,7 @@ input {
   background: var(--panel-strong);
   padding: 5px 10px;
   color: var(--foreground);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.78rem;
 }
 
@@ -280,12 +298,98 @@ input {
   padding: 14px 16px;
 }
 
+.empty-state {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 22px;
+  color: var(--muted);
+}
+
+.record-list,
+.task-list {
+  display: grid;
+  gap: 10px;
+}
+
+.record-row,
+.task-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(120px, 0.24fr);
+  gap: 16px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 14px 16px;
+}
+
+.task-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.record-row strong,
+.task-row strong {
+  display: block;
+}
+
+.record-row small,
+.task-row small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.tag {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 107, 95, 0.24);
+  border-radius: 999px;
+  background: rgba(0, 107, 95, 0.08);
+  color: var(--accent-strong);
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 760;
+  text-transform: capitalize;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.detail-grid div {
+  min-height: 98px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+.detail-grid span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.detail-grid strong {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 760px) {
   .topbar-inner {
     min-height: 64px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding: 12px 0;
   }
 
   .nav {
+    flex-wrap: wrap;
     gap: 10px;
     font-size: 0.86rem;
   }
@@ -301,5 +405,19 @@ input {
   .table-like div {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .page-heading,
+  .section-heading {
+    display: grid;
+  }
+
+  .record-row,
+  .task-row {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
   }
 }
