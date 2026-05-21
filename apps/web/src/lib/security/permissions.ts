@@ -1,0 +1,139 @@
+export const permissionSlugs = [
+  "platform.foundation.access",
+  "auth.session.read",
+  "auth.session.write",
+  "users.read",
+  "roles.read",
+  "roles.manage",
+  "audit.read",
+  "audit.write",
+  "files.read",
+  "files.write",
+  "storage.configure",
+] as const;
+
+export type PermissionSlug = (typeof permissionSlugs)[number];
+
+export type RoleScope = "global" | "project" | "event" | "custom";
+
+export type RoleSlug =
+  | "diginoces_admin"
+  | "operations_manager"
+  | "role_manager"
+  | "audit_viewer"
+  | "file_manager"
+  | "couple"
+  | "event_staff"
+  | "partner_admin";
+
+export type RoleDefinition = {
+  description: string;
+  grants: PermissionSlug[];
+  requirementIds: string[];
+  requiresMfa: boolean;
+  scope: RoleScope;
+  slug: RoleSlug;
+};
+
+export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
+  audit_viewer: {
+    description: "Can review foundation audit records.",
+    grants: ["audit.read"],
+    requirementIds: ["REP-006", "ROLE-007"],
+    requiresMfa: true,
+    scope: "global",
+    slug: "audit_viewer",
+  },
+  couple: {
+    description: "Future project-level wedding couple role.",
+    grants: ["platform.foundation.access"],
+    requirementIds: ["PV-002", "ROLE-002"],
+    requiresMfa: false,
+    scope: "project",
+    slug: "couple",
+  },
+  diginoces_admin: {
+    description: "Internal administrator with foundation-level access.",
+    grants: [...permissionSlugs],
+    requirementIds: ["PV-001", "ROLE-001", "ROLE-007"],
+    requiresMfa: true,
+    scope: "global",
+    slug: "diginoces_admin",
+  },
+  event_staff: {
+    description:
+      "Future event-level staff role with limited foundation access.",
+    grants: ["platform.foundation.access"],
+    requirementIds: ["ROLE-003"],
+    requiresMfa: false,
+    scope: "event",
+    slug: "event_staff",
+  },
+  file_manager: {
+    description:
+      "Can manage app-owned operational files through approved services.",
+    grants: ["files.read", "files.write", "storage.configure"],
+    requirementIds: ["FILE-001"],
+    requiresMfa: false,
+    scope: "global",
+    slug: "file_manager",
+  },
+  operations_manager: {
+    description:
+      "Can operate foundation services without sensitive admin controls.",
+    grants: [
+      "platform.foundation.access",
+      "auth.session.read",
+      "users.read",
+      "roles.read",
+      "files.read",
+    ],
+    requirementIds: ["PV-001", "PV-002", "ROLE-001"],
+    requiresMfa: false,
+    scope: "global",
+    slug: "operations_manager",
+  },
+  partner_admin: {
+    description: "Future restricted partner administrator role.",
+    grants: ["platform.foundation.access"],
+    requirementIds: ["ROLE-002", "ROLE-007"],
+    requiresMfa: true,
+    scope: "custom",
+    slug: "partner_admin",
+  },
+  role_manager: {
+    description: "Can manage roles and permissions.",
+    grants: ["roles.read", "roles.manage", "audit.write"],
+    requirementIds: ["ROLE-001", "ROLE-007"],
+    requiresMfa: true,
+    scope: "global",
+    slug: "role_manager",
+  },
+};
+
+export type RoleAssignment = {
+  role: RoleSlug;
+  scope: RoleScope;
+  scopeId?: string;
+};
+
+export function getGrantedPermissions(assignments: RoleAssignment[]) {
+  return new Set(
+    assignments.flatMap(
+      (assignment) => roleDefinitions[assignment.role].grants,
+    ),
+  );
+}
+
+export function hasPermission(
+  assignments: RoleAssignment[],
+  permission: PermissionSlug,
+) {
+  return getGrantedPermissions(assignments).has(permission);
+}
+
+export function sensitiveRolesRequireMfa(assignments: RoleAssignment[]) {
+  return assignments.some(
+    (assignment) => roleDefinitions[assignment.role].requiresMfa,
+  );
+}
