@@ -2,13 +2,13 @@
 
 ## Project mission
 
-Build the Diginoces wedding guest-management platform as a responsive web application using the requirements, planning documents, and technical design artifacts contained in this repository.
+Build the Diginoces wedding guest-management platform as a responsive web application using the requirements, planning documents, backlog CSV snapshots, and technical design artifacts contained in this repository.
 
 Diginoces is being transformed from a workflow based on Google tools, Canva, WhatsApp, and Python scripts into a professional platform for wedding guest operations.
 
 ## Core build rule
 
-No feature may be implemented unless it is linked to a documented requirement ID.
+No feature may be implemented unless it is linked to a documented requirement ID and an approved sprint/backlog item.
 
 No requirement may be marked complete unless it has been:
 
@@ -16,76 +16,123 @@ No requirement may be marked complete unless it has been:
 2. tested;
 3. reviewed;
 4. documented where needed;
-5. linked back to the requirements register or sprint issue.
+5. linked back to the requirements register, backlog item, sprint issue, and pull request.
 
-## Current sprint
+## Active sprint
 
-Current sprint: **Sprint 1 — Secure Platform Foundation**
+Current active implementation sprint:
 
-GitHub issue:
+```text
+Sprint 3 — Guest Management & Guest Lists Foundation
+```
 
-https://github.com/carlkanda/diginoces-platform/issues/1
+Current GitHub issue:
+
+```text
+#5 — Sprint 3 — Guest Management & Guest Lists Foundation
+```
+
+Authoritative sprint plan:
+
+```text
+docs/planning/sprint-3-plan.md
+```
+
+When the active sprint changes, update this section only. Do not rewrite the whole file unless the governance rules change.
+
+## How agents must determine scope
+
+Agents must not infer sprint scope from memory.
+
+For any task, agents must use this order of authority:
+
+1. The assigned GitHub issue.
+2. The matching sprint plan in `docs/planning/`.
+3. `docs/backlog/master-requirements-register.csv`.
+4. `docs/backlog/initial-product-backlog-features.csv`.
+5. `docs/backlog/initial-product-backlog-user-stories.csv`.
+6. `docs/backlog/initial-product-backlog-tasks.csv`.
+7. Product and technical design documents.
+
+If the GitHub issue and sprint plan conflict, stop and report the conflict instead of guessing.
 
 ## Required reading before coding
 
-Before making code changes, agents must read these documents:
+Before making code changes, agents must read:
 
-- `docs/agent-system/00-ai-agent-build-system-governance.md`
-- `docs/agent-system/agent-role-prompts.md`
-- `docs/agent-system/agent-execution-workflow.md`
-- `docs/planning/first-sprint-plan.md`
-- `docs/planning/mvp-build-execution-plan.md`
-- `docs/technical-design/database-schema-core-entities.md`
-- `docs/technical-design/api-backend-service-design.md`
-- `docs/technical-design/security-permissions-access-control.md`
-- `docs/product/16-technical-architecture.md`
-- `docs/backlog/master-requirements-register-source.md`
+- this `AGENTS.md` file;
+- the assigned GitHub issue;
+- the sprint plan matching the assigned issue;
+- `docs/agent-system/00-ai-agent-build-system-governance.md`;
+- `docs/agent-system/agent-role-prompts.md`;
+- `docs/agent-system/agent-execution-workflow.md`;
+- `docs/planning/mvp-build-execution-plan.md`;
+- `docs/backlog/master-requirements-register.csv`;
+- `docs/backlog/initial-product-backlog-epics.csv`;
+- `docs/backlog/initial-product-backlog-features.csv`;
+- `docs/backlog/initial-product-backlog-user-stories.csv`;
+- `docs/backlog/initial-product-backlog-tasks.csv`;
+- `docs/backlog/initial-product-backlog-test-cases.csv`;
+- relevant product documents under `docs/product/`;
+- relevant technical design documents under `docs/technical-design/`.
 
-## Sprint 1 scope
+## Sprint 3 required reading
 
-Implement only the secure platform foundation.
+For the current active sprint, agents must specifically read:
 
-Sprint 1 may include:
+- `docs/planning/sprint-3-plan.md`;
+- `docs/product/04-guest-management-guest-lists.md`;
+- `docs/product/03-wedding-project-structure.md`;
+- `docs/product/02-user-roles-permissions-access-control.md`;
+- `docs/technical-design/database-schema-core-entities.md`;
+- `docs/technical-design/api-backend-service-design.md`;
+- `docs/technical-design/security-permissions-access-control.md`.
 
-- Next.js / React / TypeScript app scaffold under `apps/web`;
-- package/workspace setup validation;
-- linting and formatting setup;
-- test runner setup;
-- environment variable documentation using `.env.example`;
-- Supabase/PostgreSQL connection foundation;
-- authentication foundation;
-- role/permission foundation;
-- audit-log foundation;
-- file-storage abstraction placeholder;
-- developer setup guide;
-- at least one smoke test.
+## Sprint 3 scope
 
-## Out of scope for Sprint 1
+For Sprint 3, implement only the Guest Management & Guest Lists foundation:
 
-Do not implement the following in Sprint 1:
+- project-level guest database foundation;
+- guest title/type foundation;
+- guest tag/category foundation;
+- bride/groom/both guest side foundation;
+- guest event assignment foundation;
+- manual guest creation foundation;
+- manual guest update foundation;
+- guest list filtering by side and event;
+- duplicate detection foundation;
+- guest validation foundation;
+- backend permission checks for guest operations;
+- audit logging for guest changes;
+- basic UI routes/pages for guest list and guest create/edit foundation;
+- tests;
+- documentation updates;
+- `docs/planning/sprint-3-completion-report.md`.
 
-- guest CRUD;
-- bride/groom guest lists;
+## Sprint 3 out of scope
+
+Do not implement the following in Sprint 3:
+
 - CSV/Excel import;
+- full duplicate merge workflow;
 - RSVP;
 - public guest page;
-- invitation templates;
+- invitation generation;
 - PDF generation;
 - QR generation;
-- WhatsApp sending;
-- table/seating planning;
+- WhatsApp;
+- seating;
 - check-in;
 - contracts;
 - pricing;
 - payments;
-- partner project creation;
-- full dashboards beyond placeholders.
+- partner project creation.
 
-If an out-of-scope dependency is discovered, record it as a blocker or follow-up item. Do not silently implement it.
+Guest import begins in Sprint 4.
 
 ## Recommended stack
 
-Use the repository documentation as the source of truth. The recommended Sprint 1 stack is:
+Use the repository documentation as the source of truth. The recommended stack is:
 
 - Next.js;
 - React;
@@ -118,39 +165,62 @@ docs/
   technical-design/
   planning/
   setup/
+  operations/
 ```
 
-Agents may refine this structure if needed, but must document the reason in the Sprint 1 completion report.
+Agents may refine this structure if needed, but must document the reason in the sprint completion report.
 
 ## Required workflow for agents
 
 For every implementation task:
 
 1. Identify the relevant requirement ID(s).
-2. Identify the source document(s).
-3. Confirm the implementation plan.
-4. Implement only the approved sprint scope.
-5. Add or update tests.
-6. Run available checks.
-7. Document files created or changed.
-8. Update or create the sprint completion report.
+2. Identify the relevant backlog item(s).
+3. Identify the source document(s).
+4. Confirm the implementation plan.
+5. Implement only the approved sprint scope.
+6. Add or update tests.
+7. Run available checks.
+8. Document files created or changed.
+9. Update or create the sprint completion report.
+
+## Branch and PR rules
+
+Work should be done in a branch, not directly on `main`, unless explicitly instructed otherwise.
+
+For the current sprint, use:
+
+```text
+codex/sprint-3-guest-management-foundation
+```
+
+Recommended PR title:
+
+```text
+Sprint 3 — Guest Management & Guest Lists Foundation
+```
+
+The PR must reference issue `#5`.
+
+The PR should start as a draft until implementation, tests, and documentation are ready for review.
 
 ## Permission and security rules
 
 Security must be enforced on the backend, not only in the frontend.
 
-Sprint 1 foundations should prepare for:
+Agents must preserve and extend:
 
 - global roles;
 - project-level roles;
 - event-level roles;
 - custom roles;
-- 2FA for sensitive roles;
-- secure public tokens later;
-- staff-only check-in later;
-- audit logging for sensitive actions.
+- sensitive-role handling;
+- secure public-token separation where applicable;
+- staff-only controls where applicable;
+- audit logging for sensitive actions;
+- server-side permission checks.
 
-Do not create shortcuts that would make later permission enforcement difficult.
+Do not create shortcuts that make later permission enforcement difficult.
 
 ## Environment and secrets
 
@@ -165,54 +235,58 @@ Never commit:
 - WhatsApp tokens;
 - Google credentials;
 - API secrets;
-- private client data.
+- private client data;
+- real wedding guest data;
+- real couple/client data.
 
 ## Testing expectations
 
-Sprint 1 must include at least:
+Every sprint must include tests appropriate to its scope.
 
-- one smoke test;
-- script entries for linting, type checking, testing, and building;
-- clear documentation on how to run local checks.
+At minimum, run and document:
 
-If a test cannot be run, explain why in the completion report.
+```text
+npm ci
+npm run format:check
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
+
+If database linting or Supabase checks are available, run and document them. If they cannot be run, explain why in the sprint completion report.
 
 ## Documentation expectations
 
-At minimum, Sprint 1 must create or update:
+Each sprint must create a completion report:
 
-- `docs/setup/local-development.md`;
-- `docs/planning/sprint-1-completion-report.md`.
+```text
+docs/planning/sprint-N-completion-report.md
+```
+
+For the current sprint:
+
+```text
+docs/planning/sprint-3-completion-report.md
+```
 
 The completion report must include:
 
-- requirements covered;
-- backlog items completed, if applicable;
+- sprint status;
+- requirement IDs covered;
+- backlog items covered;
 - files created or changed;
+- database migrations added;
 - tests added;
 - commands run;
+- checks passed or failed;
 - security checks performed;
-- open issues;
-- blockers;
-- recommended Sprint 2 scope.
-
-## Pull request rules
-
-Work should be done in a branch, not directly on `main`, unless explicitly instructed otherwise.
-
-Recommended branch name:
-
-```text
-codex/sprint-1-platform-foundation
-```
-
-Recommended PR title:
-
-```text
-Sprint 1 — Secure Platform Foundation
-```
-
-The PR must reference issue `#1`.
+- permission behavior implemented;
+- audit-log behavior implemented;
+- assumptions made;
+- open issues or blockers;
+- out-of-scope items intentionally deferred;
+- recommended next sprint scope.
 
 ## Quality rules
 
@@ -224,7 +298,8 @@ Agents must not:
 - introduce real client or guest data;
 - bypass permission design;
 - mark incomplete work as complete;
-- expand beyond Sprint 1 scope.
+- expand beyond the active sprint scope;
+- implement future sprint features because they appear in the backlog.
 
 Agents must:
 
@@ -232,4 +307,13 @@ Agents must:
 - document assumptions;
 - raise blockers clearly;
 - keep the codebase ready for future modules;
-- leave the repository in a buildable and reviewable state.
+- leave the repository in a buildable and reviewable state;
+- keep future sprint work out of the current sprint.
+
+## Future sprint reminder
+
+The repository contains sprint plans through Sprint 19. These are planning documents only.
+
+Agents must implement only the sprint assigned in the GitHub issue and active sprint section of this file.
+
+Future sprint plans must not be implemented early unless an explicit approved issue changes the scope.
