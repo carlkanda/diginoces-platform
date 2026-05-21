@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementation is ready for draft PR review, but Sprint 3 is not marked complete until linked Supabase migration application and `db:lint` can be rerun with valid Supabase database authentication. The web app checks passed, and the Supabase dry run found the new migration as pending.
+Sprint 3 is implemented and verified for draft PR review. The linked Supabase migration was applied, `db:lint` passed, web checks passed, and tests/checks are documented below.
 
 ## Requirements Covered
 
@@ -56,6 +56,7 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 - `npx.cmd supabase@latest db push --linked --dry-run`
 - `npx.cmd supabase@latest migration list --linked`
 - `npx.cmd supabase@latest db push --linked --yes`
+- `npx.cmd supabase@latest gen types --linked --lang=typescript --schema public`
 - `docker version`
 - `npm.cmd run db:lint`
 - `npm.cmd ci`
@@ -77,16 +78,18 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 - `npm.cmd audit --omit=dev` passed with 0 vulnerabilities.
 - `npm.cmd run build` passed with the new guest API and UI routes included in the route manifest.
 - `npx.cmd supabase@latest db push --linked --dry-run` passed and reported only `20260521211837_sprint_3_guest_management_foundation.sql` as pending.
+- `npx.cmd supabase@latest db push --linked --yes` passed and applied `20260521211837_sprint_3_guest_management_foundation.sql`.
+- `npm.cmd run db:lint` passed: no schema errors found for `public` and `app_private`.
+- `npx.cmd supabase@latest migration list --linked` passed and showed `20260521211837` present locally and remotely.
+- `npx.cmd supabase@latest gen types --linked --lang=typescript --schema public` passed, and `apps/web/src/types/database.ts` was refreshed from the linked schema.
 - Browser verification passed: home, health, and projects pages rendered content, had no framework error overlay, and reported no browser console errors.
 - `git diff --check` passed.
 - Secret-pattern scan found only documented placeholder variable names, existing service-role SQL grants, and `.env.example` placeholders; no real credentials were found.
 
 ## Checks Failed Or Blocked
 
-- `npx.cmd supabase@latest migration list --linked` timed out while connecting to the linked Supabase project.
-- `npx.cmd supabase@latest db push --linked --yes` failed before applying SQL because Supabase returned `ECIRCUITBREAKER` after too many authentication failures and requested `SUPABASE_DB_PASSWORD`.
-- `npm.cmd run db:lint` failed for the same linked Supabase authentication/circuit-breaker reason.
-- `docker version` failed because Docker is not installed in this environment, so local Supabase database validation was not available.
+- No Sprint 3 completion blockers remain.
+- `docker version` failed because Docker is not installed in this environment, so local Supabase database validation was not available. The linked Supabase migration push and linked `db:lint` path passed instead.
 
 ## Security Checks Performed
 
@@ -108,9 +111,7 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 
 ## Open Issues Or Blockers
 
-- Re-run `npx.cmd supabase@latest db push --linked --yes` once Supabase database authentication is fixed or `SUPABASE_DB_PASSWORD` is supplied outside the repository.
-- Re-run `npm.cmd run db:lint` after the linked Supabase circuit breaker clears.
-- Generate refreshed Supabase types from the applied database after the migration can be pushed; this branch includes hand-maintained type additions to keep TypeScript checks passing before remote application.
+- No Sprint 3 completion blockers remain.
 - Full duplicate merge workflow and guest locking/change-request workflow remain future scope.
 
 ## Recommended Sprint 4 Scope

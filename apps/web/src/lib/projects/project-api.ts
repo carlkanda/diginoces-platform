@@ -72,7 +72,6 @@ export async function requireGlobalPermission(
     {
       p_permission: permission,
       p_scope: "global",
-      p_scope_id: null,
     },
   );
 

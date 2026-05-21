@@ -809,6 +809,8 @@ export async function findDuplicateGuests(
   supabase: SupabaseClient<Database>,
   guest: GuestRow,
 ) {
+  const normalizedName =
+    guest.normalized_name ?? normalizeGuestName(guest.display_name);
   const whatsappDigits = normalizeWhatsapp(guest.whatsapp_number);
   let query = supabase
     .from("guests")
@@ -819,10 +821,10 @@ export async function findDuplicateGuests(
 
   if (whatsappDigits) {
     query = query.or(
-      `normalized_name.eq.${guest.normalized_name},normalized_whatsapp.eq.${whatsappDigits}`,
+      `normalized_name.eq.${normalizedName},normalized_whatsapp.eq.${whatsappDigits}`,
     );
   } else {
-    query = query.eq("normalized_name", guest.normalized_name);
+    query = query.eq("normalized_name", normalizedName);
   }
 
   const { data, error } = await query;

@@ -494,21 +494,24 @@ export async function createProject(
   input: CreateProjectInput,
   actorUserId: string,
 ) {
+  // Generated Supabase types cannot infer trigger-generated project codes.
+  const payload = {
+    bride_name: input.brideName,
+    created_by: actorUserId,
+    groom_name: input.groomName,
+    internal_notes: input.internalNotes,
+    preferred_language: input.preferredLanguage,
+    primary_contact_email: input.primaryContactEmail,
+    primary_contact_name: input.primaryContactName,
+    primary_contact_phone: input.primaryContactPhone,
+    project_year: input.projectYear,
+    timeline_notes: input.timelineNotes,
+    updated_by: actorUserId,
+  } as Database["public"]["Tables"]["wedding_projects"]["Insert"];
+
   const { data, error } = await supabase
     .from("wedding_projects")
-    .insert({
-      bride_name: input.brideName,
-      created_by: actorUserId,
-      groom_name: input.groomName,
-      internal_notes: input.internalNotes,
-      preferred_language: input.preferredLanguage,
-      primary_contact_email: input.primaryContactEmail,
-      primary_contact_name: input.primaryContactName,
-      primary_contact_phone: input.primaryContactPhone,
-      project_year: input.projectYear,
-      timeline_notes: input.timelineNotes,
-      updated_by: actorUserId,
-    })
+    .insert(payload)
     .select("*")
     .single();
 
@@ -593,20 +596,23 @@ export async function createEvent(
   input: CreateEventInput,
   actorUserId: string,
 ) {
+  // Generated Supabase types cannot infer trigger-generated event codes.
+  const payload = {
+    created_by: actorUserId,
+    ends_at: input.endsAt,
+    event_date: input.eventDate,
+    event_type: input.eventType,
+    name: input.name,
+    project_id: projectId,
+    starts_at: input.startsAt,
+    updated_by: actorUserId,
+    venue_address: input.venueAddress,
+    venue_name: input.venueName,
+  } as Database["public"]["Tables"]["events"]["Insert"];
+
   const { data, error } = await supabase
     .from("events")
-    .insert({
-      created_by: actorUserId,
-      ends_at: input.endsAt,
-      event_date: input.eventDate,
-      event_type: input.eventType,
-      name: input.name,
-      project_id: projectId,
-      starts_at: input.startsAt,
-      updated_by: actorUserId,
-      venue_address: input.venueAddress,
-      venue_name: input.venueName,
-    })
+    .insert(payload)
     .select("*")
     .single();
 
