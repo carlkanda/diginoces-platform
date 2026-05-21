@@ -242,19 +242,57 @@ input {
   font-weight: 700;
 }
 
-.field input {
+.field input,
+.field select,
+.field textarea {
   width: 100%;
-  min-height: 44px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #ffffff;
-  padding: 0 12px;
+  padding: 10px 12px;
   color: var(--foreground);
 }
 
-.field input:focus {
+.field input,
+.field select {
+  min-height: 44px;
+}
+
+.field select[multiple] {
+  min-height: 128px;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
   border-color: var(--accent);
   outline: 3px solid rgba(0, 107, 95, 0.15);
+}
+
+.check-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--foreground);
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.check-field input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.button-group,
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .alert {

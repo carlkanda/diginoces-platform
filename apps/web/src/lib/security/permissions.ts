@@ -23,6 +23,16 @@ export const permissionSlugs = [
   "event_members.manage",
   "workflow_tasks.read",
   "workflow_tasks.update",
+  "guests.read",
+  "guests.create",
+  "guests.update",
+  "guests.deactivate",
+  "guests.manage_bride_side",
+  "guests.manage_groom_side",
+  "guest_title_types.manage",
+  "guest_tags.manage",
+  "guest_event_assignments.manage",
+  "guest_duplicates.read",
 ] as const;
 
 export type PermissionSlug = (typeof permissionSlugs)[number];
@@ -36,6 +46,8 @@ export type RoleSlug =
   | "audit_viewer"
   | "file_manager"
   | "couple"
+  | "bride"
+  | "groom"
   | "event_staff"
   | "partner_admin";
 
@@ -64,11 +76,32 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "projects.read",
       "events.read",
       "workflow_tasks.read",
+      "guests.read",
+      "guest_duplicates.read",
     ],
-    requirementIds: ["PV-002", "ROLE-002", "PROJ-001", "PROJ-002"],
+    requirementIds: ["PV-002", "ROLE-002", "PROJ-001", "PROJ-002", "GM-001"],
     requiresMfa: false,
     scope: "project",
     slug: "couple",
+  },
+  bride: {
+    description: "Project-level bride role with own-side guest management.",
+    grants: [
+      "platform.foundation.access",
+      "projects.read",
+      "events.read",
+      "workflow_tasks.read",
+      "guests.read",
+      "guests.manage_bride_side",
+      "guest_title_types.manage",
+      "guest_tags.manage",
+      "guest_event_assignments.manage",
+      "guest_duplicates.read",
+    ],
+    requirementIds: ["ROLE-005", "GM-002", "GM-003", "GM-011"],
+    requiresMfa: false,
+    scope: "project",
+    slug: "bride",
   },
   diginoces_admin: {
     description: "Internal administrator with foundation-level access.",
@@ -86,6 +119,25 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
     requiresMfa: false,
     scope: "event",
     slug: "event_staff",
+  },
+  groom: {
+    description: "Project-level groom role with own-side guest management.",
+    grants: [
+      "platform.foundation.access",
+      "projects.read",
+      "events.read",
+      "workflow_tasks.read",
+      "guests.read",
+      "guests.manage_groom_side",
+      "guest_title_types.manage",
+      "guest_tags.manage",
+      "guest_event_assignments.manage",
+      "guest_duplicates.read",
+    ],
+    requirementIds: ["ROLE-005", "GM-002", "GM-003", "GM-011"],
+    requiresMfa: false,
+    scope: "project",
+    slug: "groom",
   },
   file_manager: {
     description:
@@ -113,8 +165,24 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "events.update",
       "workflow_tasks.read",
       "workflow_tasks.update",
+      "guests.read",
+      "guests.create",
+      "guests.update",
+      "guests.deactivate",
+      "guest_title_types.manage",
+      "guest_tags.manage",
+      "guest_event_assignments.manage",
+      "guest_duplicates.read",
     ],
-    requirementIds: ["PV-001", "PV-002", "ROLE-001", "PROJ-001", "PROJ-002"],
+    requirementIds: [
+      "PV-001",
+      "PV-002",
+      "ROLE-001",
+      "PROJ-001",
+      "PROJ-002",
+      "GM-001",
+      "GM-003",
+    ],
     requiresMfa: false,
     scope: "global",
     slug: "operations_manager",
