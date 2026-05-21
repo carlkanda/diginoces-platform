@@ -17,13 +17,14 @@ This report does not mark requirements permanently complete because repository g
 ## Files Created Or Changed
 
 - Root workspace: `package.json`, `package-lock.json`, `.env.example`, `.gitignore`, `.prettierrc.json`, `.prettierignore`, `README.md`.
+- CI: `.github/workflows/ci.yml`.
 - Scripts: `scripts/supabase-db-lint.mjs`.
 - Web app: `apps/web/package.json`, `apps/web/next.config.ts`, `apps/web/tsconfig.json`, `apps/web/eslint.config.mjs`, `apps/web/vitest.config.ts`, `apps/web/next-env.d.ts`, `apps/web/.prettierignore`, `apps/web/README.md`.
 - Web routes and shell: `apps/web/src/app/**`, `apps/web/src/proxy.ts`.
 - Foundations: `apps/web/src/lib/auth/**`, `apps/web/src/lib/supabase/**`, `apps/web/src/lib/security/**`, `apps/web/src/lib/audit/**`, `apps/web/src/lib/storage/**`, `apps/web/src/lib/platform/**`, `apps/web/src/types/database.ts`.
 - Database package: `packages/database/package.json`, `packages/database/tsconfig.json`, `packages/database/src/index.ts`, `packages/database/README.md`.
 - Supabase: `supabase/config.toml`, `supabase/.gitignore`, `supabase/migrations/20260520153012_sprint_1_foundation.sql`.
-- Documentation: `docs/setup/local-development.md`, `docs/planning/sprint-1-completion-report.md`.
+- Documentation: `docs/setup/local-development.md`, `docs/planning/sprint-1-completion-report.md`, `docs/planning/technical-debt.md`.
 
 ## Tests Added
 
@@ -59,6 +60,9 @@ This report does not mark requirements permanently complete because repository g
 - Final `npm run test` - passed, 1 file and 4 tests.
 - Final `npm run build` - passed with Next.js `16.3.0-canary.25`.
 - Final `npm audit --omit=dev` - passed with 0 vulnerabilities.
+- Added `.github/workflows/ci.yml` for PR/push CI with `npm ci`, format, lint, typecheck, test, and build checks.
+- Added `docs/planning/technical-debt.md` with `TD-001` to track returning from Next.js canary to stable before production once stable Next.js resolves the PostCSS audit issue.
+- Kept `npm run db:lint` documented as a manual/local linked Supabase check because it requires Supabase CLI authentication.
 - `npx supabase@latest projects list` - passed and identified the `diginoces-platform-dev` project.
 - `npx supabase@latest link --project-ref <diginoces-platform-dev-ref>` - passed and wrote ignored local CLI metadata under `supabase/.temp`.
 - `npx supabase@latest db push --linked --dry-run` - passed and identified `20260520153012_sprint_1_foundation.sql` as pending.
@@ -88,6 +92,7 @@ Passed:
 - Linked Supabase schema lint with `--schema public,private --fail-on error`
 - `npm run db:lint`
 - Local web and health endpoint smoke checks
+- GitHub Actions CI workflow added for non-secret checks: `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, and `npm run build`.
 
 Failed or blocked:
 
@@ -123,6 +128,7 @@ Notes:
 
 - Review is still required before marking any requirement complete.
 - Track Next.js stable releases and move from canary back to stable once a stable release contains the PostCSS fix.
+- `TD-001` now tracks the Next.js canary dependency and the required action to return to stable before production.
 - Local Docker is still unavailable for developers who want to run the full local Supabase stack, but linked Supabase DB lint is no longer blocked.
 - Supabase MFA enforcement is represented in role metadata but not enforced until project auth policies are configured.
 - Local `gh auth status` still reports an invalid token for `carlkanda`; the branch push and draft PR were completed through approved Git/GitHub connector paths.
