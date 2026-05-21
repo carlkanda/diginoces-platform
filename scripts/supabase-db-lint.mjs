@@ -32,14 +32,22 @@ const command = existsSync(localGoBinary)
     ? 'npx.cmd'
     : 'npx'
 const args = existsSync(localGoBinary)
-  ? ['db', 'lint', '--linked', '--schema', 'public,private', '--fail-on', 'error']
+  ? [
+      'db',
+      'lint',
+      '--linked',
+      '--schema',
+      'public,app_private',
+      '--fail-on',
+      'error',
+    ]
   : [
       'supabase@latest',
       'db',
       'lint',
       '--linked',
       '--schema',
-      'public,private',
+      'public,app_private',
       '--fail-on',
       'error',
     ]

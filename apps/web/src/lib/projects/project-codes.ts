@@ -1,0 +1,57 @@
+import type { Database } from "@/types/database";
+
+export type EventType = Database["public"]["Enums"]["event_type"];
+
+export const eventTypeCodeMap: Record<EventType, string> = {
+  brunch: "BRU",
+  civil: "CIV",
+  customary: "TRD",
+  other: "EVT",
+  reception: "REC",
+  religious: "REL",
+};
+
+export type ProjectCodeInput = {
+  brideName: string;
+  groomName: string;
+  sequence?: number;
+  year: number;
+};
+
+export type EventCodeInput = {
+  eventType: EventType;
+  projectCode: string;
+  sequence?: number;
+};
+
+export function normalizeCodeSegment(value: string) {
+  return value.replace(/[^a-z0-9]/gi, "").toUpperCase();
+}
+
+export function getCoupleCode(brideName: string, groomName: string) {
+  const normalized = normalizeCodeSegment(`${brideName}${groomName}`);
+  return `${normalized}WED`.slice(0, 3);
+}
+
+export function formatProjectCode({
+  brideName,
+  groomName,
+  sequence = 1,
+  year,
+}: ProjectCodeInput) {
+  return `${getCoupleCode(brideName, groomName)}-${year}-${String(sequence).padStart(3, "0")}`;
+}
+
+export function formatEventCode({
+  eventType,
+  projectCode,
+  sequence = 1,
+}: EventCodeInput) {
+  const baseCode = `${projectCode}-${eventTypeCodeMap[eventType]}`;
+
+  if (sequence <= 1) {
+    return baseCode;
+  }
+
+  return `${baseCode}-${String(sequence).padStart(2, "0")}`;
+}

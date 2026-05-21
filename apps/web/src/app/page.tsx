@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
+import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
 
 export default function HomePage() {
   const foundation = getPlatformFoundationStatus();
+  const sprint2Foundation = getSprint2FoundationStatus();
 
   return (
     <>
@@ -10,9 +12,9 @@ export default function HomePage() {
         <div>
           <h1>Diginoces secure platform foundation</h1>
           <p>
-            Sprint 1 establishes the authenticated app shell, backend permission
-            foundations, audit logging, storage abstraction, and developer
-            workflow needed before wedding operations modules are built.
+            Sprint 1 establishes the secure app shell. Sprint 2 adds the
+            project, event, membership, code, and workflow foundations for
+            wedding operations.
           </p>
           <div className="requirement-list" aria-label="Requirements covered">
             {foundation.requirementIds.map((requirementId) => (
@@ -41,6 +43,23 @@ export default function HomePage() {
             <span>{module.description}</span>
           </article>
         ))}
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>{sprint2Foundation.sprint}</h2>
+          <Link className="button secondary" href="/platform/projects">
+            View projects
+          </Link>
+        </div>
+        <div className="status-grid">
+          {sprint2Foundation.modules.map((module) => (
+            <article className="status-item" key={module.name}>
+              <strong>{module.name}</strong>
+              <span>{module.description}</span>
+            </article>
+          ))}
+        </div>
       </section>
     </>
   );

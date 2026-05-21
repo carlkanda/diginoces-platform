@@ -4,6 +4,10 @@ export type AuditAction =
   | "auth.magic_link_requested"
   | "permissions.role_assigned"
   | "permissions.role_revoked"
+  | "projects.created"
+  | "projects.updated"
+  | "events.created"
+  | "events.updated"
   | "storage.file_registered"
   | "system.foundation_health_checked";
 
@@ -47,6 +51,9 @@ export function getAuditFoundationSummary() {
     sensitiveActionsTracked: [
       "auth",
       "permissions",
+      "projects",
+      "events",
+      "workflow_tasks",
       "files",
       "future guest/RSVP/check-in/payment actions",
     ],

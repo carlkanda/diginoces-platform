@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getAuthContext } from "@/lib/auth/auth-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
+import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +11,7 @@ export default async function PlatformPage() {
     getAuthContext(),
     Promise.resolve(getPlatformFoundationStatus()),
   ]);
+  const sprint2Foundation = getSprint2FoundationStatus();
 
   if (authContext.status === "anonymous") {
     redirect("/login?next=/platform");
@@ -41,6 +44,23 @@ export default async function PlatformPage() {
         <h2>Foundation coverage</h2>
         <div className="table-like">
           {foundation.modules.map((module) => (
+            <div key={module.name}>
+              <strong>{module.name}</strong>
+              <span>{module.description}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>{sprint2Foundation.sprint}</h2>
+          <Link className="button secondary" href="/platform/projects">
+            Projects
+          </Link>
+        </div>
+        <div className="table-like">
+          {sprint2Foundation.modules.map((module) => (
             <div key={module.name}>
               <strong>{module.name}</strong>
               <span>{module.description}</span>
