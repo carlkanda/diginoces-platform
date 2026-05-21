@@ -8,7 +8,7 @@ This guide covers Sprint 1 foundation setup for issue `#1`. It does not include 
 
 - Node.js `20.9.0` or newer. The local checks were run with Node `24.15.0`.
 - npm. On this Windows environment, `npm.cmd` was required because PowerShell script execution blocked `npm.ps1`.
-- Docker, if you want to run the local Supabase stack.
+- Docker, if you want to run the local Supabase stack. The Sprint 1 database lint check can run against a linked Supabase dev project without Docker.
 
 ## Install
 
@@ -58,6 +58,7 @@ npm run lint
 npm run typecheck
 npm run test
 npm run build
+npm audit --omit=dev
 ```
 
 The health endpoint is available at:
@@ -90,6 +91,25 @@ To apply local migrations to the local database:
 npx supabase@latest db reset
 ```
 
+To link an authenticated Supabase CLI session to a dev project:
+
+```bash
+npx supabase@latest link --project-ref <project-ref>
+```
+
+To apply pending migrations to the linked dev project:
+
+```bash
+npx supabase@latest db push --linked --dry-run
+npx supabase@latest db push --linked --yes
+```
+
+To lint the linked database schema without a local Docker stack, use the pinned Supabase CLI dev dependency:
+
+```bash
+npm run db:lint
+```
+
 To create future migrations, use the CLI instead of inventing filenames:
 
 ```bash
@@ -98,6 +118,8 @@ npx supabase@latest migration new descriptive_name
 
 ## Known Local Notes
 
-- `supabase db lint` requires a local database on `127.0.0.1:54322`.
+- `npx supabase@latest db lint` without flags targets the local database and still requires a local database on `127.0.0.1:54322`.
+- `npm run db:lint` uses `supabase db lint --linked --schema public,private --fail-on error` and does not require Docker once the CLI is authenticated and linked.
+- The linked lint path still requires access to the developer's Supabase CLI login. In sandboxed environments, grant the command access or set `SUPABASE_ACCESS_TOKEN` outside the repository.
 - The Sprint 1 migration enables RLS on all foundation tables and keeps audit logs append-only.
 - The storage adapter is fail-closed until a real provider is configured.

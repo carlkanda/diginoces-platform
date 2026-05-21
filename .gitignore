@@ -10,6 +10,7 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
+.npm-cache/
 
 # Environment files
 .env

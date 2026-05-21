@@ -11,7 +11,8 @@
     "format:check": "npm --workspaces --if-present run format:check",
     "test": "npm --workspaces --if-present run test",
     "typecheck": "npm --workspaces --if-present run typecheck",
-    "smoke": "npm --workspace apps/web run test -- --run src/lib/platform/smoke.test.ts"
+    "smoke": "npm --workspace apps/web run test -- --run src/lib/platform/smoke.test.ts",
+    "db:lint": "node scripts/supabase-db-lint.mjs"
   },
   "workspaces": [
     "apps/*",
@@ -19,5 +20,8 @@
   ],
   "engines": {
     "node": ">=20.9.0"
+  },
+  "devDependencies": {
+    "supabase": "^2.100.1"
   }
 }
