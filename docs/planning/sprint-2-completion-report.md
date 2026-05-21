@@ -32,7 +32,7 @@ This report does not mark requirements permanently complete because repository g
 
 ## Files Created Or Changed
 
-- Supabase migrations: `supabase/migrations/20260521123000_sprint_2_projects_events.sql`, `supabase/migrations/20260521131500_sprint_2_code_generation_lint.sql`.
+- Supabase migrations: `supabase/migrations/20260521123000_sprint_2_projects_events.sql`, `supabase/migrations/20260521131500_sprint_2_code_generation_lint.sql`, `supabase/migrations/20260521143000_sprint_2_coderabbit_schema_fixes.sql`.
 - Scripts: `scripts/supabase-db-lint.mjs`.
 - Database types: `apps/web/src/types/database.ts`.
 - Permission/audit foundations: `apps/web/src/lib/security/permissions.ts`, `apps/web/src/lib/audit/audit-log.ts`.
@@ -47,6 +47,7 @@ This report does not mark requirements permanently complete because repository g
 
 - `apps/web/src/lib/projects/project-foundation.test.ts`
 - Covers Sprint 2 traceability, project code generation, event code generation, scoped project/event permission behavior, create payload validation, and workflow template scope guards.
+- CodeRabbit follow-up added coverage for invalid code-generation sequences and event permission checks that omit a project ID.
 
 Existing Sprint 1 smoke tests remain in `apps/web/src/lib/platform/smoke.test.ts`.
 
@@ -79,6 +80,17 @@ Existing Sprint 1 smoke tests remain in `apps/web/src/lib/platform/smoke.test.ts
 - `git commit -m "Implement sprint 2 projects events foundation"` - passed locally.
 - `git push -u origin codex/sprint-2-projects-events-foundation` - passed.
 - Draft pull request creation through the GitHub connector - passed: <https://github.com/carlkanda/diginoces-platform/pull/4>.
+- CodeRabbit review threads inspected through the GitHub connector - 9 unresolved threads identified and addressed.
+- `npx supabase@latest db push --linked --dry-run` - passed and identified `20260521143000_sprint_2_coderabbit_schema_fixes.sql` as pending.
+- `npx supabase@latest db push --linked --yes` - passed and applied `20260521143000_sprint_2_coderabbit_schema_fixes.sql`.
+- `npx supabase@latest migration list --linked` - passed and showed local/remote migrations aligned through `20260521143000`.
+- Final CodeRabbit follow-up `npm run format:check` - passed.
+- Final CodeRabbit follow-up `npm run lint` - passed.
+- Final CodeRabbit follow-up `npm run typecheck` - passed.
+- Final CodeRabbit follow-up `npm run test` - passed, 2 files and 11 tests.
+- Final CodeRabbit follow-up `npm run build` - passed.
+- Final CodeRabbit follow-up `npm audit --omit=dev` - passed with 0 vulnerabilities.
+- Final CodeRabbit follow-up `npm run db:lint` - passed against `public,app_private` with no schema errors found.
 
 ## Checks Passed Or Failed
 
@@ -100,13 +112,17 @@ Failed or blocked:
 - Initial typecheck failed before adding the full Supabase table `Relationships` type shape and stricter `projectYear` narrowing; fixed and re-run successfully.
 - Initial parallel `npm ci`/`npm run build` failed because `npm ci` removed dependencies while `next build` was running; both passed when rerun sequentially.
 - One in-app browser screenshot attempt timed out on `Page.captureScreenshot`; DOM-based browser verification still passed. No screenshot artifact is required for the sprint.
+- One CodeRabbit follow-up `npm run db:lint` attempt hit a transient Supabase CLI login-role password failure; it passed on retry without code changes.
 
 ## Security Checks Performed
 
 - No `.env`, `.env.local`, Supabase service-role key, database password, WhatsApp token, Google secret, or API secret was added.
 - Sprint 2 API handlers use the authenticated Supabase server client and do not require service-role secrets.
 - Project/event mutations call backend permission RPCs before writes.
+- Project listing now has an explicit `projects.read` API permission gate before querying.
+- API 500 responses return a generic client-safe error while logging details server-side.
 - Database RLS is enabled on `wedding_projects`, `events`, `project_members`, `event_members`, and `workflow_tasks`.
+- `workflow_tasks.event_id` is constrained to belong to the same `project_id`.
 - Project/event access helper functions run from `app_private` with constrained public RPC wrappers.
 - Project/event inserts and updates write audit rows through database triggers.
 - Workflow tasks added in Sprint 2 are limited to setup foundation tasks and do not implement guest, RSVP, invitation, WhatsApp, seating, check-in, contract, pricing, or payment flows.

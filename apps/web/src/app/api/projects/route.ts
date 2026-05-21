@@ -30,6 +30,8 @@ export async function GET() {
   }
 
   try {
+    await requireGlobalPermission(context, "projects.read");
+
     const projects = await listProjects(context.supabase);
 
     return NextResponse.json(

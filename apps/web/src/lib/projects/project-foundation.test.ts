@@ -63,6 +63,24 @@ describe("Sprint 2 projects and events foundation", () => {
     ).toBe("CAR-2026-001-REC-02");
   });
 
+  it("rejects invalid sequence values before formatting codes", () => {
+    expect(() =>
+      formatProjectCode({
+        brideName: "Carlie",
+        groomName: "Kanda",
+        sequence: 0,
+        year: 2026,
+      }),
+    ).toThrow(RangeError);
+    expect(() =>
+      formatEventCode({
+        eventType: "civil",
+        projectCode: "CAR-2026-001",
+        sequence: 1.5,
+      }),
+    ).toThrow(RangeError);
+  });
+
   it("keeps project and event permissions scoped to assigned records", () => {
     const assignments: RoleAssignment[] = [
       {
@@ -102,6 +120,22 @@ describe("Sprint 2 projects and events foundation", () => {
         scope: "event",
       }),
     ).toBe(true);
+  });
+
+  it("fails closed when event checks do not include a project id", () => {
+    const assignments: RoleAssignment[] = [
+      {
+        role: "couple",
+        scope: "project",
+      },
+    ];
+
+    expect(
+      hasScopedPermission(assignments, "events.read", {
+        eventId: "event-a",
+        scope: "event",
+      }),
+    ).toBe(false);
   });
 
   it("validates create payloads before API handlers write to Supabase", () => {

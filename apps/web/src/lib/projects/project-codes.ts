@@ -33,25 +33,38 @@ export function getCoupleCode(brideName: string, groomName: string) {
   return `${normalized}WED`.slice(0, 3);
 }
 
+function normalizeSequence(sequence: number | undefined) {
+  const value = sequence ?? 1;
+
+  if (!Number.isInteger(value) || value < 1) {
+    throw new RangeError("sequence must be a positive integer.");
+  }
+
+  return value;
+}
+
 export function formatProjectCode({
   brideName,
   groomName,
-  sequence = 1,
+  sequence,
   year,
 }: ProjectCodeInput) {
-  return `${getCoupleCode(brideName, groomName)}-${year}-${String(sequence).padStart(3, "0")}`;
+  const normalizedSequence = normalizeSequence(sequence);
+
+  return `${getCoupleCode(brideName, groomName)}-${year}-${String(normalizedSequence).padStart(3, "0")}`;
 }
 
 export function formatEventCode({
   eventType,
   projectCode,
-  sequence = 1,
+  sequence,
 }: EventCodeInput) {
+  const normalizedSequence = normalizeSequence(sequence);
   const baseCode = `${projectCode}-${eventTypeCodeMap[eventType]}`;
 
-  if (sequence <= 1) {
+  if (normalizedSequence <= 1) {
     return baseCode;
   }
 
-  return `${baseCode}-${String(sequence).padStart(2, "0")}`;
+  return `${baseCode}-${String(normalizedSequence).padStart(2, "0")}`;
 }

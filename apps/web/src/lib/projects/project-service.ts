@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  eventLifecycleOptions,
+  eventTypeOptions,
+  projectLifecycleOptions,
+} from "@/lib/projects/project-foundation";
 import type { Database } from "@/types/database";
 
 export type ProjectRow =
@@ -63,40 +68,13 @@ export class ProjectValidationError extends Error {
   }
 }
 
-const eventTypes = new Set<Database["public"]["Enums"]["event_type"]>([
-  "brunch",
-  "civil",
-  "customary",
-  "other",
-  "reception",
-  "religious",
-]);
-
-const projectStatuses = new Set<
-  Database["public"]["Enums"]["project_lifecycle_status"]
->([
-  "active",
-  "approved",
-  "archived",
-  "completed",
-  "draft",
-  "event_operations",
-  "lead",
-  "ready_for_invitations",
-  "submitted",
-]);
-
-const eventStatuses = new Set<
-  Database["public"]["Enums"]["event_lifecycle_status"]
->([
-  "archived",
-  "cancelled",
-  "completed",
-  "draft",
-  "in_progress",
-  "ready",
-  "scheduled",
-]);
+const eventTypes = new Set(eventTypeOptions.map((option) => option.value));
+const projectStatuses = new Set(
+  projectLifecycleOptions.map((option) => option.value),
+);
+const eventStatuses = new Set(
+  eventLifecycleOptions.map((option) => option.value),
+);
 
 function asRecord(payload: unknown) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {

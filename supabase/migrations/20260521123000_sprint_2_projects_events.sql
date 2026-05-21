@@ -131,7 +131,7 @@ create table if not exists public.events (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint events_name_not_blank check (length(trim(name)) > 0),
-  constraint events_event_code_format check (event_code ~ '^[A-Z0-9]{3,8}-[0-9]{4}-[0-9]{3,}-[A-Z]{3}(-[0-9]{2})?$'),
+  constraint events_event_code_format check (event_code ~ '^[A-Z0-9]{3,8}-[0-9]{4}-[0-9]{3,}-[A-Z]{3}(-[0-9]{2,})?$'),
   constraint events_time_order check (starts_at is null or ends_at is null or ends_at > starts_at)
 );
 
@@ -140,6 +140,9 @@ create index if not exists events_project_id_created_at_idx
 
 create index if not exists events_status_idx
   on public.events (status, event_date);
+
+create unique index if not exists events_id_project_id_key
+  on public.events (id, project_id);
 
 create table if not exists public.project_members (
   id uuid primary key default extensions.gen_random_uuid(),
@@ -198,7 +201,11 @@ create table if not exists public.workflow_tasks (
   constraint workflow_tasks_event_scope_requires_event check (
     (scope = 'event' and event_id is not null)
     or (scope = 'project' and event_id is null)
-  )
+  ),
+  constraint workflow_tasks_event_matches_project
+    foreign key (event_id, project_id)
+    references public.events (id, project_id)
+    on delete cascade
 );
 
 create unique index if not exists workflow_tasks_unique_scope_key

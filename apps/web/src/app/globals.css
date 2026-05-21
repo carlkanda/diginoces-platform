@@ -138,7 +138,7 @@ input {
 .eyebrow {
   margin: 0 0 8px;
   color: var(--accent);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.78rem;
   font-weight: 760;
   letter-spacing: 0;
@@ -196,7 +196,7 @@ input {
   background: var(--panel-strong);
   padding: 5px 10px;
   color: var(--foreground);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.78rem;
 }
 
