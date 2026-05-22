@@ -15,7 +15,17 @@ export async function readJson(request: NextRequest) {
   }
 
   try {
-    return JSON.parse(text) as Record<string, unknown>;
+    const parsed = JSON.parse(text) as unknown;
+
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      throw new InvalidJsonBodyError();
+    }
+
+    return parsed as Record<string, unknown>;
   } catch {
     throw new InvalidJsonBodyError();
   }

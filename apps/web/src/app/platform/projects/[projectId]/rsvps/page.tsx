@@ -13,12 +13,12 @@ type ProjectRsvpSummaryPageProps = {
   }>;
 };
 
-function formatDeadline(value: string | null) {
+function formatDeadline(value: string | null, locale?: string | null) {
   if (!value) {
     return "No deadline set";
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(locale ?? "en", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -49,6 +49,22 @@ export default async function ProjectRsvpSummaryPage({
   }
 
   const supabase = await createSupabaseServerClient();
+  const { data: canReadRsvps, error: permissionError } = await supabase.rpc(
+    "current_user_can_access_project",
+    {
+      p_permission: "rsvps.read",
+      p_project_id: projectId,
+    },
+  );
+
+  if (permissionError) {
+    throw permissionError;
+  }
+
+  if (!canReadRsvps) {
+    notFound();
+  }
+
   const [projectDetails, summary] = await Promise.all([
     getProjectDetails(supabase, projectId),
     getProjectRsvpSummary(supabase, projectId),
@@ -97,7 +113,10 @@ export default async function ProjectRsvpSummaryPage({
                 <div className="progress-card-header">
                   <div>
                     <p className="eyebrow">
-                      {formatDeadline(event.rsvpDeadlineAt)}
+                      {formatDeadline(
+                        event.rsvpDeadlineAt,
+                        projectDetails.project.preferred_language,
+                      )}
                     </p>
                     <h3>{event.eventName}</h3>
                   </div>

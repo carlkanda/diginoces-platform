@@ -48,6 +48,16 @@ export default async function EditGuestPage({ params }: EditGuestPageProps) {
     notFound();
   }
 
+  const { data: canPreviewPublicPage, error: previewPermissionError } =
+    await supabase.rpc("current_user_can_access_project", {
+      p_permission: "guest_public_pages.preview",
+      p_project_id: projectId,
+    });
+
+  if (previewPermissionError) {
+    throw previewPermissionError;
+  }
+
   const [events, tags, titleTypes] = await Promise.all([
     listProjectEvents(supabase, projectId),
     listGuestTags(supabase, projectId),
@@ -71,18 +81,22 @@ export default async function EditGuestPage({ params }: EditGuestPageProps) {
             Edit manual guest fields, side, tags, and event assignments.
           </p>
         </div>
-        <Link
-          className="button secondary"
-          href={`/platform/projects/${projectId}/guests`}
-        >
-          Guests
-        </Link>
-        <Link
-          className="button secondary"
-          href={`/platform/projects/${projectId}/guests/${guestId}/public-preview`}
-        >
-          Public preview
-        </Link>
+        <div className="button-group">
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/guests`}
+          >
+            Guests
+          </Link>
+          {canPreviewPublicPage ? (
+            <Link
+              className="button secondary"
+              href={`/platform/projects/${projectId}/guests/${guestId}/public-preview`}
+            >
+              Public preview
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <section className="section">

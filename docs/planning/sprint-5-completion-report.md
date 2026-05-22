@@ -25,6 +25,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - `supabase/migrations/20260522135714_sprint_5_preserve_rsvp_submitted_at.sql`
 - `supabase/migrations/20260522142952_sprint_5_coderabbit_final_fixes.sql`
 - `supabase/migrations/20260522144906_sprint_5_locked_rsvp_final_response.sql`
+- `supabase/migrations/20260522151659_sprint_5_atomic_rsvp_finality.sql`
 - `apps/web/src/types/database.ts`
 - `apps/web/src/lib/api/read-json.ts`
 - `apps/web/src/lib/rsvp/rsvp-service.ts`
@@ -67,6 +68,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - Added follow-up migration moving privileged RSVP/public-page logic into `app_private` with `security invoker` public wrappers for Supabase RPC compatibility.
 - Added final CodeRabbit follow-up migration that guards token-regeneration chains against cycles/depth overflow and makes first `submitted_at` preservation explicit in the RSVP upsert.
 - Added final locked-response follow-up migration so public RSVP submission cannot overwrite an operations-owned `locked` RSVP record.
+- Added final atomic-finality follow-up migration so public RSVP upserts cannot race past a concurrent final `yes`, `no`, or `locked` response.
 
 ## Tests Added
 
@@ -113,6 +115,20 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - `npx.cmd supabase@latest migration new sprint_5_private_rsvp_rpc_wrappers`
 - `npx.cmd supabase@latest db push --linked --dry-run`
 - `npx.cmd supabase@latest db push --linked --yes`
+- `npm.cmd run db:lint`
+- `npx.cmd supabase@latest db push --linked --dry-run`
+- `git diff --check`
+- `wsl.exe -d Ubuntu --exec /home/carlkanda/.local/bin/coderabbit review --agent --type committed --base origin/main -c AGENTS.md`
+- `npx.cmd supabase@latest migration new sprint_5_atomic_rsvp_finality`
+- `npm.cmd run format`
+- `npm.cmd --workspace apps/web run test -- src/lib/rsvp/rsvp-foundation.test.ts`
+- `npm.cmd run typecheck`
+- `npx.cmd supabase@latest db push --linked --dry-run`
+- `npx.cmd supabase@latest db push --linked --yes`
+- `npm.cmd run format:check`
+- `npm.cmd run lint`
+- `npm.cmd run test`
+- `npm.cmd run build`
 - `npm.cmd run db:lint`
 - `npx.cmd supabase@latest db push --linked --dry-run`
 - `git diff --check`
@@ -184,6 +200,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - Final CodeRabbit follow-up checks passed after `20260522142952_sprint_5_coderabbit_final_fixes.sql`: targeted RSVP test, `format:check`, `lint`, `typecheck`, full test suite, `build`, `db:lint`, Supabase post-push dry run, `git diff --check`, and targeted secret scan.
 - Second final CodeRabbit follow-up checks passed after `20260522144906_sprint_5_locked_rsvp_final_response.sql`: targeted RSVP test, `format:check`, `lint`, `typecheck`, full test suite, `build`, `db:lint`, Supabase post-push dry run, `git diff --check`, and targeted secret scan.
 - Third CodeRabbit follow-up checks passed after the typed RPC/shared JSON helper changes: targeted RSVP test, `format:check`, `lint`, `typecheck`, full test suite, `build`, `db:lint`, Supabase dry run, and `git diff --check`.
+- Fourth CodeRabbit follow-up checks passed after `20260522151659_sprint_5_atomic_rsvp_finality.sql`: targeted RSVP test, `format:check`, `lint`, `typecheck`, full test suite, `build`, `db:lint`, Supabase post-push dry run, `git diff --check`, and targeted secret scan.
 
 ## Checks Failed Or Blocked
 
@@ -195,6 +212,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - A final local CodeRabbit full review requested four review-readiness fixes: canonical RSVP navigation label, regeneration-chain guard/documentation, explicit `locked` RSVP semantics, and explicit `submitted_at` preservation. These fixes were applied in the final review follow-up.
 - A second local CodeRabbit full review requested seven low-severity follow-ups: token revocation RPC helper clarity, RSVP summary 404 behavior, public-token expiry validation, single timestamp calculation in the guest page view, duplicate CSS cleanup, nullable generated token expiry type, and treating `locked` RSVP records as final in public submission. These fixes were applied in the second final review follow-up.
 - A third local CodeRabbit full review requested three remaining trivial follow-ups: typed RSVP/revoke RPC responses, a shared JSON body helper for the token route, and runtime validation around the public guest page payload. These fixes were applied without adding a new validation dependency.
+- A fourth local CodeRabbit full review requested additional review hardening: RSVP summary server-side `rsvps.read` permission check, preview-link visibility by `guest_public_pages.preview`, grouped guest-page actions, JSON object validation, localized RSVP deadlines, submit-response runtime validation, and atomic final-response upsert protection. These fixes were applied in the fourth review follow-up.
 - No Sprint 5 completion blockers remain.
 
 ## Security Checks Performed
@@ -211,6 +229,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - Locked public guest pages return a safe locked state without guest/event details.
 - Public RSVP submission requires a valid active token, unlocked guest page gate, non-printed-only guest, and an assigned invited event.
 - Admin/operations preview is authenticated and permission-gated; public access logs are not generated for preview mode.
+- RSVP summary pages are server-side permission-gated with `rsvps.read`.
 - Couple roles are not granted `guest_public_pages.preview` or `guest_public_tokens.manage`.
 - RSVP summary is authenticated and permission-gated by `rsvps.read`.
 - New public tables have RLS enabled.
@@ -224,6 +243,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - RSVP responses are stored per guest and per event.
 - Guests can only RSVP to events assigned to them as invited.
 - Previous `yes`, `no`, and operations-owned `locked` responses are locked from guest-side changes.
+- Final-response protection is enforced inside the RSVP upsert conflict update, not only by a prior read.
 - Previous `maybe` or `pending` responses can be changed by the guest.
 - Late responses after an event RSVP deadline are saved with manual-review state.
 - `no` responses are treated as excluded from active operational effects.

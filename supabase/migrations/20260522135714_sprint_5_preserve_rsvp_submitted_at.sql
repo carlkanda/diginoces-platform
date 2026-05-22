@@ -138,7 +138,16 @@ begin
     submitted_at = coalesce(public.rsvp_records.submitted_at, excluded.submitted_at),
     last_changed_at = excluded.last_changed_at,
     public_token_id = excluded.public_token_id
+  where public.rsvp_records.status not in (
+    'yes'::public.rsvp_status,
+    'no'::public.rsvp_status,
+    'locked'::public.rsvp_status
+  )
   returning id into v_rsvp_id;
+
+  if v_rsvp_id is null then
+    return jsonb_build_object('status', 'locked_final_response');
+  end if;
 
   if lower(coalesce(p_preferred_language, '')) in ('fr', 'en') then
     update public.guests as g

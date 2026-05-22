@@ -218,6 +218,31 @@ function asPublicGuestPagePayload(data: unknown): PublicGuestPagePayload {
   return data;
 }
 
+function isSubmitPublicGuestRsvpResponse(
+  data: unknown,
+): data is SubmitPublicGuestRsvpResponse {
+  if (!isRecord(data)) {
+    return false;
+  }
+
+  if (data.status === "saved") {
+    return (
+      typeof data.rsvpId === "string" &&
+      ["manual_review", "open"].includes(String(data.deadlineState)) &&
+      typeof data.manualReviewRequired === "boolean"
+    );
+  }
+
+  return [
+    "invalid",
+    "invalid_response",
+    "locked_final_response",
+    "manual_printed_only",
+    "not_invited",
+    "payment_gate_locked",
+  ].includes(String(data.status));
+}
+
 export async function resolvePublicGuestPage(
   supabase: SupabaseClient<Database>,
   token: string,
@@ -272,7 +297,11 @@ export async function submitPublicGuestRsvp(
     throw error;
   }
 
-  return data as SubmitPublicGuestRsvpResponse;
+  if (!isSubmitPublicGuestRsvpResponse(data)) {
+    throw new Error("Invalid public RSVP response returned by Supabase.");
+  }
+
+  return data;
 }
 
 export async function createGuestPublicToken(
