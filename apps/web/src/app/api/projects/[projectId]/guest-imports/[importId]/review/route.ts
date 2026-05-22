@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  getGuestImportDetails,
   parseReviewGuestImportRowsPayload,
   reviewGuestImportRows,
 } from "@/lib/guest-imports/guest-import-db";
@@ -40,6 +41,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   try {
     const { importId, projectId } = await context.params;
+    const details = await getGuestImportDetails(
+      apiContext.supabase,
+      projectId,
+      importId,
+    );
+
+    if (!details) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "not_found",
+            message: "Guest import session was not found.",
+          },
+        },
+        { status: 404 },
+      );
+    }
+
     await requireGuestImportReviewPermission(apiContext, projectId);
 
     await reviewGuestImportRows(

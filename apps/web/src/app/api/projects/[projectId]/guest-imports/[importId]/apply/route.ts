@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { applyGuestImportApprovedRows } from "@/lib/guest-imports/guest-import-db";
+import {
+  applyGuestImportApprovedRows,
+  getGuestImportDetails,
+} from "@/lib/guest-imports/guest-import-db";
 import {
   handleGuestImportApiError,
   requireGuestImportApplyPermission,
@@ -28,6 +31,24 @@ export async function POST(_request: NextRequest, context: RouteContext) {
 
   try {
     const { importId, projectId } = await context.params;
+    const details = await getGuestImportDetails(
+      apiContext.supabase,
+      projectId,
+      importId,
+    );
+
+    if (!details) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "not_found",
+            message: "Guest import session was not found.",
+          },
+        },
+        { status: 404 },
+      );
+    }
+
     await requireGuestImportApplyPermission(apiContext, projectId);
 
     const createdGuestCount = await applyGuestImportApprovedRows(

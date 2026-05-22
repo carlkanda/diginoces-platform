@@ -65,7 +65,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       projectId,
       importId,
       parseImportMappingPayload(await readJson(request)),
-      apiContext.user.id,
     );
 
     return NextResponse.json({ preview });

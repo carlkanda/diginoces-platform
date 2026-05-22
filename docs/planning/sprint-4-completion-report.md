@@ -2,7 +2,7 @@
 
 ## Status
 
-Sprint 4 is implemented and verified for draft PR review. The linked Supabase migration was applied, generated database types were refreshed, `db:lint` passed, and web checks passed.
+Sprint 4 is implemented and verified for PR review. The linked Supabase migrations were applied, generated database types were refreshed, `db:lint` passed, web checks passed, and the CodeRabbit review fixes were applied.
 
 ## Requirements Covered
 
@@ -18,6 +18,7 @@ Deferred by Sprint 4 scope: Excel import, RSVP, public guest page, invitation ge
 ## Files Created Or Changed
 
 - `supabase/migrations/20260522085658_sprint_4_guest_import_approval.sql`
+- `supabase/migrations/20260522095423_sprint_4_coderabbit_review_fixes.sql`
 - `apps/web/package.json`
 - `package-lock.json`
 - `apps/web/src/types/database.ts`
@@ -50,9 +51,12 @@ Deferred by Sprint 4 scope: Excel import, RSVP, public guest page, invitation ge
 - Added import status, row validation status, duplicate severity, and row approval status enums.
 - Added RLS policies, grants, indexes, updated-at triggers, audit triggers, and import permissions.
 - Added RPCs:
+  - `create_guest_import_session`
+  - `save_guest_import_preview`
   - `submit_guest_import_session`
   - `review_guest_import_rows`
   - `apply_guest_import_approved_rows`
+- CodeRabbit follow-up migration moves import creation and preview persistence into transactional RPCs and enforces approved/partially-approved session status before applying rows.
 
 ## Tests Added
 
@@ -67,6 +71,9 @@ Deferred by Sprint 4 scope: Excel import, RSVP, public guest page, invitation ge
   - Partial approval applies only approved rows.
   - Unauthorized roles cannot review/apply.
   - Import audit action coverage.
+  - Duplicate normalized CSV headers are rejected before row mapping.
+  - Unknown imported tags produce validation feedback.
+  - Review payload rows cannot appear in more than one outcome bucket.
 
 ## Commands Run
 
@@ -95,6 +102,24 @@ Deferred by Sprint 4 scope: Excel import, RSVP, public guest page, invitation ge
 - `npx.cmd supabase@latest migration list --linked`
 - `git diff --check`
 - Targeted secret-pattern scan across app, docs, migrations, env template, and package files.
+- CodeRabbit/GitHub review thread read for PR `#8`.
+- `npx.cmd supabase@latest migration new sprint_4_coderabbit_review_fixes`
+- `npm.cmd --workspace apps/web run test -- src/lib/guest-imports/guest-import-foundation.test.ts`
+- `npx.cmd supabase@latest db push --linked --dry-run`
+- `npx.cmd supabase@latest db push --linked --yes`
+- `npx.cmd supabase@latest gen types --linked --lang=typescript --schema public`
+- `npm.cmd run db:lint`
+- `npm.cmd ci`
+- `npm.cmd run format`
+- `npm.cmd run format:check`
+- `npm.cmd run lint`
+- `npm.cmd run typecheck`
+- `npm.cmd run test`
+- `npm.cmd run build`
+- `npm.cmd audit --omit=dev`
+- `npx.cmd supabase@latest db push --linked --dry-run`
+- `git diff --check`
+- Targeted secret-pattern scan across app, docs, migrations, env template, and package files after CodeRabbit fixes.
 
 ## Checks Passed
 
@@ -102,7 +127,7 @@ Deferred by Sprint 4 scope: Excel import, RSVP, public guest page, invitation ge
 - `npm.cmd run format:check` passed.
 - `npm.cmd run lint` passed.
 - `npm.cmd run typecheck` passed for web and database workspaces.
-- `npm.cmd run test` passed: 4 files, 29 tests.
+- `npm.cmd run test` passed: 4 files, 31 tests.
 - `npm.cmd run build` passed with Sprint 4 API and UI routes in the route manifest.
 - `npm.cmd audit --omit=dev` passed with 0 vulnerabilities.
 - `npx.cmd supabase@latest db push --linked --dry-run` passed before apply and reported `20260522085658_sprint_4_guest_import_approval.sql` pending.
@@ -111,6 +136,20 @@ Deferred by Sprint 4 scope: Excel import, RSVP, public guest page, invitation ge
 - `npm.cmd run db:lint` passed: no schema errors found for `public` and `app_private`.
 - `npx.cmd supabase@latest db push --linked --dry-run` passed after apply and reported the remote database is up to date.
 - `npx.cmd supabase@latest migration list --linked` passed and showed `20260522085658` present locally and remotely.
+- CodeRabbit follow-up targeted test passed: 1 file, 11 tests.
+- CodeRabbit follow-up `npx.cmd supabase@latest db push --linked --dry-run` passed and reported `20260522095423_sprint_4_coderabbit_review_fixes.sql` pending.
+- CodeRabbit follow-up `npx.cmd supabase@latest db push --linked --yes` passed and applied `20260522095423_sprint_4_coderabbit_review_fixes.sql`.
+- CodeRabbit follow-up `npx.cmd supabase@latest gen types --linked --lang=typescript --schema public` passed and refreshed `apps/web/src/types/database.ts`.
+- CodeRabbit follow-up `npm.cmd run db:lint` passed: no schema errors found for `public` and `app_private`.
+- CodeRabbit follow-up `npm.cmd ci` passed and reported `found 0 vulnerabilities`.
+- CodeRabbit follow-up `npm.cmd run format:check` passed.
+- CodeRabbit follow-up `npm.cmd run lint` passed with no warnings.
+- CodeRabbit follow-up `npm.cmd run typecheck` passed for web and database workspaces.
+- CodeRabbit follow-up `npm.cmd run test` passed: 4 files, 31 tests.
+- CodeRabbit follow-up `npm.cmd run build` passed.
+- CodeRabbit follow-up `npm.cmd audit --omit=dev` passed with 0 vulnerabilities.
+- CodeRabbit follow-up `npx.cmd supabase@latest db push --linked --dry-run` passed after apply and reported the remote database is up to date.
+- CodeRabbit follow-up `git diff --check` passed.
 
 ## Checks Failed Or Blocked
 
@@ -123,6 +162,10 @@ Deferred by Sprint 4 scope: Excel import, RSVP, public guest page, invitation ge
 - No Supabase service-role key, database password, WhatsApp token, Google secret, or private guest/client data was added.
 - New public tables have RLS enabled.
 - Backend routes and server actions call permission helpers before import mutations.
+- Review/apply routes and server actions now verify the import session belongs to the requested project before mutating by import ID.
+- Upload actions reject CSV input larger than 5 MB before reading file content into memory.
+- Import session creation and preview persistence are transactional database RPCs to avoid partial staging state.
+- Applying approved rows is blocked unless the session status is `approved` or `partially_approved`.
 - RLS enforces `guest_imports.create`, `guest_imports.submit`, `guest_imports.review`, and `guest_imports.apply`.
 - Bride/groom imports require own-side permission and remain staged until review.
 - Review and apply are admin/staff permission-gated.
@@ -139,6 +182,8 @@ Deferred by Sprint 4 scope: Excel import, RSVP, public guest page, invitation ge
 - Missing or unknown title/type is blocked.
 - Invalid side is blocked.
 - Event names outside the project are blocked.
+- Tag names outside the project are blocked.
+- Duplicate normalized headers are rejected before row mapping.
 - Printed-only rows can pass without WhatsApp.
 - Digital rows without WhatsApp are blocked.
 - Duplicate signals are warnings and do not auto-merge.

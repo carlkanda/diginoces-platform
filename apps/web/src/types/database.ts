@@ -1080,6 +1080,49 @@ export type Database = {
         Args: { p_import_session_id: string };
         Returns: number;
       };
+      create_guest_import_session: {
+        Args: {
+          p_import_side: Database["public"]["Enums"]["guest_side"];
+          p_project_id: string;
+          p_rows: Json;
+          p_source_file_type: string;
+          p_source_filename: string;
+          p_source_headers: Json;
+          p_target_mapping: Json;
+        };
+        Returns: {
+          applied_at: string | null;
+          applied_by: string | null;
+          approved_row_count: number;
+          created_at: string;
+          created_by: string | null;
+          created_guest_count: number;
+          duplicate_warning_count: number;
+          id: string;
+          import_side: Database["public"]["Enums"]["guest_side"];
+          invalid_row_count: number;
+          project_id: string;
+          rejected_row_count: number;
+          review_notes: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          row_count: number;
+          source_file_type: string;
+          source_filename: string;
+          status: Database["public"]["Enums"]["guest_import_session_status"];
+          submitted_at: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          uploaded_by: string | null;
+          valid_row_count: number;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "guest_import_sessions";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       current_user_can_access_event: {
         Args: { p_event_id: string; p_permission?: string };
         Returns: boolean;
@@ -1118,6 +1161,17 @@ export type Database = {
           p_import_session_id: string;
           p_rejected_row_ids?: string[];
           p_review_notes?: string;
+        };
+        Returns: undefined;
+      };
+      save_guest_import_preview: {
+        Args: {
+          p_import_session_id: string;
+          p_project_id: string;
+          p_rows: Json;
+          p_source_headers: Json;
+          p_summary: Json;
+          p_target_mapping: Json;
         };
         Returns: undefined;
       };

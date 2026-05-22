@@ -23,6 +23,8 @@ import {
 } from "@/lib/guest-imports/guest-import-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+const MAX_CSV_UPLOAD_BYTES = 5 * 1024 * 1024;
+
 function formValue(formData: FormData, key: string) {
   const value = formData.get(key);
 
@@ -51,11 +53,19 @@ async function getActionContext() {
   };
 }
 
+function assertCsvInputSize(byteLength: number) {
+  if (byteLength > MAX_CSV_UPLOAD_BYTES) {
+    throw new GuestImportValidationError("CSV input must be 5 MB or smaller.");
+  }
+}
+
 async function readCsvInput(formData: FormData) {
   const file = formData.get("csvFile");
   const pastedCsv = formValue(formData, "csvContent");
 
   if (file instanceof File && file.size > 0) {
+    assertCsvInputSize(file.size);
+
     return {
       csvContent: await file.text(),
       sourceFilename: formValue(formData, "sourceFilename") ?? file.name,
@@ -67,6 +77,8 @@ async function readCsvInput(formData: FormData) {
       "Upload a CSV file or paste CSV content.",
     );
   }
+
+  assertCsvInputSize(new TextEncoder().encode(pastedCsv).byteLength);
 
   return {
     csvContent: pastedCsv,
@@ -98,15 +110,10 @@ export async function startGuestImportAction(
     "guest_imports.create",
   );
 
-  const session = await createGuestImportSession(
-    context.supabase,
-    projectId,
-    {
-      ...csvInput,
-      importSide,
-    },
-    context.user.id,
-  );
+  const session = await createGuestImportSession(context.supabase, projectId, {
+    ...csvInput,
+    importSide,
+  });
 
   redirect(
     `/platform/projects/${projectId}/guest-imports/${session.id}/mapping`,
@@ -149,7 +156,6 @@ export async function saveGuestImportMappingAction(
     projectId,
     importSessionId,
     mapping,
-    context.user.id,
   );
 
   redirect(`/platform/projects/${projectId}/guest-imports/${importSessionId}`);
@@ -189,6 +195,15 @@ export async function reviewGuestImportRowsAction(
 ) {
   const context = await getActionContext();
   await requireGuestImportReviewPermission(context, projectId);
+  const details = await getGuestImportDetails(
+    context.supabase,
+    projectId,
+    importSessionId,
+  );
+
+  if (!details) {
+    throw new GuestImportValidationError("Guest import session was not found.");
+  }
 
   const approvedRowIds: string[] = [];
   const heldRowIds: string[] = [];
@@ -224,6 +239,15 @@ export async function applyGuestImportRowsAction(
 ) {
   const context = await getActionContext();
   await requireGuestImportApplyPermission(context, projectId);
+  const details = await getGuestImportDetails(
+    context.supabase,
+    projectId,
+    importSessionId,
+  );
+
+  if (!details) {
+    throw new GuestImportValidationError("Guest import session was not found.");
+  }
 
   await applyGuestImportApprovedRows(context.supabase, importSessionId);
 

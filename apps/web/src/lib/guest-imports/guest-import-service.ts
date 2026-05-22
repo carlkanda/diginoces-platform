@@ -339,6 +339,7 @@ function validateMappedFields(
   const rawEvents = splitMultiValue(
     readMappedValue(row, mapping, "eventNames"),
   );
+  const rawTags = splitMultiValue(readMappedValue(row, mapping, "tagNames"));
 
   if (!mappedFields.displayName) {
     validationErrors.push({
@@ -385,6 +386,14 @@ function validateMappedFields(
     validationErrors.push({
       code: "unknown_event",
       message: "One or more imported events do not belong to this project.",
+      requirementIds: ["GM-004", "TECH-004"],
+    });
+  }
+
+  if (rawTags.length > 0 && mappedFields.tagIds.length !== rawTags.length) {
+    validationErrors.push({
+      code: "unknown_tag",
+      message: "One or more imported tags do not belong to this project.",
       requirementIds: ["GM-004", "TECH-004"],
     });
   }
@@ -555,6 +564,30 @@ export function parseGuestImportCsv(csvContent: string): ParsedGuestImportCsv {
   }
 
   const headers = rawHeaders.map((header) => header.trim());
+  const seenHeaders = new Set<string>();
+  const duplicateHeaders = new Set<string>();
+
+  for (const header of headers) {
+    const normalizedHeader = normalizeLookup(header);
+
+    if (normalizedHeader.length === 0) {
+      continue;
+    }
+
+    if (seenHeaders.has(normalizedHeader)) {
+      duplicateHeaders.add(header);
+      continue;
+    }
+
+    seenHeaders.add(normalizedHeader);
+  }
+
+  if (duplicateHeaders.size > 0) {
+    throw new GuestImportValidationError(
+      `CSV contains duplicate headers: ${[...duplicateHeaders].join(", ")}`,
+    );
+  }
+
   const rows = rawRows.flatMap((rawRow, index) => {
     const values = Object.fromEntries(
       headers.map((header, headerIndex) => [

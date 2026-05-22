@@ -10,6 +10,7 @@ import {
   type GuestImportPreviewRow,
   type ImportColumnMapping,
 } from "@/lib/guest-imports/guest-import-service";
+import { parseReviewGuestImportRowsPayload } from "@/lib/guest-imports/guest-import-db";
 import type { GuestFoundationRecord } from "@/lib/guests/guest-service";
 import type { RoleAssignment } from "@/lib/security/permissions";
 
@@ -97,6 +98,16 @@ describe("Sprint 4 guest import foundation", () => {
     expect(parsed.rows[1].rowNumber).toBe(4);
   });
 
+  it("rejects duplicate normalized CSV headers before rows are mapped", () => {
+    expect(() =>
+      parseGuestImportCsv(
+        ["Nom complet,Nom  complet,Titre", "Ada Kanda,Ada Override,Mr."].join(
+          "\n",
+        ),
+      ),
+    ).toThrow(/duplicate headers/i);
+  });
+
   it("suggests column mappings for common French and English headers", () => {
     expect(
       suggestColumnMappings([
@@ -129,6 +140,7 @@ describe("Sprint 4 guest import foundation", () => {
           "Nico Kanda,Dr.,+243810000003,Bride,fr,digital,Reception,Family,",
           "Mona Kanda,Mr.,+243810000004,Guest,fr,digital,Reception,Family,",
           "Lea Kanda,Mr.,+243810000005,Bride,fr,digital,Unknown Event,Family,",
+          "Iris Kanda,Mr.,+243810000006,Bride,fr,digital,Reception,Unknown Tag,",
         ].join("\n"),
       ),
       mapping,
@@ -169,7 +181,22 @@ describe("Sprint 4 guest import foundation", () => {
         expect.objectContaining({ code: "unknown_event" }),
       ]),
     );
-    expect(preview.summary.invalidRows).toBe(4);
+    expect(preview.rows[5].validationErrors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "unknown_tag" }),
+      ]),
+    );
+    expect(preview.summary.invalidRows).toBe(5);
+  });
+
+  it("rejects review payloads that put a row in more than one outcome bucket", () => {
+    expect(() =>
+      parseReviewGuestImportRowsPayload({
+        approvedRowIds: ["row-1", "row-2"],
+        heldRowIds: ["row-3"],
+        rejectedRowIds: ["row-2"],
+      }),
+    ).toThrow(/row-2/);
   });
 
   it("allows printed-only rows without WhatsApp but blocks digital rows without WhatsApp", () => {

@@ -650,6 +650,11 @@ begin
       using errcode = '42501';
   end if;
 
+  if v_session.status not in ('approved', 'partially_approved') then
+    raise exception 'Guest import session must be approved before applying.'
+      using errcode = '22023';
+  end if;
+
   for v_row in
     select *
     from public.guest_import_rows

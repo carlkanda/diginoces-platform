@@ -102,6 +102,39 @@ function stringArray(value: unknown, fieldName: string) {
   return [...new Set(value.map((item) => item.trim()).filter(Boolean))];
 }
 
+function assertMutuallyExclusiveReviewRows(
+  approvedRowIds: string[],
+  heldRowIds: string[],
+  rejectedRowIds: string[],
+) {
+  const buckets = [
+    ["approved", approvedRowIds],
+    ["held", heldRowIds],
+    ["rejected", rejectedRowIds],
+  ] as const;
+  const seen = new Map<string, string>();
+  const overlaps: string[] = [];
+
+  for (const [bucket, rowIds] of buckets) {
+    for (const rowId of rowIds) {
+      const existingBucket = seen.get(rowId);
+
+      if (existingBucket) {
+        overlaps.push(`${rowId} appears in ${existingBucket} and ${bucket}`);
+        continue;
+      }
+
+      seen.set(rowId, bucket);
+    }
+  }
+
+  if (overlaps.length > 0) {
+    throw new GuestImportValidationError(
+      `Each row can have only one review outcome: ${overlaps.join("; ")}.`,
+    );
+  }
+}
+
 function asJson(value: unknown): Json {
   return value as Json;
 }
@@ -256,11 +289,16 @@ export function parseReviewGuestImportRowsPayload(
   payload: unknown,
 ): ReviewGuestImportRowsInput {
   const body = asRecord(payload);
+  const approvedRowIds = stringArray(body.approvedRowIds, "approvedRowIds");
+  const heldRowIds = stringArray(body.heldRowIds, "heldRowIds");
+  const rejectedRowIds = stringArray(body.rejectedRowIds, "rejectedRowIds");
+
+  assertMutuallyExclusiveReviewRows(approvedRowIds, heldRowIds, rejectedRowIds);
 
   return {
-    approvedRowIds: stringArray(body.approvedRowIds, "approvedRowIds"),
-    heldRowIds: stringArray(body.heldRowIds, "heldRowIds"),
-    rejectedRowIds: stringArray(body.rejectedRowIds, "rejectedRowIds"),
+    approvedRowIds,
+    heldRowIds,
+    rejectedRowIds,
     reviewNotes: optionalText(body.reviewNotes),
   };
 }
@@ -334,7 +372,6 @@ export async function createGuestImportSession(
   supabase: SupabaseClient<Database>,
   projectId: string,
   input: StartGuestImportInput,
-  actorUserId: string,
 ): Promise<GuestImportSessionRow> {
   const filename = assertCsvSource(input);
   const parsedCsv = parseGuestImportCsv(input.csvContent);
@@ -345,56 +382,27 @@ export async function createGuestImportSession(
     );
   }
 
-  const { data: session, error: sessionError } = await supabase
-    .from("guest_import_sessions")
-    .insert({
-      created_by: actorUserId,
-      import_side: input.importSide,
-      project_id: projectId,
-      row_count: parsedCsv.rows.length,
-      source_file_type: "csv",
-      source_filename: filename,
-      status: "draft",
-      updated_by: actorUserId,
-      uploaded_by: actorUserId,
-    })
-    .select("*")
-    .single();
-
-  if (sessionError) {
-    throw sessionError;
-  }
-
   const suggestedMapping = suggestColumnMappings(parsedCsv.headers);
-  const { error: mappingError } = await supabase
-    .from("guest_import_mappings")
-    .insert({
-      created_by: actorUserId,
-      import_session_id: session.id,
-      project_id: projectId,
-      source_headers: asJson(parsedCsv.headers),
-      target_mapping: asJson(suggestedMapping),
-      updated_by: actorUserId,
-    });
+  const { data, error } = await supabase.rpc("create_guest_import_session", {
+    p_import_side: input.importSide,
+    p_project_id: projectId,
+    p_rows: asJson(
+      parsedCsv.rows.map((row) => ({
+        rawRowData: row.values,
+        rowNumber: row.rowNumber,
+      })),
+    ),
+    p_source_file_type: "csv",
+    p_source_filename: filename,
+    p_source_headers: asJson(parsedCsv.headers),
+    p_target_mapping: asJson(suggestedMapping),
+  });
 
-  if (mappingError) {
-    throw mappingError;
+  if (error) {
+    throw error;
   }
 
-  const { error: rowsError } = await supabase.from("guest_import_rows").insert(
-    parsedCsv.rows.map((row) => ({
-      import_session_id: session.id,
-      project_id: projectId,
-      raw_row_data: asJson(row.values),
-      row_number: row.rowNumber,
-    })),
-  );
-
-  if (rowsError) {
-    throw rowsError;
-  }
-
-  return session;
+  return data;
 }
 
 export async function validateGuestImportMapping(
@@ -402,7 +410,6 @@ export async function validateGuestImportMapping(
   projectId: string,
   importSessionId: string,
   mapping: ImportColumnMapping,
-  actorUserId: string,
 ): Promise<GuestImportPreview> {
   const details = await getGuestImportDetails(
     supabase,
@@ -425,61 +432,26 @@ export async function validateGuestImportMapping(
   );
   const preview = buildImportPreview(parsedCsv, mapping, context);
 
-  const { error: mappingError } = await supabase
-    .from("guest_import_mappings")
-    .upsert(
-      {
-        import_session_id: importSessionId,
-        project_id: projectId,
-        source_headers: asJson(headers),
-        target_mapping: asJson(mapping),
-        updated_by: actorUserId,
-      },
-      { onConflict: "import_session_id" },
-    );
+  const { error } = await supabase.rpc("save_guest_import_preview", {
+    p_import_session_id: importSessionId,
+    p_project_id: projectId,
+    p_rows: asJson(
+      preview.rows.map((row) => ({
+        duplicateSeverity: row.duplicateSeverity,
+        duplicateWarnings: row.duplicateWarnings,
+        mappedFields: row.mappedFields,
+        rowNumber: row.rowNumber,
+        validationErrors: row.validationErrors,
+        validationStatus: row.validationStatus,
+      })),
+    ),
+    p_source_headers: asJson(headers),
+    p_summary: asJson(preview.summary),
+    p_target_mapping: asJson(mapping),
+  });
 
-  if (mappingError) {
-    throw mappingError;
-  }
-
-  await Promise.all(
-    preview.rows.map(async (row) => {
-      const { error } = await supabase
-        .from("guest_import_rows")
-        .update({
-          approval_status: "pending",
-          duplicate_severity: row.duplicateSeverity,
-          duplicate_warnings: asJson(row.duplicateWarnings),
-          linked_guest_id: null,
-          mapped_fields: asJson(row.mappedFields),
-          validation_errors: asJson(row.validationErrors),
-          validation_status: row.validationStatus,
-        })
-        .eq("import_session_id", importSessionId)
-        .eq("row_number", row.rowNumber);
-
-      if (error) {
-        throw error;
-      }
-    }),
-  );
-
-  const { error: sessionError } = await supabase
-    .from("guest_import_sessions")
-    .update({
-      duplicate_warning_count: preview.summary.duplicateWarnings,
-      invalid_row_count: preview.summary.invalidRows,
-      row_count: preview.summary.totalRows,
-      status:
-        preview.summary.invalidRows > 0 ? "validation_failed" : "previewed",
-      updated_by: actorUserId,
-      valid_row_count: preview.summary.validRows,
-    })
-    .eq("id", importSessionId)
-    .eq("project_id", projectId);
-
-  if (sessionError) {
-    throw sessionError;
+  if (error) {
+    throw error;
   }
 
   return preview;

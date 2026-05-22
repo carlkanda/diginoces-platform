@@ -87,7 +87,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       apiContext.supabase,
       projectId,
       input,
-      apiContext.user.id,
     );
 
     return NextResponse.json({ session }, { status: 201 });
