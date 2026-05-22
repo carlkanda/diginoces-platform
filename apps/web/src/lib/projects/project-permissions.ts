@@ -23,7 +23,11 @@ function assignmentGrantsPermission(
   assignment: RoleAssignment,
   permission: PermissionSlug,
 ) {
-  return roleDefinitions[assignment.role]?.grants.includes(permission) ?? false;
+  const definition = roleDefinitions[assignment.role];
+  return (
+    definition?.scope === assignment.scope &&
+    definition.grants.includes(permission)
+  );
 }
 
 export function hasScopedPermission(
