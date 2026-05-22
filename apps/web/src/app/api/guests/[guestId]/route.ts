@@ -7,10 +7,12 @@ import {
 } from "@/lib/projects/project-api";
 import {
   handleGuestApiError,
+  requireGuestDeactivationPermission,
   requireGuestSidePermission,
 } from "@/lib/guests/guest-api";
 import {
   getGuestDetails,
+  guestUpdateRequiresDeactivationPermission,
   GuestValidationError,
   parseUpdateGuestPayload,
   updateGuest,
@@ -111,6 +113,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         apiContext,
         details.guest.project_id,
         input.guestSide,
+      );
+    }
+
+    if (guestUpdateRequiresDeactivationPermission(details.guest, input)) {
+      await requireGuestDeactivationPermission(
+        apiContext,
+        details.guest.project_id,
       );
     }
 

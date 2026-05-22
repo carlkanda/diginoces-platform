@@ -1,11 +1,19 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
 import {
   getProjectDetails,
   listProjectEvents,
 } from "@/lib/projects/project-service";
-import { listProjectGuests, type GuestSide } from "@/lib/guests/guest-service";
+import {
+  listProjectGuests,
+  parseGuestListSideFilter,
+  type GuestSide,
+} from "@/lib/guests/guest-service";
+import {
+  ProjectAccessError,
+  requireProjectPermission,
+} from "@/lib/projects/project-api";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -19,14 +27,6 @@ type GuestListPageProps = {
     side?: string;
   }>;
 };
-
-function parseSideFilter(value: string | undefined): GuestSide | "all" {
-  if (value === "bride" || value === "groom" || value === "both") {
-    return value;
-  }
-
-  return "all";
-}
 
 function formatSide(side: GuestSide) {
   return side === "both" ? "Both sides" : `${side} side`;
@@ -59,13 +59,38 @@ export default async function ProjectGuestsPage({
   }
 
   const supabase = await createSupabaseServerClient();
+
+  try {
+    await requireProjectPermission(
+      {
+        supabase,
+        user: authContext.user,
+      },
+      projectId,
+      "guests.read",
+    );
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
+  }
+
   const projectDetails = await getProjectDetails(supabase, projectId);
 
   if (!projectDetails) {
-    redirect("/platform/projects");
+    notFound();
   }
 
-  const side = parseSideFilter(filters.side);
+  let side: GuestSide | "all";
+
+  try {
+    side = parseGuestListSideFilter(filters.side);
+  } catch {
+    notFound();
+  }
+
   const eventId = filters.eventId;
   const [events, guests] = await Promise.all([
     listProjectEvents(supabase, projectId),
@@ -77,7 +102,7 @@ export default async function ProjectGuestsPage({
 
   const sideHref = (
     value: GuestSide | "all",
-    nextEventId: string | undefined = eventId,
+    nextEventId: string | undefined,
   ) => {
     const params = new URLSearchParams();
     if (value !== "all") {
@@ -139,7 +164,7 @@ export default async function ProjectGuestsPage({
             <Link
               aria-current={side === value ? "page" : undefined}
               className="button secondary"
-              href={sideHref(value)}
+              href={sideHref(value, eventId)}
               key={value}
             >
               {value === "all" ? "All" : formatSide(value)}
@@ -152,17 +177,11 @@ export default async function ProjectGuestsPage({
               All events
             </Link>
             {events.map((event) => {
-              const params = new URLSearchParams();
-              if (side !== "all") {
-                params.set("side", side);
-              }
-              params.set("eventId", event.id);
-
               return (
                 <Link
                   aria-current={eventId === event.id ? "page" : undefined}
                   className="button secondary"
-                  href={`/platform/projects/${projectId}/guests?${params.toString()}`}
+                  href={sideHref(side, event.id)}
                   key={event.id}
                 >
                   {event.name}

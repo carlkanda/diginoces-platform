@@ -67,6 +67,47 @@ export async function requireGuestSidePermission(
   throw new ProjectAccessError("Guest side access denied.", 403);
 }
 
+export async function requireGuestCreatePermission(
+  context: ProjectApiContext,
+  projectId: string,
+  side: GuestSide,
+) {
+  if (await hasProjectPermission(context, projectId, "guests.create")) {
+    return;
+  }
+
+  await requireGuestSidePermission(context, projectId, side);
+}
+
+export async function requireAnyGuestCreatePermission(
+  context: ProjectApiContext,
+  projectId: string,
+) {
+  const permissionResults = await Promise.all([
+    hasProjectPermission(context, projectId, "guests.create"),
+    hasProjectPermission(context, projectId, "guests.update"),
+    hasProjectPermission(context, projectId, "guests.manage_bride_side"),
+    hasProjectPermission(context, projectId, "guests.manage_groom_side"),
+  ]);
+
+  if (permissionResults.some(Boolean)) {
+    return;
+  }
+
+  throw new ProjectAccessError("Guest creation access denied.", 403);
+}
+
+export async function requireGuestDeactivationPermission(
+  context: ProjectApiContext,
+  projectId: string,
+) {
+  if (await hasProjectPermission(context, projectId, "guests.deactivate")) {
+    return;
+  }
+
+  throw new ProjectAccessError("Guest deactivation access denied.", 403);
+}
+
 export function handleGuestApiError(error: unknown) {
   if (error instanceof GuestValidationError) {
     return jsonError(400, "invalid_guest_request", error.message);

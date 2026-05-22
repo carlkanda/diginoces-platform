@@ -91,6 +91,12 @@ export type GuestDuplicateCandidate = {
 };
 
 const guestSides = new Set<GuestSide>(["bride", "groom", "both"]);
+const guestListSides = new Set<GuestSide | "all">([
+  "all",
+  "bride",
+  "groom",
+  "both",
+]);
 
 export const defaultGuestTitleTypes = [
   {
@@ -205,6 +211,40 @@ function optionalGuestSide(value: unknown) {
   return requiredGuestSide(value);
 }
 
+export function parseGuestListSideFilter(
+  value: string | null | undefined,
+): GuestSide | "all" {
+  if (value === null || value === undefined || value.length === 0) {
+    return "all";
+  }
+
+  if (!guestListSides.has(value as GuestSide | "all")) {
+    throw new GuestValidationError(
+      "side must be one of: bride, groom, both, all.",
+    );
+  }
+
+  return value as GuestSide | "all";
+}
+
+export function getGuestSideFilterValues(
+  side: GuestListFilters["side"],
+): GuestSide[] | undefined {
+  if (!side || side === "all") {
+    return undefined;
+  }
+
+  if (side === "bride") {
+    return ["bride", "both"];
+  }
+
+  if (side === "groom") {
+    return ["groom", "both"];
+  }
+
+  return ["both"];
+}
+
 export function normalizeGuestName(value: string) {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
@@ -279,12 +319,10 @@ export function filterGuests<T extends GuestFoundationRecord>(
   guests: T[],
   filters: GuestListFilters,
 ) {
+  const sideValues = getGuestSideFilterValues(filters.side);
+
   return guests.filter((guest) => {
-    const sideMatches =
-      !filters.side ||
-      filters.side === "all" ||
-      guest.guestSide === filters.side ||
-      guest.guestSide === "both";
+    const sideMatches = !sideValues || sideValues.includes(guest.guestSide);
     const eventMatches =
       !filters.eventId ||
       guest.eventAssignments.some(
@@ -420,6 +458,29 @@ export function canManageGuestSide(
   );
 }
 
+export function canCreateGuestSide(
+  assignments: RoleAssignment[],
+  side: GuestSide,
+  projectId: string,
+) {
+  const target: PermissionTarget = {
+    projectId,
+    scope: "project",
+  };
+
+  return (
+    hasScopedPermission(assignments, "guests.create", target) ||
+    canManageGuestSide(assignments, side, projectId)
+  );
+}
+
+export function guestUpdateRequiresDeactivationPermission(
+  guest: Pick<GuestRow, "is_active">,
+  input: Pick<UpdateGuestInput, "isActive">,
+) {
+  return guest.is_active && input.isActive === false;
+}
+
 export function getSprint3FoundationStatus() {
   return {
     epic: "EPIC-GM",
@@ -548,11 +609,10 @@ export async function listProjectGuests(
     .eq("is_active", true)
     .order("display_name", { ascending: true });
 
-  if (filters.side && filters.side !== "all") {
-    query =
-      filters.side === "bride"
-        ? query.in("guest_side", ["bride", "both"])
-        : query.in("guest_side", ["groom", "both"]);
+  const sideValues = getGuestSideFilterValues(filters.side);
+
+  if (sideValues) {
+    query = query.in("guest_side", sideValues);
   }
 
   if (eventGuestIds) {

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
+import { requireGuestSidePermission } from "@/lib/guests/guest-api";
 import {
   getGuestDetails,
   listGuestTags,
   listGuestTitleTypes,
 } from "@/lib/guests/guest-service";
+import { ProjectAccessError } from "@/lib/projects/project-api";
 import { listProjectEvents } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { updateGuestAction } from "../actions";
@@ -46,6 +48,23 @@ export default async function EditGuestPage({ params }: EditGuestPageProps) {
 
   if (!details || details.guest.project_id !== projectId) {
     notFound();
+  }
+
+  try {
+    await requireGuestSidePermission(
+      {
+        supabase,
+        user: authContext.user,
+      },
+      projectId,
+      details.guest.guest_side,
+    );
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
   }
 
   const { data: canPreviewPublicPage, error: previewPermissionError } =
