@@ -23,38 +23,38 @@ No requirement may be marked complete unless it has been:
 Current active implementation sprint:
 
 ```text
-Sprint 4 — Guest Import & Approval Workflow
+Sprint 5 — RSVP & Public Guest Page
 ```
 
 Current GitHub issue:
 
 ```text
-#7 — Sprint 4 — Guest Import & Approval Workflow
-https://github.com/carlkanda/diginoces-platform/issues/7
+#10 — Sprint 5 — RSVP & Public Guest Page
+https://github.com/carlkanda/diginoces-platform/issues/10
 ```
 
 Authoritative sprint plan:
 
 ```text
-docs/planning/sprint-4-plan.md
+docs/planning/sprint-5-plan.md
 ```
 
 Expected branch:
 
 ```text
-codex/sprint-4-guest-import-approval
+codex/sprint-5-rsvp-public-guest-page
 ```
 
 Expected PR title:
 
 ```text
-Sprint 4 — Guest Import & Approval Workflow
+Sprint 5 — RSVP & Public Guest Page
 ```
 
 Expected completion report:
 
 ```text
-docs/planning/sprint-4-completion-report.md
+docs/planning/sprint-5-completion-report.md
 ```
 
 ## Active sprint sync rule
@@ -114,61 +114,62 @@ Before making code changes, agents must read:
 - relevant product documents under `docs/product/`;
 - relevant technical design documents under `docs/technical-design/`.
 
-## Sprint 4 required reading
+## Sprint 5 required reading
 
 For the current active sprint, agents must specifically read:
 
+- `docs/planning/sprint-5-plan.md`;
 - `docs/planning/sprint-4-plan.md`;
-- `docs/planning/sprint-3-plan.md`;
+- `docs/product/05-rsvp-public-guest-page.md`;
 - `docs/product/04-guest-management-guest-lists.md`;
 - `docs/product/03-wedding-project-structure.md`;
 - `docs/product/02-user-roles-permissions-access-control.md`;
+- `docs/product/10-contracts-pricing-payment-controls.md`;
 - `docs/technical-design/database-schema-core-entities.md`;
 - `docs/technical-design/api-backend-service-design.md`;
 - `docs/technical-design/security-permissions-access-control.md`.
 
-## Sprint 4 scope
+## Sprint 5 scope
 
-For Sprint 4, implement only the Guest Import & Approval Workflow foundation:
+For Sprint 5, implement only the RSVP & Public Guest Page foundation:
 
-- guest import session foundation;
-- guest import row staging foundation;
-- import column mapping foundation;
-- CSV parsing support;
-- import preview workflow;
-- import validation workflow;
-- duplicate detection during import;
-- bride/groom submit-for-review workflow;
-- Diginoces/admin review workflow;
-- row-level approval/rejection or partial approval foundation;
-- apply-approved-rows workflow to create guest records;
-- import history;
-- backend permission checks for import operations;
-- audit logging for import actions;
-- basic UI routes/pages for upload, mapping, preview, review, and import history;
+- secure guest public token foundation;
+- public guest page route and page;
+- token resolution and guest-scoped access checks;
+- payment-gate or guest-page access-check foundation;
+- Diginoces/admin preview foundation;
+- event-specific RSVP record model;
+- RSVP Yes/No/Maybe submission;
+- multi-event RSVP support;
+- RSVP deadline foundation;
+- RSVP change rules;
+- RSVP operational-effect helper foundation;
+- guest preferred language/labels foundation;
+- invitation download placeholder only;
+- printed-only RSVP/manual foundation if low-risk;
+- audit logging for RSVP/public page actions;
+- basic UI for guest page and RSVP controls;
 - tests;
 - documentation updates;
-- `docs/planning/sprint-4-completion-report.md`.
+- `docs/planning/sprint-5-completion-report.md`.
 
-## Sprint 4 out of scope
+## Sprint 5 out of scope
 
-Do not implement the following in Sprint 4:
+Do not implement the following in Sprint 5:
 
-- RSVP;
-- public guest page;
-- invitation generation;
-- PDF generation;
-- QR generation;
-- WhatsApp;
+- invitation PDF generation;
+- invitation template upload;
+- QR image generation;
+- WhatsApp sending;
 - seating;
 - check-in;
 - contracts;
 - pricing;
 - payments;
 - partner project creation;
-- automatic duplicate merging.
+- full guest-book workflow.
 
-RSVP and public guest page begin in Sprint 5.
+Invitation template and PDF generation begins in Sprint 6.
 
 ## Recommended stack
 
@@ -231,16 +232,16 @@ Work should be done in a branch, not directly on `main`, unless explicitly instr
 For the current sprint, use:
 
 ```text
-codex/sprint-4-guest-import-approval
+codex/sprint-5-rsvp-public-guest-page
 ```
 
 Recommended PR title:
 
 ```text
-Sprint 4 — Guest Import & Approval Workflow
+Sprint 5 — RSVP & Public Guest Page
 ```
 
-The PR must reference issue `#7`.
+The PR must reference issue `#10`.
 
 The PR should start as a draft until implementation, tests, and documentation are ready for review.
 
@@ -307,7 +308,7 @@ docs/planning/sprint-N-completion-report.md
 For the current sprint:
 
 ```text
-docs/planning/sprint-4-completion-report.md
+docs/planning/sprint-5-completion-report.md
 ```
 
 The completion report must include:
