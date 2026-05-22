@@ -23,38 +23,38 @@ No requirement may be marked complete unless it has been:
 Current active implementation sprint:
 
 ```text
-Sprint 3 — Guest Management & Guest Lists Foundation
+Sprint 4 — Guest Import & Approval Workflow
 ```
 
 Current GitHub issue:
 
 ```text
-#5 — Sprint 3 — Guest Management & Guest Lists Foundation
-https://github.com/carlkanda/diginoces-platform/issues/5
+#7 — Sprint 4 — Guest Import & Approval Workflow
+https://github.com/carlkanda/diginoces-platform/issues/7
 ```
 
 Authoritative sprint plan:
 
 ```text
-docs/planning/sprint-3-plan.md
+docs/planning/sprint-4-plan.md
 ```
 
 Expected branch:
 
 ```text
-codex/sprint-3-guest-management-foundation
+codex/sprint-4-guest-import-approval
 ```
 
 Expected PR title:
 
 ```text
-Sprint 3 — Guest Management & Guest Lists Foundation
+Sprint 4 — Guest Import & Approval Workflow
 ```
 
 Expected completion report:
 
 ```text
-docs/planning/sprint-3-completion-report.md
+docs/planning/sprint-4-completion-report.md
 ```
 
 ## Active sprint sync rule
@@ -114,10 +114,11 @@ Before making code changes, agents must read:
 - relevant product documents under `docs/product/`;
 - relevant technical design documents under `docs/technical-design/`.
 
-## Sprint 3 required reading
+## Sprint 4 required reading
 
 For the current active sprint, agents must specifically read:
 
+- `docs/planning/sprint-4-plan.md`;
 - `docs/planning/sprint-3-plan.md`;
 - `docs/product/04-guest-management-guest-lists.md`;
 - `docs/product/03-wedding-project-structure.md`;
@@ -126,33 +127,33 @@ For the current active sprint, agents must specifically read:
 - `docs/technical-design/api-backend-service-design.md`;
 - `docs/technical-design/security-permissions-access-control.md`.
 
-## Sprint 3 scope
+## Sprint 4 scope
 
-For Sprint 3, implement only the Guest Management & Guest Lists foundation:
+For Sprint 4, implement only the Guest Import & Approval Workflow foundation:
 
-- project-level guest database foundation;
-- guest title/type foundation;
-- guest tag/category foundation;
-- bride/groom/both guest side foundation;
-- guest event assignment foundation;
-- manual guest creation foundation;
-- manual guest update foundation;
-- guest list filtering by side and event;
-- duplicate detection foundation;
-- guest validation foundation;
-- backend permission checks for guest operations;
-- audit logging for guest changes;
-- basic UI routes/pages for guest list and guest create/edit foundation;
+- guest import session foundation;
+- guest import row staging foundation;
+- import column mapping foundation;
+- CSV parsing support;
+- import preview workflow;
+- import validation workflow;
+- duplicate detection during import;
+- bride/groom submit-for-review workflow;
+- Diginoces/admin review workflow;
+- row-level approval/rejection or partial approval foundation;
+- apply-approved-rows workflow to create guest records;
+- import history;
+- backend permission checks for import operations;
+- audit logging for import actions;
+- basic UI routes/pages for upload, mapping, preview, review, and import history;
 - tests;
 - documentation updates;
-- `docs/planning/sprint-3-completion-report.md`.
+- `docs/planning/sprint-4-completion-report.md`.
 
-## Sprint 3 out of scope
+## Sprint 4 out of scope
 
-Do not implement the following in Sprint 3:
+Do not implement the following in Sprint 4:
 
-- CSV/Excel import;
-- full duplicate merge workflow;
 - RSVP;
 - public guest page;
 - invitation generation;
@@ -164,9 +165,10 @@ Do not implement the following in Sprint 3:
 - contracts;
 - pricing;
 - payments;
-- partner project creation.
+- partner project creation;
+- automatic duplicate merging.
 
-Guest import begins in Sprint 4.
+RSVP and public guest page begin in Sprint 5.
 
 ## Recommended stack
 
@@ -229,16 +231,16 @@ Work should be done in a branch, not directly on `main`, unless explicitly instr
 For the current sprint, use:
 
 ```text
-codex/sprint-3-guest-management-foundation
+codex/sprint-4-guest-import-approval
 ```
 
 Recommended PR title:
 
 ```text
-Sprint 3 — Guest Management & Guest Lists Foundation
+Sprint 4 — Guest Import & Approval Workflow
 ```
 
-The PR must reference issue `#5`.
+The PR must reference issue `#7`.
 
 The PR should start as a draft until implementation, tests, and documentation are ready for review.
 
@@ -305,7 +307,7 @@ docs/planning/sprint-N-completion-report.md
 For the current sprint:
 
 ```text
-docs/planning/sprint-3-completion-report.md
+docs/planning/sprint-4-completion-report.md
 ```
 
 The completion report must include:
