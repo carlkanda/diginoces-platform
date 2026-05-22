@@ -28,16 +28,17 @@ Completed:
 
 - **Sprint 1 — Secure Platform Foundation**
 - **Sprint 2 — Wedding Projects & Events Foundation**
+- **Sprint 3 — Guest Management & Guest Lists Foundation**
 
 Active sprint:
 
-- **Sprint 3 — Guest Management & Guest Lists Foundation**
-- GitHub issue: `#5`
-- Issue URL: `https://github.com/carlkanda/diginoces-platform/issues/5`
-- Sprint plan: `docs/planning/sprint-3-plan.md`
-- Expected branch: `codex/sprint-3-guest-management-foundation`
-- Expected PR title: `Sprint 3 — Guest Management & Guest Lists Foundation`
-- Expected completion report: `docs/planning/sprint-3-completion-report.md`
+- **Sprint 4 — Guest Import & Approval Workflow**
+- GitHub issue: `#7`
+- Issue URL: `https://github.com/carlkanda/diginoces-platform/issues/7`
+- Sprint plan: `docs/planning/sprint-4-plan.md`
+- Expected branch: `codex/sprint-4-guest-import-approval`
+- Expected PR title: `Sprint 4 — Guest Import & Approval Workflow`
+- Expected completion report: `docs/planning/sprint-4-completion-report.md`
 
 ## Active sprint sync rule
 
@@ -106,7 +107,7 @@ Important files:
 ```text
 AGENTS.md
 
-docs/planning/sprint-3-plan.md
+docs/planning/sprint-4-plan.md
 
 docs/backlog/master-requirements-register.csv
 docs/backlog/traceability-matrix.csv
@@ -124,8 +125,8 @@ docs/backlog/initial-product-backlog-test-cases.csv
 |---:|---|---|
 | 1 | Secure Platform Foundation | Completed |
 | 2 | Wedding Projects & Events Foundation | Completed |
-| 3 | Guest Management & Guest Lists Foundation | Active |
-| 4 | Guest Import & Approval Workflow | Planned |
+| 3 | Guest Management & Guest Lists Foundation | Completed |
+| 4 | Guest Import & Approval Workflow | Active |
 | 5 | RSVP & Public Guest Page | Planned |
 | 6 | Invitation Template & PDF Generation | Planned |
 | 7 | WhatsApp Communication Workflows | Planned |
@@ -194,8 +195,8 @@ Every sprint PR must include:
 - open issues/blockers;
 - sprint completion report.
 
-For Sprint 3, the expected completion report is:
+For Sprint 4, the expected completion report is:
 
 ```text
-docs/planning/sprint-3-completion-report.md
+docs/planning/sprint-4-completion-report.md
 ```
