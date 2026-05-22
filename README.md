@@ -33,8 +33,32 @@ Active sprint:
 
 - **Sprint 3 — Guest Management & Guest Lists Foundation**
 - GitHub issue: `#5`
+- Issue URL: `https://github.com/carlkanda/diginoces-platform/issues/5`
 - Sprint plan: `docs/planning/sprint-3-plan.md`
-- Active branch expected from Codex: `codex/sprint-3-guest-management-foundation`
+- Expected branch: `codex/sprint-3-guest-management-foundation`
+- Expected PR title: `Sprint 3 — Guest Management & Guest Lists Foundation`
+- Expected completion report: `docs/planning/sprint-3-completion-report.md`
+
+## Active sprint sync rule
+
+Whenever the active sprint changes, update both files in the same commit:
+
+```text
+AGENTS.md
+README.md
+```
+
+Update:
+
+- active sprint name;
+- GitHub issue number and URL;
+- authoritative sprint plan path;
+- expected branch name;
+- expected PR title;
+- expected completion report path;
+- sprint roadmap status table below.
+
+This prevents Codex from reading outdated sprint instructions.
 
 ## AI-agent instructions
 
