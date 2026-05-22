@@ -57,8 +57,10 @@ as $$
   select exists (
     select 1
     from public.role_assignments ra
+    join public.roles r on r.id = ra.role_id
     join public.role_permissions rp on rp.role_id = ra.role_id
     where ra.user_id = p_user_id
+      and ra.scope = r.scope
       and rp.permission_slug = p_permission
       and (ra.expires_at is null or ra.expires_at > now())
       and (
