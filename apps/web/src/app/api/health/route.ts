@@ -36,7 +36,7 @@ export function GET() {
           featureCount: sprint3Foundation.features.length,
           issue: sprint3Foundation.issue,
           moduleCount: sprint3Foundation.modules.length,
-          sprint: "Sprint 3 — Guest Management & Guest Lists Foundation",
+          sprint: sprint3Foundation.sprint,
         },
         {
           featureCount: sprint4Foundation.features.length,

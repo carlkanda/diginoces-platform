@@ -29,6 +29,21 @@ This hardening pass does not reopen Sprint 1 or add product scope. It tightens t
 - Added smoke-test coverage for malformed role assignments.
 - Set Prettier `endOfLine` to `auto` for cross-platform local checks.
 
+## Files Changed
+
+- `.github/workflows/ci.yml`
+- `.prettierrc.json`
+- `apps/web/package.json`
+- `apps/web/src/app/api/health/route.ts`
+- `apps/web/src/lib/guests/guest-service.ts`
+- `apps/web/src/lib/platform/smoke.test.ts`
+- `apps/web/src/lib/projects/project-permissions.ts`
+- `apps/web/src/lib/security/permissions.ts`
+- `docs/planning/sprint-1-hardening-report.md`
+- `docs/planning/technical-debt.md`
+- `package-lock.json`
+- `supabase/migrations/20260522193138_sprint_1_post_merge_hardening.sql`
+
 ## Commands Run
 
 - `git fetch origin`
@@ -46,6 +61,7 @@ This hardening pass does not reopen Sprint 1 or add product scope. It tightens t
 - `wsl.exe -d Ubuntu --exec /home/carlkanda/.local/bin/coderabbit --version`
 - `wsl.exe -d Ubuntu --exec /home/carlkanda/.local/bin/coderabbit auth status --agent`
 - `wsl.exe -d Ubuntu --exec /home/carlkanda/.local/bin/coderabbit review --agent --type uncommitted --base origin/main -c AGENTS.md`
+- `wsl.exe -d Ubuntu --exec /home/carlkanda/.local/bin/coderabbit review --agent --type committed --base origin/main -c AGENTS.md`
 - `npm.cmd ci`
 - `npm.cmd run format:check`
 - `npm.cmd run lint`
@@ -73,11 +89,12 @@ Passed:
 - `npx.cmd supabase@latest db push --linked --dry-run`, showing the hardening migration as pending
 - `git diff --check`
 - Targeted secret scan for private keys, Supabase secret keys/JWTs, Google API keys, and OpenAI-style keys
+- CodeRabbit committed review completed with 2 trivial findings; both were applied and revalidated
 
 Failed or blocked:
 
 - First `npm.cmd ci` attempt failed because Windows could not unlink the Next SWC native binary. Retrying outside the sandbox passed.
-- CodeRabbit CLI authenticated successfully, but the uncommitted review failed before findings with `Review failed: Unknown error` / `TRPCClientError`. The committed branch review should be retried after the first hardening commit.
+- CodeRabbit CLI authenticated successfully, but the initial uncommitted review failed before findings with `Review failed: Unknown error` / `TRPCClientError`. The committed review succeeded.
 
 ## Security Notes
 
@@ -89,4 +106,3 @@ Failed or blocked:
 ## Open Issues
 
 - `TD-001` remains open: return from Next.js canary to a stable Next.js release before production once the stable release no longer triggers the PostCSS audit issue.
-- CodeRabbit CLI review must be retried on the committed hardening diff or by the PR review integration.

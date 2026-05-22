@@ -431,6 +431,7 @@ export function getSprint3FoundationStatus() {
       "FEAT-GM-006",
     ],
     issue: 5,
+    sprint: "Sprint 3 - Guest Management & Guest Lists Foundation",
     modules: [
       {
         name: "Project-level guest database",
