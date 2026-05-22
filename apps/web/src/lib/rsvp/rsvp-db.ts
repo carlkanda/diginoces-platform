@@ -243,6 +243,30 @@ function isSubmitPublicGuestRsvpResponse(
   ].includes(String(data.status));
 }
 
+function isRevokeGuestPublicTokenResponse(
+  data: unknown,
+): data is RevokeGuestPublicTokenResponse {
+  return data === null;
+}
+
+function isRsvpSummaryRow(value: unknown): value is RsvpSummaryRow {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.eventId === "string" &&
+    typeof value.eventName === "string" &&
+    typeof value.invitedCount === "number" &&
+    typeof value.manualReviewCount === "number" &&
+    typeof value.maybeCount === "number" &&
+    typeof value.noCount === "number" &&
+    typeof value.pendingCount === "number" &&
+    isNullableString(value.rsvpDeadlineAt) &&
+    typeof value.yesCount === "number"
+  );
+}
+
 export async function resolvePublicGuestPage(
   supabase: SupabaseClient<Database>,
   token: string,
@@ -340,7 +364,13 @@ export async function revokeGuestPublicToken(
     throw error;
   }
 
-  return data as RevokeGuestPublicTokenResponse;
+  if (!isRevokeGuestPublicTokenResponse(data)) {
+    throw new Error(
+      "Invalid guest public token revoke response returned by Supabase.",
+    );
+  }
+
+  return data;
 }
 
 export async function getProjectRsvpSummary(
@@ -358,5 +388,9 @@ export async function getProjectRsvpSummary(
     throw error;
   }
 
-  return data as RsvpSummaryRow[];
+  if (!Array.isArray(data) || !data.every(isRsvpSummaryRow)) {
+    throw new Error("Invalid RSVP summary response returned by Supabase.");
+  }
+
+  return data;
 }

@@ -6,6 +6,7 @@ import type { RsvpResponseStatus } from "@/lib/rsvp/rsvp-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const publicResponses = new Set<RsvpResponseStatus>(["maybe", "no", "yes"]);
+const supportedLanguages = new Set(["en", "fr"]);
 
 export async function submitPublicRsvpAction(
   guestToken: string,
@@ -13,12 +14,24 @@ export async function submitPublicRsvpAction(
   formData: FormData,
 ) {
   const response = String(formData.get("response") ?? "");
-  const preferredLanguage = String(formData.get("preferredLanguage") ?? "");
+  const rawPreferredLanguage = String(formData.get("preferredLanguage") ?? "")
+    .trim()
+    .toLowerCase();
 
   if (!publicResponses.has(response as RsvpResponseStatus)) {
     redirect(`/g/${guestToken}?rsvp=invalid_response`);
   }
 
+  if (
+    rawPreferredLanguage.length > 5 ||
+    (rawPreferredLanguage.length > 0 &&
+      (!/^[a-z]+$/.test(rawPreferredLanguage) ||
+        !supportedLanguages.has(rawPreferredLanguage)))
+  ) {
+    redirect(`/g/${guestToken}?rsvp=invalid_language`);
+  }
+
+  const preferredLanguage = rawPreferredLanguage || null;
   let result: Awaited<ReturnType<typeof submitPublicGuestRsvp>>;
 
   try {
@@ -27,26 +40,18 @@ export async function submitPublicRsvpAction(
       guestToken,
       eventId,
       response as RsvpResponseStatus,
-      preferredLanguage || null,
+      preferredLanguage,
     );
-  } catch (error) {
-    console.error("Public RSVP submission failed.", error);
+  } catch {
+    console.error("Public RSVP submission failed.");
     redirect(`/g/${guestToken}?rsvp=error`);
   }
 
-  if (
-    result &&
-    typeof result === "object" &&
-    "status" in result &&
-    result.status === "saved"
-  ) {
+  const status = result?.status ?? "error";
+
+  if (status === "saved") {
     redirect(`/g/${guestToken}?rsvp=saved`);
   }
-
-  const status =
-    result && typeof result === "object" && "status" in result
-      ? String(result.status)
-      : "error";
 
   redirect(`/g/${guestToken}?rsvp=${encodeURIComponent(status)}`);
 }

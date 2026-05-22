@@ -119,6 +119,17 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - `npx.cmd supabase@latest db push --linked --dry-run`
 - `git diff --check`
 - `wsl.exe -d Ubuntu --exec /home/carlkanda/.local/bin/coderabbit review --agent --type committed --base origin/main -c AGENTS.md`
+- `npm.cmd run format`
+- `npm.cmd --workspace apps/web run test -- src/lib/rsvp/rsvp-foundation.test.ts`
+- `npm.cmd run typecheck`
+- `npm.cmd run format:check`
+- `npm.cmd run lint`
+- `npm.cmd run test`
+- `npm.cmd run build`
+- `npm.cmd run db:lint`
+- `npx.cmd supabase@latest db push --linked --dry-run`
+- `git diff --check`
+- `wsl.exe -d Ubuntu --exec /home/carlkanda/.local/bin/coderabbit review --agent --type committed --base origin/main -c AGENTS.md`
 - `npx.cmd supabase@latest migration new sprint_5_atomic_rsvp_finality`
 - `npm.cmd run format`
 - `npm.cmd --workspace apps/web run test -- src/lib/rsvp/rsvp-foundation.test.ts`
@@ -201,6 +212,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - Second final CodeRabbit follow-up checks passed after `20260522144906_sprint_5_locked_rsvp_final_response.sql`: targeted RSVP test, `format:check`, `lint`, `typecheck`, full test suite, `build`, `db:lint`, Supabase post-push dry run, `git diff --check`, and targeted secret scan.
 - Third CodeRabbit follow-up checks passed after the typed RPC/shared JSON helper changes: targeted RSVP test, `format:check`, `lint`, `typecheck`, full test suite, `build`, `db:lint`, Supabase dry run, and `git diff --check`.
 - Fourth CodeRabbit follow-up checks passed after `20260522151659_sprint_5_atomic_rsvp_finality.sql`: targeted RSVP test, `format:check`, `lint`, `typecheck`, full test suite, `build`, `db:lint`, Supabase post-push dry run, `git diff --check`, and targeted secret scan.
+- Fifth CodeRabbit follow-up checks passed after the runtime-validation/i18n/action-sanitization changes: targeted RSVP test, `format:check`, `lint`, `typecheck`, full test suite, `build`, `db:lint`, Supabase dry run, `git diff --check`, and targeted secret scan.
 
 ## Checks Failed Or Blocked
 
@@ -213,6 +225,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - A second local CodeRabbit full review requested seven low-severity follow-ups: token revocation RPC helper clarity, RSVP summary 404 behavior, public-token expiry validation, single timestamp calculation in the guest page view, duplicate CSS cleanup, nullable generated token expiry type, and treating `locked` RSVP records as final in public submission. These fixes were applied in the second final review follow-up.
 - A third local CodeRabbit full review requested three remaining trivial follow-ups: typed RSVP/revoke RPC responses, a shared JSON body helper for the token route, and runtime validation around the public guest page payload. These fixes were applied without adding a new validation dependency.
 - A fourth local CodeRabbit full review requested additional review hardening: RSVP summary server-side `rsvps.read` permission check, preview-link visibility by `guest_public_pages.preview`, grouped guest-page actions, JSON object validation, localized RSVP deadlines, submit-response runtime validation, and atomic final-response upsert protection. These fixes were applied in the fourth review follow-up.
+- A fifth local CodeRabbit full review requested defensive validation/localization cleanup: accurate `expiresAt` validation wording, revoke and summary RPC runtime guards, canonical guest-page language default usage, localized Pending label/date rendering, defensive time formatting, public action language allowlisting, sanitized error logging, and simplified RSVP redirect flow. These fixes were applied in the fifth review follow-up.
 - No Sprint 5 completion blockers remain.
 
 ## Security Checks Performed
@@ -222,6 +235,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - Public guest tokens store only SHA-256 hashes, not raw token values.
 - Raw public guest tokens are returned only once by the authenticated token generation RPC.
 - Public token generation validates optional `expiresAt` before calling the database RPC.
+- Public RSVP actions allow only supported language codes and log generic submission errors.
 - Public guest token type is separate from future check-in token types.
 - Guest public token regeneration is guarded by a database trigger that rejects cycles and chains deeper than 25 tokens.
 - Public token resolution returns only guest-scoped safe payloads.
@@ -241,6 +255,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 
 - RSVP options are `yes`, `no`, and `maybe`.
 - RSVP responses are stored per guest and per event.
+- Guest-facing RSVP labels and date formatting use the guest/project language foundation.
 - Guests can only RSVP to events assigned to them as invited.
 - Previous `yes`, `no`, and operations-owned `locked` responses are locked from guest-side changes.
 - Final-response protection is enforced inside the RSVP upsert conflict update, not only by a prior read.

@@ -63,7 +63,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return jsonError(
         400,
         "invalid_expires_at",
-        "expiresAt must be a valid ISO 8601 date.",
+        "expiresAt must be a valid date string.",
       );
     }
 

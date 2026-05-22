@@ -84,12 +84,15 @@ export type RsvpOperationalEffect = {
 
 export type GuestPageLanguage = "en" | "fr";
 
+export const DEFAULT_GUEST_PAGE_LANGUAGE: GuestPageLanguage = "fr";
+
 export type GuestPageLabels = {
   downloadPlaceholder: string;
   lockedBody: string;
   lockedTitle: string;
   maybe: string;
   no: string;
+  pending: string;
   rsvpTitle: string;
   submit: string;
   yes: string;
@@ -117,6 +120,7 @@ const labels: Record<GuestPageLanguage, GuestPageLabels> = {
     lockedTitle: "Guest page not yet open",
     maybe: "Maybe",
     no: "No",
+    pending: "Pending",
     rsvpTitle: "Your RSVP",
     submit: "Save RSVP",
     yes: "Yes",
@@ -129,6 +133,7 @@ const labels: Record<GuestPageLanguage, GuestPageLabels> = {
     lockedTitle: "Page invité pas encore ouverte",
     maybe: "Peut-être",
     no: "Non",
+    pending: "En attente",
     rsvpTitle: "Votre RSVP",
     submit: "Enregistrer RSVP",
     yes: "Oui",
@@ -139,7 +144,7 @@ function normalizeLanguage(
   value: string | null | undefined,
 ): GuestPageLanguage {
   const normalized = value?.toLowerCase().trim();
-  return normalized?.startsWith("en") ? "en" : "fr";
+  return normalized?.startsWith("en") ? "en" : DEFAULT_GUEST_PAGE_LANGUAGE;
 }
 
 export function buildGuestPublicToken() {

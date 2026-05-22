@@ -1,5 +1,6 @@
 import {
   canSubmitPublicRsvp,
+  DEFAULT_GUEST_PAGE_LANGUAGE,
   getGuestPageLabels,
   type PublicGuestEvent,
   type RsvpResponseStatus,
@@ -14,19 +15,40 @@ type PublicGuestPageViewProps = {
   result?: string;
 };
 
-function formatDate(value: string | null) {
+function formatDate(
+  value: string | null,
+  language: string | null | undefined,
+  timeZone = "UTC",
+) {
   if (!value) {
     return "Date to be confirmed";
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(language ?? DEFAULT_GUEST_PAGE_LANGUAGE, {
     dateStyle: "full",
-    timeZone: "UTC",
+    timeZone,
   }).format(new Date(`${value}T00:00:00Z`));
 }
 
 function formatTime(value: string | null) {
-  return value ? value.slice(0, 5) : "Time to be confirmed";
+  if (!value) {
+    return "Time to be confirmed";
+  }
+
+  const [hours, minutes] = value.split(":");
+
+  if (!/^\d{1,2}$/.test(hours ?? "") || !/^\d{1,2}$/.test(minutes ?? "")) {
+    return "Time to be confirmed";
+  }
+
+  const hour = Number(hours);
+  const minute = Number(minutes);
+
+  if (hour > 23 || minute > 59) {
+    return "Time to be confirmed";
+  }
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 function toPublicGuestEvent(
@@ -59,7 +81,7 @@ function statusLabel(
     return labels.maybe;
   }
 
-  return "Pending";
+  return labels.pending;
 }
 
 function rsvpResponseOptions(labels: ReturnType<typeof getGuestPageLabels>) {
@@ -156,7 +178,7 @@ export function PublicGuestPageView({
                 <div>
                   <h3>{event.name}</h3>
                   <p className="meta-list">
-                    {formatDate(event.eventDate)} at{" "}
+                    {formatDate(event.eventDate, language)} at{" "}
                     {formatTime(event.startsAt)}
                   </p>
                   <p className="meta-list">
@@ -165,10 +187,13 @@ export function PublicGuestPageView({
                   {event.rsvpDeadlineAt ? (
                     <p className="meta-list">
                       RSVP deadline:{" "}
-                      {new Intl.DateTimeFormat("en", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }).format(new Date(event.rsvpDeadlineAt))}
+                      {new Intl.DateTimeFormat(
+                        language ?? DEFAULT_GUEST_PAGE_LANGUAGE,
+                        {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        },
+                      ).format(new Date(event.rsvpDeadlineAt))}
                     </p>
                   ) : null}
                 </div>
@@ -185,7 +210,7 @@ export function PublicGuestPageView({
                     <input
                       name="preferredLanguage"
                       type="hidden"
-                      value={language ?? "fr"}
+                      value={language ?? DEFAULT_GUEST_PAGE_LANGUAGE}
                     />
                     {responseOptions.map((option) => {
                       const decision = canSubmitPublicRsvp({
