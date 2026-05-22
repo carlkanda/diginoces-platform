@@ -72,10 +72,23 @@ export async function POST(request: NextRequest, context: RouteContext) {
       typeof body.expiresAt === "string" && body.expiresAt.trim().length > 0
         ? body.expiresAt.trim()
         : null;
+    const parsedExpiresAt = expiresAt === null ? null : Date.parse(expiresAt);
+
+    if (parsedExpiresAt !== null && Number.isNaN(parsedExpiresAt)) {
+      return jsonError(
+        400,
+        "invalid_expires_at",
+        "expiresAt must be a valid ISO 8601 date.",
+      );
+    }
+
+    const normalizedExpiresAt =
+      parsedExpiresAt === null ? null : new Date(parsedExpiresAt).toISOString();
+
     const token = await createGuestPublicToken(
       apiContext.supabase,
       guestId,
-      expiresAt,
+      normalizedExpiresAt,
     );
 
     return NextResponse.json(

@@ -24,6 +24,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - `supabase/migrations/20260522132532_sprint_5_private_rsvp_rpc_wrappers.sql`
 - `supabase/migrations/20260522135714_sprint_5_preserve_rsvp_submitted_at.sql`
 - `supabase/migrations/20260522142952_sprint_5_coderabbit_final_fixes.sql`
+- `supabase/migrations/20260522144906_sprint_5_locked_rsvp_final_response.sql`
 - `apps/web/src/types/database.ts`
 - `apps/web/src/lib/rsvp/rsvp-service.ts`
 - `apps/web/src/lib/rsvp/rsvp-db.ts`
@@ -64,6 +65,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - Added follow-up migration for `db:lint` SQL fixes: qualified token references and cast RSVP enum literals.
 - Added follow-up migration moving privileged RSVP/public-page logic into `app_private` with `security invoker` public wrappers for Supabase RPC compatibility.
 - Added final CodeRabbit follow-up migration that guards token-regeneration chains against cycles/depth overflow and makes first `submitted_at` preservation explicit in the RSVP upsert.
+- Added final locked-response follow-up migration so public RSVP submission cannot overwrite an operations-owned `locked` RSVP record.
 
 ## Tests Added
 
@@ -131,6 +133,21 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - `npx.cmd supabase@latest db push --linked --dry-run`
 - `git diff --check`
 - Targeted final secret-pattern scan across changed files.
+- `wsl.exe -d Ubuntu --exec /home/carlkanda/.local/bin/coderabbit review --agent --type committed --base origin/main -c AGENTS.md`
+- `npx.cmd supabase@latest migration new sprint_5_locked_rsvp_final_response`
+- `npm.cmd run format`
+- `npm.cmd --workspace apps/web run test -- src/lib/rsvp/rsvp-foundation.test.ts`
+- `npx.cmd supabase@latest db push --linked --dry-run`
+- `npm.cmd run lint`
+- `npm.cmd run typecheck`
+- `npm.cmd run format:check`
+- `npx.cmd supabase@latest db push --linked --yes`
+- `npm.cmd run test`
+- `npm.cmd run build`
+- `npm.cmd run db:lint`
+- `npx.cmd supabase@latest db push --linked --dry-run`
+- `git diff --check`
+- Targeted final secret-pattern scan across changed files.
 
 ## Checks Passed
 
@@ -153,6 +170,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - `git diff --check` passed.
 - Targeted secret-pattern scan found only expected WhatsApp field/type references, out-of-scope docs text, and SQL `service_role` grants. No real secrets were found.
 - Final CodeRabbit follow-up checks passed after `20260522142952_sprint_5_coderabbit_final_fixes.sql`: targeted RSVP test, `format:check`, `lint`, `typecheck`, full test suite, `build`, `db:lint`, Supabase post-push dry run, `git diff --check`, and targeted secret scan.
+- Second final CodeRabbit follow-up checks passed after `20260522144906_sprint_5_locked_rsvp_final_response.sql`: targeted RSVP test, `format:check`, `lint`, `typecheck`, full test suite, `build`, `db:lint`, Supabase post-push dry run, `git diff --check`, and targeted secret scan.
 
 ## Checks Failed Or Blocked
 
@@ -162,6 +180,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - A later local `npm.cmd run format:check` failed because untracked local helper files `apps/web/AGENTS.md` and `apps/web/CLAUDE.md` were being scanned. `apps/web/.prettierignore` now ignores those local helper files so they stay preserved and uncommitted while the required format check passes.
 - CodeRabbit requested seven follow-up fixes on PR `#11`: invalid JSON handling, public RSVP error fallback, home-page scope/coverage accuracy, conditional manual-review alerts, per-button RSVP gating, complete Yes/No/Maybe test coverage, and preserving first RSVP `submitted_at`. These fixes were applied in the review follow-up commit.
 - A final local CodeRabbit full review requested four review-readiness fixes: canonical RSVP navigation label, regeneration-chain guard/documentation, explicit `locked` RSVP semantics, and explicit `submitted_at` preservation. These fixes were applied in the final review follow-up.
+- A second local CodeRabbit full review requested seven low-severity follow-ups: token revocation RPC helper clarity, RSVP summary 404 behavior, public-token expiry validation, single timestamp calculation in the guest page view, duplicate CSS cleanup, nullable generated token expiry type, and treating `locked` RSVP records as final in public submission. These fixes were applied in the second final review follow-up.
 - No Sprint 5 completion blockers remain.
 
 ## Security Checks Performed
@@ -170,6 +189,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - No Supabase service-role key, database password, WhatsApp token, Google secret, or private client data was added.
 - Public guest tokens store only SHA-256 hashes, not raw token values.
 - Raw public guest tokens are returned only once by the authenticated token generation RPC.
+- Public token generation validates optional `expiresAt` before calling the database RPC.
 - Public guest token type is separate from future check-in token types.
 - Guest public token regeneration is guarded by a database trigger that rejects cycles and chains deeper than 25 tokens.
 - Public token resolution returns only guest-scoped safe payloads.
@@ -188,7 +208,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - RSVP options are `yes`, `no`, and `maybe`.
 - RSVP responses are stored per guest and per event.
 - Guests can only RSVP to events assigned to them as invited.
-- Previous `yes` and `no` responses are locked from guest-side changes.
+- Previous `yes`, `no`, and operations-owned `locked` responses are locked from guest-side changes.
 - Previous `maybe` or `pending` responses can be changed by the guest.
 - Late responses after an event RSVP deadline are saved with manual-review state.
 - `no` responses are treated as excluded from active operational effects.

@@ -1,5 +1,5 @@
--- Sprint 5 CodeRabbit review fix.
--- Preserve the first public RSVP submitted_at timestamp on later guest changes.
+-- Sprint 5 CodeRabbit follow-up.
+-- Treat operations-locked RSVP records as final responses for public RSVP changes.
 
 create or replace function app_private.submit_public_rsvp(
   p_token text,

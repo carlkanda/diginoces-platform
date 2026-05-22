@@ -197,7 +197,11 @@ begin
   where rr.guest_id = v_guest.id
     and rr.event_id = p_event_id;
 
-  if v_previous_status in ('yes'::public.rsvp_status, 'no'::public.rsvp_status) then
+  if v_previous_status in (
+    'yes'::public.rsvp_status,
+    'no'::public.rsvp_status,
+    'locked'::public.rsvp_status
+  ) then
     return jsonb_build_object('status', 'locked_final_response');
   end if;
 

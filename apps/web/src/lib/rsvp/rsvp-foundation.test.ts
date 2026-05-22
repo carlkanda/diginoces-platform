@@ -222,6 +222,16 @@ describe("Sprint 5 RSVP and public guest page foundation", () => {
         requestedStatus: "maybe",
       }).reason,
     ).toBe("locked_final_response");
+    expect(
+      canSubmitPublicRsvp({
+        eventId: eventA,
+        invitedEvents,
+        now: "2026-07-01T10:00:00.000Z",
+        paymentGate: "unlocked",
+        previousStatus: "locked",
+        requestedStatus: "yes",
+      }).reason,
+    ).toBe("locked_final_response");
   });
 
   it("routes post-deadline pending or Maybe responses to manual review", () => {

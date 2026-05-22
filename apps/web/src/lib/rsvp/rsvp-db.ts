@@ -180,6 +180,24 @@ export async function createGuestPublicToken(
   return rows[0] ?? null;
 }
 
+export async function revokeGuestPublicToken(
+  supabase: SupabaseClient<Database>,
+  tokenId: string,
+) {
+  const { data, error } = await rpcClient(supabase).rpc(
+    "revoke_guest_public_token",
+    {
+      p_token_id: tokenId,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data as Json;
+}
+
 export async function getProjectRsvpSummary(
   supabase: SupabaseClient<Database>,
   projectId: string,

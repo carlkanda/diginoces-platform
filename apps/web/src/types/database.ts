@@ -1309,7 +1309,7 @@ export type Database = {
       create_guest_public_token: {
         Args: { p_expires_at?: string; p_guest_id: string };
         Returns: {
-          expires_at: string;
+          expires_at: string | null;
           guest_id: string;
           project_id: string;
           token: string;

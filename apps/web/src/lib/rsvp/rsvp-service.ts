@@ -224,7 +224,11 @@ export function canSubmitPublicRsvp(
     };
   }
 
-  if (input.previousStatus === "yes" || input.previousStatus === "no") {
+  if (
+    input.previousStatus === "yes" ||
+    input.previousStatus === "no" ||
+    input.previousStatus === "locked"
+  ) {
     return {
       allowed: false,
       reason: "locked_final_response",

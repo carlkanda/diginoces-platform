@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { getProjectRsvpSummary } from "@/lib/rsvp/rsvp-db";
@@ -54,6 +54,10 @@ export default async function ProjectRsvpSummaryPage({
     getProjectRsvpSummary(supabase, projectId),
   ]);
 
+  if (!projectDetails) {
+    notFound();
+  }
+
   return (
     <>
       <div className="page-heading">
@@ -76,9 +80,8 @@ export default async function ProjectRsvpSummaryPage({
       <section className="section">
         <div className="section-heading">
           <h2>
-            {projectDetails
-              ? `${projectDetails.project.bride_name} & ${projectDetails.project.groom_name}`
-              : "Project RSVP"}
+            {projectDetails.project.bride_name} &{" "}
+            {projectDetails.project.groom_name}
           </h2>
           <span className="meta-list">{summary.length} events</span>
         </div>

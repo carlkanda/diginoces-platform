@@ -794,7 +794,7 @@ begin
   where guest_id = v_guest.id
     and event_id = p_event_id;
 
-  if v_previous_status in ('yes', 'no') then
+  if v_previous_status in ('yes', 'no', 'locked') then
     return jsonb_build_object('status', 'locked_final_response');
   end if;
 

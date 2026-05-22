@@ -624,10 +624,6 @@ textarea {
   text-align: center;
 }
 
-.detail-grid.compact {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
 .detail-grid.compact div {
   min-height: 74px;
 }

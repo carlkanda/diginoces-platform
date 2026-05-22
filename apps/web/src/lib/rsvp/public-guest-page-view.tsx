@@ -90,6 +90,7 @@ export function PublicGuestPageView({
   const isPreview = payload.mode === "preview";
   const invitedEvents = payload.events.map(toPublicGuestEvent);
   const responseOptions = rsvpResponseOptions(labels);
+  const now = new Date().toISOString();
 
   return (
     <div className="public-page">
@@ -145,7 +146,6 @@ export function PublicGuestPageView({
           {payload.events.map((event) => {
             const currentStatus = event.rsvp?.status ?? "pending";
             const action = formActionFactory?.(event.eventId);
-            const now = new Date().toISOString();
             const paymentGate =
               payload.project.guestPageAccessStatus === "locked"
                 ? "locked"
