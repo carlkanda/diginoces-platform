@@ -4,9 +4,13 @@
 
 Implemented on branch `codex/sprint-1-post-merge-hardening` as a post-merge follow-up to Sprint 1 issue `#1` and merged PR `#2`.
 
+Tracked under Sprint 1 issue `#1`; no separate hardening issue exists.
+
 This hardening pass does not reopen Sprint 1 or add product scope. It tightens the secure platform foundation that later sprints depend on.
 
 ## Findings Resolved
+
+All findings map back to Sprint 1 requirement IDs `PV-001`, `PV-002`, `ROLE-001`, `ROLE-002`, `ROLE-003`, `ROLE-007`, `REP-006`, `FILE-001`, `TECH-001`, `TECH-003`, and `TECH-004`.
 
 - CI used floating GitHub Action tags and persisted checkout credentials by default.
 - The temporary Next.js canary dependency from `TD-001` used semver ranges instead of exact pins.
