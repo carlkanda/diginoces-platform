@@ -20,7 +20,8 @@ export default async function NewGuestImportPage({
   const { projectId } = await params;
 
   if (authContext.status === "anonymous") {
-    redirect(`/login?next=/platform/projects/${projectId}/guest-imports/new`);
+    const nextPath = `/platform/projects/${projectId}/guest-imports/new`;
+    redirect(`/login?${new URLSearchParams({ next: nextPath }).toString()}`);
   }
 
   if (authContext.status === "not_configured") {
