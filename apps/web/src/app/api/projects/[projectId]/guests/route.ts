@@ -7,12 +7,13 @@ import {
 } from "@/lib/projects/project-api";
 import {
   handleGuestApiError,
-  requireGuestSidePermission,
+  requireGuestCreatePermission,
 } from "@/lib/guests/guest-api";
 import {
   createGuest,
   GuestValidationError,
   listProjectGuests,
+  parseGuestListSideFilter,
   parseCreateGuestPayload,
   type GuestListFilters,
 } from "@/lib/guests/guest-service";
@@ -34,23 +35,9 @@ async function readJson(request: NextRequest) {
 }
 
 function parseGuestFilters(request: NextRequest): GuestListFilters {
-  const side = request.nextUrl.searchParams.get("side");
-  const eventId = request.nextUrl.searchParams.get("eventId") ?? undefined;
-  let sideFilter: GuestListFilters["side"];
-
-  if (side === "bride" || side === "groom" || side === "both") {
-    sideFilter = side;
-  } else if (side === "all") {
-    sideFilter = "all";
-  } else if (side !== null) {
-    throw new GuestValidationError(
-      "side must be one of: bride, groom, both, all.",
-    );
-  }
-
   return {
-    eventId,
-    side: sideFilter,
+    eventId: request.nextUrl.searchParams.get("eventId") ?? undefined,
+    side: parseGuestListSideFilter(request.nextUrl.searchParams.get("side")),
   };
 }
 
@@ -99,7 +86,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const { projectId } = await context.params;
     const input = parseCreateGuestPayload(await readJson(request));
 
-    await requireGuestSidePermission(apiContext, projectId, input.guestSide);
+    await requireGuestCreatePermission(apiContext, projectId, input.guestSide);
 
     const guest = await createGuest(
       apiContext.supabase,

@@ -2,10 +2,15 @@
 
 import { redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
-import { requireGuestSidePermission } from "@/lib/guests/guest-api";
+import {
+  requireGuestCreatePermission,
+  requireGuestDeactivationPermission,
+  requireGuestSidePermission,
+} from "@/lib/guests/guest-api";
 import {
   createGuest,
   getGuestDetails,
+  guestUpdateRequiresDeactivationPermission,
   parseCreateGuestPayload,
   parseUpdateGuestPayload,
   updateGuest,
@@ -61,7 +66,7 @@ export async function createGuestAction(projectId: string, formData: FormData) {
     whatsappNumber: formValue(formData, "whatsappNumber"),
   });
 
-  await requireGuestSidePermission(context, projectId, input.guestSide);
+  await requireGuestCreatePermission(context, projectId, input.guestSide);
   const guest = await createGuest(
     context.supabase,
     projectId,
@@ -105,6 +110,10 @@ export async function updateGuestAction(
 
   if (input.guestSide && input.guestSide !== details.guest.guest_side) {
     await requireGuestSidePermission(context, projectId, input.guestSide);
+  }
+
+  if (guestUpdateRequiresDeactivationPermission(details.guest, input)) {
+    await requireGuestDeactivationPermission(context, projectId);
   }
 
   await updateGuest(context.supabase, guestId, input, context.user.id);

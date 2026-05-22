@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  canCreateGuestSide,
   canManageGuestSide,
   detectGuestDuplicateCandidates,
   filterGuests,
+  getGuestSideFilterValues,
   getSprint3FoundationStatus,
+  guestUpdateRequiresDeactivationPermission,
   parseCreateGuestPayload,
+  parseGuestListSideFilter,
   parseUpdateGuestPayload,
   validateGuestForFoundation,
 } from "@/lib/guests/guest-service";
@@ -145,8 +149,25 @@ describe("Sprint 3 guest-management foundation", () => {
     ];
 
     expect(filterGuests(guests, { side: "bride" })).toHaveLength(2);
+    expect(filterGuests(guests, { side: "both" })).toHaveLength(1);
     expect(filterGuests(guests, { eventId })).toHaveLength(2);
     expect(filterGuests(guests, { eventId, side: "groom" })).toHaveLength(1);
+  });
+
+  it("keeps database side filter values consistent with bride/groom/both list rules", () => {
+    expect(getGuestSideFilterValues("bride")).toStrictEqual(["bride", "both"]);
+    expect(getGuestSideFilterValues("groom")).toStrictEqual(["groom", "both"]);
+    expect(getGuestSideFilterValues("both")).toStrictEqual(["both"]);
+    expect(getGuestSideFilterValues("all")).toBeUndefined();
+  });
+
+  it("rejects unsupported guest list side filters instead of broadening access", () => {
+    expect(parseGuestListSideFilter(undefined)).toBe("all");
+    expect(parseGuestListSideFilter("all")).toBe("all");
+    expect(parseGuestListSideFilter("bride")).toBe("bride");
+    expect(() => parseGuestListSideFilter("unsupported")).toThrow(
+      /side must be one of: bride, groom, both, all/,
+    );
   });
 
   it("detects duplicate candidates by normalized name and WhatsApp within one project", () => {
@@ -201,6 +222,35 @@ describe("Sprint 3 guest-management foundation", () => {
       false,
     );
     expect(canManageGuestSide(adminAssignments, "both", projectId)).toBe(true);
+    expect(canCreateGuestSide(brideAssignments, "bride", projectId)).toBe(true);
+    expect(canCreateGuestSide(brideAssignments, "groom", projectId)).toBe(
+      false,
+    );
+    expect(canCreateGuestSide(adminAssignments, "groom", projectId)).toBe(true);
+  });
+
+  it("requires the explicit deactivation permission only for active-to-inactive updates", () => {
+    expect(
+      guestUpdateRequiresDeactivationPermission(
+        { is_active: true },
+        { isActive: false },
+      ),
+    ).toBe(true);
+    expect(
+      guestUpdateRequiresDeactivationPermission(
+        { is_active: true },
+        { isActive: true },
+      ),
+    ).toBe(false);
+    expect(
+      guestUpdateRequiresDeactivationPermission(
+        { is_active: false },
+        { isActive: false },
+      ),
+    ).toBe(false);
+    expect(
+      guestUpdateRequiresDeactivationPermission({ is_active: true }, {}),
+    ).toBe(false);
   });
 
   it("validates records for later invitation workflows without implementing invitations", () => {

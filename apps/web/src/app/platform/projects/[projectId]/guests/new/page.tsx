@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
+import { requireAnyGuestCreatePermission } from "@/lib/guests/guest-api";
 import { listGuestTags, listGuestTitleTypes } from "@/lib/guests/guest-service";
+import { ProjectAccessError } from "@/lib/projects/project-api";
 import { listProjectEvents } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createGuestAction } from "../actions";
@@ -37,6 +39,23 @@ export default async function NewGuestPage({ params }: NewGuestPageProps) {
   }
 
   const supabase = await createSupabaseServerClient();
+
+  try {
+    await requireAnyGuestCreatePermission(
+      {
+        supabase,
+        user: authContext.user,
+      },
+      projectId,
+    );
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
+  }
+
   const [events, tags, titleTypes] = await Promise.all([
     listProjectEvents(supabase, projectId),
     listGuestTags(supabase, projectId),
