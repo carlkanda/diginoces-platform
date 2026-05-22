@@ -22,6 +22,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - `supabase/migrations/20260522125555_sprint_5_rsvp_public_guest_page.sql`
 - `supabase/migrations/20260522131947_sprint_5_db_lint_fixes.sql`
 - `supabase/migrations/20260522132532_sprint_5_private_rsvp_rpc_wrappers.sql`
+- `supabase/migrations/20260522135714_sprint_5_preserve_rsvp_submitted_at.sql`
 - `apps/web/src/types/database.ts`
 - `apps/web/src/lib/rsvp/rsvp-service.ts`
 - `apps/web/src/lib/rsvp/rsvp-db.ts`
@@ -111,6 +112,8 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - `npx.cmd supabase@latest db push --linked --dry-run`
 - `git diff --check`
 - Targeted secret-pattern scan across changed files.
+- CodeRabbit review read for PR `#11`.
+- `npx.cmd supabase@latest migration new sprint_5_preserve_rsvp_submitted_at`
 
 ## Checks Passed
 
@@ -139,6 +142,7 @@ Deferred by Sprint 5 scope: invitation PDF generation, invitation template uploa
 - `20260522131947_sprint_5_db_lint_fixes.sql` fixed the lint findings by qualifying token table references and casting RSVP enum literals.
 - A final hardening pass added `20260522132532_sprint_5_private_rsvp_rpc_wrappers.sql` to keep privileged logic in `app_private` and leave public RPCs as `security invoker` wrappers.
 - A later local `npm.cmd run format:check` failed because untracked local helper files `apps/web/AGENTS.md` and `apps/web/CLAUDE.md` were being scanned. `apps/web/.prettierignore` now ignores those local helper files so they stay preserved and uncommitted while the required format check passes.
+- CodeRabbit requested seven follow-up fixes on PR `#11`: invalid JSON handling, public RSVP error fallback, home-page scope/coverage accuracy, conditional manual-review alerts, per-button RSVP gating, complete Yes/No/Maybe test coverage, and preserving first RSVP `submitted_at`. These fixes were applied in the review follow-up commit.
 - No Sprint 5 completion blockers remain.
 
 ## Security Checks Performed

@@ -40,12 +40,12 @@ const projectRouteExamples = [
 ];
 
 const deferredScope = [
-  "invitation PDF generation",
-  "invitation template upload",
-  "PDF and QR generation",
+  "invitation templates and PDF generation",
+  "QR image generation",
   "WhatsApp sending",
   "seating and check-in",
   "contracts, pricing, and full payments",
+  "partner project creation",
   "full guest-book workflow",
 ];
 
@@ -64,9 +64,7 @@ export default function HomePage() {
       ...sprint4Foundation.requirementIds,
       ...sprint5Foundation.requirementIds,
     ]),
-  )
-    .sort()
-    .slice(0, 18);
+  ).sort();
 
   const sprintSummaries = [
     {

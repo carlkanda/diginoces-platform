@@ -2,6 +2,7 @@ import {
   canSubmitPublicRsvp,
   getGuestPageLabels,
   type PublicGuestEvent,
+  type RsvpResponseStatus,
 } from "@/lib/rsvp/rsvp-service";
 import type { PublicGuestPagePayload } from "@/lib/rsvp/rsvp-db";
 
@@ -61,6 +62,23 @@ function statusLabel(
   return "Pending";
 }
 
+function rsvpResponseOptions(labels: ReturnType<typeof getGuestPageLabels>) {
+  return [
+    {
+      label: labels.yes,
+      status: "yes",
+    },
+    {
+      label: labels.no,
+      status: "no",
+    },
+    {
+      label: labels.maybe,
+      status: "maybe",
+    },
+  ] satisfies { label: string; status: RsvpResponseStatus }[];
+}
+
 export function PublicGuestPageView({
   formActionFactory,
   payload,
@@ -71,6 +89,7 @@ export function PublicGuestPageView({
   const labels = getGuestPageLabels(language);
   const isPreview = payload.mode === "preview";
   const invitedEvents = payload.events.map(toPublicGuestEvent);
+  const responseOptions = rsvpResponseOptions(labels);
 
   return (
     <div className="public-page">
@@ -126,19 +145,11 @@ export function PublicGuestPageView({
           {payload.events.map((event) => {
             const currentStatus = event.rsvp?.status ?? "pending";
             const action = formActionFactory?.(event.eventId);
-            const publicDecision = canSubmitPublicRsvp({
-              eventId: event.eventId,
-              invitedEvents,
-              isPrintedOnly: payload.guest.isPrintedOnly,
-              now: new Date().toISOString(),
-              paymentGate:
-                payload.project.guestPageAccessStatus === "locked"
-                  ? "locked"
-                  : "unlocked",
-              previousStatus: currentStatus,
-              requestedStatus: "yes",
-            });
-            const controlsDisabled = isPreview || !publicDecision.allowed;
+            const now = new Date().toISOString();
+            const paymentGate =
+              payload.project.guestPageAccessStatus === "locked"
+                ? "locked"
+                : "unlocked";
 
             return (
               <article className="public-event-card" key={event.eventId}>
@@ -176,33 +187,30 @@ export function PublicGuestPageView({
                       type="hidden"
                       value={language ?? "fr"}
                     />
-                    <button
-                      className="button secondary"
-                      disabled={controlsDisabled}
-                      name="response"
-                      type="submit"
-                      value="yes"
-                    >
-                      {labels.yes}
-                    </button>
-                    <button
-                      className="button secondary"
-                      disabled={controlsDisabled}
-                      name="response"
-                      type="submit"
-                      value="no"
-                    >
-                      {labels.no}
-                    </button>
-                    <button
-                      className="button secondary"
-                      disabled={controlsDisabled}
-                      name="response"
-                      type="submit"
-                      value="maybe"
-                    >
-                      {labels.maybe}
-                    </button>
+                    {responseOptions.map((option) => {
+                      const decision = canSubmitPublicRsvp({
+                        eventId: event.eventId,
+                        invitedEvents,
+                        isPrintedOnly: payload.guest.isPrintedOnly,
+                        now,
+                        paymentGate,
+                        previousStatus: currentStatus,
+                        requestedStatus: option.status,
+                      });
+
+                      return (
+                        <button
+                          className="button secondary"
+                          disabled={isPreview || !decision.allowed}
+                          key={option.status}
+                          name="response"
+                          type="submit"
+                          value={option.status}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
                   </form>
                 </div>
               </article>

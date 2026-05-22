@@ -118,10 +118,12 @@ export default async function ProjectRsvpSummaryPage({
                     <strong>{event.pendingCount}</strong>
                   </div>
                 </div>
-                <div className="alert">
-                  {event.manualReviewCount} records need manual review after
-                  deadline or Maybe/Pending review rules.
-                </div>
+                {event.manualReviewCount > 0 ? (
+                  <div className="alert">
+                    {event.manualReviewCount} records need manual review after
+                    deadline or Maybe/Pending review rules.
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>

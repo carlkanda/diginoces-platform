@@ -18,11 +18,19 @@ type RouteContext = {
   }>;
 };
 
+class InvalidJsonBodyError extends Error {}
+
 async function readJson(request: NextRequest) {
-  try {
-    return (await request.json()) as Record<string, unknown>;
-  } catch {
+  const text = await request.text();
+
+  if (text.trim().length === 0) {
     return {};
+  }
+
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    throw new InvalidJsonBodyError("Request body must be valid JSON.");
   }
 }
 
@@ -48,7 +56,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return jsonError(404, "guest_not_found", "Guest was not found.");
     }
 
-    const body = await readJson(request);
+    let body: Record<string, unknown>;
+
+    try {
+      body = await readJson(request);
+    } catch (error) {
+      if (error instanceof InvalidJsonBodyError) {
+        return jsonError(400, "invalid_json", error.message);
+      }
+
+      throw error;
+    }
+
     const expiresAt =
       typeof body.expiresAt === "string" && body.expiresAt.trim().length > 0
         ? body.expiresAt.trim()

@@ -19,13 +19,20 @@ export async function submitPublicRsvpAction(
     redirect(`/g/${guestToken}?rsvp=invalid_response`);
   }
 
-  const result = await submitPublicGuestRsvp(
-    await createSupabaseServerClient(),
-    guestToken,
-    eventId,
-    response as RsvpResponseStatus,
-    preferredLanguage || null,
-  );
+  let result: Awaited<ReturnType<typeof submitPublicGuestRsvp>>;
+
+  try {
+    result = await submitPublicGuestRsvp(
+      await createSupabaseServerClient(),
+      guestToken,
+      eventId,
+      response as RsvpResponseStatus,
+      preferredLanguage || null,
+    );
+  } catch (error) {
+    console.error("Public RSVP submission failed.", error);
+    redirect(`/g/${guestToken}?rsvp=error`);
+  }
 
   if (
     result &&

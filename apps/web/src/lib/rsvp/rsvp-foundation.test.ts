@@ -22,6 +22,7 @@ const guestId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const otherGuestId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const eventA = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const eventB = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+const eventC = "abababab-abab-4aba-8aba-abababababab";
 
 function tokenRecord(
   token: string,
@@ -159,13 +160,24 @@ describe("Sprint 5 RSVP and public guest page foundation", () => {
       status: "maybe",
       submittedAt: "2026-07-01T10:01:00.000Z",
     });
+    const withNo = upsertRsvpRecord(withMaybe, {
+      eventId: eventC,
+      guestId,
+      projectId,
+      source: "public_guest_page",
+      status: "no",
+      submittedAt: "2026-07-01T10:02:00.000Z",
+    });
 
-    expect(withMaybe).toHaveLength(2);
-    expect(withMaybe.find((record) => record.eventId === eventA)?.status).toBe(
+    expect(withNo).toHaveLength(3);
+    expect(withNo.find((record) => record.eventId === eventA)?.status).toBe(
       "yes",
     );
-    expect(withMaybe.find((record) => record.eventId === eventB)?.status).toBe(
+    expect(withNo.find((record) => record.eventId === eventB)?.status).toBe(
       "maybe",
+    );
+    expect(withNo.find((record) => record.eventId === eventC)?.status).toBe(
+      "no",
     );
   });
 
