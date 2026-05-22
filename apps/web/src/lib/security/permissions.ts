@@ -240,9 +240,33 @@ export type RoleAssignment = {
   scopeId?: string;
 };
 
+function getRoleDefinition(role: string) {
+  return (roleDefinitions as Partial<Record<string, RoleDefinition>>)[role];
+}
+
+export function isValidRoleAssignment(assignment: RoleAssignment) {
+  const roleDefinition = getRoleDefinition(assignment.role);
+
+  if (!roleDefinition || assignment.scope !== roleDefinition.scope) {
+    return false;
+  }
+
+  if (assignment.scope === "global") {
+    return !assignment.scopeId;
+  }
+
+  return (
+    typeof assignment.scopeId === "string" && assignment.scopeId.length > 0
+  );
+}
+
+export function getValidRoleAssignments(assignments: RoleAssignment[]) {
+  return assignments.filter(isValidRoleAssignment);
+}
+
 export function getGrantedPermissions(assignments: RoleAssignment[]) {
   return new Set(
-    assignments.flatMap(
+    getValidRoleAssignments(assignments).flatMap(
       (assignment) => roleDefinitions[assignment.role].grants,
     ),
   );
@@ -256,7 +280,7 @@ export function hasPermission(
 }
 
 export function sensitiveRolesRequireMfa(assignments: RoleAssignment[]) {
-  return assignments.some(
+  return getValidRoleAssignments(assignments).some(
     (assignment) => roleDefinitions[assignment.role].requiresMfa,
   );
 }

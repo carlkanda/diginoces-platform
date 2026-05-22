@@ -13,6 +13,8 @@ Sprint 1 moved `next` and `eslint-config-next` to `16.3.0-canary.25` because the
 
 The canary release resolves the audit finding by depending on `postcss@8.5.10`, and the Sprint 1 verification suite passes with the canary dependency.
 
+The canary package specs are pinned exactly while this item is open so lockfile refreshes do not silently advance to a different canary build.
+
 ### Risk
 
 Canary framework releases may contain regressions or API changes that are not appropriate for production hardening.

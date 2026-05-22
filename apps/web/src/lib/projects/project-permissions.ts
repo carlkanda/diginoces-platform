@@ -1,5 +1,5 @@
 import {
-  hasPermission,
+  getValidRoleAssignments,
   roleDefinitions,
   type PermissionSlug,
   type RoleAssignment,
@@ -23,7 +23,7 @@ function assignmentGrantsPermission(
   assignment: RoleAssignment,
   permission: PermissionSlug,
 ) {
-  return roleDefinitions[assignment.role].grants.includes(permission);
+  return roleDefinitions[assignment.role]?.grants.includes(permission) ?? false;
 }
 
 export function hasScopedPermission(
@@ -31,19 +31,19 @@ export function hasScopedPermission(
   permission: PermissionSlug,
   target: PermissionTarget,
 ) {
-  if (hasPermission(assignments, permission)) {
-    const globalGrant = assignments.some(
-      (assignment) =>
-        assignment.scope === "global" &&
-        assignmentGrantsPermission(assignment, permission),
-    );
+  const validAssignments = getValidRoleAssignments(assignments);
 
-    if (globalGrant) {
-      return true;
-    }
+  const globalGrant = validAssignments.some(
+    (assignment) =>
+      assignment.scope === "global" &&
+      assignmentGrantsPermission(assignment, permission),
+  );
+
+  if (globalGrant) {
+    return true;
   }
 
-  return assignments.some((assignment) => {
+  return validAssignments.some((assignment) => {
     if (!assignmentGrantsPermission(assignment, permission)) {
       return false;
     }
