@@ -119,7 +119,7 @@ Passed:
 - `npx.cmd supabase@latest db push --linked --dry-run`, showing the hardening migration as pending
 - `git diff --check`
 - Targeted secret scan for private keys, Supabase secret keys/JWTs, Google API keys, and OpenAI-style keys
-- CodeRabbit committed review completed with 2 trivial findings; both were applied and revalidated
+- CodeRabbit committed reviews completed; all returned findings were applied and revalidated, and the final committed review returned 0 findings
 
 Failed or blocked:
 
