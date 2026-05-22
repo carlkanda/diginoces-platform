@@ -263,6 +263,13 @@ describe("Sprint 5 RSVP and public guest page foundation", () => {
     expect(getRsvpOperationalEffect("no")).toMatchObject({
       includedInExpectedAttendance: false,
     });
+    expect(getRsvpOperationalEffect("locked")).toMatchObject({
+      includedInExpectedAttendance: false,
+      includedInFutureCheckIn: false,
+      includedInFutureReminders: false,
+      includedInFutureSeating: false,
+      requiresReview: false,
+    });
   });
 
   it("provides French and English public guest labels", () => {

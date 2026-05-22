@@ -100,7 +100,7 @@ export default async function ProjectDetailPage({
           className="button secondary"
           href={`/platform/projects/${projectId}/rsvps`}
         >
-          RSVP
+          RSVP summary
         </Link>
       </div>
 

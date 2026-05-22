@@ -236,6 +236,7 @@ begin
     source = excluded.source,
     deadline_state = excluded.deadline_state,
     manual_review_required = excluded.manual_review_required,
+    submitted_at = coalesce(public.rsvp_records.submitted_at, excluded.submitted_at),
     last_changed_at = excluded.last_changed_at,
     public_token_id = excluded.public_token_id
   returning id into v_rsvp_id;

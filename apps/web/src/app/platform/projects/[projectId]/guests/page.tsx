@@ -118,7 +118,7 @@ export default async function ProjectGuestsPage({
             className="button secondary"
             href={`/platform/projects/${projectId}/rsvps`}
           >
-            RSVPs
+            RSVP summary
           </Link>
           <Link
             className="button"

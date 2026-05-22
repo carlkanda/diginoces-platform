@@ -264,6 +264,8 @@ export function upsertRsvpRecord(
 export function getRsvpOperationalEffect(
   status: RsvpStatus,
 ): RsvpOperationalEffect {
+  // "locked" is an operations-owned final RSVP state; for downstream planning
+  // it behaves like a final "no" response and stays out of guest-side changes.
   if (status === "no" || status === "locked") {
     return {
       includedInExpectedAttendance: false,

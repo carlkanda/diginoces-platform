@@ -125,6 +125,62 @@ create unique index if not exists guest_public_tokens_active_guest_page_key
 create index if not exists guest_public_tokens_project_guest_idx
   on public.guest_public_tokens (project_id, guest_id, status);
 
+comment on column public.guest_public_tokens.regenerated_from_token_id is
+  'Previous token in the regeneration chain. app_private.validate_guest_public_token_regeneration_chain prevents cycles and caps traversal at 25 tokens.';
+
+create or replace function app_private.validate_guest_public_token_regeneration_chain()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_cursor uuid := new.regenerated_from_token_id;
+  v_next uuid;
+  v_depth integer := 0;
+  v_max_depth constant integer := 25;
+begin
+  if new.regenerated_from_token_id is null then
+    return new;
+  end if;
+
+  while v_cursor is not null loop
+    v_depth := v_depth + 1;
+
+    if v_cursor = new.id then
+      raise exception 'Guest public token regeneration chain cannot contain a cycle.'
+        using errcode = '23514';
+    end if;
+
+    if v_depth > v_max_depth then
+      raise exception 'Guest public token regeneration chain exceeds % tokens.', v_max_depth
+        using errcode = '23514';
+    end if;
+
+    select gpt.regenerated_from_token_id
+    into v_next
+    from public.guest_public_tokens gpt
+    where gpt.id = v_cursor;
+
+    if not found then
+      exit;
+    end if;
+
+    v_cursor := v_next;
+  end loop;
+
+  return new;
+end;
+$$;
+
+revoke all on function app_private.validate_guest_public_token_regeneration_chain() from public;
+
+drop trigger if exists validate_guest_public_token_regeneration_chain on public.guest_public_tokens;
+create trigger validate_guest_public_token_regeneration_chain
+before insert or update of regenerated_from_token_id on public.guest_public_tokens
+for each row
+execute function app_private.validate_guest_public_token_regeneration_chain();
+
 create table if not exists public.rsvp_records (
   id uuid primary key default extensions.gen_random_uuid(),
   project_id uuid not null references public.wedding_projects (id) on delete cascade,
@@ -777,6 +833,7 @@ begin
     source = excluded.source,
     deadline_state = excluded.deadline_state,
     manual_review_required = excluded.manual_review_required,
+    submitted_at = coalesce(public.rsvp_records.submitted_at, excluded.submitted_at),
     last_changed_at = excluded.last_changed_at,
     public_token_id = excluded.public_token_id
   returning id into v_rsvp_id;
