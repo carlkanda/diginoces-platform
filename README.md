@@ -1,83 +1,34 @@
 # Diginoces Platform
 
-This repository contains the source code, technical documentation, backlog snapshots, sprint plans, and AI-agent build control system for the Diginoces wedding guest-management platform.
+Diginoces is a responsive web platform for wedding guest operations, replacing the current Google tools + Canva + WhatsApp + Python workflow with a structured app.
 
-## Repository purpose
-
-Diginoces is being transformed from a Google tools + Python scripts workflow into a professional responsive web application for wedding guest operations.
-
-The platform covers:
-
-- wedding project and event management;
-- guest management and guest imports;
-- RSVP and public guest pages;
-- Canva-based invitation template and PDF generation;
-- WhatsApp-first communication workflows;
-- tables, seating, and print exports;
-- wedding-day check-in;
-- contracts, pricing, and payment controls;
-- dashboards, reports, and audit logs;
-- guest wishes, guest-book exports, and feedback;
-- partner/external provider operations;
-- files, storage, retention, and archive;
-- post-MVP AI assistance, integrations, partner scaling, and post-launch operations.
-
-## Current build status
+## Current status
 
 Completed:
 
-- **Sprint 1 — Secure Platform Foundation**
-- **Sprint 2 — Wedding Projects & Events Foundation**
-- **Sprint 3 — Guest Management & Guest Lists Foundation**
-- **Sprint 4 — Guest Import & Approval Workflow**
+- Sprint 1 — Secure Platform Foundation
+- Sprint 2 — Wedding Projects & Events Foundation
+- Sprint 3 — Guest Management & Guest Lists Foundation
+- Sprint 4 — Guest Import & Approval Workflow
+- Sprint 5 — RSVP & Public Guest Page
 
 Active sprint:
 
-- **Sprint 5 — RSVP & Public Guest Page**
-- GitHub issue: `#10`
-- Issue URL: `https://github.com/carlkanda/diginoces-platform/issues/10`
-- Sprint plan: `docs/planning/sprint-5-plan.md`
-- Expected branch: `codex/sprint-5-rsvp-public-guest-page`
-- Expected PR title: `Sprint 5 — RSVP & Public Guest Page`
-- Expected completion report: `docs/planning/sprint-5-completion-report.md`
-
-## Active sprint sync rule
-
-Whenever the active sprint changes, update both files in the same commit:
-
 ```text
-AGENTS.md
-README.md
+Sprint 6 — Invitation Template & PDF Generation
+Issue: #12
+Issue URL: https://github.com/carlkanda/diginoces-platform/issues/12
+Sprint plan: docs/planning/sprint-6-plan.md
+Expected branch: codex/sprint-6-invitation-template-pdf-generation
+Expected PR title: Sprint 6 — Invitation Template & PDF Generation
+Expected report: docs/planning/sprint-6-completion-report.md
 ```
 
-Update:
+## Agent instructions
 
-- active sprint name;
-- GitHub issue number and URL;
-- authoritative sprint plan path;
-- expected branch name;
-- expected PR title;
-- expected completion report path;
-- sprint roadmap status table below.
+Codex and other AI agents must read `AGENTS.md` before making changes.
 
-This prevents Codex from reading outdated sprint instructions.
-
-## AI-agent instructions
-
-Codex and other AI coding agents must read `AGENTS.md` before making changes.
-
-`AGENTS.md` defines:
-
-- the active sprint;
-- required reading;
-- sprint scope;
-- out-of-scope boundaries;
-- branch and PR naming rules;
-- security and secrets rules;
-- testing expectations;
-- completion report requirements.
-
-Do not ask an agent to “build the whole app.” Always assign one sprint issue at a time.
+Work must be assigned one sprint issue at a time. Do not ask an agent to build the whole app.
 
 ## Build rule
 
@@ -90,26 +41,11 @@ No feature may be implemented unless it is linked to:
 
 No requirement may be marked complete unless it has been implemented, tested, reviewed, and documented.
 
-## Documentation structure
-
-```text
-docs/
-  product/
-  agent-system/
-  backlog/
-  technical-design/
-  planning/
-  setup/
-  operations/
-```
-
-Important files:
+## Important docs
 
 ```text
 AGENTS.md
-
-docs/planning/sprint-5-plan.md
-
+docs/planning/sprint-6-plan.md
 docs/backlog/master-requirements-register.csv
 docs/backlog/traceability-matrix.csv
 docs/backlog/module-coverage.csv
@@ -128,8 +64,8 @@ docs/backlog/initial-product-backlog-test-cases.csv
 | 2 | Wedding Projects & Events Foundation | Completed |
 | 3 | Guest Management & Guest Lists Foundation | Completed |
 | 4 | Guest Import & Approval Workflow | Completed |
-| 5 | RSVP & Public Guest Page | Active |
-| 6 | Invitation Template & PDF Generation | Planned |
+| 5 | RSVP & Public Guest Page | Completed |
+| 6 | Invitation Template & PDF Generation | Active |
 | 7 | WhatsApp Communication Workflows | Planned |
 | 8 | Tables, Seating & Print Materials | Planned |
 | 9 | Check-in & Wedding-Day Operations | Planned |
@@ -146,8 +82,6 @@ docs/backlog/initial-product-backlog-test-cases.csv
 
 ## Local development
 
-The web app lives in `apps/web` and is wired through npm workspaces.
-
 ```bash
 npm install
 npm run dev
@@ -157,20 +91,17 @@ npm run test
 npm run build
 ```
 
-Local setup details are maintained in:
+See:
 
 ```text
 docs/setup/local-development.md
 ```
 
-## Environment and secrets
-
-Use `.env.example` for documentation only.
+## Security
 
 Never commit:
 
-- `.env`;
-- `.env.local`;
+- `.env` or `.env.local`;
 - Supabase service-role keys;
 - database passwords;
 - WhatsApp tokens;
@@ -179,25 +110,6 @@ Never commit:
 - real client data;
 - real wedding guest data.
 
-## Pull request expectations
+## PR expectations
 
-Every sprint PR must include:
-
-- linked issue reference;
-- requirement IDs covered;
-- backlog items covered;
-- files changed;
-- database migrations, if any;
-- tests added;
-- commands run;
-- checks passed/failed;
-- security checks;
-- known assumptions;
-- open issues/blockers;
-- sprint completion report.
-
-For Sprint 5, the expected completion report is:
-
-```text
-docs/planning/sprint-5-completion-report.md
-```
+Every sprint PR must reference the active issue and include requirement IDs, backlog items, files changed, tests, commands run, security checks, assumptions, blockers, and the sprint completion report.
