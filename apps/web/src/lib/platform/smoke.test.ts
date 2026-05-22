@@ -34,6 +34,27 @@ describe("Sprint 1 platform foundation smoke test", () => {
     expect(sensitiveRolesRequireMfa(assignments)).toBe(true);
   });
 
+  it("fails closed for malformed role assignments", () => {
+    const assignments = [
+      {
+        role: "couple",
+        scope: "project",
+      },
+      {
+        role: "event_staff",
+        scope: "project",
+        scopeId: "project-a",
+      },
+      {
+        role: "unknown_role",
+        scope: "global",
+      },
+    ] as unknown as RoleAssignment[];
+
+    expect(hasPermission(assignments, "projects.read")).toBe(false);
+    expect(sensitiveRolesRequireMfa(assignments)).toBe(false);
+  });
+
   it("keeps storage fail-closed until a real provider is configured", async () => {
     const storage = createStorageAdapter();
 
