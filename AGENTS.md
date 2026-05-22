@@ -30,6 +30,7 @@ Current GitHub issue:
 
 ```text
 #5 — Sprint 3 — Guest Management & Guest Lists Foundation
+https://github.com/carlkanda/diginoces-platform/issues/5
 ```
 
 Authoritative sprint plan:
@@ -38,7 +39,44 @@ Authoritative sprint plan:
 docs/planning/sprint-3-plan.md
 ```
 
-When the active sprint changes, update this section only. Do not rewrite the whole file unless the governance rules change.
+Expected branch:
+
+```text
+codex/sprint-3-guest-management-foundation
+```
+
+Expected PR title:
+
+```text
+Sprint 3 — Guest Management & Guest Lists Foundation
+```
+
+Expected completion report:
+
+```text
+docs/planning/sprint-3-completion-report.md
+```
+
+## Active sprint sync rule
+
+When the active sprint changes, update both files in the same commit:
+
+```text
+AGENTS.md
+README.md
+```
+
+At minimum, update:
+
+- active sprint name;
+- GitHub issue number and URL;
+- authoritative sprint plan path;
+- expected branch name;
+- expected PR title;
+- expected completion report path;
+- roadmap status table in `README.md`.
+
+Do not leave this file pointing to an old sprint.
 
 ## How agents must determine scope
 
