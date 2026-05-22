@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { InvalidJsonBodyError, readJson } from "@/lib/api/read-json";
 import { getGuestDetails } from "@/lib/guests/guest-service";
 import {
   getProjectApiContext,
@@ -17,22 +18,6 @@ type RouteContext = {
     projectId: string;
   }>;
 };
-
-class InvalidJsonBodyError extends Error {}
-
-async function readJson(request: NextRequest) {
-  const text = await request.text();
-
-  if (text.trim().length === 0) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    throw new InvalidJsonBodyError("Request body must be valid JSON.");
-  }
-}
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const apiContext = await getProjectApiContext();
