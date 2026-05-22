@@ -67,6 +67,7 @@ Sprint 3 post-merge hardening is implemented on branch `codex/sprint-3-post-merg
 - `npx.cmd supabase@latest db push --linked --dry-run`
 - `git diff --check`
 - Targeted secret scan across changed Sprint 3 hardening files
+- `wsl.exe ... coderabbit review --agent -t committed -c AGENTS.md`
 
 ## Checks Passed
 
@@ -82,11 +83,13 @@ Sprint 3 post-merge hardening is implemented on branch `codex/sprint-3-post-merg
 - `npx.cmd supabase@latest db push --linked --dry-run` passed and reported only `20260522211108_sprint_3_post_merge_hardening.sql` as pending.
 - `git diff --check` passed.
 - Targeted secret scan found no real secrets or private client/guest data.
+- CodeRabbit CLI committed review completed and raised one trivial migration style suggestion.
 
 ## Checks Failed Or Blocked
 
 - Initial `npm.cmd run format:check` failed on Prettier formatting for `guest-foundation.test.ts` and `guest-service.ts`; `npm.cmd run format` was run, and the final `format:check` passed.
 - No Supabase authentication blockers occurred; linked `db:lint` and linked migration dry-run both passed.
+- CodeRabbit suggested replacing `(select auth.uid())` with `auth.uid()` in the new RLS policy. This was not applied because the repository's Supabase policies consistently use the `(select auth.uid())` initplan pattern and `db:lint` passed with that convention.
 
 ## Security Checks Performed
 
@@ -107,7 +110,7 @@ Sprint 3 post-merge hardening is implemented on branch `codex/sprint-3-post-merg
 ## Open Issues Or Blockers
 
 - No Sprint 3 hardening blockers remain before PR review.
-- CodeRabbit review will be run on the hardening PR diff after the branch is pushed.
+- CodeRabbit review has been run on the committed hardening diff; no blocking findings remain.
 
 ## Recommended Follow-Up
 
