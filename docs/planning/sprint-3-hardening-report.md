@@ -109,7 +109,7 @@ Sprint 3 post-merge hardening is implemented on branch `codex/sprint-3-post-merg
 - This hardening pass targets current `main`, not a rewrite of merged PR `#6`.
 - Sprint 3 traceability remains anchored to issue `#5` and PR `#6`.
 - Current `main` includes later Sprint 4 and Sprint 5 code, but this branch intentionally changes only shared Sprint 3 guest-management foundations.
-- Supabase linked-project checks will be run if local authentication remains available; otherwise they will be documented as blocked.
+- Supabase linked-project checks (`db:lint` and migration dry-run) were run successfully against the linked project without authentication blockers.
 
 ## Open Issues Or Blockers
 

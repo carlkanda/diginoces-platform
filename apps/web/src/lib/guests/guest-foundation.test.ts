@@ -165,6 +165,8 @@ describe("Sprint 3 guest-management foundation", () => {
     expect(parseGuestListSideFilter(undefined)).toBe("all");
     expect(parseGuestListSideFilter("all")).toBe("all");
     expect(parseGuestListSideFilter("bride")).toBe("bride");
+    expect(parseGuestListSideFilter("groom")).toBe("groom");
+    expect(parseGuestListSideFilter("both")).toBe("both");
     expect(() => parseGuestListSideFilter("unsupported")).toThrow(
       /side must be one of: bride, groom, both, all/,
     );
@@ -226,7 +228,12 @@ describe("Sprint 3 guest-management foundation", () => {
     expect(canCreateGuestSide(brideAssignments, "groom", projectId)).toBe(
       false,
     );
+    expect(canCreateGuestSide(groomAssignments, "groom", projectId)).toBe(true);
+    expect(canCreateGuestSide(groomAssignments, "bride", projectId)).toBe(
+      false,
+    );
     expect(canCreateGuestSide(adminAssignments, "groom", projectId)).toBe(true);
+    expect(canCreateGuestSide(adminAssignments, "both", projectId)).toBe(true);
   });
 
   it("requires the explicit deactivation permission only for active-to-inactive updates", () => {
@@ -250,6 +257,12 @@ describe("Sprint 3 guest-management foundation", () => {
     ).toBe(false);
     expect(
       guestUpdateRequiresDeactivationPermission({ is_active: true }, {}),
+    ).toBe(false);
+    expect(
+      guestUpdateRequiresDeactivationPermission(
+        { is_active: false },
+        { isActive: true },
+      ),
     ).toBe(false);
   });
 
