@@ -86,7 +86,8 @@ function requiredCsvContent(value: unknown) {
     throw new GuestImportValidationError("csvContent is required.");
   }
 
-  // API JSON uploads must fail before permission checks; assertCsvSource remains the service-layer backstop.
+  // parseStartGuestImportPayload runs this early to avoid expensive parsing
+  // and permission work on oversized API JSON uploads.
   assertGuestImportCsvSize(value);
 
   return value.trim();
@@ -194,7 +195,11 @@ function assertGuestImportCsvSize(csvContent: string) {
   if (
     new TextEncoder().encode(csvContent).byteLength > MAX_GUEST_IMPORT_CSV_BYTES
   ) {
-    throw new GuestImportValidationError("CSV input must be 5 MB or smaller.");
+    const maxCsvSizeMb = MAX_GUEST_IMPORT_CSV_BYTES / (1024 * 1024);
+
+    throw new GuestImportValidationError(
+      `CSV input must be ${maxCsvSizeMb} MB or smaller.`,
+    );
   }
 }
 

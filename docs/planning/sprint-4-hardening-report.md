@@ -136,6 +136,13 @@ Migration behavior:
 | Second review-loop rerun: `npm run build` | Passed |
 | Second review-loop rerun: `npm run db:lint` | Passed - no schema errors found |
 | Second review-loop rerun: `npx supabase@latest db push --linked --dry-run` | Passed - dry run would push the existing Sprint 3 hardening migration and this Sprint 4 hardening migration |
+| Ready-review CodeRabbit pass: `wsl.exe ... coderabbit review --agent --base main -c AGENTS.md` | Passed - 3 trivial issues raised and fixed |
+| Ready-review rerun: `npm --workspace apps/web run test -- src/lib/guest-imports/guest-import-foundation.test.ts` | Passed - 14 tests |
+| Ready-review rerun: `npm run format:check` | Passed |
+| Ready-review rerun: `npm run lint` | Passed |
+| Ready-review rerun: `npm run typecheck` | Passed |
+| Ready-review rerun: `npm run test` | Passed - 5 files, 50 tests |
+| Ready-review rerun: `npm run build` | Passed |
 
 ## Security Review
 
@@ -144,6 +151,7 @@ Migration behavior:
 - Server pages and API routes perform backend permission checks; UI controls are no longer the only enforcement layer.
 - Raw row JSON, mapping JSON, validation issues, and duplicate warnings remain protected by the same RLS helper as the import session.
 - CSV size validation intentionally remains layered: API payload parsing rejects oversized `csvContent` before permission checks, and import creation remains a service-layer backstop for non-API callers.
+- CSV size messaging now derives the displayed MB limit from `MAX_GUEST_IMPORT_CSV_BYTES` so tests and user-facing validation stay aligned with the configured limit.
 - Import apply now validates UUID-shaped mapped title, event, and tag values before casting, so malformed staged JSON is skipped or nulled instead of aborting the whole apply loop.
 - No real credentials, Supabase service-role keys, database passwords, WhatsApp tokens, Google secrets, private keys, or real client/guest data were added.
 

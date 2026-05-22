@@ -211,13 +211,15 @@ describe("Sprint 4 guest import foundation", () => {
   });
 
   it("rejects API CSV payloads over the Sprint 4 size limit", () => {
+    const maxCsvSizeMb = MAX_GUEST_IMPORT_CSV_BYTES / (1024 * 1024);
+
     expect(() =>
       parseStartGuestImportPayload({
         csvContent: "a".repeat(MAX_GUEST_IMPORT_CSV_BYTES + 1),
         importSide: "bride",
         sourceFilename: "guests.csv",
       }),
-    ).toThrow(/5 MB/);
+    ).toThrow(`CSV input must be ${maxCsvSizeMb} MB or smaller.`);
   });
 
   it("allows printed-only rows without WhatsApp but blocks digital rows without WhatsApp", () => {
