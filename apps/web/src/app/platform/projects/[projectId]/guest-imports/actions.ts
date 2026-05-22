@@ -13,17 +13,17 @@ import {
 } from "@/lib/guest-imports/guest-import-db";
 import {
   requireGuestImportApplyPermission,
+  requireGuestImportProjectPermission,
   requireGuestImportReviewPermission,
   requireGuestImportSidePermission,
 } from "@/lib/guest-imports/guest-import-api";
 import {
   GuestImportValidationError,
   importColumnTargets,
+  MAX_GUEST_IMPORT_CSV_BYTES,
   type ImportColumnMapping,
 } from "@/lib/guest-imports/guest-import-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-const MAX_CSV_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 function formValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -54,7 +54,7 @@ async function getActionContext() {
 }
 
 function assertCsvInputSize(byteLength: number) {
-  if (byteLength > MAX_CSV_UPLOAD_BYTES) {
+  if (byteLength > MAX_GUEST_IMPORT_CSV_BYTES) {
     throw new GuestImportValidationError("CSV input must be 5 MB or smaller.");
   }
 }
@@ -126,6 +126,12 @@ export async function saveGuestImportMappingAction(
   formData: FormData,
 ) {
   const context = await getActionContext();
+  await requireGuestImportProjectPermission(
+    context,
+    projectId,
+    "guest_imports.create",
+  );
+
   const details = await getGuestImportDetails(
     context.supabase,
     projectId,
@@ -166,6 +172,12 @@ export async function submitGuestImportAction(
   importSessionId: string,
 ) {
   const context = await getActionContext();
+  await requireGuestImportProjectPermission(
+    context,
+    projectId,
+    "guest_imports.submit",
+  );
+
   const details = await getGuestImportDetails(
     context.supabase,
     projectId,

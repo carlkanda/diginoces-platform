@@ -5,6 +5,7 @@ import {
 } from "@/lib/guest-imports/guest-import-db";
 import {
   handleGuestImportApiError,
+  requireGuestImportProjectPermission,
   requireGuestImportSidePermission,
 } from "@/lib/guest-imports/guest-import-api";
 import {
@@ -31,6 +32,12 @@ export async function POST(_request: NextRequest, context: RouteContext) {
 
   try {
     const { importId, projectId } = await context.params;
+    await requireGuestImportProjectPermission(
+      apiContext,
+      projectId,
+      "guest_imports.submit",
+    );
+
     const details = await getGuestImportDetails(
       apiContext.supabase,
       projectId,

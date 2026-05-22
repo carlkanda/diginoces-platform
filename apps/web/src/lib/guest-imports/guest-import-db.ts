@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildImportPreview,
   importColumnTargets,
+  MAX_GUEST_IMPORT_CSV_BYTES,
   parseGuestImportCsv,
   suggestColumnMappings,
   type GuestImportPreview,
@@ -78,6 +79,16 @@ function optionalText(value: unknown) {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function requiredCsvContent(value: unknown) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new GuestImportValidationError("csvContent is required.");
+  }
+
+  assertGuestImportCsvSize(value);
+
+  return value.trim();
 }
 
 function parseGuestSide(value: unknown) {
@@ -178,10 +189,20 @@ function makeFilename(value: string) {
   return filename.length > 0 ? filename : "guest-import.csv";
 }
 
+function assertGuestImportCsvSize(csvContent: string) {
+  if (
+    new TextEncoder().encode(csvContent).byteLength > MAX_GUEST_IMPORT_CSV_BYTES
+  ) {
+    throw new GuestImportValidationError("CSV input must be 5 MB or smaller.");
+  }
+}
+
 function assertCsvSource(input: StartGuestImportInput) {
   if (input.csvContent.trim().length === 0) {
     throw new GuestImportValidationError("CSV content is required.");
   }
+
+  assertGuestImportCsvSize(input.csvContent);
 
   const filename = makeFilename(input.sourceFilename);
   if (!filename.toLowerCase().endsWith(".csv")) {
@@ -261,9 +282,10 @@ export function parseStartGuestImportPayload(
   payload: unknown,
 ): StartGuestImportInput {
   const body = asRecord(payload);
+  const csvContent = requiredCsvContent(body.csvContent);
 
   return {
-    csvContent: requiredText(body.csvContent, "csvContent"),
+    csvContent,
     importSide: parseGuestSide(body.importSide),
     sourceFilename: requiredText(body.sourceFilename, "sourceFilename"),
   };

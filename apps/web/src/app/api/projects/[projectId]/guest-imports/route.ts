@@ -6,6 +6,7 @@ import {
 } from "@/lib/guest-imports/guest-import-db";
 import {
   handleGuestImportApiError,
+  requireGuestImportReadPermission,
   requireGuestImportSidePermission,
 } from "@/lib/guest-imports/guest-import-api";
 import { GuestImportValidationError } from "@/lib/guest-imports/guest-import-service";
@@ -13,7 +14,6 @@ import {
   getProjectApiContext,
   handleProjectApiError,
   isProjectApiContext,
-  requireProjectPermission,
 } from "@/lib/projects/project-api";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +41,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   try {
     const { projectId } = await context.params;
-    await requireProjectPermission(apiContext, projectId, "guest_imports.read");
+    await requireGuestImportReadPermission(apiContext, projectId);
 
     const sessions = await listGuestImportSessions(
       apiContext.supabase,

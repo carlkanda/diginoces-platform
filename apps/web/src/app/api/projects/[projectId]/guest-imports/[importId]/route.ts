@@ -1,11 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getGuestImportDetails } from "@/lib/guest-imports/guest-import-db";
-import { handleGuestImportApiError } from "@/lib/guest-imports/guest-import-api";
+import {
+  handleGuestImportApiError,
+  requireGuestImportReadPermission,
+} from "@/lib/guest-imports/guest-import-api";
 import {
   getProjectApiContext,
   handleProjectApiError,
   isProjectApiContext,
-  requireProjectPermission,
 } from "@/lib/projects/project-api";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +28,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   try {
     const { importId, projectId } = await context.params;
-    await requireProjectPermission(apiContext, projectId, "guest_imports.read");
+    await requireGuestImportReadPermission(apiContext, projectId);
 
     const details = await getGuestImportDetails(
       apiContext.supabase,

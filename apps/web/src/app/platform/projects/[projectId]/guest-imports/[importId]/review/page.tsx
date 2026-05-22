@@ -6,6 +6,8 @@ import {
   getImportRowDisplayName,
   isReviewableStoredRow,
 } from "@/lib/guest-imports/guest-import-db";
+import { requireGuestImportReviewPermission } from "@/lib/guest-imports/guest-import-api";
+import { ProjectAccessError } from "@/lib/projects/project-api";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { reviewGuestImportRowsAction } from "../../actions";
 
@@ -37,9 +39,8 @@ export default async function GuestImportReviewPage({
   const { importId, projectId } = await params;
 
   if (authContext.status === "anonymous") {
-    redirect(
-      `/login?next=/platform/projects/${projectId}/guest-imports/${importId}/review`,
-    );
+    const nextPath = `/platform/projects/${projectId}/guest-imports/${importId}/review`;
+    redirect(`/login?${new URLSearchParams({ next: nextPath }).toString()}`);
   }
 
   if (authContext.status === "not_configured") {
@@ -56,11 +57,20 @@ export default async function GuestImportReviewPage({
     );
   }
 
-  const details = await getGuestImportDetails(
-    await createSupabaseServerClient(),
-    projectId,
-    importId,
-  );
+  const supabase = await createSupabaseServerClient();
+  const context = { supabase, user: authContext.user };
+
+  try {
+    await requireGuestImportReviewPermission(context, projectId);
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
+  }
+
+  const details = await getGuestImportDetails(supabase, projectId, importId);
 
   if (!details) {
     notFound();

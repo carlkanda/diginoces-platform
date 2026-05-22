@@ -41,6 +41,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   try {
     const { importId, projectId } = await context.params;
+    await requireGuestImportReviewPermission(apiContext, projectId);
+
     const details = await getGuestImportDetails(
       apiContext.supabase,
       projectId,
@@ -58,8 +60,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
         { status: 404 },
       );
     }
-
-    await requireGuestImportReviewPermission(apiContext, projectId);
 
     await reviewGuestImportRows(
       apiContext.supabase,

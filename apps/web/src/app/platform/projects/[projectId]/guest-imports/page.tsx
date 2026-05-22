@@ -1,7 +1,12 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  requireAnyGuestImportCreatePermission,
+  requireGuestImportReadPermission,
+} from "@/lib/guest-imports/guest-import-api";
 import { listGuestImportSessions } from "@/lib/guest-imports/guest-import-db";
+import { ProjectAccessError } from "@/lib/projects/project-api";
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -24,7 +29,8 @@ export default async function GuestImportsPage({
   const { projectId } = await params;
 
   if (authContext.status === "anonymous") {
-    redirect(`/login?next=/platform/projects/${projectId}/guest-imports`);
+    const nextPath = `/platform/projects/${projectId}/guest-imports`;
+    redirect(`/login?${new URLSearchParams({ next: nextPath }).toString()}`);
   }
 
   if (authContext.status === "not_configured") {
@@ -42,6 +48,27 @@ export default async function GuestImportsPage({
   }
 
   const supabase = await createSupabaseServerClient();
+  const context = { supabase, user: authContext.user };
+  try {
+    await requireGuestImportReadPermission(context, projectId);
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
+  }
+
+  let canUpload = false;
+  try {
+    await requireAnyGuestImportCreatePermission(context, projectId);
+    canUpload = true;
+  } catch (error) {
+    if (!(error instanceof ProjectAccessError)) {
+      throw error;
+    }
+  }
+
   const [projectDetails, sessions] = await Promise.all([
     getProjectDetails(supabase, projectId),
     listGuestImportSessions(supabase, projectId),
@@ -69,12 +96,14 @@ export default async function GuestImportsPage({
           >
             Guests
           </Link>
-          <Link
-            className="button"
-            href={`/platform/projects/${projectId}/guest-imports/new`}
-          >
-            Upload CSV
-          </Link>
+          {canUpload ? (
+            <Link
+              className="button"
+              href={`/platform/projects/${projectId}/guest-imports/new`}
+            >
+              Upload CSV
+            </Link>
+          ) : null}
         </div>
       </div>
 
