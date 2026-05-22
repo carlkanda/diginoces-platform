@@ -34,6 +34,11 @@ export const permissionSlugs = [
   "guest_event_assignments.manage",
   "guest_duplicates.read",
   "guest_duplicates.manage",
+  "guest_imports.read",
+  "guest_imports.create",
+  "guest_imports.submit",
+  "guest_imports.review",
+  "guest_imports.apply",
 ] as const;
 
 export type PermissionSlug = (typeof permissionSlugs)[number];
@@ -98,6 +103,9 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "guest_tags.manage",
       "guest_event_assignments.manage",
       "guest_duplicates.read",
+      "guest_imports.read",
+      "guest_imports.create",
+      "guest_imports.submit",
     ],
     requirementIds: ["ROLE-005", "GM-002", "GM-003", "GM-011"],
     requiresMfa: false,
@@ -134,6 +142,9 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "guest_tags.manage",
       "guest_event_assignments.manage",
       "guest_duplicates.read",
+      "guest_imports.read",
+      "guest_imports.create",
+      "guest_imports.submit",
     ],
     requirementIds: ["ROLE-005", "GM-002", "GM-003", "GM-011"],
     requiresMfa: false,
@@ -175,6 +186,11 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "guest_event_assignments.manage",
       "guest_duplicates.read",
       "guest_duplicates.manage",
+      "guest_imports.read",
+      "guest_imports.create",
+      "guest_imports.submit",
+      "guest_imports.review",
+      "guest_imports.apply",
     ],
     requirementIds: [
       "PV-001",

@@ -342,6 +342,208 @@ export type Database = {
           },
         ];
       };
+      guest_import_mappings: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          import_session_id: string;
+          project_id: string;
+          source_headers: Json;
+          target_mapping: Json;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          import_session_id: string;
+          project_id: string;
+          source_headers?: Json;
+          target_mapping?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          import_session_id?: string;
+          project_id?: string;
+          source_headers?: Json;
+          target_mapping?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guest_import_mappings_session_project_match";
+            columns: ["import_session_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "guest_import_sessions";
+            referencedColumns: ["id", "project_id"];
+          },
+        ];
+      };
+      guest_import_rows: {
+        Row: {
+          approval_status: Database["public"]["Enums"]["guest_import_row_approval_status"];
+          created_at: string;
+          duplicate_severity: Database["public"]["Enums"]["guest_import_duplicate_severity"];
+          duplicate_warnings: Json;
+          id: string;
+          import_session_id: string;
+          linked_guest_id: string | null;
+          mapped_fields: Json;
+          project_id: string;
+          raw_row_data: Json;
+          review_notes: string | null;
+          row_number: number;
+          updated_at: string;
+          validation_errors: Json;
+          validation_status: Database["public"]["Enums"]["guest_import_row_validation_status"];
+        };
+        Insert: {
+          approval_status?: Database["public"]["Enums"]["guest_import_row_approval_status"];
+          created_at?: string;
+          duplicate_severity?: Database["public"]["Enums"]["guest_import_duplicate_severity"];
+          duplicate_warnings?: Json;
+          id?: string;
+          import_session_id: string;
+          linked_guest_id?: string | null;
+          mapped_fields?: Json;
+          project_id: string;
+          raw_row_data?: Json;
+          review_notes?: string | null;
+          row_number: number;
+          updated_at?: string;
+          validation_errors?: Json;
+          validation_status?: Database["public"]["Enums"]["guest_import_row_validation_status"];
+        };
+        Update: {
+          approval_status?: Database["public"]["Enums"]["guest_import_row_approval_status"];
+          created_at?: string;
+          duplicate_severity?: Database["public"]["Enums"]["guest_import_duplicate_severity"];
+          duplicate_warnings?: Json;
+          id?: string;
+          import_session_id?: string;
+          linked_guest_id?: string | null;
+          mapped_fields?: Json;
+          project_id?: string;
+          raw_row_data?: Json;
+          review_notes?: string | null;
+          row_number?: number;
+          updated_at?: string;
+          validation_errors?: Json;
+          validation_status?: Database["public"]["Enums"]["guest_import_row_validation_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guest_import_rows_linked_guest_project_match";
+            columns: ["linked_guest_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "guests";
+            referencedColumns: ["id", "project_id"];
+          },
+          {
+            foreignKeyName: "guest_import_rows_session_project_match";
+            columns: ["import_session_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "guest_import_sessions";
+            referencedColumns: ["id", "project_id"];
+          },
+        ];
+      };
+      guest_import_sessions: {
+        Row: {
+          applied_at: string | null;
+          applied_by: string | null;
+          approved_row_count: number;
+          created_at: string;
+          created_by: string | null;
+          created_guest_count: number;
+          duplicate_warning_count: number;
+          id: string;
+          import_side: Database["public"]["Enums"]["guest_side"];
+          invalid_row_count: number;
+          project_id: string;
+          rejected_row_count: number;
+          review_notes: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          row_count: number;
+          source_file_type: string;
+          source_filename: string;
+          status: Database["public"]["Enums"]["guest_import_session_status"];
+          submitted_at: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          uploaded_by: string | null;
+          valid_row_count: number;
+        };
+        Insert: {
+          applied_at?: string | null;
+          applied_by?: string | null;
+          approved_row_count?: number;
+          created_at?: string;
+          created_by?: string | null;
+          created_guest_count?: number;
+          duplicate_warning_count?: number;
+          id?: string;
+          import_side: Database["public"]["Enums"]["guest_side"];
+          invalid_row_count?: number;
+          project_id: string;
+          rejected_row_count?: number;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          row_count?: number;
+          source_file_type?: string;
+          source_filename: string;
+          status?: Database["public"]["Enums"]["guest_import_session_status"];
+          submitted_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          uploaded_by?: string | null;
+          valid_row_count?: number;
+        };
+        Update: {
+          applied_at?: string | null;
+          applied_by?: string | null;
+          approved_row_count?: number;
+          created_at?: string;
+          created_by?: string | null;
+          created_guest_count?: number;
+          duplicate_warning_count?: number;
+          id?: string;
+          import_side?: Database["public"]["Enums"]["guest_side"];
+          invalid_row_count?: number;
+          project_id?: string;
+          rejected_row_count?: number;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          row_count?: number;
+          source_file_type?: string;
+          source_filename?: string;
+          status?: Database["public"]["Enums"]["guest_import_session_status"];
+          submitted_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          uploaded_by?: string | null;
+          valid_row_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guest_import_sessions_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "wedding_projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       guest_tag_assignments: {
         Row: {
           created_at: string;
@@ -874,6 +1076,53 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      apply_guest_import_approved_rows: {
+        Args: { p_import_session_id: string };
+        Returns: number;
+      };
+      create_guest_import_session: {
+        Args: {
+          p_import_side: Database["public"]["Enums"]["guest_side"];
+          p_project_id: string;
+          p_rows: Json;
+          p_source_file_type: string;
+          p_source_filename: string;
+          p_source_headers: Json;
+          p_target_mapping: Json;
+        };
+        Returns: {
+          applied_at: string | null;
+          applied_by: string | null;
+          approved_row_count: number;
+          created_at: string;
+          created_by: string | null;
+          created_guest_count: number;
+          duplicate_warning_count: number;
+          id: string;
+          import_side: Database["public"]["Enums"]["guest_side"];
+          invalid_row_count: number;
+          project_id: string;
+          rejected_row_count: number;
+          review_notes: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          row_count: number;
+          source_file_type: string;
+          source_filename: string;
+          status: Database["public"]["Enums"]["guest_import_session_status"];
+          submitted_at: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          uploaded_by: string | null;
+          valid_row_count: number;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "guest_import_sessions";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       current_user_can_access_event: {
         Args: { p_event_id: string; p_permission?: string };
         Returns: boolean;
@@ -905,6 +1154,31 @@ export type Database = {
         };
         Returns: undefined;
       };
+      review_guest_import_rows: {
+        Args: {
+          p_approved_row_ids?: string[];
+          p_held_row_ids?: string[];
+          p_import_session_id: string;
+          p_rejected_row_ids?: string[];
+          p_review_notes?: string;
+        };
+        Returns: undefined;
+      };
+      save_guest_import_preview: {
+        Args: {
+          p_import_session_id: string;
+          p_project_id: string;
+          p_rows: Json;
+          p_source_headers: Json;
+          p_summary: Json;
+          p_target_mapping: Json;
+        };
+        Returns: undefined;
+      };
+      submit_guest_import_session: {
+        Args: { p_import_session_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       audit_source: "api" | "auth" | "system" | "storage";
@@ -930,6 +1204,34 @@ export type Database = {
         | "whatsapp_number";
       guest_duplicate_status: "open" | "dismissed" | "confirmed";
       guest_event_assignment_status: "assigned" | "not_invited" | "removed";
+      guest_import_duplicate_severity:
+        | "clear"
+        | "warning"
+        | "needs_review"
+        | "blocked";
+      guest_import_row_approval_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "held"
+        | "applied";
+      guest_import_row_validation_status:
+        | "pending"
+        | "valid"
+        | "warning"
+        | "blocked";
+      guest_import_session_status:
+        | "draft"
+        | "mapping_saved"
+        | "previewed"
+        | "validation_failed"
+        | "ready_for_review"
+        | "partially_approved"
+        | "approved"
+        | "rejected"
+        | "applied"
+        | "cancelled"
+        | "failed";
       guest_side: "bride" | "groom" | "both";
       membership_status: "active" | "invited" | "suspended" | "removed";
       project_lifecycle_status:
@@ -1106,6 +1408,38 @@ export const Constants = {
       ],
       guest_duplicate_status: ["open", "dismissed", "confirmed"],
       guest_event_assignment_status: ["assigned", "not_invited", "removed"],
+      guest_import_duplicate_severity: [
+        "clear",
+        "warning",
+        "needs_review",
+        "blocked",
+      ],
+      guest_import_row_approval_status: [
+        "pending",
+        "approved",
+        "rejected",
+        "held",
+        "applied",
+      ],
+      guest_import_row_validation_status: [
+        "pending",
+        "valid",
+        "warning",
+        "blocked",
+      ],
+      guest_import_session_status: [
+        "draft",
+        "mapping_saved",
+        "previewed",
+        "validation_failed",
+        "ready_for_review",
+        "partially_approved",
+        "approved",
+        "rejected",
+        "applied",
+        "cancelled",
+        "failed",
+      ],
       guest_side: ["bride", "groom", "both"],
       membership_status: ["active", "invited", "suspended", "removed"],
       project_lifecycle_status: [
