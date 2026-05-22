@@ -119,7 +119,8 @@ Migration behavior:
 | `npx supabase@latest db push --linked --dry-run` | Passed - dry run would push the existing Sprint 3 hardening migration and this Sprint 4 hardening migration |
 | `git diff --check` | Passed |
 | Targeted secret scan | Passed - no matching real secret patterns found |
-| CodeRabbit review | Failed - CLI authenticated, but `coderabbit review --agent --base main -c AGENTS.md` and `coderabbit review --agent --base main` both returned `TRPCClientError` with `Review failed: Unknown error` |
+| GitHub PR `Verify` check | Passed on PR #16 |
+| CodeRabbit review | CLI failed - authenticated, but `coderabbit review --agent --base main -c AGENTS.md` and `coderabbit review --agent --base main` both returned `TRPCClientError` with `Review failed: Unknown error`; GitHub CodeRabbit check is green but says `Review skipped` while the PR is draft |
 
 ## Security Review
 
@@ -139,7 +140,7 @@ Migration behavior:
 ## Open Issues Or Blockers
 
 - Supabase linked-project checks will be run if local authentication remains available. If unavailable, that will be documented in the command matrix before the PR is marked review-ready.
-- CodeRabbit CLI review is blocked by a non-recoverable review-service error despite successful WSL CLI authentication. The draft PR remains open for GitHub/CodeRabbit review once the service accepts the review request.
+- CodeRabbit CLI review is blocked by a non-recoverable review-service error despite successful WSL CLI authentication. The GitHub CodeRabbit check on the draft PR is green but skipped the review; rerun CodeRabbit after marking the PR ready if needed.
 - No browser UI regression test suite exists for these server-rendered permission flows; coverage is by helper/unit tests, build/typecheck, and RLS/RPC migration review.
 
 ## Recommended Next Scope
