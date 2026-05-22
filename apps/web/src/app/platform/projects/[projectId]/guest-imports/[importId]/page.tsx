@@ -72,7 +72,8 @@ export default async function GuestImportDetailPage({
       details.session.status === "validation_failed") &&
     details.rows.some(isReviewableStoredRow);
   const canApply =
-    details.session.status !== "applied" &&
+    (details.session.status === "approved" ||
+      details.session.status === "partially_approved") &&
     details.rows.some((row) => row.approval_status === "approved");
   const submitAction = submitGuestImportAction.bind(null, projectId, importId);
   const applyAction = applyGuestImportRowsAction.bind(

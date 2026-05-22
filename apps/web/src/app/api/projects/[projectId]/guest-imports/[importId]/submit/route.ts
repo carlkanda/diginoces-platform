@@ -7,7 +7,6 @@ import {
   handleGuestImportApiError,
   requireGuestImportSidePermission,
 } from "@/lib/guest-imports/guest-import-api";
-import { GuestImportValidationError } from "@/lib/guest-imports/guest-import-service";
 import {
   getProjectApiContext,
   handleProjectApiError,
@@ -39,8 +38,14 @@ export async function POST(_request: NextRequest, context: RouteContext) {
     );
 
     if (!details) {
-      throw new GuestImportValidationError(
-        "Guest import session was not found.",
+      return NextResponse.json(
+        {
+          error: {
+            code: "not_found",
+            message: "Guest import session was not found.",
+          },
+        },
+        { status: 404 },
       );
     }
 

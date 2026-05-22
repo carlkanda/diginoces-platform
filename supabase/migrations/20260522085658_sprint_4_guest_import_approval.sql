@@ -508,6 +508,11 @@ begin
       using errcode = '42501';
   end if;
 
+  if v_session.status not in ('previewed', 'validation_failed') then
+    raise exception 'Guest import session must be previewed before submission.'
+      using errcode = '22023';
+  end if;
+
   if v_session.row_count <= v_session.invalid_row_count then
     raise exception 'Guest import has no reviewable rows.'
       using errcode = '22023';
@@ -560,6 +565,11 @@ begin
   if not app_private.user_can_access_project(v_actor_user_id, v_session.project_id, 'guest_imports.review') then
     raise exception 'Guest import review permission denied.'
       using errcode = '42501';
+  end if;
+
+  if v_session.status not in ('ready_for_review', 'partially_approved') then
+    raise exception 'Guest import session must be submitted for review.'
+      using errcode = '22023';
   end if;
 
   update public.guest_import_rows

@@ -31,6 +31,8 @@ export async function POST(_request: NextRequest, context: RouteContext) {
 
   try {
     const { importId, projectId } = await context.params;
+    await requireGuestImportApplyPermission(apiContext, projectId);
+
     const details = await getGuestImportDetails(
       apiContext.supabase,
       projectId,
@@ -48,8 +50,6 @@ export async function POST(_request: NextRequest, context: RouteContext) {
         { status: 404 },
       );
     }
-
-    await requireGuestImportApplyPermission(apiContext, projectId);
 
     const createdGuestCount = await applyGuestImportApprovedRows(
       apiContext.supabase,

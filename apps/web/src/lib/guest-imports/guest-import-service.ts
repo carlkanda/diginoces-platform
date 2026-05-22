@@ -551,11 +551,22 @@ function appendDuplicateWarnings(
 }
 
 export function parseGuestImportCsv(csvContent: string): ParsedGuestImportCsv {
-  const records = parse(csvContent, {
-    bom: true,
-    relax_column_count: true,
-    skip_empty_lines: false,
-  }) as string[][];
+  let records: string[][];
+
+  try {
+    records = parse(csvContent, {
+      bom: true,
+      relax_column_count: true,
+      skip_empty_lines: false,
+    }) as string[][];
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message.length > 0
+        ? `CSV content is invalid: ${error.message}`
+        : "CSV content is invalid.";
+
+    throw new GuestImportValidationError(message);
+  }
 
   const [rawHeaders, ...rawRows] = records;
 

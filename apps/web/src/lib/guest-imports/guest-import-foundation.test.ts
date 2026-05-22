@@ -108,6 +108,12 @@ describe("Sprint 4 guest import foundation", () => {
     ).toThrow(/duplicate headers/i);
   });
 
+  it("normalizes malformed CSV parser errors", () => {
+    expect(() =>
+      parseGuestImportCsv('Nom complet,Titre\n"Unclosed guest,Mr.'),
+    ).toThrow(/CSV content is invalid/i);
+  });
+
   it("suggests column mappings for common French and English headers", () => {
     expect(
       suggestColumnMappings([
