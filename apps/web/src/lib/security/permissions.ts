@@ -39,6 +39,10 @@ export const permissionSlugs = [
   "guest_imports.submit",
   "guest_imports.review",
   "guest_imports.apply",
+  "guest_public_pages.preview",
+  "guest_public_tokens.manage",
+  "rsvps.read",
+  "rsvps.manage",
 ] as const;
 
 export type PermissionSlug = (typeof permissionSlugs)[number];
@@ -84,6 +88,7 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "workflow_tasks.read",
       "guests.read",
       "guest_duplicates.read",
+      "rsvps.read",
     ],
     requirementIds: ["PV-002", "ROLE-002", "PROJ-001", "PROJ-002", "GM-001"],
     requiresMfa: false,
@@ -106,6 +111,7 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "guest_imports.read",
       "guest_imports.create",
       "guest_imports.submit",
+      "rsvps.read",
     ],
     requirementIds: ["ROLE-005", "GM-002", "GM-003", "GM-011"],
     requiresMfa: false,
@@ -145,6 +151,7 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "guest_imports.read",
       "guest_imports.create",
       "guest_imports.submit",
+      "rsvps.read",
     ],
     requirementIds: ["ROLE-005", "GM-002", "GM-003", "GM-011"],
     requiresMfa: false,
@@ -191,6 +198,10 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "guest_imports.submit",
       "guest_imports.review",
       "guest_imports.apply",
+      "guest_public_pages.preview",
+      "guest_public_tokens.manage",
+      "rsvps.read",
+      "rsvps.manage",
     ],
     requirementIds: [
       "PV-001",

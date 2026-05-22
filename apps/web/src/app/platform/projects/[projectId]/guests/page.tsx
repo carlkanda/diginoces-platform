@@ -115,6 +115,12 @@ export default async function ProjectGuestsPage({
             Imports
           </Link>
           <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/rsvps`}
+          >
+            RSVPs
+          </Link>
+          <Link
             className="button"
             href={`/platform/projects/${projectId}/guests/new`}
           >

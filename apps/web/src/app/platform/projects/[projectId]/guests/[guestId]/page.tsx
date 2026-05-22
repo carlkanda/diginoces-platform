@@ -77,6 +77,12 @@ export default async function EditGuestPage({ params }: EditGuestPageProps) {
         >
           Guests
         </Link>
+        <Link
+          className="button secondary"
+          href={`/platform/projects/${projectId}/guests/${guestId}/public-preview`}
+        >
+          Public preview
+        </Link>
       </div>
 
       <section className="section">

@@ -96,6 +96,12 @@ export default async function ProjectDetailPage({
         >
           Guest imports
         </Link>
+        <Link
+          className="button secondary"
+          href={`/platform/projects/${projectId}/rsvps`}
+        >
+          RSVP
+        </Link>
       </div>
 
       <section className="section">
@@ -127,12 +133,12 @@ export default async function ProjectDetailPage({
       <section className="section">
         <div className="section-heading">
           <h2>Guest management</h2>
-          <span className="meta-list">Sprint 3 and Sprint 4 foundation</span>
+          <span className="meta-list">Sprint 3, 4, and 5 foundation</span>
         </div>
         <p className="page-summary">
           Manage the project master guest list, bride/groom side filters, tags,
-          title types, and event assignments without RSVP, invitations, seating,
-          or check-in workflows.
+          title types, event assignments, import history, and RSVP summary
+          foundation without invitations, seating, or check-in workflows.
         </p>
         <Link
           className="button"
@@ -145,6 +151,12 @@ export default async function ProjectDetailPage({
           href={`/platform/projects/${projectId}/guest-imports`}
         >
           Open imports
+        </Link>
+        <Link
+          className="button secondary"
+          href={`/platform/projects/${projectId}/rsvps`}
+        >
+          RSVP summary
         </Link>
       </section>
 

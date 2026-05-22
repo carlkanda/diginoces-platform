@@ -4,6 +4,7 @@ import { getSprint4ImportStatus } from "@/lib/guest-imports/guest-import-service
 import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
 import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
+import { getSprint5RsvpStatus } from "@/lib/rsvp/rsvp-service";
 
 const projectRouteExamples = [
   {
@@ -26,16 +27,26 @@ const projectRouteExamples = [
     label: "Upload CSV",
     path: "/platform/projects/{projectId}/guest-imports/new",
   },
+  {
+    description: "Sprint 5 RSVP counts and manual review foundation.",
+    label: "RSVP summary",
+    path: "/platform/projects/{projectId}/rsvps",
+  },
+  {
+    description: "Sprint 5 admin/staff preview for one guest page.",
+    label: "Guest preview",
+    path: "/platform/projects/{projectId}/guests/{guestId}/public-preview",
+  },
 ];
 
 const deferredScope = [
-  "RSVP",
-  "public guest page",
-  "invitation generation",
+  "invitation PDF generation",
+  "invitation template upload",
   "PDF and QR generation",
   "WhatsApp sending",
   "seating and check-in",
-  "contracts, pricing, and payments",
+  "contracts, pricing, and full payments",
+  "full guest-book workflow",
 ];
 
 export default function HomePage() {
@@ -43,6 +54,7 @@ export default function HomePage() {
   const sprint2Foundation = getSprint2FoundationStatus();
   const sprint3Foundation = getSprint3FoundationStatus();
   const sprint4Foundation = getSprint4ImportStatus();
+  const sprint5Foundation = getSprint5RsvpStatus();
   const env = getPublicEnvironment();
   const coveredRequirementIds = Array.from(
     new Set([
@@ -50,6 +62,7 @@ export default function HomePage() {
       ...sprint2Foundation.modules.flatMap((module) => module.requirementIds),
       ...sprint3Foundation.modules.flatMap((module) => module.requirementIds),
       ...sprint4Foundation.requirementIds,
+      ...sprint5Foundation.requirementIds,
     ]),
   )
     .sort()
@@ -88,18 +101,27 @@ export default function HomePage() {
       sprint: sprint4Foundation.sprint,
       stories: sprint4Foundation.stories,
     },
+    {
+      description:
+        "Secure guest public tokens, payment-gated public access, admin preview, event-specific RSVP, deadlines, change rules, language labels, and invitation placeholder.",
+      features: sprint5Foundation.features,
+      issue: sprint5Foundation.issue,
+      modules: sprint5Foundation.modules,
+      sprint: sprint5Foundation.sprint,
+      stories: sprint5Foundation.stories,
+    },
   ];
 
   return (
     <>
       <section className="hero">
         <div>
-          <p className="eyebrow">Sprint 1-4 implementation status</p>
+          <p className="eyebrow">Sprint 1-5 implementation status</p>
           <h1>Diginoces platform progress</h1>
           <p>
-            The home page now surfaces the foundations already delivered across
-            the first four sprints, while keeping future wedding operations out
-            of scope until their documented sprint begins.
+            The home page surfaces the foundations already delivered across the
+            first five sprints, while keeping future wedding operations out of
+            scope until their documented sprint begins.
           </p>
           <div className="requirement-list" aria-label="Requirements covered">
             {coveredRequirementIds.map((requirementId) => (
@@ -131,7 +153,7 @@ export default function HomePage() {
       <section className="section" aria-label="Sprint progress">
         <div className="section-heading">
           <h2>What has been built so far</h2>
-          <span className="meta-list">4 sprint foundations</span>
+          <span className="meta-list">5 sprint foundations</span>
         </div>
         <div className="progress-overview">
           {sprintSummaries.map((sprint) => (

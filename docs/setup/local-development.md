@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, and the Sprint 4 CSV guest import and approval workflow for issue `#7`. It does not include Excel import, RSVP, invitations, WhatsApp sending, table planning, check-in, contracts, pricing, payments, partner project creation, automatic duplicate merging, or full dashboards.
+This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, and the Sprint 5 RSVP/public guest page foundation for issue `#10`. It does not include Excel import, invitation PDF generation, invitation template upload, QR image generation, WhatsApp sending, table planning, check-in, contracts, pricing, payments, partner project creation, automatic duplicate merging, or full dashboards.
 
 ## Prerequisites
 
@@ -107,6 +107,28 @@ http://127.0.0.1:3000/api/projects/{projectId}/guest-imports/{importId}/apply
 
 Sprint 4 accepts CSV content only. Uploaded source files are not persisted; the app stores parsed row JSON, mapping JSON, source filename, and source file type metadata in Supabase. Bride and groom imports remain staged until an authorized Diginoces/admin or operations user reviews rows and applies approved rows into `guests`.
 
+Sprint 5 RSVP and public guest page foundation routes:
+
+```text
+http://127.0.0.1:3000/g/{guestPublicToken}
+http://127.0.0.1:3000/platform/projects/{projectId}/rsvps
+http://127.0.0.1:3000/platform/projects/{projectId}/guests/{guestId}/public-preview
+http://127.0.0.1:3000/api/projects/{projectId}/rsvps/summary
+http://127.0.0.1:3000/api/projects/{projectId}/guests/{guestId}/public-token
+```
+
+Public guest tokens are generated through the authenticated admin/operations API endpoint and stored only as hashes in Supabase. The raw token is returned once to the authorized caller. Public page resolution, RSVP submission, and internal preview are handled through permission-gated Supabase RPCs and RLS-backed tables.
+
+Sprint 5 RSVP behavior:
+
+- Public guest pages stay locked while `wedding_projects.guest_page_access_status` is `locked`.
+- Diginoces/admin and operations users can preview the guest page without unlocking the public page.
+- Public RSVP is event-specific and supports `yes`, `no`, and `maybe`.
+- Guests can RSVP only to events assigned to their guest record.
+- RSVP deadlines route late responses into manual review instead of silently overwriting operational state.
+- Printed-only guests remain a manual RSVP workflow.
+- Invitation download is a placeholder only; PDF generation, QR images, WhatsApp sending, seating, and check-in are deferred to later sprints.
+
 ## Supabase
 
 The project has been initialized with Supabase CLI metadata in `supabase/config.toml`.
@@ -168,4 +190,6 @@ npx supabase@latest migration new descriptive_name
 - Sprint 3 guest creation and updates are audited by database triggers with guest PII redacted from audit snapshots. API handlers and RLS enforce bride/groom/both side permissions.
 - The Sprint 4 migration enables RLS on guest import sessions, rows, and mappings. Import actions are audited by database triggers with raw row data, mapped fields, mapping JSON, validation details, duplicate details, and review notes redacted from audit snapshots.
 - Sprint 4 apply actions use a permission-gated Supabase RPC to create approved guest records and event/tag assignments atomically within the database transaction.
+- The Sprint 5 migration enables RLS on public guest tokens and event-specific RSVP records. Public tokens are stored as SHA-256 hashes only, and public page access/RSVP actions are audited by RPCs and audit triggers.
+- Sprint 5 public RSVP RPCs are callable without a signed-in Supabase user only through token resolution and guest-scoped checks. Admin/operations preview, token generation, token revocation, and RSVP summary remain authenticated and permission-gated.
 - The storage adapter is fail-closed until a real provider is configured.
