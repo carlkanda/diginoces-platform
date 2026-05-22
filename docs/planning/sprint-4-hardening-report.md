@@ -79,7 +79,7 @@ Sprint 4 remains limited to CSV guest import and approval hardening. No RSVP, pu
 - `apps/web/src/app/platform/projects/[projectId]/guest-imports/[importId]/review/page.tsx`
 - `docs/planning/sprint-4-hardening-report.md`
 
-No active sprint metadata was changed in `AGENTS.md` or `README.md`.
+No active sprint metadata files were changed; neither `AGENTS.md` nor `README.md` is part of this hardening diff.
 
 ## Database Migration
 
@@ -120,7 +120,22 @@ Migration behavior:
 | `git diff --check` | Passed |
 | Targeted secret scan | Passed - no matching real secret patterns found |
 | GitHub PR `Verify` check | Passed on PR #16 |
-| CodeRabbit review | CLI failed - authenticated, but `coderabbit review --agent --base main -c AGENTS.md` and `coderabbit review --agent --base main` both returned `TRPCClientError` with `Review failed: Unknown error`; GitHub CodeRabbit check is green but says `Review skipped` while the PR is draft |
+| `wsl.exe ... coderabbit review --agent --base main -c AGENTS.md` | Passed - 3 issues raised; fixed the migration-test and report-precision items; retained the layered CSV size guard because the hardening plan explicitly requires API payload parsing to reject oversized `csvContent` |
+| Review-loop rerun: `npm --workspace apps/web run test -- src/lib/guest-imports/guest-import-foundation.test.ts` | Passed - 14 tests |
+| Review-loop rerun: `npm run format:check` | Passed |
+| Review-loop rerun: `npm run lint` | Passed |
+| Review-loop rerun: `npm run typecheck` | Passed |
+| Review-loop rerun: `npm run test` | Passed - 5 files, 50 tests |
+| Review-loop rerun: `npm run build` | Passed |
+| Second CodeRabbit pass: `wsl.exe ... coderabbit review --agent --base main -c AGENTS.md` | Passed - valid Sprint 4 findings applied for safe UUID casting and import permission test coverage; out-of-scope findings tracked below |
+| Second review-loop rerun: `npm --workspace apps/web run test -- src/lib/guest-imports/guest-import-foundation.test.ts` | Passed - 14 tests |
+| Second review-loop rerun: `npm run format:check` | Passed |
+| Second review-loop rerun: `npm run lint` | Passed |
+| Second review-loop rerun: `npm run typecheck` | Passed |
+| Second review-loop rerun: `npm run test` | Passed - 5 files, 50 tests |
+| Second review-loop rerun: `npm run build` | Passed |
+| Second review-loop rerun: `npm run db:lint` | Passed - no schema errors found |
+| Second review-loop rerun: `npx supabase@latest db push --linked --dry-run` | Passed - dry run would push the existing Sprint 3 hardening migration and this Sprint 4 hardening migration |
 
 ## Security Review
 
@@ -128,6 +143,8 @@ Migration behavior:
 - Review/apply actors retain full access only through `guest_imports.review` and `guest_imports.apply`.
 - Server pages and API routes perform backend permission checks; UI controls are no longer the only enforcement layer.
 - Raw row JSON, mapping JSON, validation issues, and duplicate warnings remain protected by the same RLS helper as the import session.
+- CSV size validation intentionally remains layered: API payload parsing rejects oversized `csvContent` before permission checks, and import creation remains a service-layer backstop for non-API callers.
+- Import apply now validates UUID-shaped mapped title, event, and tag values before casting, so malformed staged JSON is skipped or nulled instead of aborting the whole apply loop.
 - No real credentials, Supabase service-role keys, database passwords, WhatsApp tokens, Google secrets, private keys, or real client/guest data were added.
 
 ## Assumptions
@@ -139,8 +156,10 @@ Migration behavior:
 
 ## Open Issues Or Blockers
 
-- Supabase linked-project checks will be run if local authentication remains available. If unavailable, that will be documented in the command matrix before the PR is marked review-ready.
-- CodeRabbit CLI review is blocked by a non-recoverable review-service error despite successful WSL CLI authentication. The GitHub CodeRabbit check on the draft PR is green but skipped the review; rerun CodeRabbit after marking the PR ready if needed.
+- No blocking issues remain from the WSL CodeRabbit CLI review loop.
+- CodeRabbit raised dependency/version findings for the existing Next.js canary and `latest` type packages. The Next.js canary is already tracked as Sprint 1 technical debt in `docs/planning/technical-debt.md` (`TD-001`), and package dependency changes are outside this Sprint 4 guest-import hardening PR.
+- CodeRabbit raised a Sprint 2 project-code loop bound finding in `20260521123000_sprint_2_projects_events.sql`; that is outside this Sprint 4 hardening scope and should be handled in a Sprint 2 follow-up if still desired.
+- CodeRabbit suggested replacing multiple UI capability RPCs with a composite RPC. This is a performance optimization outside the current correctness/security hardening scope and would require a new public database interface.
 - No browser UI regression test suite exists for these server-rendered permission flows; coverage is by helper/unit tests, build/typecheck, and RLS/RPC migration review.
 
 ## Recommended Next Scope

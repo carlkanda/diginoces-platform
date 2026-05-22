@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   applyApprovedImportRowsForFoundation,
@@ -366,11 +366,35 @@ describe("Sprint 4 guest import foundation", () => {
     expect(
       canPerformGuestImportAction(
         brideAssignments,
+        "submit",
+        "bride",
+        projectId,
+      ),
+    ).toBe(true);
+    expect(
+      canPerformGuestImportAction(
+        brideAssignments,
+        "submit",
+        "groom",
+        projectId,
+      ),
+    ).toBe(false);
+    expect(
+      canPerformGuestImportAction(
+        brideAssignments,
         "review",
         "bride",
         projectId,
       ),
     ).toBe(false);
+    expect(
+      canPerformGuestImportAction(
+        operationsAssignments,
+        "review",
+        "groom",
+        projectId,
+      ),
+    ).toBe(true);
     expect(
       canPerformGuestImportAction(
         operationsAssignments,
@@ -390,13 +414,17 @@ describe("Sprint 4 guest import foundation", () => {
   });
 
   it("documents the post-merge migration guards for RLS and workflow transitions", () => {
-    const migration = readFileSync(
-      new URL(
-        "../../../../../supabase/migrations/20260522221804_sprint_4_post_merge_hardening.sql",
-        import.meta.url,
-      ),
-      "utf8",
+    const migrationPath = new URL(
+      "../../../../../supabase/migrations/20260522221804_sprint_4_post_merge_hardening.sql",
+      import.meta.url,
     );
+
+    expect(
+      existsSync(migrationPath),
+      "Expected Sprint 4 post-merge hardening migration to exist at its generated path.",
+    ).toBe(true);
+
+    const migration = readFileSync(migrationPath, "utf8");
 
     expect(migration).toContain("user_can_read_guest_import_session");
     expect(migration).toContain("for update");
@@ -410,6 +438,9 @@ describe("Sprint 4 guest import foundation", () => {
       "Blocked or applied import rows cannot be approved.",
     );
     expect(migration).toContain("if v_session.status = 'applied' then");
+    expect(migration).toContain(
+      "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$",
+    );
   });
 
   it("documents audit actions for import lifecycle changes", () => {

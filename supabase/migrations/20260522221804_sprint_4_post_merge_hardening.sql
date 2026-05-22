@@ -396,7 +396,11 @@ begin
     )
     values (
       v_session.project_id,
-      nullif(v_row.mapped_fields ->> 'guestTitleTypeId', '')::uuid,
+      case
+        when nullif(v_row.mapped_fields ->> 'guestTitleTypeId', '') ~ '^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$'
+          then (v_row.mapped_fields ->> 'guestTitleTypeId')::uuid
+        else null
+      end,
       v_row.mapped_fields ->> 'displayName',
       coalesce(nullif(v_row.mapped_fields ->> 'guestSide', '')::public.guest_side, v_session.import_side),
       nullif(v_row.mapped_fields ->> 'whatsappNumber', ''),
@@ -420,14 +424,18 @@ begin
     select
       v_session.project_id,
       v_guest_id,
-      imported_event_ids.event_id::uuid,
+      valid_event_ids.event_id,
       true,
       'assigned',
       v_actor_user_id,
       v_actor_user_id
     from jsonb_array_elements_text(coalesce(v_row.mapped_fields -> 'eventIds', '[]'::jsonb)) as imported_event_ids(event_id)
+    join lateral (
+      select imported_event_ids.event_id::uuid as event_id
+      where imported_event_ids.event_id ~ '^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$'
+    ) valid_event_ids on true
     join public.events e
-      on e.id = imported_event_ids.event_id::uuid
+      on e.id = valid_event_ids.event_id
      and e.project_id = v_session.project_id
     on conflict (guest_id, event_id) do nothing;
 
@@ -440,11 +448,15 @@ begin
     select
       v_session.project_id,
       v_guest_id,
-      imported_tag_ids.tag_id::uuid,
+      valid_tag_ids.tag_id,
       v_actor_user_id
     from jsonb_array_elements_text(coalesce(v_row.mapped_fields -> 'tagIds', '[]'::jsonb)) as imported_tag_ids(tag_id)
+    join lateral (
+      select imported_tag_ids.tag_id::uuid as tag_id
+      where imported_tag_ids.tag_id ~ '^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$'
+    ) valid_tag_ids on true
     join public.guest_tags gt
-      on gt.id = imported_tag_ids.tag_id::uuid
+      on gt.id = valid_tag_ids.tag_id
      and gt.project_id = v_session.project_id
     on conflict (guest_id, tag_id) do nothing;
 

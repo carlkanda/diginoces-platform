@@ -86,6 +86,7 @@ function requiredCsvContent(value: unknown) {
     throw new GuestImportValidationError("csvContent is required.");
   }
 
+  // API JSON uploads must fail before permission checks; assertCsvSource remains the service-layer backstop.
   assertGuestImportCsvSize(value);
 
   return value.trim();
