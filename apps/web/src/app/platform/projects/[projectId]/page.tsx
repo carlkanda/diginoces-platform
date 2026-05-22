@@ -84,6 +84,12 @@ export default async function ProjectDetailPage({
         <Link className="button secondary" href="/platform/projects">
           Projects
         </Link>
+        <Link
+          className="button"
+          href={`/platform/projects/${projectId}/guests`}
+        >
+          Guests
+        </Link>
       </div>
 
       <section className="section">
@@ -110,6 +116,24 @@ export default async function ProjectDetailPage({
             </strong>
           </div>
         </div>
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>Guest management</h2>
+          <span className="meta-list">Sprint 3 foundation</span>
+        </div>
+        <p className="page-summary">
+          Manage the project master guest list, bride/groom side filters, tags,
+          title types, and event assignments without RSVP, invitations, seating,
+          or check-in workflows.
+        </p>
+        <Link
+          className="button"
+          href={`/platform/projects/${projectId}/guests`}
+        >
+          Open guest list
+        </Link>
       </section>
 
       <section className="section">

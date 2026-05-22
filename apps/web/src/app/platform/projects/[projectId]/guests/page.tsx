@@ -1,0 +1,198 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  getProjectDetails,
+  listProjectEvents,
+} from "@/lib/projects/project-service";
+import { listProjectGuests, type GuestSide } from "@/lib/guests/guest-service";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
+
+type GuestListPageProps = {
+  params: Promise<{
+    projectId: string;
+  }>;
+  searchParams: Promise<{
+    eventId?: string;
+    side?: string;
+  }>;
+};
+
+function parseSideFilter(value: string | undefined): GuestSide | "all" {
+  if (value === "bride" || value === "groom" || value === "both") {
+    return value;
+  }
+
+  return "all";
+}
+
+function formatSide(side: GuestSide) {
+  return side === "both" ? "Both sides" : `${side} side`;
+}
+
+export default async function ProjectGuestsPage({
+  params,
+  searchParams,
+}: GuestListPageProps) {
+  const authContext = await getAuthContext();
+  const { projectId } = await params;
+  const filters = await searchParams;
+
+  if (authContext.status === "anonymous") {
+    redirect(`/login?next=/platform/projects/${projectId}/guests`);
+  }
+
+  if (authContext.status === "not_configured") {
+    return (
+      <>
+        <h1 className="page-title">Guest list</h1>
+        <section className="section">
+          <div className="alert">
+            Supabase environment variables are not configured. Guest management
+            will load after local credentials are supplied.
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const projectDetails = await getProjectDetails(supabase, projectId);
+
+  if (!projectDetails) {
+    redirect("/platform/projects");
+  }
+
+  const side = parseSideFilter(filters.side);
+  const eventId = filters.eventId;
+  const [events, guests] = await Promise.all([
+    listProjectEvents(supabase, projectId),
+    listProjectGuests(supabase, projectId, {
+      eventId,
+      side,
+    }),
+  ]);
+
+  const sideHref = (
+    value: GuestSide | "all",
+    nextEventId: string | undefined = eventId,
+  ) => {
+    const params = new URLSearchParams();
+    if (value !== "all") {
+      params.set("side", value);
+    }
+    if (nextEventId) {
+      params.set("eventId", nextEventId);
+    }
+
+    return `/platform/projects/${projectId}/guests${params.size > 0 ? `?${params.toString()}` : ""}`;
+  };
+
+  return (
+    <>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">{projectDetails.project.project_code}</p>
+          <h1 className="page-title">Guest list foundation</h1>
+          <p className="page-summary">
+            {projectDetails.project.bride_name} &{" "}
+            {projectDetails.project.groom_name}
+          </p>
+        </div>
+        <div className="button-group">
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}`}
+          >
+            Project
+          </Link>
+          <Link
+            className="button"
+            href={`/platform/projects/${projectId}/guests/new`}
+          >
+            Add guest
+          </Link>
+        </div>
+      </div>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>Filters</h2>
+          <span className="meta-list">{guests.length} visible guests</span>
+        </div>
+        <div className="filter-bar">
+          {(["all", "bride", "groom", "both"] as const).map((value) => (
+            <Link
+              aria-current={side === value ? "page" : undefined}
+              className="button secondary"
+              href={sideHref(value)}
+              key={value}
+            >
+              {value === "all" ? "All" : formatSide(value)}
+            </Link>
+          ))}
+        </div>
+        {events.length > 0 ? (
+          <div className="filter-bar">
+            <Link className="button secondary" href={sideHref(side, undefined)}>
+              All events
+            </Link>
+            {events.map((event) => {
+              const params = new URLSearchParams();
+              if (side !== "all") {
+                params.set("side", side);
+              }
+              params.set("eventId", event.id);
+
+              return (
+                <Link
+                  aria-current={eventId === event.id ? "page" : undefined}
+                  className="button secondary"
+                  href={`/platform/projects/${projectId}/guests?${params.toString()}`}
+                  key={event.id}
+                >
+                  {event.name}
+                </Link>
+              );
+            })}
+          </div>
+        ) : null}
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>Guests</h2>
+          <span className="meta-list">Master project guest records</span>
+        </div>
+
+        {guests.length === 0 ? (
+          <div className="empty-state">No guests match this view yet.</div>
+        ) : (
+          <div className="record-list">
+            {guests.map((guest) => (
+              <Link
+                className="record-row"
+                href={`/platform/projects/${projectId}/guests/${guest.id}`}
+                key={guest.id}
+              >
+                <span>
+                  <strong>{guest.display_name}</strong>
+                  <small>
+                    {guest.whatsapp_number ?? "No WhatsApp"} -{" "}
+                    {guest.is_printed_only ? "Printed only" : "Digital ready"}
+                  </small>
+                </span>
+                <span className="tag">{formatSide(guest.guest_side)}</span>
+                <span className="meta-list">
+                  {guest.is_active ? "Active" : "Inactive"}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
