@@ -29,16 +29,17 @@ Completed:
 - **Sprint 1 — Secure Platform Foundation**
 - **Sprint 2 — Wedding Projects & Events Foundation**
 - **Sprint 3 — Guest Management & Guest Lists Foundation**
+- **Sprint 4 — Guest Import & Approval Workflow**
 
 Active sprint:
 
-- **Sprint 4 — Guest Import & Approval Workflow**
-- GitHub issue: `#7`
-- Issue URL: `https://github.com/carlkanda/diginoces-platform/issues/7`
-- Sprint plan: `docs/planning/sprint-4-plan.md`
-- Expected branch: `codex/sprint-4-guest-import-approval`
-- Expected PR title: `Sprint 4 — Guest Import & Approval Workflow`
-- Expected completion report: `docs/planning/sprint-4-completion-report.md`
+- **Sprint 5 — RSVP & Public Guest Page**
+- GitHub issue: `#10`
+- Issue URL: `https://github.com/carlkanda/diginoces-platform/issues/10`
+- Sprint plan: `docs/planning/sprint-5-plan.md`
+- Expected branch: `codex/sprint-5-rsvp-public-guest-page`
+- Expected PR title: `Sprint 5 — RSVP & Public Guest Page`
+- Expected completion report: `docs/planning/sprint-5-completion-report.md`
 
 ## Active sprint sync rule
 
@@ -107,7 +108,7 @@ Important files:
 ```text
 AGENTS.md
 
-docs/planning/sprint-4-plan.md
+docs/planning/sprint-5-plan.md
 
 docs/backlog/master-requirements-register.csv
 docs/backlog/traceability-matrix.csv
@@ -126,8 +127,8 @@ docs/backlog/initial-product-backlog-test-cases.csv
 | 1 | Secure Platform Foundation | Completed |
 | 2 | Wedding Projects & Events Foundation | Completed |
 | 3 | Guest Management & Guest Lists Foundation | Completed |
-| 4 | Guest Import & Approval Workflow | Active |
-| 5 | RSVP & Public Guest Page | Planned |
+| 4 | Guest Import & Approval Workflow | Completed |
+| 5 | RSVP & Public Guest Page | Active |
 | 6 | Invitation Template & PDF Generation | Planned |
 | 7 | WhatsApp Communication Workflows | Planned |
 | 8 | Tables, Seating & Print Materials | Planned |
@@ -195,8 +196,8 @@ Every sprint PR must include:
 - open issues/blockers;
 - sprint completion report.
 
-For Sprint 4, the expected completion report is:
+For Sprint 5, the expected completion report is:
 
 ```text
-docs/planning/sprint-4-completion-report.md
+docs/planning/sprint-5-completion-report.md
 ```
