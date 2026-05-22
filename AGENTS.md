@@ -1,276 +1,157 @@
 # AGENTS.md — Diginoces Platform
 
-## Project mission
+## Mission
 
-Build the Diginoces wedding guest-management platform as a responsive web application using the requirements, planning documents, backlog CSV snapshots, and technical design artifacts contained in this repository.
+Build the Diginoces wedding guest-management platform as a responsive web application using the requirements, sprint plans, backlog CSV snapshots, and technical design documents in this repository.
 
-Diginoces is being transformed from a workflow based on Google tools, Canva, WhatsApp, and Python scripts into a professional platform for wedding guest operations.
+## Core rule
 
-## Core build rule
+No feature may be implemented unless it is linked to:
 
-No feature may be implemented unless it is linked to a documented requirement ID and an approved sprint/backlog item.
+1. a documented requirement ID;
+2. a backlog item where applicable;
+3. the active sprint plan;
+4. the active GitHub issue.
 
-No requirement may be marked complete unless it has been:
-
-1. implemented;
-2. tested;
-3. reviewed;
-4. documented where needed;
-5. linked back to the requirements register, backlog item, sprint issue, and pull request.
+No requirement may be marked complete unless it is implemented, tested, reviewed, documented, and linked back to the requirement/backlog/sprint issue/PR.
 
 ## Active sprint
 
-Current active implementation sprint:
-
 ```text
-Sprint 5 — RSVP & Public Guest Page
+Sprint 6 — Invitation Template & PDF Generation
 ```
 
-Current GitHub issue:
+GitHub issue:
 
 ```text
-#10 — Sprint 5 — RSVP & Public Guest Page
-https://github.com/carlkanda/diginoces-platform/issues/10
+#12 — Sprint 6 — Invitation Template & PDF Generation
+https://github.com/carlkanda/diginoces-platform/issues/12
 ```
 
 Authoritative sprint plan:
 
 ```text
-docs/planning/sprint-5-plan.md
+docs/planning/sprint-6-plan.md
 ```
 
 Expected branch:
 
 ```text
-codex/sprint-5-rsvp-public-guest-page
+codex/sprint-6-invitation-template-pdf-generation
 ```
 
 Expected PR title:
 
 ```text
-Sprint 5 — RSVP & Public Guest Page
+Sprint 6 — Invitation Template & PDF Generation
 ```
 
 Expected completion report:
 
 ```text
-docs/planning/sprint-5-completion-report.md
+docs/planning/sprint-6-completion-report.md
 ```
 
 ## Active sprint sync rule
 
-When the active sprint changes, update both files in the same commit:
+When the active sprint changes, update both `AGENTS.md` and `README.md` in the same commit.
 
-```text
-AGENTS.md
-README.md
-```
-
-At minimum, update:
-
-- active sprint name;
-- GitHub issue number and URL;
-- authoritative sprint plan path;
-- expected branch name;
-- expected PR title;
-- expected completion report path;
-- roadmap status table in `README.md`.
-
-Do not leave this file pointing to an old sprint.
-
-## How agents must determine scope
-
-Agents must not infer sprint scope from memory.
-
-For any task, agents must use this order of authority:
-
-1. The assigned GitHub issue.
-2. The matching sprint plan in `docs/planning/`.
-3. `docs/backlog/master-requirements-register.csv`.
-4. `docs/backlog/initial-product-backlog-features.csv`.
-5. `docs/backlog/initial-product-backlog-user-stories.csv`.
-6. `docs/backlog/initial-product-backlog-tasks.csv`.
-7. Product and technical design documents.
-
-If the GitHub issue and sprint plan conflict, stop and report the conflict instead of guessing.
+Update the active sprint name, issue number/URL, sprint plan path, branch name, PR title, completion report path, and README roadmap status.
 
 ## Required reading before coding
 
-Before making code changes, agents must read:
+Always read:
 
-- this `AGENTS.md` file;
-- the assigned GitHub issue;
-- the sprint plan matching the assigned issue;
-- `docs/agent-system/00-ai-agent-build-system-governance.md`;
-- `docs/agent-system/agent-role-prompts.md`;
-- `docs/agent-system/agent-execution-workflow.md`;
-- `docs/planning/mvp-build-execution-plan.md`;
-- `docs/backlog/master-requirements-register.csv`;
-- `docs/backlog/initial-product-backlog-epics.csv`;
-- `docs/backlog/initial-product-backlog-features.csv`;
-- `docs/backlog/initial-product-backlog-user-stories.csv`;
-- `docs/backlog/initial-product-backlog-tasks.csv`;
-- `docs/backlog/initial-product-backlog-test-cases.csv`;
-- relevant product documents under `docs/product/`;
-- relevant technical design documents under `docs/technical-design/`.
+- `AGENTS.md`
+- the assigned GitHub issue
+- the matching sprint plan under `docs/planning/`
+- `docs/agent-system/00-ai-agent-build-system-governance.md`
+- `docs/agent-system/agent-role-prompts.md`
+- `docs/agent-system/agent-execution-workflow.md`
+- `docs/planning/mvp-build-execution-plan.md`
+- `docs/backlog/master-requirements-register.csv`
+- `docs/backlog/initial-product-backlog-epics.csv`
+- `docs/backlog/initial-product-backlog-features.csv`
+- `docs/backlog/initial-product-backlog-user-stories.csv`
+- `docs/backlog/initial-product-backlog-tasks.csv`
+- `docs/backlog/initial-product-backlog-test-cases.csv`
+- relevant product documents in `docs/product/`
+- relevant technical design documents in `docs/technical-design/`
 
-## Sprint 5 required reading
+For Sprint 6, specifically read:
 
-For the current active sprint, agents must specifically read:
+- `docs/planning/sprint-6-plan.md`
+- `docs/planning/sprint-5-plan.md`
+- `docs/product/06-invitation-template-pdf-generation.md`
+- `docs/product/05-rsvp-public-guest-page.md`
+- `docs/product/04-guest-management-guest-lists.md`
+- `docs/product/03-wedding-project-structure.md`
+- `docs/product/14-files-storage-retention-security.md`
+- `docs/technical-design/database-schema-core-entities.md`
+- `docs/technical-design/api-backend-service-design.md`
+- `docs/technical-design/background-jobs-pdf-qr-whatsapp-offline-checkin.md`
+- `docs/technical-design/security-permissions-access-control.md`
 
-- `docs/planning/sprint-5-plan.md`;
-- `docs/planning/sprint-4-plan.md`;
-- `docs/product/05-rsvp-public-guest-page.md`;
-- `docs/product/04-guest-management-guest-lists.md`;
-- `docs/product/03-wedding-project-structure.md`;
-- `docs/product/02-user-roles-permissions-access-control.md`;
-- `docs/product/10-contracts-pricing-payment-controls.md`;
-- `docs/technical-design/database-schema-core-entities.md`;
-- `docs/technical-design/api-backend-service-design.md`;
-- `docs/technical-design/security-permissions-access-control.md`.
+## Sprint 6 scope
 
-## Sprint 5 scope
+Implement only the Invitation Template & PDF Generation foundation:
 
-For Sprint 5, implement only the RSVP & Public Guest Page foundation:
-
-- secure guest public token foundation;
-- public guest page route and page;
-- token resolution and guest-scoped access checks;
-- payment-gate or guest-page access-check foundation;
-- Diginoces/admin preview foundation;
-- event-specific RSVP record model;
-- RSVP Yes/No/Maybe submission;
-- multi-event RSVP support;
-- RSVP deadline foundation;
-- RSVP change rules;
-- RSVP operational-effect helper foundation;
-- guest preferred language/labels foundation;
-- invitation download placeholder only;
-- printed-only RSVP/manual foundation if low-risk;
-- audit logging for RSVP/public page actions;
-- basic UI for guest page and RSVP controls;
+- event-level invitation template model;
+- Canva-exported PDF template upload/registration foundation;
+- dynamic field configuration foundation;
+- visual/coordinate editor foundation;
+- technical preview generation workflow;
+- technical preview approval workflow;
+- invitation record model;
+- invitation file/version foundation;
+- secure public guest page QR/link dynamic field foundation;
+- separation between public guest page token and future check-in token;
+- generation validation workflow;
+- batch generation job foundation;
+- PDF generation or tested PDF worker abstraction;
+- long-name/text-fitting foundation;
+- permission checks for template/generation operations;
+- audit logging for template/generation actions;
+- basic UI for upload, field configuration, preview, approval, and generation results;
 - tests;
 - documentation updates;
-- `docs/planning/sprint-5-completion-report.md`.
+- `docs/planning/sprint-6-completion-report.md`.
 
-## Sprint 5 out of scope
+## Sprint 6 out of scope
 
-Do not implement the following in Sprint 5:
+Do not implement:
 
-- invitation PDF generation;
-- invitation template upload;
-- QR image generation;
 - WhatsApp sending;
+- invitation sending workflow;
 - seating;
 - check-in;
 - contracts;
 - pricing;
 - payments;
 - partner project creation;
-- full guest-book workflow.
+- full Canva API integration.
 
-Invitation template and PDF generation begins in Sprint 6.
+WhatsApp communication workflows begin in Sprint 7.
 
-## Recommended stack
-
-Use the repository documentation as the source of truth. The recommended stack is:
-
-- Next.js;
-- React;
-- TypeScript;
-- PostgreSQL;
-- Supabase Auth / Supabase client foundation;
-- app-owned storage abstraction;
-- responsive web app first.
-
-Do not commit real credentials or secrets.
-
-## Repository structure expectations
-
-The repository should follow this general structure:
-
-```text
-apps/
-  web/
-packages/
-  database/
-  shared/
-  ui/
-supabase/
-  migrations/
-  seed/
-docs/
-  product/
-  agent-system/
-  backlog/
-  technical-design/
-  planning/
-  setup/
-  operations/
-```
-
-Agents may refine this structure if needed, but must document the reason in the sprint completion report.
-
-## Required workflow for agents
+## Workflow
 
 For every implementation task:
 
-1. Identify the relevant requirement ID(s).
-2. Identify the relevant backlog item(s).
-3. Identify the source document(s).
-4. Confirm the implementation plan.
-5. Implement only the approved sprint scope.
-6. Add or update tests.
-7. Run available checks.
-8. Document files created or changed.
-9. Update or create the sprint completion report.
+1. Identify requirement IDs.
+2. Identify backlog items.
+3. Identify source documents.
+4. Implement only active sprint scope.
+5. Add or update tests.
+6. Run checks.
+7. Update the sprint completion report.
 
-## Branch and PR rules
-
-Work should be done in a branch, not directly on `main`, unless explicitly instructed otherwise.
-
-For the current sprint, use:
-
-```text
-codex/sprint-5-rsvp-public-guest-page
-```
-
-Recommended PR title:
-
-```text
-Sprint 5 — RSVP & Public Guest Page
-```
-
-The PR must reference issue `#10`.
-
-The PR should start as a draft until implementation, tests, and documentation are ready for review.
-
-## Permission and security rules
+## Security and secrets
 
 Security must be enforced on the backend, not only in the frontend.
 
-Agents must preserve and extend:
-
-- global roles;
-- project-level roles;
-- event-level roles;
-- custom roles;
-- sensitive-role handling;
-- secure public-token separation where applicable;
-- staff-only controls where applicable;
-- audit logging for sensitive actions;
-- server-side permission checks.
-
-Do not create shortcuts that make later permission enforcement difficult.
-
-## Environment and secrets
-
-Use `.env.example` for documentation only.
-
 Never commit:
 
-- `.env`;
-- `.env.local`;
+- `.env` or `.env.local`;
 - Supabase service role keys;
 - database passwords;
 - WhatsApp tokens;
@@ -281,8 +162,6 @@ Never commit:
 - real couple/client data.
 
 ## Testing expectations
-
-Every sprint must include tests appropriate to its scope.
 
 At minimum, run and document:
 
@@ -295,66 +174,10 @@ npm run test
 npm run build
 ```
 
-If database linting or Supabase checks are available, run and document them. If they cannot be run, explain why in the sprint completion report.
-
-## Documentation expectations
-
-Each sprint must create a completion report:
-
-```text
-docs/planning/sprint-N-completion-report.md
-```
-
-For the current sprint:
-
-```text
-docs/planning/sprint-5-completion-report.md
-```
-
-The completion report must include:
-
-- sprint status;
-- requirement IDs covered;
-- backlog items covered;
-- files created or changed;
-- database migrations added;
-- tests added;
-- commands run;
-- checks passed or failed;
-- security checks performed;
-- permission behavior implemented;
-- audit-log behavior implemented;
-- assumptions made;
-- open issues or blockers;
-- out-of-scope items intentionally deferred;
-- recommended next sprint scope.
+Run Supabase/database checks when available. If they cannot be run, explain why in the completion report.
 
 ## Quality rules
 
-Agents must not:
+Agents must not implement future sprint features just because they appear in the backlog.
 
-- implement undocumented features;
-- skip tests;
-- commit secrets;
-- introduce real client or guest data;
-- bypass permission design;
-- mark incomplete work as complete;
-- expand beyond the active sprint scope;
-- implement future sprint features because they appear in the backlog.
-
-Agents must:
-
-- preserve traceability;
-- document assumptions;
-- raise blockers clearly;
-- keep the codebase ready for future modules;
-- leave the repository in a buildable and reviewable state;
-- keep future sprint work out of the current sprint.
-
-## Future sprint reminder
-
-The repository contains sprint plans through Sprint 19. These are planning documents only.
-
-Agents must implement only the sprint assigned in the GitHub issue and active sprint section of this file.
-
-Future sprint plans must not be implemented early unless an explicit approved issue changes the scope.
+Agents must preserve traceability, document assumptions, raise blockers clearly, and keep the repository buildable and reviewable.
