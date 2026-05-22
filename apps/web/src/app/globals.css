@@ -399,6 +399,7 @@ textarea {
 .button-group,
 .filter-bar {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 10px;
 }
@@ -526,6 +527,108 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+.public-page {
+  display: grid;
+  gap: 18px;
+}
+
+.public-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.36fr);
+  gap: 24px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+}
+
+.public-hero h1,
+.public-locked h1 {
+  max-width: 780px;
+  margin: 0;
+  font-size: clamp(2.4rem, 6vw, 5.2rem);
+  line-height: 0.96;
+  letter-spacing: 0;
+}
+
+.public-hero p,
+.public-locked p {
+  max-width: 620px;
+  color: var(--muted);
+  font-size: 1.08rem;
+}
+
+.couple-photo-placeholder {
+  display: grid;
+  aspect-ratio: 4 / 5;
+  min-height: 260px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #fff7f4, #edf8f3 48%, #f3f6ff);
+}
+
+.couple-photo-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.couple-photo-placeholder span {
+  color: var(--accent-strong);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 4rem;
+}
+
+.public-event-list,
+.rsvp-summary-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.public-event-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.45fr);
+  gap: 18px;
+  align-items: start;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 18px;
+}
+
+.public-event-card h3 {
+  margin: 0 0 8px;
+}
+
+.rsvp-panel {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.rsvp-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.warning-tag {
+  border-color: rgba(150, 90, 0, 0.3);
+  background: #fff8ec;
+  color: var(--warning);
+}
+
+.public-locked {
+  max-width: 720px;
+  margin: 9vh auto;
+  text-align: center;
+}
+
+.detail-grid.compact div {
+  min-height: 74px;
+}
+
 @media (max-width: 760px) {
   .topbar-inner {
     min-height: 64px;
@@ -541,6 +644,11 @@ textarea {
   }
 
   .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .public-hero,
+  .public-event-card {
     grid-template-columns: 1fr;
   }
 
@@ -570,5 +678,9 @@ textarea {
 
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .detail-grid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

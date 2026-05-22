@@ -25,6 +25,15 @@ export type AuditAction =
   | "guest_title_types.updated"
   | "guest_duplicates.detected"
   | "guest_duplicates.reviewed"
+  | "guest_public_pages.accessed"
+  | "guest_public_pages.previewed"
+  | "guest_public_tokens.created"
+  | "guest_public_tokens.regenerated"
+  | "guest_public_tokens.revoked"
+  | "rsvps.changed"
+  | "rsvps.deadline_review_required"
+  | "rsvps.manual_recorded"
+  | "rsvps.submitted"
   | "storage.file_registered"
   | "system.foundation_health_checked";
 
@@ -72,7 +81,11 @@ export function getAuditFoundationSummary() {
       "events",
       "workflow_tasks",
       "files",
-      "future guest/RSVP/check-in/payment actions",
+      "guests",
+      "guest_public_pages",
+      "guest_public_tokens",
+      "rsvps",
+      "future check-in/payment actions",
     ],
   };
 }

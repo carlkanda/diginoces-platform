@@ -139,6 +139,7 @@ export type Database = {
           id: string;
           name: string;
           project_id: string;
+          rsvp_deadline_at: string | null;
           starts_at: string | null;
           status: Database["public"]["Enums"]["event_lifecycle_status"];
           updated_at: string;
@@ -156,6 +157,7 @@ export type Database = {
           id?: string;
           name: string;
           project_id: string;
+          rsvp_deadline_at?: string | null;
           starts_at?: string | null;
           status?: Database["public"]["Enums"]["event_lifecycle_status"];
           updated_at?: string;
@@ -173,6 +175,7 @@ export type Database = {
           id?: string;
           name?: string;
           project_id?: string;
+          rsvp_deadline_at?: string | null;
           starts_at?: string | null;
           status?: Database["public"]["Enums"]["event_lifecycle_status"];
           updated_at?: string;
@@ -540,6 +543,85 @@ export type Database = {
             columns: ["project_id"];
             isOneToOne: false;
             referencedRelation: "wedding_projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      guest_public_tokens: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          expires_at: string | null;
+          guest_id: string;
+          id: string;
+          last_used_at: string | null;
+          project_id: string;
+          regenerated_from_token_id: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          status: Database["public"]["Enums"]["guest_public_token_status"];
+          token_hash: string;
+          token_preview: string;
+          token_type: Database["public"]["Enums"]["guest_public_token_type"];
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string | null;
+          guest_id: string;
+          id?: string;
+          last_used_at?: string | null;
+          project_id: string;
+          regenerated_from_token_id?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          status?: Database["public"]["Enums"]["guest_public_token_status"];
+          token_hash: string;
+          token_preview: string;
+          token_type?: Database["public"]["Enums"]["guest_public_token_type"];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string | null;
+          guest_id?: string;
+          id?: string;
+          last_used_at?: string | null;
+          project_id?: string;
+          regenerated_from_token_id?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          status?: Database["public"]["Enums"]["guest_public_token_status"];
+          token_hash?: string;
+          token_preview?: string;
+          token_type?: Database["public"]["Enums"]["guest_public_token_type"];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guest_public_tokens_guest_project_match";
+            columns: ["guest_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "guests";
+            referencedColumns: ["id", "project_id"];
+          },
+          {
+            foreignKeyName: "guest_public_tokens_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "wedding_projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "guest_public_tokens_regenerated_from_token_id_fkey";
+            columns: ["regenerated_from_token_id"];
+            isOneToOne: false;
+            referencedRelation: "guest_public_tokens";
             referencedColumns: ["id"];
           },
         ];
@@ -941,12 +1023,103 @@ export type Database = {
         };
         Relationships: [];
       };
+      rsvp_records: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          deadline_state: Database["public"]["Enums"]["rsvp_deadline_state"];
+          event_id: string;
+          guest_id: string;
+          id: string;
+          last_changed_at: string | null;
+          manual_review_required: boolean;
+          project_id: string;
+          public_token_id: string | null;
+          source: Database["public"]["Enums"]["rsvp_source"];
+          status: Database["public"]["Enums"]["rsvp_status"];
+          submitted_at: string | null;
+          submitted_by_user_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          deadline_state?: Database["public"]["Enums"]["rsvp_deadline_state"];
+          event_id: string;
+          guest_id: string;
+          id?: string;
+          last_changed_at?: string | null;
+          manual_review_required?: boolean;
+          project_id: string;
+          public_token_id?: string | null;
+          source?: Database["public"]["Enums"]["rsvp_source"];
+          status?: Database["public"]["Enums"]["rsvp_status"];
+          submitted_at?: string | null;
+          submitted_by_user_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          deadline_state?: Database["public"]["Enums"]["rsvp_deadline_state"];
+          event_id?: string;
+          guest_id?: string;
+          id?: string;
+          last_changed_at?: string | null;
+          manual_review_required?: boolean;
+          project_id?: string;
+          public_token_id?: string | null;
+          source?: Database["public"]["Enums"]["rsvp_source"];
+          status?: Database["public"]["Enums"]["rsvp_status"];
+          submitted_at?: string | null;
+          submitted_by_user_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rsvp_records_event_project_match";
+            columns: ["event_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id", "project_id"];
+          },
+          {
+            foreignKeyName: "rsvp_records_guest_project_match";
+            columns: ["guest_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "guests";
+            referencedColumns: ["id", "project_id"];
+          },
+          {
+            foreignKeyName: "rsvp_records_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "wedding_projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rsvp_records_public_token_id_fkey";
+            columns: ["public_token_id"];
+            isOneToOne: false;
+            referencedRelation: "guest_public_tokens";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       wedding_projects: {
         Row: {
           bride_name: string;
+          couple_photo_url: string | null;
           created_at: string;
           created_by: string | null;
           groom_name: string;
+          guest_page_access_status: Database["public"]["Enums"]["guest_page_access_status"];
+          guest_page_access_unlocked_at: string | null;
+          guest_page_access_unlocked_by: string | null;
+          guest_page_payment_exception_reason: string | null;
           id: string;
           internal_notes: string | null;
           preferred_language: string | null;
@@ -963,9 +1136,14 @@ export type Database = {
         };
         Insert: {
           bride_name: string;
+          couple_photo_url?: string | null;
           created_at?: string;
           created_by?: string | null;
           groom_name: string;
+          guest_page_access_status?: Database["public"]["Enums"]["guest_page_access_status"];
+          guest_page_access_unlocked_at?: string | null;
+          guest_page_access_unlocked_by?: string | null;
+          guest_page_payment_exception_reason?: string | null;
           id?: string;
           internal_notes?: string | null;
           preferred_language?: string | null;
@@ -982,9 +1160,14 @@ export type Database = {
         };
         Update: {
           bride_name?: string;
+          couple_photo_url?: string | null;
           created_at?: string;
           created_by?: string | null;
           groom_name?: string;
+          guest_page_access_status?: Database["public"]["Enums"]["guest_page_access_status"];
+          guest_page_access_unlocked_at?: string | null;
+          guest_page_access_unlocked_by?: string | null;
+          guest_page_payment_exception_reason?: string | null;
           id?: string;
           internal_notes?: string | null;
           preferred_language?: string | null;
@@ -1123,6 +1306,17 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      create_guest_public_token: {
+        Args: { p_expires_at?: string; p_guest_id: string };
+        Returns: {
+          expires_at: string | null;
+          guest_id: string;
+          project_id: string;
+          token: string;
+          token_id: string;
+          token_preview: string;
+        }[];
+      };
       current_user_can_access_event: {
         Args: { p_event_id: string; p_permission?: string };
         Returns: boolean;
@@ -1146,6 +1340,14 @@ export type Database = {
         };
         Returns: boolean;
       };
+      get_project_rsvp_summary: {
+        Args: { p_project_id: string };
+        Returns: Json;
+      };
+      preview_guest_public_page: {
+        Args: { p_guest_id: string };
+        Returns: Json;
+      };
       replace_guest_foundation_assignments: {
         Args: {
           p_event_ids?: string[];
@@ -1154,6 +1356,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      resolve_guest_public_page: { Args: { p_token: string }; Returns: Json };
       review_guest_import_rows: {
         Args: {
           p_approved_row_ids?: string[];
@@ -1162,6 +1365,10 @@ export type Database = {
           p_rejected_row_ids?: string[];
           p_review_notes?: string;
         };
+        Returns: undefined;
+      };
+      revoke_guest_public_token: {
+        Args: { p_token_id: string };
         Returns: undefined;
       };
       save_guest_import_preview: {
@@ -1178,6 +1385,15 @@ export type Database = {
       submit_guest_import_session: {
         Args: { p_import_session_id: string };
         Returns: undefined;
+      };
+      submit_public_rsvp: {
+        Args: {
+          p_event_id: string;
+          p_preferred_language?: string;
+          p_response: Database["public"]["Enums"]["rsvp_status"];
+          p_token: string;
+        };
+        Returns: Json;
       };
     };
     Enums: {
@@ -1232,6 +1448,12 @@ export type Database = {
         | "applied"
         | "cancelled"
         | "failed";
+      guest_page_access_status:
+        | "locked"
+        | "payment_confirmed"
+        | "exception_override";
+      guest_public_token_status: "active" | "revoked" | "expired";
+      guest_public_token_type: "guest_public_page" | "check_in";
       guest_side: "bride" | "groom" | "both";
       membership_status: "active" | "invited" | "suspended" | "removed";
       project_lifecycle_status:
@@ -1245,6 +1467,21 @@ export type Database = {
         | "completed"
         | "archived";
       role_scope_type: "global" | "project" | "event" | "custom";
+      rsvp_deadline_state: "open" | "manual_review";
+      rsvp_source:
+        | "public_guest_page"
+        | "manual"
+        | "phone_call"
+        | "whatsapp"
+        | "in_person"
+        | "family_confirmation";
+      rsvp_status:
+        | "pending"
+        | "yes"
+        | "no"
+        | "maybe"
+        | "manual_review"
+        | "locked";
       workflow_task_scope: "project" | "event";
       workflow_task_status:
         | "not_started"
@@ -1440,6 +1677,13 @@ export const Constants = {
         "cancelled",
         "failed",
       ],
+      guest_page_access_status: [
+        "locked",
+        "payment_confirmed",
+        "exception_override",
+      ],
+      guest_public_token_status: ["active", "revoked", "expired"],
+      guest_public_token_type: ["guest_public_page", "check_in"],
       guest_side: ["bride", "groom", "both"],
       membership_status: ["active", "invited", "suspended", "removed"],
       project_lifecycle_status: [
@@ -1454,6 +1698,16 @@ export const Constants = {
         "archived",
       ],
       role_scope_type: ["global", "project", "event", "custom"],
+      rsvp_deadline_state: ["open", "manual_review"],
+      rsvp_source: [
+        "public_guest_page",
+        "manual",
+        "phone_call",
+        "whatsapp",
+        "in_person",
+        "family_confirmation",
+      ],
+      rsvp_status: ["pending", "yes", "no", "maybe", "manual_review", "locked"],
       workflow_task_scope: ["project", "event"],
       workflow_task_status: [
         "not_started",

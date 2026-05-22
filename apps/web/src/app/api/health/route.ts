@@ -4,6 +4,7 @@ import { getSprint4ImportStatus } from "@/lib/guest-imports/guest-import-service
 import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
 import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
+import { getSprint5RsvpStatus } from "@/lib/rsvp/rsvp-service";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export function GET() {
   const sprint2Foundation = getSprint2FoundationStatus();
   const sprint3Foundation = getSprint3FoundationStatus();
   const sprint4Foundation = getSprint4ImportStatus();
+  const sprint5Foundation = getSprint5RsvpStatus();
   const env = getPublicEnvironment();
 
   return NextResponse.json(
@@ -43,6 +45,13 @@ export function GET() {
           issue: sprint4Foundation.issue,
           modules: sprint4Foundation.modules.map((module) => module.name),
           sprint: sprint4Foundation.sprint,
+        },
+        {
+          epic: sprint5Foundation.epic,
+          features: sprint5Foundation.features,
+          issue: sprint5Foundation.issue,
+          modules: sprint5Foundation.modules.map((module) => module.name),
+          sprint: sprint5Foundation.sprint,
         },
       ],
       supabaseConfigured: env.supabaseConfigured,
