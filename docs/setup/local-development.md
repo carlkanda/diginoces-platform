@@ -87,7 +87,7 @@ http://127.0.0.1:3000/api/projects/{projectId}/guests
 http://127.0.0.1:3000/api/guests/{guestId}
 ```
 
-The project, event, and guest API routes require a Supabase-authenticated session. Mutations also call backend permission RPCs before writing and are protected by database RLS.
+The project, event, and guest API routes require a Supabase-authenticated session. Mutations also call backend permission RPCs before writing and are protected by database RLS. The Sprint 2 project and event detail pages also call the read permission RPCs before rendering records.
 
 Sprint 4 guest-import foundation routes:
 

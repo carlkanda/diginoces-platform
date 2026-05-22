@@ -140,6 +140,33 @@ describe("Sprint 2 projects and events foundation", () => {
     ).toBe(false);
   });
 
+  it("ignores role assignments whose scope conflicts with the role definition", () => {
+    const assignments: RoleAssignment[] = [
+      {
+        role: "event_staff",
+        scope: "global",
+      },
+      {
+        role: "couple",
+        scope: "event",
+        scopeId: "event-a",
+      },
+    ];
+
+    expect(
+      hasScopedPermission(assignments, "events.read", {
+        eventId: "event-a",
+        scope: "event",
+      }),
+    ).toBe(false);
+    expect(
+      hasScopedPermission(assignments, "projects.read", {
+        projectId: "project-a",
+        scope: "project",
+      }),
+    ).toBe(false);
+  });
+
   it("validates create payloads before API handlers write to Supabase", () => {
     expect(
       parseCreateProjectPayload({

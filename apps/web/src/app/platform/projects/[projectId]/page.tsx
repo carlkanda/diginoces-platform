@@ -6,6 +6,10 @@ import {
   getEventTypeLabel,
   getProjectLifecycleLabel,
 } from "@/lib/projects/project-foundation";
+import {
+  ProjectAccessError,
+  requireProjectPermission,
+} from "@/lib/projects/project-api";
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -56,10 +60,26 @@ export default async function ProjectDetailPage({
     );
   }
 
-  const details = await getProjectDetails(
-    await createSupabaseServerClient(),
-    projectId,
-  );
+  const supabase = await createSupabaseServerClient();
+
+  try {
+    await requireProjectPermission(
+      {
+        supabase,
+        user: authContext.user,
+      },
+      projectId,
+      "projects.read",
+    );
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
+  }
+
+  const details = await getProjectDetails(supabase, projectId);
 
   if (!details) {
     notFound();
