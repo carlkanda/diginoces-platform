@@ -96,10 +96,10 @@ Migration behavior:
 
 ## Tests Added Or Updated
 
-- Added side-aware import read permission coverage for bride, groom, and operations/admin-style reviewers.
-- Added API payload size coverage for CSV content over 5 MB.
-- Added applied-row idempotency coverage in the pure apply helper.
-- Added static migration guard coverage for RLS helper, row/session locking, invalid row review rejection, blocked/applied approval rejection, and repeated apply behavior.
+- Introduced side-aware import read permission coverage for bride, groom, and operations/admin-style reviewers.
+- API payload size coverage now verifies CSV content over 5 MB is rejected.
+- Applied-row idempotency coverage is implemented in the pure apply helper.
+- Static migration guard coverage verifies the RLS helper, row/session locking, invalid row review rejection, blocked/applied approval rejection, and repeated apply behavior.
 - Existing Sprint 4 parsing, mapping, validation, duplicate detection, audit action, and partial approval tests remain in the same test suite.
 
 ## Commands Run

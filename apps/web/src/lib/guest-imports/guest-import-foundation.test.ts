@@ -416,6 +416,9 @@ describe("Sprint 4 guest import foundation", () => {
   });
 
   it("documents the post-merge migration guards for RLS and workflow transitions", () => {
+    // This it(...) intentionally locks migrationPath and content checks to the
+    // generated Sprint 4 post-merge hardening migration; renaming or moving the
+    // migration file should break this documentation guard.
     const migrationPath = new URL(
       "../../../../../supabase/migrations/20260522221804_sprint_4_post_merge_hardening.sql",
       import.meta.url,
