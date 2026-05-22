@@ -17,6 +17,7 @@ Sprint 3 post-merge hardening is implemented on branch `codex/sprint-3-post-merg
 
 - Fixed guest side filtering so `side=both` returns only both-side guests, while `side=bride` and `side=groom` still include both-side records for working-list visibility.
 - Added shared side-filter parsing so unsupported `side` values fail closed instead of broadening a guest-list page to all guests.
+- Fixed the guest-list event filter links so event filtering still works when the current side filter is `all`.
 - Added explicit server-rendered page permission checks before loading guest list, guest creation form data, and guest edit form data.
 - Added explicit `guests.deactivate` checks in the API route and server action before active guests can be deactivated.
 - Aligned the guest insert RLS policy with the existing `guests.create` permission while preserving bride/groom own-side creation through `guests.manage_bride_side` and `guests.manage_groom_side`.
@@ -68,6 +69,7 @@ Sprint 3 post-merge hardening is implemented on branch `codex/sprint-3-post-merg
 - `git diff --check`
 - Targeted secret scan across changed Sprint 3 hardening files
 - `wsl.exe ... coderabbit review --agent -t committed -c AGENTS.md`
+- Post-review reruns: `npm.cmd run format:check`, `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run test`, `npm.cmd run build`, `git diff --check`
 
 ## Checks Passed
 
@@ -84,12 +86,14 @@ Sprint 3 post-merge hardening is implemented on branch `codex/sprint-3-post-merg
 - `git diff --check` passed.
 - Targeted secret scan found no real secrets or private client/guest data.
 - CodeRabbit CLI committed review completed and raised one trivial migration style suggestion.
+- Post-review verification passed after the event-filter link fix: format check, lint, typecheck, tests, build, and diff check.
 
 ## Checks Failed Or Blocked
 
 - Initial `npm.cmd run format:check` failed on Prettier formatting for `guest-foundation.test.ts` and `guest-service.ts`; `npm.cmd run format` was run, and the final `format:check` passed.
 - No Supabase authentication blockers occurred; linked `db:lint` and linked migration dry-run both passed.
 - CodeRabbit suggested replacing `(select auth.uid())` with `auth.uid()` in the new RLS policy. This was not applied because the repository's Supabase policies consistently use the `(select auth.uid())` initplan pattern and `db:lint` passed with that convention.
+- CodeRabbit GitHub review later found that event filter links dropped `eventId` when `side=all`; this was applied as a targeted fix.
 
 ## Security Checks Performed
 
@@ -110,7 +114,7 @@ Sprint 3 post-merge hardening is implemented on branch `codex/sprint-3-post-merg
 ## Open Issues Or Blockers
 
 - No Sprint 3 hardening blockers remain before PR review.
-- CodeRabbit review has been run on the committed hardening diff; no blocking findings remain.
+- CodeRabbit review has been run on the committed hardening diff; the remaining actionable event-filter finding has been fixed.
 
 ## Recommended Follow-Up
 

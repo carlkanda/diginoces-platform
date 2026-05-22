@@ -108,7 +108,7 @@ export default async function ProjectGuestsPage({
     if (value !== "all") {
       params.set("side", value);
     }
-    if (nextEventId && value !== "all") {
+    if (nextEventId) {
       params.set("eventId", nextEventId);
     }
 
