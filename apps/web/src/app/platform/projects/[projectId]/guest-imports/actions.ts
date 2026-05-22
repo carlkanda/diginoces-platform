@@ -101,14 +101,14 @@ export async function startGuestImportAction(
     throw new GuestImportValidationError("Select a supported guest side.");
   }
 
-  const csvInput = await readCsvInput(formData);
-
   await requireGuestImportSidePermission(
     context,
     projectId,
     importSide,
     "guest_imports.create",
   );
+
+  const csvInput = await readCsvInput(formData);
 
   const session = await createGuestImportSession(context.supabase, projectId, {
     ...csvInput,

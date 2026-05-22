@@ -69,6 +69,7 @@ declare
   v_actor_user_id uuid := (select auth.uid());
   v_approved_count integer;
   v_held_count integer;
+  v_pending_count integer;
   v_rejected_count integer;
   v_session public.guest_import_sessions%rowtype;
   v_status public.guest_import_session_status;
@@ -126,15 +127,16 @@ begin
   select
     count(*) filter (where approval_status = 'approved'),
     count(*) filter (where approval_status = 'rejected'),
-    count(*) filter (where approval_status = 'held')
-  into v_approved_count, v_rejected_count, v_held_count
+    count(*) filter (where approval_status = 'held'),
+    count(*) filter (where approval_status = 'pending' and validation_status <> 'blocked')
+  into v_approved_count, v_rejected_count, v_held_count, v_pending_count
   from public.guest_import_rows
   where import_session_id = p_import_session_id;
 
   v_status := case
-    when v_approved_count > 0 and (v_rejected_count > 0 or v_held_count > 0) then 'partially_approved'::public.guest_import_session_status
+    when v_approved_count > 0 and (v_rejected_count > 0 or v_held_count > 0 or v_pending_count > 0) then 'partially_approved'::public.guest_import_session_status
     when v_approved_count > 0 then 'approved'::public.guest_import_session_status
-    when v_rejected_count > 0 and v_held_count = 0 then 'rejected'::public.guest_import_session_status
+    when v_rejected_count > 0 and v_held_count = 0 and v_pending_count = 0 then 'rejected'::public.guest_import_session_status
     else 'ready_for_review'::public.guest_import_session_status
   end;
 
