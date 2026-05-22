@@ -83,21 +83,14 @@ export async function requireAnyGuestCreatePermission(
   context: ProjectApiContext,
   projectId: string,
 ) {
-  const hasCreateAccess =
-    (await hasProjectPermission(context, projectId, "guests.create")) ||
-    (await hasProjectPermission(context, projectId, "guests.update")) ||
-    (await hasProjectPermission(
-      context,
-      projectId,
-      "guests.manage_bride_side",
-    )) ||
-    (await hasProjectPermission(
-      context,
-      projectId,
-      "guests.manage_groom_side",
-    ));
+  const permissionResults = await Promise.all([
+    hasProjectPermission(context, projectId, "guests.create"),
+    hasProjectPermission(context, projectId, "guests.update"),
+    hasProjectPermission(context, projectId, "guests.manage_bride_side"),
+    hasProjectPermission(context, projectId, "guests.manage_groom_side"),
+  ]);
 
-  if (hasCreateAccess) {
+  if (permissionResults.some(Boolean)) {
     return;
   }
 
