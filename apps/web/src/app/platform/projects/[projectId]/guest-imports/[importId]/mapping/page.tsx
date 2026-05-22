@@ -7,9 +7,14 @@ import {
   getStoredImportMapping,
 } from "@/lib/guest-imports/guest-import-db";
 import {
+  requireGuestImportProjectPermission,
+  requireGuestImportSidePermission,
+} from "@/lib/guest-imports/guest-import-api";
+import {
   importColumnTargets,
   type ImportColumnTarget,
 } from "@/lib/guest-imports/guest-import-service";
+import { ProjectAccessError } from "@/lib/projects/project-api";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { saveGuestImportMappingAction } from "../../actions";
 
@@ -41,9 +46,8 @@ export default async function GuestImportMappingPage({
   const { importId, projectId } = await params;
 
   if (authContext.status === "anonymous") {
-    redirect(
-      `/login?next=/platform/projects/${projectId}/guest-imports/${importId}/mapping`,
-    );
+    const nextPath = `/platform/projects/${projectId}/guest-imports/${importId}/mapping`;
+    redirect(`/login?${new URLSearchParams({ next: nextPath }).toString()}`);
   }
 
   if (authContext.status === "not_configured") {
@@ -60,14 +64,42 @@ export default async function GuestImportMappingPage({
     );
   }
 
-  const details = await getGuestImportDetails(
-    await createSupabaseServerClient(),
-    projectId,
-    importId,
-  );
+  const supabase = await createSupabaseServerClient();
+  const context = { supabase, user: authContext.user };
+
+  try {
+    await requireGuestImportProjectPermission(
+      context,
+      projectId,
+      "guest_imports.create",
+    );
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
+  }
+
+  const details = await getGuestImportDetails(supabase, projectId, importId);
 
   if (!details) {
     notFound();
+  }
+
+  try {
+    await requireGuestImportSidePermission(
+      context,
+      projectId,
+      details.session.import_side,
+      "guest_imports.create",
+    );
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
   }
 
   const headers = getStoredImportHeaders(details);

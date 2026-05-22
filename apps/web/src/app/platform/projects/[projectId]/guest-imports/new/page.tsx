@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
+import { requireAnyGuestImportCreatePermission } from "@/lib/guest-imports/guest-import-api";
+import { ProjectAccessError } from "@/lib/projects/project-api";
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { startGuestImportAction } from "../actions";
@@ -38,10 +40,21 @@ export default async function NewGuestImportPage({
     );
   }
 
-  const projectDetails = await getProjectDetails(
-    await createSupabaseServerClient(),
-    projectId,
-  );
+  const supabase = await createSupabaseServerClient();
+  try {
+    await requireAnyGuestImportCreatePermission(
+      { supabase, user: authContext.user },
+      projectId,
+    );
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
+  }
+
+  const projectDetails = await getProjectDetails(supabase, projectId);
 
   if (!projectDetails) {
     redirect("/platform/projects");

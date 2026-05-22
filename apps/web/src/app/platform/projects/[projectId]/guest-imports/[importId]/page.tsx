@@ -2,11 +2,16 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
 import {
+  getGuestImportActionCapabilities,
+  requireGuestImportReadPermission,
+} from "@/lib/guest-imports/guest-import-api";
+import {
   getGuestImportDetails,
   getImportRowDisplayName,
   isReviewableStoredRow,
   summarizeStoredImportRows,
 } from "@/lib/guest-imports/guest-import-db";
+import { ProjectAccessError } from "@/lib/projects/project-api";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   applyGuestImportRowsAction,
@@ -37,9 +42,8 @@ export default async function GuestImportDetailPage({
   const { importId, projectId } = await params;
 
   if (authContext.status === "anonymous") {
-    redirect(
-      `/login?next=/platform/projects/${projectId}/guest-imports/${importId}`,
-    );
+    const nextPath = `/platform/projects/${projectId}/guest-imports/${importId}`;
+    redirect(`/login?${new URLSearchParams({ next: nextPath }).toString()}`);
   }
 
   if (authContext.status === "not_configured") {
@@ -56,22 +60,39 @@ export default async function GuestImportDetailPage({
     );
   }
 
-  const details = await getGuestImportDetails(
-    await createSupabaseServerClient(),
-    projectId,
-    importId,
-  );
+  const supabase = await createSupabaseServerClient();
+  const context = { supabase, user: authContext.user };
+
+  try {
+    await requireGuestImportReadPermission(context, projectId);
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
+  }
+
+  const details = await getGuestImportDetails(supabase, projectId, importId);
 
   if (!details) {
     notFound();
   }
 
+  const capabilities = await getGuestImportActionCapabilities(
+    context,
+    projectId,
+    details.session.import_side,
+    details.session.uploaded_by,
+  );
   const summary = summarizeStoredImportRows(details.rows);
   const canSubmit =
+    capabilities.canSubmit &&
     (details.session.status === "previewed" ||
       details.session.status === "validation_failed") &&
     details.rows.some(isReviewableStoredRow);
   const canApply =
+    capabilities.canApply &&
     (details.session.status === "approved" ||
       details.session.status === "partially_approved") &&
     details.rows.some((row) => row.approval_status === "approved");
@@ -99,18 +120,22 @@ export default async function GuestImportDetailPage({
           >
             History
           </Link>
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/guest-imports/${importId}/mapping`}
-          >
-            Mapping
-          </Link>
-          <Link
-            className="button"
-            href={`/platform/projects/${projectId}/guest-imports/${importId}/review`}
-          >
-            Review
-          </Link>
+          {capabilities.canEditMapping ? (
+            <Link
+              className="button secondary"
+              href={`/platform/projects/${projectId}/guest-imports/${importId}/mapping`}
+            >
+              Mapping
+            </Link>
+          ) : null}
+          {capabilities.canReview ? (
+            <Link
+              className="button"
+              href={`/platform/projects/${projectId}/guest-imports/${importId}/review`}
+            >
+              Review
+            </Link>
+          ) : null}
         </div>
       </div>
 

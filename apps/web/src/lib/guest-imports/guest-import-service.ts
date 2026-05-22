@@ -183,6 +183,8 @@ export type GuestImportAction =
   | "review"
   | "submit";
 
+export const MAX_GUEST_IMPORT_CSV_BYTES = 5 * 1024 * 1024;
+
 const importAuditActions = [
   "guest_imports.created",
   "guest_imports.file_parsed",
@@ -732,8 +734,16 @@ export function canPerformGuestImportAction(
     return false;
   }
 
-  if (action === "review" || action === "apply" || action === "read") {
+  if (action === "review" || action === "apply") {
     return true;
+  }
+
+  if (action === "read") {
+    return (
+      hasScopedPermission(assignments, "guest_imports.review", target) ||
+      hasScopedPermission(assignments, "guest_imports.apply", target) ||
+      canManageGuestSide(assignments, side, projectId)
+    );
   }
 
   return canManageGuestSide(assignments, side, projectId);

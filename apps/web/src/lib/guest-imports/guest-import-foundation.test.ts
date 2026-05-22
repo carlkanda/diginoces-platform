@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   applyApprovedImportRowsForFoundation,
@@ -5,12 +6,16 @@ import {
   canPerformGuestImportAction,
   getGuestImportAuditActions,
   getSprint4ImportStatus,
+  MAX_GUEST_IMPORT_CSV_BYTES,
   parseGuestImportCsv,
   suggestColumnMappings,
   type GuestImportPreviewRow,
   type ImportColumnMapping,
 } from "@/lib/guest-imports/guest-import-service";
-import { parseReviewGuestImportRowsPayload } from "@/lib/guest-imports/guest-import-db";
+import {
+  parseReviewGuestImportRowsPayload,
+  parseStartGuestImportPayload,
+} from "@/lib/guest-imports/guest-import-db";
 import type { GuestFoundationRecord } from "@/lib/guests/guest-service";
 import type { RoleAssignment } from "@/lib/security/permissions";
 
@@ -205,6 +210,18 @@ describe("Sprint 4 guest import foundation", () => {
     ).toThrow(/row-2/);
   });
 
+  it("rejects API CSV payloads over the Sprint 4 size limit", () => {
+    const maxCsvSizeMb = MAX_GUEST_IMPORT_CSV_BYTES / (1024 * 1024);
+
+    expect(() =>
+      parseStartGuestImportPayload({
+        csvContent: "a".repeat(MAX_GUEST_IMPORT_CSV_BYTES + 1),
+        importSide: "bride",
+        sourceFilename: "guests.csv",
+      }),
+    ).toThrow(`CSV input must be ${maxCsvSizeMb} MB or smaller.`);
+  });
+
   it("allows printed-only rows without WhatsApp but blocks digital rows without WhatsApp", () => {
     const preview = buildImportPreview(
       parseGuestImportCsv(
@@ -293,6 +310,10 @@ describe("Sprint 4 guest import foundation", () => {
       approvedRow(preview.rows[0]),
       { ...preview.rows[1], approvalStatus: "rejected" },
       { ...preview.rows[2], approvalStatus: "held" },
+      {
+        ...approvedRow(preview.rows[2]),
+        linkedGuestId: "55555555-5555-4555-8555-555555555555",
+      },
     ]);
 
     expect(preview.rows.every((row) => row.linkedGuestId === null)).toBe(true);
@@ -305,9 +326,12 @@ describe("Sprint 4 guest import foundation", () => {
     });
   });
 
-  it("enforces import permissions for couple submitters and internal reviewers", () => {
+  it("enforces side-aware import permissions for couple submitters and internal reviewers", () => {
     const brideAssignments: RoleAssignment[] = [
       { role: "bride", scope: "project", scopeId: projectId },
+    ];
+    const groomAssignments: RoleAssignment[] = [
+      { role: "groom", scope: "project", scopeId: projectId },
     ];
     const operationsAssignments: RoleAssignment[] = [
       { role: "operations_manager", scope: "global" },
@@ -330,6 +354,34 @@ describe("Sprint 4 guest import foundation", () => {
       ),
     ).toBe(false);
     expect(
+      canPerformGuestImportAction(brideAssignments, "read", "bride", projectId),
+    ).toBe(true);
+    expect(
+      canPerformGuestImportAction(brideAssignments, "read", "groom", projectId),
+    ).toBe(false);
+    expect(
+      canPerformGuestImportAction(groomAssignments, "read", "groom", projectId),
+    ).toBe(true);
+    expect(
+      canPerformGuestImportAction(groomAssignments, "read", "bride", projectId),
+    ).toBe(false);
+    expect(
+      canPerformGuestImportAction(
+        brideAssignments,
+        "submit",
+        "bride",
+        projectId,
+      ),
+    ).toBe(true);
+    expect(
+      canPerformGuestImportAction(
+        brideAssignments,
+        "submit",
+        "groom",
+        projectId,
+      ),
+    ).toBe(false);
+    expect(
       canPerformGuestImportAction(
         brideAssignments,
         "review",
@@ -340,11 +392,60 @@ describe("Sprint 4 guest import foundation", () => {
     expect(
       canPerformGuestImportAction(
         operationsAssignments,
+        "review",
+        "groom",
+        projectId,
+      ),
+    ).toBe(true);
+    expect(
+      canPerformGuestImportAction(
+        operationsAssignments,
+        "read",
+        "both",
+        projectId,
+      ),
+    ).toBe(true);
+    expect(
+      canPerformGuestImportAction(
+        operationsAssignments,
         "apply",
         "both",
         projectId,
       ),
     ).toBe(true);
+  });
+
+  it("documents the post-merge migration guards for RLS and workflow transitions", () => {
+    // This it(...) intentionally locks migrationPath and content checks to the
+    // generated Sprint 4 post-merge hardening migration; renaming or moving the
+    // migration file should break this documentation guard.
+    const migrationPath = new URL(
+      "../../../../../supabase/migrations/20260522221804_sprint_4_post_merge_hardening.sql",
+      import.meta.url,
+    );
+
+    expect(
+      existsSync(migrationPath),
+      "Expected Sprint 4 post-merge hardening migration to exist at its generated path.",
+    ).toBe(true);
+
+    const migration = readFileSync(migrationPath, "utf8");
+
+    expect(migration).toContain("user_can_read_guest_import_session");
+    expect(migration).toContain("for update");
+    expect(migration).toContain(
+      "Each guest import row can have only one review outcome.",
+    );
+    expect(migration).toContain(
+      "One or more requested review rows do not belong to this import session.",
+    );
+    expect(migration).toContain(
+      "Blocked or applied import rows cannot be approved.",
+    );
+    expect(migration).toContain("if v_session.status = 'applied' then");
+    expect(migration).toContain(
+      "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$",
+    );
   });
 
   it("documents audit actions for import lifecycle changes", () => {
