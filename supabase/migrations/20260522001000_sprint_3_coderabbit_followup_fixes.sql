@@ -1,5 +1,31 @@
--- Sprint 3 CodeRabbit review fixes.
--- Requirements: GM-003, GM-006, PROJ-005, REP-006, ROLE-005.
+insert into public.permissions (slug, description, requirement_ids)
+values
+  ('guest_duplicates.manage', 'Manage guest duplicate candidate review state.', array['GM-008'])
+on conflict (slug) do update
+set
+  description = excluded.description,
+  requirement_ids = excluded.requirement_ids;
+
+with grants(role_slug, permission_slug) as (
+  values
+    ('diginoces_admin', 'guest_duplicates.manage'),
+    ('operations_manager', 'guest_duplicates.manage')
+)
+insert into public.role_permissions (role_id, permission_slug)
+select r.id, g.permission_slug
+from grants g
+join public.roles r on r.slug = g.role_slug
+join public.permissions p on p.slug = g.permission_slug
+on conflict (role_id, permission_slug) do nothing;
+
+drop policy if exists "Guest duplicates managed by duplicate readers" on public.guest_duplicate_candidates;
+drop policy if exists "Guest duplicates managed by duplicate managers" on public.guest_duplicate_candidates;
+create policy "Guest duplicates managed by duplicate managers"
+on public.guest_duplicate_candidates
+for all
+to authenticated
+using (app_private.user_can_access_project((select auth.uid()), project_id, 'guest_duplicates.manage'))
+with check (app_private.user_can_access_project((select auth.uid()), project_id, 'guest_duplicates.manage'));
 
 create or replace function public.replace_guest_foundation_assignments(
   p_guest_id uuid,
@@ -124,17 +150,3 @@ $$;
 
 revoke all on function public.replace_guest_foundation_assignments(uuid, uuid[], uuid[]) from public;
 grant execute on function public.replace_guest_foundation_assignments(uuid, uuid[], uuid[]) to authenticated;
-
-drop policy if exists "Guests updated by side managers" on public.guests;
-create policy "Guests updated by side managers"
-on public.guests
-for update
-to authenticated
-using (app_private.user_can_manage_guest_side((select auth.uid()), project_id, guest_side))
-with check (
-  app_private.user_can_manage_guest_side((select auth.uid()), project_id, guest_side)
-  and (
-    is_active
-    or app_private.user_can_access_project((select auth.uid()), project_id, 'guests.deactivate')
-  )
-);

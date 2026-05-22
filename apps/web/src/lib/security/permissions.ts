@@ -33,6 +33,7 @@ export const permissionSlugs = [
   "guest_tags.manage",
   "guest_event_assignments.manage",
   "guest_duplicates.read",
+  "guest_duplicates.manage",
 ] as const;
 
 export type PermissionSlug = (typeof permissionSlugs)[number];
@@ -173,6 +174,7 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "guest_tags.manage",
       "guest_event_assignments.manage",
       "guest_duplicates.read",
+      "guest_duplicates.manage",
     ],
     requirementIds: [
       "PV-001",

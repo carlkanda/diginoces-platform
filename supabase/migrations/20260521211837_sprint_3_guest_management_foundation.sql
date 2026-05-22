@@ -646,12 +646,13 @@ to authenticated
 using (app_private.user_can_access_project((select auth.uid()), project_id, 'guest_duplicates.read'));
 
 drop policy if exists "Guest duplicates managed by duplicate readers" on public.guest_duplicate_candidates;
-create policy "Guest duplicates managed by duplicate readers"
+drop policy if exists "Guest duplicates managed by duplicate managers" on public.guest_duplicate_candidates;
+create policy "Guest duplicates managed by duplicate managers"
 on public.guest_duplicate_candidates
 for all
 to authenticated
-using (app_private.user_can_access_project((select auth.uid()), project_id, 'guest_duplicates.read'))
-with check (app_private.user_can_access_project((select auth.uid()), project_id, 'guest_duplicates.read'));
+using (app_private.user_can_access_project((select auth.uid()), project_id, 'guest_duplicates.manage'))
+with check (app_private.user_can_access_project((select auth.uid()), project_id, 'guest_duplicates.manage'));
 
 grant select, insert, update on public.guest_title_types to authenticated;
 grant select, insert, update on public.guest_tags to authenticated;
@@ -678,7 +679,8 @@ values
   ('guest_title_types.manage', 'Manage project guest title/type records.', array['GM-007']),
   ('guest_tags.manage', 'Manage project guest tags and tag assignments.', array['GM-011']),
   ('guest_event_assignments.manage', 'Manage event assignment foundation for guests.', array['PROJ-005', 'GM-006']),
-  ('guest_duplicates.read', 'Read and review guest duplicate candidate signals.', array['GM-008'])
+  ('guest_duplicates.read', 'Read guest duplicate candidate signals.', array['GM-008']),
+  ('guest_duplicates.manage', 'Manage guest duplicate candidate review state.', array['GM-008'])
 on conflict (slug) do update
 set
   description = excluded.description,
@@ -709,6 +711,7 @@ with grants(role_slug, permission_slug) as (
     ('diginoces_admin', 'guest_tags.manage'),
     ('diginoces_admin', 'guest_event_assignments.manage'),
     ('diginoces_admin', 'guest_duplicates.read'),
+    ('diginoces_admin', 'guest_duplicates.manage'),
     ('operations_manager', 'guests.read'),
     ('operations_manager', 'guests.create'),
     ('operations_manager', 'guests.update'),
@@ -717,6 +720,7 @@ with grants(role_slug, permission_slug) as (
     ('operations_manager', 'guest_tags.manage'),
     ('operations_manager', 'guest_event_assignments.manage'),
     ('operations_manager', 'guest_duplicates.read'),
+    ('operations_manager', 'guest_duplicates.manage'),
     ('couple', 'guests.read'),
     ('couple', 'guest_duplicates.read'),
     ('bride', 'guests.read'),

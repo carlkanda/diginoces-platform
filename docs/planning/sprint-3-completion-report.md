@@ -17,6 +17,7 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 
 - `supabase/migrations/20260521211837_sprint_3_guest_management_foundation.sql`
 - `supabase/migrations/20260521230555_sprint_3_coderabbit_review_fixes.sql`
+- `supabase/migrations/20260522001000_sprint_3_coderabbit_followup_fixes.sql`
 - `apps/web/src/types/database.ts`
 - `apps/web/src/lib/guests/guest-service.ts`
 - `apps/web/src/lib/guests/guest-api.ts`
@@ -61,16 +62,28 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 - `npx.cmd supabase@latest db push --linked --dry-run` after CodeRabbit fixes
 - `npx.cmd supabase@latest db push --linked --yes` after CodeRabbit fixes
 - `npx.cmd supabase@latest gen types --linked --lang=typescript --schema public` after CodeRabbit fixes
+- `npx.cmd supabase@latest db push --linked --dry-run` after CodeRabbit follow-up fixes
+- `npx.cmd supabase@latest db push --linked --yes` after CodeRabbit follow-up fixes
+- `npx.cmd supabase@latest migration list --linked` after CodeRabbit follow-up fixes
+- `npm.cmd run db:lint` after CodeRabbit follow-up fixes
 - `docker version`
 - `npm.cmd run db:lint`
 - `npm.cmd ci`
 - `npm.cmd run format:check`
+- `npm.cmd run format:check` after CodeRabbit follow-up fixes
+- `npm.cmd run lint` after CodeRabbit follow-up fixes
+- `npm.cmd run typecheck` after CodeRabbit follow-up fixes
 - `npm.cmd run test`
+- `npm.cmd run test` after CodeRabbit follow-up fixes
 - `npm.cmd audit --omit=dev`
+- `npm.cmd audit --omit=dev` after CodeRabbit follow-up fixes
 - `npm.cmd run build`
+- `npm.cmd run build` after CodeRabbit follow-up fixes
 - Local browser verification at `http://localhost:3000`, `/api/health`, and `/platform/projects`
 - `git diff --check`
+- `git diff --check` after CodeRabbit follow-up fixes
 - Secret-pattern scan across changed app, migration, setup, report, and `.env.example` files
+- Secret-pattern scan across changed app, migration, setup, report, and `.env.example` files after CodeRabbit follow-up fixes
 
 ## Checks Passed
 
@@ -89,6 +102,12 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 - `npx.cmd supabase@latest db push --linked --yes` after CodeRabbit fixes passed and applied `20260521230555_sprint_3_coderabbit_review_fixes.sql`.
 - `npx.cmd supabase@latest gen types --linked --lang=typescript --schema public` after CodeRabbit fixes passed, and `apps/web/src/types/database.ts` was refreshed with `replace_guest_foundation_assignments`.
 - CodeRabbit review fixes were applied for event filter clearing, guest fixture consistency, atomic assignment replacement, safe duplicate queries without `.or()` interpolation, and `guests.deactivate` RLS enforcement.
+- `npx.cmd supabase@latest db push --linked --dry-run` after CodeRabbit follow-up fixes passed and reported `20260522001000_sprint_3_coderabbit_followup_fixes.sql` as pending.
+- `npx.cmd supabase@latest db push --linked --yes` after CodeRabbit follow-up fixes passed and applied `20260522001000_sprint_3_coderabbit_followup_fixes.sql`.
+- `npm.cmd run db:lint` after CodeRabbit follow-up fixes passed: no schema errors found for `public` and `app_private`.
+- `npx.cmd supabase@latest migration list --linked` after CodeRabbit follow-up fixes passed and showed `20260522001000` present locally and remotely.
+- Additional CodeRabbit follow-up fixes were applied for invalid guest `side` query validation, form-control typography inheritance, `guest_duplicates.manage` write semantics, and project-scoped event/tag assignment validation in `replace_guest_foundation_assignments`.
+- After the CodeRabbit follow-up fixes, `npm.cmd run format:check`, `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run test`, `npm.cmd run build`, `npm.cmd audit --omit=dev`, and `git diff --check` were re-run and passed.
 - Browser verification passed: home, health, and projects pages rendered content, had no framework error overlay, and reported no browser console errors.
 - `git diff --check` passed.
 - Secret-pattern scan found only documented placeholder variable names, existing service-role SQL grants, and `.env.example` placeholders; no real credentials were found.
@@ -107,6 +126,8 @@ Deferred by Sprint 3 scope: `FEAT-GM-004` CSV/Excel import and approval, full du
 - RLS policies use project permissions and bride/groom/both side checks for guest writes and guest assignment writes.
 - Guest deactivation requires `guests.deactivate` in addition to side-management access.
 - Guest event/tag assignment replacement now runs through an atomic database RPC.
+- Guest event/tag assignment replacement rejects event and tag IDs outside the guest project before writing assignments.
+- Guest duplicate candidate writes now require `guest_duplicates.manage`; read-only duplicate visibility remains on `guest_duplicates.read`.
 - Security definer functions are placed in the private `app_private` schema.
 - Guest audit triggers redact direct guest PII fields from audit snapshots.
 - Guest APIs use the authenticated Supabase session and do not use service-role secrets.

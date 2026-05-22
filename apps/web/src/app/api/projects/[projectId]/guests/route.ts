@@ -42,6 +42,10 @@ function parseGuestFilters(request: NextRequest): GuestListFilters {
     sideFilter = side;
   } else if (side === "all") {
     sideFilter = "all";
+  } else if (side !== null) {
+    throw new GuestValidationError(
+      "side must be one of: bride, groom, both, all.",
+    );
   }
 
   return {
