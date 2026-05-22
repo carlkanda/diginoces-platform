@@ -90,6 +90,12 @@ export default async function ProjectDetailPage({
         >
           Guests
         </Link>
+        <Link
+          className="button secondary"
+          href={`/platform/projects/${projectId}/guest-imports`}
+        >
+          Guest imports
+        </Link>
       </div>
 
       <section className="section">
@@ -121,7 +127,7 @@ export default async function ProjectDetailPage({
       <section className="section">
         <div className="section-heading">
           <h2>Guest management</h2>
-          <span className="meta-list">Sprint 3 foundation</span>
+          <span className="meta-list">Sprint 3 and Sprint 4 foundation</span>
         </div>
         <p className="page-summary">
           Manage the project master guest list, bride/groom side filters, tags,
@@ -133,6 +139,12 @@ export default async function ProjectDetailPage({
           href={`/platform/projects/${projectId}/guests`}
         >
           Open guest list
+        </Link>
+        <Link
+          className="button secondary"
+          href={`/platform/projects/${projectId}/guest-imports`}
+        >
+          Open imports
         </Link>
       </section>
 

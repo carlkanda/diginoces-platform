@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, and the Sprint 3 guest-management foundation for issue `#5`. It does not include CSV/Excel guest import, RSVP, invitations, WhatsApp sending, table planning, check-in, contracts, pricing, payments, partner project creation, or full dashboards.
+This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, and the Sprint 4 CSV guest import and approval workflow for issue `#7`. It does not include Excel import, RSVP, invitations, WhatsApp sending, table planning, check-in, contracts, pricing, payments, partner project creation, automatic duplicate merging, or full dashboards.
 
 ## Prerequisites
 
@@ -89,6 +89,24 @@ http://127.0.0.1:3000/api/guests/{guestId}
 
 The project, event, and guest API routes require a Supabase-authenticated session. Mutations also call backend permission RPCs before writing and are protected by database RLS.
 
+Sprint 4 guest-import foundation routes:
+
+```text
+http://127.0.0.1:3000/platform/projects/{projectId}/guest-imports
+http://127.0.0.1:3000/platform/projects/{projectId}/guest-imports/new
+http://127.0.0.1:3000/platform/projects/{projectId}/guest-imports/{importId}
+http://127.0.0.1:3000/platform/projects/{projectId}/guest-imports/{importId}/mapping
+http://127.0.0.1:3000/platform/projects/{projectId}/guest-imports/{importId}/review
+http://127.0.0.1:3000/api/projects/{projectId}/guest-imports
+http://127.0.0.1:3000/api/projects/{projectId}/guest-imports/{importId}
+http://127.0.0.1:3000/api/projects/{projectId}/guest-imports/{importId}/mapping
+http://127.0.0.1:3000/api/projects/{projectId}/guest-imports/{importId}/submit
+http://127.0.0.1:3000/api/projects/{projectId}/guest-imports/{importId}/review
+http://127.0.0.1:3000/api/projects/{projectId}/guest-imports/{importId}/apply
+```
+
+Sprint 4 accepts CSV content only. Uploaded source files are not persisted; the app stores parsed row JSON, mapping JSON, source filename, and source file type metadata in Supabase. Bride and groom imports remain staged until an authorized Diginoces/admin or operations user reviews rows and applies approved rows into `guests`.
+
 ## Supabase
 
 The project has been initialized with Supabase CLI metadata in `supabase/config.toml`.
@@ -148,4 +166,6 @@ npx supabase@latest migration new descriptive_name
 - Sprint 2 project/event creation is audited by database triggers. API handlers use the authenticated user's Supabase session and do not require Supabase service-role secrets.
 - The Sprint 3 migration enables RLS on guest title/type, guest tag, guest, guest event assignment, guest tag assignment, and duplicate candidate tables.
 - Sprint 3 guest creation and updates are audited by database triggers with guest PII redacted from audit snapshots. API handlers and RLS enforce bride/groom/both side permissions.
+- The Sprint 4 migration enables RLS on guest import sessions, rows, and mappings. Import actions are audited by database triggers with raw row data, mapped fields, mapping JSON, validation details, duplicate details, and review notes redacted from audit snapshots.
+- Sprint 4 apply actions use a permission-gated Supabase RPC to create approved guest records and event/tag assignments atomically within the database transaction.
 - The storage adapter is fail-closed until a real provider is configured.
