@@ -2,13 +2,14 @@
 
 ## Status
 
-Review-ready hardening follow-up for Sprint 4 after the original merged PRs.
+Draft PR hardening follow-up for Sprint 4 after the original merged PRs.
 
 Traceability anchors:
 
 - Issue: #7 - Sprint 4 - Guest Import & Approval Workflow
 - Original PR: #8 - Sprint 4 - Guest Import & Approval Workflow
 - Follow-up PR: #9 - Sprint 4 - Guest Import & Approval Workflow
+- Hardening PR: #16 - Sprint 4 - Guest Import Hardening
 - Sprint plan: `docs/planning/sprint-4-plan.md`
 
 ## Requirements And Backlog Scope
@@ -118,7 +119,7 @@ Migration behavior:
 | `npx supabase@latest db push --linked --dry-run` | Passed - dry run would push the existing Sprint 3 hardening migration and this Sprint 4 hardening migration |
 | `git diff --check` | Passed |
 | Targeted secret scan | Passed - no matching real secret patterns found |
-| CodeRabbit review | Pending |
+| CodeRabbit review | Failed - CLI authenticated, but `coderabbit review --agent --base main -c AGENTS.md` and `coderabbit review --agent --base main` both returned `TRPCClientError` with `Review failed: Unknown error` |
 
 ## Security Review
 
@@ -138,6 +139,7 @@ Migration behavior:
 ## Open Issues Or Blockers
 
 - Supabase linked-project checks will be run if local authentication remains available. If unavailable, that will be documented in the command matrix before the PR is marked review-ready.
+- CodeRabbit CLI review is blocked by a non-recoverable review-service error despite successful WSL CLI authentication. The draft PR remains open for GitHub/CodeRabbit review once the service accepts the review request.
 - No browser UI regression test suite exists for these server-rendered permission flows; coverage is by helper/unit tests, build/typecheck, and RLS/RPC migration review.
 
 ## Recommended Next Scope
