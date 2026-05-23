@@ -7,6 +7,7 @@ import {
   type ProjectApiContext,
 } from "@/lib/projects/project-api";
 import { InvitationValidationError } from "@/lib/invitations/invitation-service";
+import { serverLogger } from "@/lib/logging";
 import type { PermissionSlug } from "@/lib/security/permissions";
 
 // Invitation routes use these aliases so Sprint 6 permission checks read in
@@ -41,10 +42,16 @@ export function handleInvitationApiError(error: unknown) {
   }
 
   if (error instanceof Error) {
-    console.error("Invitation API error:", error);
+    serverLogger.error("Invitation API error.", {
+      error,
+      handler: "handleInvitationApiError",
+    });
     return jsonError(500, "server_error", "Unexpected server error.");
   }
 
-  console.error("Unexpected invitation API error:", error);
+  serverLogger.error("Unexpected invitation API error.", {
+    error,
+    handler: "handleInvitationApiError",
+  });
   return jsonError(500, "server_error", "Unexpected server error.");
 }

@@ -565,8 +565,9 @@ export function createInvitationFileVersion(
 }
 
 function estimatedTextWidth(text: string, fontSize: number) {
-  // estimatedTextWidth uses a placeholder average character-width heuristic
-  // for proportional fonts until the PDF worker abstraction has real metrics.
+  // estimatedTextWidth uses 0.34em as a placeholder for typical Latin
+  // proportional fonts. Recalibrate or replace it with PDF-worker font metrics
+  // when the real rendering engine is integrated.
   return text.length * fontSize * 0.34;
 }
 
@@ -586,11 +587,23 @@ export function fitInvitationText(
   const trimmedText = input.text.trim();
   let fontSize = input.maxFontSize;
 
-  while (
-    fontSize > input.minFontSize &&
-    estimatedTextWidth(trimmedText, fontSize) > input.widthPoints
-  ) {
-    fontSize -= 1;
+  if (estimatedTextWidth(trimmedText, input.maxFontSize) > input.widthPoints) {
+    let lowerBound = input.minFontSize;
+    let upperBound = input.maxFontSize;
+    fontSize = input.minFontSize;
+
+    for (let iteration = 0; iteration < 20; iteration += 1) {
+      const midpoint = (lowerBound + upperBound) / 2;
+
+      if (estimatedTextWidth(trimmedText, midpoint) <= input.widthPoints) {
+        fontSize = midpoint;
+        lowerBound = midpoint;
+      } else {
+        upperBound = midpoint;
+      }
+    }
+
+    fontSize = Math.round(fontSize * 100) / 100;
   }
 
   const estimatedWidthPoints = estimatedTextWidth(trimmedText, fontSize);

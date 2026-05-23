@@ -83,6 +83,8 @@ Coverage includes:
 - third post-CodeRabbit reruns: `npm run lint`, `npm run typecheck`, targeted Sprint 6 test, `npm run db:lint`, and linked Supabase dry-run
 - fourth `coderabbit review --agent --base main -c AGENTS.md` from WSL
 - fourth post-CodeRabbit reruns: `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, `git diff --check`, and targeted secret scan
+- fifth `coderabbit review --agent --base main -c AGENTS.md` from WSL
+- fifth post-CodeRabbit reruns: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, `git diff --check`, and targeted secret scan
 
 ## Checks Passed Or Failed
 
@@ -101,6 +103,7 @@ Coverage includes:
 - Local CodeRabbit CLI rerun: raised 5 issues. All valid fixes were applied, including stricter generation mode validation, platform-neutral repo-root test helpers, reduced duplicate server-action permission checks, simpler preview route error handling, and set-based batch generation SQL.
 - Third local CodeRabbit CLI rerun: raised 11 issues. Valid fixes were applied, including file-scope enum constants sync, strict `guestIds` validation, font-family UI input support, PDF upload MIME/header validation, RPC response validation, route catch cleanup, and safer preview permission/not-found behavior. The API-layer audit suggestion was reviewed and skipped because preview generation is already persisted by the database audit trigger on the template status transition.
 - Fourth local CodeRabbit CLI rerun: raised 10 issues. Valid fixes were applied, including form-control consistency, operations manager requirement traceability, typed default field alignment, server-side upload size and coordinate validation, consistent preview route authorization errors, template-detail pagination defaults, fields parsing helper, and event-assignment validation in the PDF worker abstraction.
+- Fifth local CodeRabbit CLI rerun: raised 7 low-severity issues. Valid fixes were applied, including fuller operations manager requirement traceability, form CSS consolidation/comments, template upload metadata-only documentation, binary-search text fitting, text-width heuristic documentation, and structured invitation API error logging.
 
 ## Security Checks Performed
 

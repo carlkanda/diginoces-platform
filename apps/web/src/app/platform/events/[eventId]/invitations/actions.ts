@@ -192,6 +192,8 @@ export async function registerInvitationTemplateAction(
     throw new InvitationValidationError("Upload a Canva-exported PDF file.");
   }
 
+  // Sprint 6 registers PDF metadata only; source-file bytes are persisted when
+  // the storage-provider integration replaces the current placeholder.
   const template = await registerInvitationTemplate(
     context.supabase,
     details.project.id,
