@@ -88,6 +88,7 @@ Coverage includes:
 - sixth `coderabbit review --agent --base main -c AGENTS.md` from WSL
 - sixth post-CodeRabbit reruns: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, `git diff --check`, and targeted secret scan
 - stale hosted review follow-up reruns: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, and `git diff --check`
+- final hosted unresolved-thread reruns: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm run db:lint`, linked Supabase dry-run, and `git diff --check`
 
 ## Checks Passed Or Failed
 
@@ -109,6 +110,7 @@ Coverage includes:
 - Fifth local CodeRabbit CLI rerun: raised 7 low-severity issues. Valid fixes were applied, including fuller operations manager requirement traceability, form CSS consolidation/comments, template upload metadata-only documentation, binary-search text fitting, text-width heuristic documentation, and structured invitation API error logging.
 - Sixth local CodeRabbit CLI rerun: raised 9 low-severity issues. Valid fixes were applied, including generation mode/guest ID cross-field validation, template registration API validation, API and RPC template-field validation, a unique per-template dynamic-field key constraint, invitation job row type parity, audit trigger fallback object types, and updated Sprint 6 setup wording.
 - Stale hosted CodeRabbit requested-changes reviews on older commits were dismissed after the latest hosted rerun passed. Remaining stale hardening items were still applied: logger serialization is guarded, and direct template updates now require `invitation_templates.update` instead of accepting approve-only permission.
+- Final hosted unresolved CodeRabbit threads were addressed by removing the duplicate local setup storage note and adding composite generation-job/project/event foreign keys for invitation generation job items and invitation files.
 
 ## Security Checks Performed
 

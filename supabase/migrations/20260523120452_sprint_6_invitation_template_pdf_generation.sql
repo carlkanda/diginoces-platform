@@ -216,6 +216,9 @@ create table if not exists public.invitation_generation_jobs (
 create index if not exists invitation_generation_jobs_project_event_idx
   on public.invitation_generation_jobs (project_id, event_id, created_at desc);
 
+create unique index if not exists invitation_generation_jobs_id_project_event_key
+  on public.invitation_generation_jobs (id, project_id, event_id);
+
 create table if not exists public.invitations (
   id uuid primary key default extensions.gen_random_uuid(),
   project_id uuid not null references public.wedding_projects (id) on delete cascade,
@@ -258,7 +261,7 @@ create table if not exists public.invitation_generation_job_items (
   id uuid primary key default extensions.gen_random_uuid(),
   project_id uuid not null references public.wedding_projects (id) on delete cascade,
   event_id uuid not null,
-  generation_job_id uuid not null references public.invitation_generation_jobs (id) on delete cascade,
+  generation_job_id uuid not null,
   guest_id uuid not null,
   invitation_id uuid references public.invitations (id) on delete set null,
   status public.invitation_generation_job_status not null default 'queued',
@@ -273,6 +276,10 @@ create table if not exists public.invitation_generation_job_items (
   constraint invitation_generation_job_items_event_project_match
     foreign key (event_id, project_id)
     references public.events (id, project_id)
+    on delete cascade,
+  constraint invitation_generation_job_items_job_project_event_match
+    foreign key (generation_job_id, project_id, event_id)
+    references public.invitation_generation_jobs (id, project_id, event_id)
     on delete cascade
 );
 
@@ -286,7 +293,7 @@ create table if not exists public.invitation_files (
   guest_id uuid not null,
   invitation_id uuid not null,
   template_id uuid not null,
-  generation_job_id uuid references public.invitation_generation_jobs (id) on delete set null,
+  generation_job_id uuid,
   version integer not null,
   storage_bucket text not null default 'invitations',
   storage_path text not null,
@@ -313,6 +320,10 @@ create table if not exists public.invitation_files (
     foreign key (template_id, project_id)
     references public.invitation_templates (id, project_id)
     on delete restrict,
+  constraint invitation_files_job_project_event_match
+    foreign key (generation_job_id, project_id, event_id)
+    references public.invitation_generation_jobs (id, project_id, event_id)
+    on delete set null (generation_job_id),
   constraint invitation_files_version_positive check (version > 0),
   constraint invitation_files_storage_path_not_blank check (length(trim(storage_path)) > 0),
   constraint invitation_files_pdf_mime check (mime_type = 'application/pdf'),
