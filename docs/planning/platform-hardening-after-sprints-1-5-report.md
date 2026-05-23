@@ -29,9 +29,11 @@ The follow-up dry run now reports that the remote database is up to date, and `n
 
 The project keeps `next` and `eslint-config-next` pinned to `16.3.0-canary.25` because the current canary dependency tree passes `npm audit --omit=dev` with 0 vulnerabilities. The item must be rechecked before production readiness.
 
-### Low - Local CodeRabbit WSL Full-Diff Review Needs A Documented Fallback
+### Low - Historical CodeRabbit WSL Full-Diff Failure Needed A Documented Fallback
 
-The local WSL CodeRabbit CLI can fail on full-diff reviews with `TRPCClientError` even when `coderabbit doctor` passes. The documented fallback is to run scoped directory reviews locally and rely on hosted CodeRabbit PR review for full-diff coverage.
+During cross-sprint PR `#17`, the local WSL CodeRabbit CLI failed on full-diff reviews with `TRPCClientError` even when `coderabbit doctor` passed. The documented fallback is to run scoped directory reviews locally and rely on hosted CodeRabbit PR review for full-diff coverage if the error recurs.
+
+For this PR `#18`, the WSL CodeRabbit full-diff review completed on May 23, 2026 and raised 0 issues, so there is no current local CodeRabbit blocker.
 
 ## Files Changed
 
@@ -78,7 +80,7 @@ The local WSL CodeRabbit CLI can fail on full-diff reviews with `TRPCClientError
 - `npx supabase@latest db push --linked --dry-run` reported `Remote database is up to date.`
 - `git diff --check` passed. Git printed local CRLF conversion warnings for touched Markdown files, but no whitespace errors.
 - Targeted secret scan found only the expected placeholder `.env.example` `DATABASE_URL`; no real secrets or private client/guest data were found.
-- WSL CodeRabbit full-diff review completed and raised 0 issues.
+- WSL CodeRabbit full-diff review for PR `#18` completed on May 23, 2026 and raised 0 issues.
 
 ## Security Review
 
@@ -97,7 +99,7 @@ The local WSL CodeRabbit CLI can fail on full-diff reviews with `TRPCClientError
 ## Open Issues Or Blockers
 
 - `TD-001` remains open: return from Next.js canary to stable before production once stable Next.js no longer triggers the PostCSS audit issue.
-- Local WSL CodeRabbit full-diff CLI review may still fail with `TRPCClientError`; scoped local reviews and hosted PR review remain the fallback.
+- No current CodeRabbit blocker remains. If a future WSL full-diff review fails with `TRPCClientError`, use scoped local reviews and hosted PR review as the fallback.
 
 ## Recommended Sprint 6 Readiness Notes
 
