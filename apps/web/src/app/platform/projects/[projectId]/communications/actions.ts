@@ -7,9 +7,9 @@ import {
   markGuidedManualMessageStatus,
   prepareProjectMessage,
 } from "@/lib/messages/message-db";
-import { requireMessageProjectPermission } from "@/lib/messages/message-api";
 import { MessageValidationError } from "@/lib/messages/message-service";
 import type { MessageDeliveryStatus } from "@/lib/messages/message-service";
+import { requireProjectPermission } from "@/lib/projects/project-api";
 import type { PermissionSlug } from "@/lib/security/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -38,6 +38,16 @@ function requiredFormValue(formData: FormData, key: string) {
   return value;
 }
 
+function messageDetailPath(
+  projectId: string,
+  messageLogId: string,
+  params: Record<string, string>,
+) {
+  const searchParams = new URLSearchParams(params);
+
+  return `/platform/projects/${projectId}/communications/${messageLogId}?${searchParams.toString()}`;
+}
+
 async function getActionContext(projectId: string, permission: PermissionSlug) {
   const authContext = await getAuthContext();
 
@@ -54,7 +64,7 @@ async function getActionContext(projectId: string, permission: PermissionSlug) {
     user: authContext.user,
   };
 
-  await requireMessageProjectPermission(context, projectId, permission);
+  await requireProjectPermission(context, projectId, permission);
 
   return context;
 }
@@ -113,15 +123,34 @@ export async function markProjectMessageStatusAction(
   const reason = formValue(formData, "reason");
 
   if ((status === "failed" || status === "skipped") && !reason) {
-    throw new MessageValidationError("reason is required for this status.");
+    redirect(
+      messageDetailPath(projectId, messageLogId, {
+        messageError: "Reason is required for this status.",
+      }),
+    );
   }
 
-  await markGuidedManualMessageStatus(
-    context.supabase,
-    messageLogId,
-    status,
-    reason ?? null,
-  );
+  try {
+    await markGuidedManualMessageStatus(
+      context.supabase,
+      messageLogId,
+      status,
+      reason ?? null,
+    );
+  } catch (error) {
+    redirect(
+      messageDetailPath(projectId, messageLogId, {
+        messageError:
+          error instanceof MessageValidationError
+            ? error.message
+            : "Unable to update message status.",
+      }),
+    );
+  }
 
-  redirect(`/platform/projects/${projectId}/communications/${messageLogId}`);
+  redirect(
+    messageDetailPath(projectId, messageLogId, {
+      messageStatus: status,
+    }),
+  );
 }

@@ -1,21 +1,7 @@
 import { InvalidJsonBodyError } from "@/lib/api/read-json";
-import {
-  jsonError,
-  ProjectAccessError,
-  requireProjectPermission,
-  type ProjectApiContext,
-} from "@/lib/projects/project-api";
+import { jsonError, ProjectAccessError } from "@/lib/projects/project-api";
 import { MessageValidationError } from "@/lib/messages/message-service";
 import { serverLogger } from "@/lib/logging";
-import type { PermissionSlug } from "@/lib/security/permissions";
-
-export async function requireMessageProjectPermission(
-  context: ProjectApiContext,
-  projectId: string,
-  permission: PermissionSlug,
-) {
-  await requireProjectPermission(context, projectId, permission);
-}
 
 export function handleMessageApiError(error: unknown) {
   if (error instanceof InvalidJsonBodyError) {

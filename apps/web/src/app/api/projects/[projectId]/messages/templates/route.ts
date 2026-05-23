@@ -4,13 +4,11 @@ import {
   createMessageTemplate,
   listProjectMessageTemplates,
 } from "@/lib/messages/message-db";
-import {
-  handleMessageApiError,
-  requireMessageProjectPermission,
-} from "@/lib/messages/message-api";
+import { handleMessageApiError } from "@/lib/messages/message-api";
 import {
   getProjectApiContext,
   isProjectApiContext,
+  requireProjectPermission,
 } from "@/lib/projects/project-api";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +28,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   try {
     const { projectId } = await context.params;
-    await requireMessageProjectPermission(
+    await requireProjectPermission(
       apiContext,
       projectId,
       "message_templates.read",
@@ -63,7 +61,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   try {
     const { projectId } = await context.params;
-    await requireMessageProjectPermission(
+    await requireProjectPermission(
       apiContext,
       projectId,
       "message_templates.manage",

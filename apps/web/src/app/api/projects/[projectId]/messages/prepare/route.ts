@@ -1,13 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { readJson } from "@/lib/api/read-json";
 import { prepareProjectMessage } from "@/lib/messages/message-db";
-import {
-  handleMessageApiError,
-  requireMessageProjectPermission,
-} from "@/lib/messages/message-api";
+import { handleMessageApiError } from "@/lib/messages/message-api";
 import {
   getProjectApiContext,
   isProjectApiContext,
+  requireProjectPermission,
 } from "@/lib/projects/project-api";
 
 export const dynamic = "force-dynamic";
@@ -27,11 +25,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   try {
     const { projectId } = await context.params;
-    await requireMessageProjectPermission(
-      apiContext,
-      projectId,
-      "messages.prepare",
-    );
+    await requireProjectPermission(apiContext, projectId, "messages.prepare");
 
     const messageLog = await prepareProjectMessage(
       apiContext.supabase,

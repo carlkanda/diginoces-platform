@@ -257,6 +257,7 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "MSG-004",
       "MSG-005",
       "MSG-006",
+      "MSG-007",
       "MSG-008",
       "MSG-009",
       "MSG-010",

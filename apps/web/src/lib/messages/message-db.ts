@@ -77,6 +77,7 @@ export type MessageQueueItemRow = {
 
 export type MessageInvitationOption = {
   event_id: string;
+  guest_display_name: string;
   guest_id: string;
   id: string;
   status: string;
@@ -163,7 +164,38 @@ export async function listProjectMessageInvitationOptions(
     throw error;
   }
 
-  return (data ?? []) as MessageInvitationOption[];
+  const invitations = (data ?? []) as Array<
+    Omit<MessageInvitationOption, "guest_display_name">
+  >;
+  const guestIds = Array.from(
+    new Set(invitations.map((invitation) => invitation.guest_id)),
+  );
+
+  if (guestIds.length === 0) {
+    return [];
+  }
+
+  const guestResult = await supabase
+    .from("guests")
+    .select("id, display_name")
+    .eq("project_id", projectId)
+    .in("id", guestIds);
+
+  if (guestResult.error) {
+    throw guestResult.error;
+  }
+
+  const guestNames = new Map(
+    (
+      (guestResult.data ?? []) as Array<{ display_name: string; id: string }>
+    ).map((guest) => [guest.id, guest.display_name]),
+  );
+
+  return invitations.map((invitation) => ({
+    ...invitation,
+    guest_display_name:
+      guestNames.get(invitation.guest_id) ?? invitation.guest_id,
+  }));
 }
 
 export async function listProjectMessageTemplates(

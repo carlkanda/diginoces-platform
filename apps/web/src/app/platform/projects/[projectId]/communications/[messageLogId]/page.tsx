@@ -22,13 +22,19 @@ type MessageLogDetailPageProps = {
     messageLogId: string;
     projectId: string;
   }>;
+  searchParams: Promise<{
+    messageError?: string;
+    messageStatus?: string;
+  }>;
 };
 
 export default async function MessageLogDetailPage({
   params,
+  searchParams,
 }: MessageLogDetailPageProps) {
   const authContext = await getAuthContext();
   const { messageLogId, projectId } = await params;
+  const feedback = await searchParams;
 
   if (authContext.status === "anonymous") {
     redirect(
@@ -163,6 +169,14 @@ export default async function MessageLogDetailPage({
             <h2>Manual send controls</h2>
             <span className="meta-list">No unofficial automation</span>
           </div>
+          {feedback.messageError ? (
+            <div className="alert">{feedback.messageError}</div>
+          ) : null}
+          {feedback.messageStatus ? (
+            <div className="alert">
+              Message status updated to {formatStatus(feedback.messageStatus)}.
+            </div>
+          ) : null}
           <div className="button-group">
             {messageLog.manual_whatsapp_url ? (
               <a

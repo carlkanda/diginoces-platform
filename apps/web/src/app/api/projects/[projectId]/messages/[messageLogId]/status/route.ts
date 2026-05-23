@@ -4,15 +4,13 @@ import {
   getMessageLogDetails,
   markGuidedManualMessageStatus,
 } from "@/lib/messages/message-db";
-import {
-  handleMessageApiError,
-  requireMessageProjectPermission,
-} from "@/lib/messages/message-api";
+import { handleMessageApiError } from "@/lib/messages/message-api";
 import { MessageValidationError } from "@/lib/messages/message-service";
 import type { MessageDeliveryStatus } from "@/lib/messages/message-service";
 import {
   getProjectApiContext,
   isProjectApiContext,
+  requireProjectPermission,
 } from "@/lib/projects/project-api";
 
 export const dynamic = "force-dynamic";
@@ -74,11 +72,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   try {
     const { messageLogId, projectId } = await context.params;
-    await requireMessageProjectPermission(
-      apiContext,
-      projectId,
-      "messages.send",
-    );
+    await requireProjectPermission(apiContext, projectId, "messages.send");
 
     const messageLog = await getMessageLogDetails(
       apiContext.supabase,

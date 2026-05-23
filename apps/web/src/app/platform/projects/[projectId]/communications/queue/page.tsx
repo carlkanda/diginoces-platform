@@ -81,7 +81,6 @@ export default async function MessageQueuePage({
   }
 
   const prepareMessage = prepareProjectMessageAction.bind(null, projectId);
-  const invitationOptions = invitations;
   const hasMessagePrerequisites =
     details.events.length > 0 && guests.length > 0;
 
@@ -164,9 +163,9 @@ export default async function MessageQueuePage({
                 Invitation
                 <select name="invitationId">
                   <option value="">None</option>
-                  {invitationOptions.map((invitation) => (
+                  {invitations.map((invitation) => (
                     <option key={invitation.id} value={invitation.id}>
-                      {invitation.status} - {invitation.guest_id}
+                      {invitation.status} - {invitation.guest_display_name}
                     </option>
                   ))}
                 </select>

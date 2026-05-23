@@ -219,10 +219,16 @@ describe("Sprint 7 WhatsApp communication workflow foundation", () => {
       ),
     ).toEqual(["guest.display_name", "event.name"]);
 
+    const eventStartsAt = basePreparationInput.event.startsAt;
+
+    if (!eventStartsAt) {
+      throw new Error("Expected base event start date for rendering test.");
+    }
+
     const englishDate = new Intl.DateTimeFormat("en", {
       dateStyle: "medium",
       timeZone: "UTC",
-    }).format(new Date(basePreparationInput.event.startsAt ?? ""));
+    }).format(new Date(eventStartsAt));
     const englishRendered = renderMessageTemplate(
       {
         ...englishInvitationTemplate,
