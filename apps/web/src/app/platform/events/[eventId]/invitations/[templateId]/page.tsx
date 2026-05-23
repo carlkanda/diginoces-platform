@@ -30,7 +30,7 @@ type InvitationTemplateDetailPageProps = {
 
 const defaultFields = [
   {
-    alignment: "center",
+    alignment: "center" as const,
     field_key: "guest.display_name",
     font_family: "Inter",
     font_size: 24,
@@ -39,7 +39,7 @@ const defaultFields = [
     position: { height: 0.08, width: 0.5, x: 0.25, y: 0.42 },
   },
   {
-    alignment: "center",
+    alignment: "center" as const,
     field_key: "public_guest_page_qr",
     font_family: null,
     font_size: null,

@@ -81,6 +81,8 @@ Coverage includes:
 - second post-CodeRabbit reruns: `npm run lint`, `npm run typecheck`, targeted Sprint 6 test, `npm run db:lint`, and linked Supabase dry-run
 - third `coderabbit review --agent --base main -c AGENTS.md` from WSL
 - third post-CodeRabbit reruns: `npm run lint`, `npm run typecheck`, targeted Sprint 6 test, `npm run db:lint`, and linked Supabase dry-run
+- fourth `coderabbit review --agent --base main -c AGENTS.md` from WSL
+- fourth post-CodeRabbit reruns: `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, `git diff --check`, and targeted secret scan
 
 ## Checks Passed Or Failed
 
@@ -98,6 +100,7 @@ Coverage includes:
 - Local CodeRabbit CLI review: raised 11 issues. All valid fixes were applied, including template/event binding checks for server actions, zero coordinate support, atomic template field saving through an RPC, stricter API fields payload validation, centralized PDF engine metadata, and invitation file update audit coverage.
 - Local CodeRabbit CLI rerun: raised 5 issues. All valid fixes were applied, including stricter generation mode validation, platform-neutral repo-root test helpers, reduced duplicate server-action permission checks, simpler preview route error handling, and set-based batch generation SQL.
 - Third local CodeRabbit CLI rerun: raised 11 issues. Valid fixes were applied, including file-scope enum constants sync, strict `guestIds` validation, font-family UI input support, PDF upload MIME/header validation, RPC response validation, route catch cleanup, and safer preview permission/not-found behavior. The API-layer audit suggestion was reviewed and skipped because preview generation is already persisted by the database audit trigger on the template status transition.
+- Fourth local CodeRabbit CLI rerun: raised 10 issues. Valid fixes were applied, including form-control consistency, operations manager requirement traceability, typed default field alignment, server-side upload size and coordinate validation, consistent preview route authorization errors, template-detail pagination defaults, fields parsing helper, and event-assignment validation in the PDF worker abstraction.
 
 ## Security Checks Performed
 
@@ -112,6 +115,7 @@ Implemented security controls include:
 - template field replacement is atomic through the `save_invitation_template_fields` RPC.
 - invitation generation job enqueueing uses set-based inserts/upserts instead of row-by-row loops.
 - server action PDF uploads validate MIME type or `%PDF` magic bytes before registration.
+- server action field coordinates are bounded before reaching the service layer.
 
 ## Assumptions Made
 

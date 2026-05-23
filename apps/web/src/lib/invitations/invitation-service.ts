@@ -616,7 +616,10 @@ export function renderInvitationPdfWithWorkerAbstraction(input: {
   assertTemplateCanGenerate(input.template);
 
   const fields = validateInvitationFieldConfiguration(input.fields);
-  const readinessIssues = validateInvitationGuestReadiness(input.guest);
+  const readinessIssues = validateInvitationGuestReadiness(
+    input.guest,
+    input.template.eventId,
+  );
 
   if (readinessIssues.length > 0) {
     throw new InvitationValidationError(

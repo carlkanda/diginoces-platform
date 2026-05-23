@@ -91,6 +91,11 @@ export type InvitationTemplateDetails = {
   template: InvitationTemplateRow;
 };
 
+export type InvitationTemplateDetailsOptions = {
+  invitationsLimit?: number;
+  jobsLimit?: number;
+};
+
 export type EnqueueInvitationGenerationResult = {
   eventId: string;
   generationJobId: string;
@@ -170,10 +175,18 @@ export async function listEventInvitationTemplates(
   return (data ?? []) as InvitationTemplateRow[];
 }
 
+/**
+ * Loads a template with recent child records. Defaults are intentionally small
+ * for Sprint 6 UI previews: 10 generation jobs and 25 invitation records.
+ */
 export async function getInvitationTemplateDetails(
   supabase: SupabaseClient,
   templateId: string,
+  options: InvitationTemplateDetailsOptions = {},
 ): Promise<InvitationTemplateDetails | null> {
+  const jobsLimit = options.jobsLimit ?? 10;
+  const invitationsLimit = options.invitationsLimit ?? 25;
+
   const { data: template, error: templateError } = await supabase
     .from("invitation_templates")
     .select("*")
@@ -201,7 +214,7 @@ export async function getInvitationTemplateDetails(
       .select("*")
       .eq("template_id", templateId)
       .order("created_at", { ascending: false })
-      .limit(10),
+      .limit(jobsLimit),
     supabase
       .from("invitations")
       .select(
@@ -209,7 +222,7 @@ export async function getInvitationTemplateDetails(
       )
       .eq("template_id", templateId)
       .order("updated_at", { ascending: false })
-      .limit(25),
+      .limit(invitationsLimit),
   ]);
 
   if (fieldsResult.error) {

@@ -13,6 +13,7 @@ import {
 import { requireInvitationEventPermission } from "@/lib/invitations/invitation-api";
 import {
   InvitationValidationError,
+  MAX_INVITATION_TEMPLATE_PDF_BYTES,
   PDF_ENGINE_IDENTIFIER,
 } from "@/lib/invitations/invitation-service";
 import type { PermissionSlug } from "@/lib/security/permissions";
@@ -47,6 +48,40 @@ function parseNumber(value: FormDataEntryValue | null, fieldName: string) {
 
   if (!Number.isFinite(parsed)) {
     throw new InvitationValidationError(`${fieldName} must be a number.`);
+  }
+
+  return parsed;
+}
+
+function parsePageNumber(value: FormDataEntryValue | null) {
+  const parsed = parseNumber(value, "pageNumber");
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new InvitationValidationError(
+      "pageNumber must be a positive integer.",
+    );
+  }
+
+  return parsed;
+}
+
+function parseCoordinate(value: FormDataEntryValue | null, fieldName: string) {
+  const parsed = parseNumber(value, fieldName);
+
+  if (parsed < 0 || parsed > 1) {
+    throw new InvitationValidationError(
+      `${fieldName} must be between 0 and 1.`,
+    );
+  }
+
+  return parsed;
+}
+
+function parseDimension(value: FormDataEntryValue | null, fieldName: string) {
+  const parsed = parseCoordinate(value, fieldName);
+
+  if (parsed === 0) {
+    throw new InvitationValidationError(`${fieldName} must be greater than 0.`);
   }
 
   return parsed;
@@ -147,6 +182,12 @@ export async function registerInvitationTemplateAction(
     throw new InvitationValidationError("Upload a Canva-exported PDF file.");
   }
 
+  if (file.size > MAX_INVITATION_TEMPLATE_PDF_BYTES) {
+    throw new InvitationValidationError(
+      "Invitation template PDF must be 20 MB or smaller.",
+    );
+  }
+
   if (!(await fileLooksLikePdf(file))) {
     throw new InvitationValidationError("Upload a Canva-exported PDF file.");
   }
@@ -194,15 +235,12 @@ export async function saveInvitationTemplateFieldsAction(
           : parseNumber(formData.get(`fontSize:${index}`), "fontSize"),
       key,
       label: requiredFormValue(formData, `label:${index}`),
-      pageNumber: parseNumber(
-        formData.get(`pageNumber:${index}`),
-        "pageNumber",
-      ),
+      pageNumber: parsePageNumber(formData.get(`pageNumber:${index}`)),
       position: {
-        height: parseNumber(formData.get(`height:${index}`), "height"),
-        width: parseNumber(formData.get(`width:${index}`), "width"),
-        x: parseNumber(formData.get(`x:${index}`), "x"),
-        y: parseNumber(formData.get(`y:${index}`), "y"),
+        height: parseDimension(formData.get(`height:${index}`), "height"),
+        width: parseDimension(formData.get(`width:${index}`), "width"),
+        x: parseCoordinate(formData.get(`x:${index}`), "x"),
+        y: parseCoordinate(formData.get(`y:${index}`), "y"),
       },
     }))
     .filter((field) => field.key.length > 0);

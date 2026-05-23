@@ -406,21 +406,25 @@ textarea {
 
 .form-grid input,
 .form-grid select,
+.form-grid textarea,
 .stacked-form input,
-.stacked-form select {
+.stacked-form select,
+.stacked-form textarea {
   width: 100%;
-  min-height: 42px;
+  min-height: 44px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #ffffff;
-  padding: 9px 11px;
+  padding: 10px 12px;
   color: var(--foreground);
 }
 
 .form-grid input:focus,
 .form-grid select:focus,
+.form-grid textarea:focus,
 .stacked-form input:focus,
-.stacked-form select:focus {
+.stacked-form select:focus,
+.stacked-form textarea:focus {
   border-color: var(--accent);
   outline: 3px solid rgba(0, 107, 95, 0.15);
 }
