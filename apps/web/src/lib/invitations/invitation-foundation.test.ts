@@ -477,14 +477,14 @@ describe("Sprint 6 invitation template and PDF generation foundation", () => {
   it("documents Sprint 6 post-merge database hardening fixes", () => {
     const migration = readSprint6HardeningMigration();
 
-    expect(migration).toContain(
-      "grant execute on function app_private.user_has_permission",
+    expect(migration).toMatch(
+      /grant execute on function app_private\.user_has_permission\(\s*uuid,\s*text,\s*public\.role_scope_type,\s*uuid\s*\) to authenticated;/,
     );
-    expect(migration).toContain(
-      "grant execute on function app_private.user_can_access_project",
+    expect(migration).toMatch(
+      /grant execute on function app_private\.user_can_access_project\(\s*uuid,\s*uuid,\s*text\s*\) to authenticated;/,
     );
-    expect(migration).toContain(
-      "grant execute on function app_private.user_can_access_event",
+    expect(migration).toMatch(
+      /grant execute on function app_private\.user_can_access_event\(\s*uuid,\s*uuid,\s*text\s*\) to authenticated;/,
     );
     expect(migration).toContain("if tg_table_name = 'guests' then");
     expect(migration).toContain(
