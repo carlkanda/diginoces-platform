@@ -169,7 +169,9 @@ create table if not exists public.invitation_template_fields (
   ),
   constraint invitation_template_fields_font_size_positive check (
     font_size is null or font_size > 0
-  )
+  ),
+  constraint invitation_template_fields_template_field_key_unique
+    unique (template_id, field_key)
 );
 
 create index if not exists invitation_template_fields_template_sort_idx
@@ -403,6 +405,7 @@ begin
     when 'invitation_generation_job_items' then 'invitation_generation_job_item'
     when 'invitations' then 'invitation'
     when 'invitation_files' then 'invitation_file'
+    else tg_table_name
   end;
 
   changed_object_id := case tg_op
@@ -569,6 +572,18 @@ begin
   if not app_private.user_can_access_project(v_actor_user_id, v_template.project_id, 'invitation_templates.update') then
     raise exception 'Invitation template update permission denied.'
       using errcode = '42501';
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_array_elements(p_fields) as field_json(value)
+    where nullif(trim(field_json.value->>'fieldKey'), '') is null
+      or nullif(trim(field_json.value->>'label'), '') is null
+      or field_json.value->>'pageNumber' is null
+      or jsonb_typeof(field_json.value->'position') is distinct from 'object'
+  ) then
+    raise exception 'Each template field requires fieldKey, label, pageNumber, and position.'
+      using errcode = '22023';
   end if;
 
   delete from public.invitation_template_fields
@@ -788,6 +803,21 @@ begin
       using errcode = '23514';
   end if;
 
+  if p_mode is null then
+    raise exception 'Invitation generation mode is required.'
+      using errcode = '22023';
+  end if;
+
+  if p_mode in ('selected_guests', 'regenerate_selected') and coalesce(cardinality(p_guest_ids), 0) = 0 then
+    raise exception 'Selected invitation generation modes require at least one guest id.'
+      using errcode = '22023';
+  end if;
+
+  if p_mode in ('event', 'technical_preview') and coalesce(cardinality(p_guest_ids), 0) > 0 then
+    raise exception 'Guest ids are only allowed for selected invitation generation modes.'
+      using errcode = '22023';
+  end if;
+
   insert into public.invitation_generation_jobs (
     project_id,
     event_id,
@@ -818,8 +848,7 @@ begin
       and gea.invited = true
       and gea.status = 'assigned'
       and (
-        p_guest_ids is null
-        or cardinality(p_guest_ids) = 0
+        p_mode in ('event', 'technical_preview')
         or g.id = any(p_guest_ids)
       )
   ),

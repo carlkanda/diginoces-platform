@@ -413,6 +413,14 @@ textarea {
   color: var(--foreground);
 }
 
+:is(.form-grid, .stacked-form) select[multiple] {
+  min-height: 128px;
+}
+
+:is(.form-grid, .stacked-form) textarea {
+  resize: vertical;
+}
+
 :is(.form-grid, .stacked-form) :is(input, select, textarea):focus {
   border-color: var(--accent);
   outline: 3px solid rgba(0, 107, 95, 0.15);

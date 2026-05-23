@@ -8,6 +8,7 @@ import {
   listEventInvitationTemplates,
   registerInvitationTemplate,
 } from "@/lib/invitations/invitation-db";
+import { parseTemplateRegistrationPayload } from "@/lib/invitations/invitation-service";
 import {
   getProjectApiContext,
   isProjectApiContext,
@@ -80,16 +81,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const body = await readJson(request);
+    const input = parseTemplateRegistrationPayload({ ...body, eventId });
     const template = await registerInvitationTemplate(
       apiContext.supabase,
       details.project.id,
-      {
-        eventId,
-        fileSizeBytes: body.fileSizeBytes,
-        mimeType: body.mimeType,
-        sourceFilename: body.sourceFilename,
-        templateName: body.templateName,
-      } satisfies Record<string, unknown>,
+      input,
       apiContext.user.id,
     );
 

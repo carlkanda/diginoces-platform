@@ -127,7 +127,7 @@ Sprint 5 RSVP behavior:
 - Guests can RSVP only to events assigned to their guest record.
 - RSVP deadlines route late responses into manual review instead of silently overwriting operational state.
 - Printed-only guests remain a manual RSVP workflow.
-- Invitation download is a placeholder only until Sprint 6 generated invitation records/files are available; WhatsApp sending, seating, and check-in are deferred to later sprints.
+- Sprint 6 implements invitation generation foundation with a PDF worker abstraction and metadata persistence; full production PDF composition and sending, WhatsApp sending, seating, and check-in are deferred to later sprints. See `docs/planning/sprint-6-completion-report.md` for details.
 
 Sprint 6 invitation template and PDF generation foundation routes:
 

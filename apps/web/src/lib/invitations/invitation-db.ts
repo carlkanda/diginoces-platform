@@ -55,6 +55,7 @@ export type InvitationGenerationJobRow = {
   completed_at: string | null;
   created_at: string;
   created_by: string | null;
+  error_message: string | null;
   event_id: string;
   failed_count: number;
   generated_count: number;
@@ -66,6 +67,7 @@ export type InvitationGenerationJobRow = {
   template_id: string;
   total_guests: number;
   updated_at: string;
+  validation_summary: Record<string, unknown> | null;
 };
 
 export type InvitationRow = {

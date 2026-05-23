@@ -63,6 +63,27 @@ function parseGuestIds(value: unknown) {
   return value;
 }
 
+function validateModeGuestIds(
+  mode: InvitationGenerationMode,
+  guestIds: string[] | undefined,
+) {
+  const requiresGuestIds =
+    mode === "selected_guests" || mode === "regenerate_selected";
+  const hasGuestIds = Array.isArray(guestIds) && guestIds.length > 0;
+
+  if (requiresGuestIds && !hasGuestIds) {
+    throw new InvitationValidationError(
+      "selected generation modes require at least one guestId.",
+    );
+  }
+
+  if (!requiresGuestIds && hasGuestIds) {
+    throw new InvitationValidationError(
+      "guestIds are only accepted for selected generation modes.",
+    );
+  }
+}
+
 export async function POST(request: NextRequest, context: RouteContext) {
   const apiContext = await getProjectApiContext();
 
@@ -91,11 +112,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
 
     const body = await readJson(request);
+    const mode = parseMode(body.mode);
+    const guestIds = parseGuestIds(body.guestIds);
+    validateModeGuestIds(mode, guestIds);
+
     const generationJob = await enqueueInvitationGenerationJob(
       apiContext.supabase,
       templateId,
-      parseMode(body.mode),
-      parseGuestIds(body.guestIds),
+      mode,
+      guestIds,
     );
 
     return NextResponse.json({ generationJob }, { status: 202 });

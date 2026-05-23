@@ -85,6 +85,8 @@ Coverage includes:
 - fourth post-CodeRabbit reruns: `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, `git diff --check`, and targeted secret scan
 - fifth `coderabbit review --agent --base main -c AGENTS.md` from WSL
 - fifth post-CodeRabbit reruns: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, `git diff --check`, and targeted secret scan
+- sixth `coderabbit review --agent --base main -c AGENTS.md` from WSL
+- sixth post-CodeRabbit reruns: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, `git diff --check`, and targeted secret scan
 
 ## Checks Passed Or Failed
 
@@ -104,6 +106,7 @@ Coverage includes:
 - Third local CodeRabbit CLI rerun: raised 11 issues. Valid fixes were applied, including file-scope enum constants sync, strict `guestIds` validation, font-family UI input support, PDF upload MIME/header validation, RPC response validation, route catch cleanup, and safer preview permission/not-found behavior. The API-layer audit suggestion was reviewed and skipped because preview generation is already persisted by the database audit trigger on the template status transition.
 - Fourth local CodeRabbit CLI rerun: raised 10 issues. Valid fixes were applied, including form-control consistency, operations manager requirement traceability, typed default field alignment, server-side upload size and coordinate validation, consistent preview route authorization errors, template-detail pagination defaults, fields parsing helper, and event-assignment validation in the PDF worker abstraction.
 - Fifth local CodeRabbit CLI rerun: raised 7 low-severity issues. Valid fixes were applied, including fuller operations manager requirement traceability, form CSS consolidation/comments, template upload metadata-only documentation, binary-search text fitting, text-width heuristic documentation, and structured invitation API error logging.
+- Sixth local CodeRabbit CLI rerun: raised 9 low-severity issues. Valid fixes were applied, including generation mode/guest ID cross-field validation, template registration API validation, API and RPC template-field validation, a unique per-template dynamic-field key constraint, invitation job row type parity, audit trigger fallback object types, and updated Sprint 6 setup wording.
 
 ## Security Checks Performed
 
@@ -135,5 +138,5 @@ Implemented security controls include:
 ## Recommended Sprint 7 Scope
 
 - WhatsApp communication workflow foundation.
-- Invitation sending workflow that consumes generated invitation file records.
+- Invitation-sending workflow that consumes generated invitation file records.
 - Production PDF renderer/storage provider hardening if required before external pilot use.
