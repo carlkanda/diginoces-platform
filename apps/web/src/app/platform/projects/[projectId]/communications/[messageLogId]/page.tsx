@@ -13,6 +13,7 @@ import {
 } from "@/lib/projects/project-api";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { markProjectMessageStatusAction } from "../actions";
+import { SubmitButton } from "../submit-button";
 
 export const dynamic = "force-dynamic";
 
@@ -174,14 +175,10 @@ export default async function MessageLogDetailPage({
               </a>
             ) : null}
             <form action={markOpened}>
-              <button className="button secondary" type="submit">
-                Mark opened
-              </button>
+              <SubmitButton>Mark opened</SubmitButton>
             </form>
             <form action={markSent}>
-              <button className="button secondary" type="submit">
-                Mark sent
-              </button>
+              <SubmitButton>Mark sent</SubmitButton>
             </form>
           </div>
           <div className="form-grid">
@@ -190,9 +187,7 @@ export default async function MessageLogDetailPage({
                 Failure reason
                 <input name="reason" placeholder="wrong_number" required />
               </label>
-              <button className="button secondary" type="submit">
-                Mark failed
-              </button>
+              <SubmitButton>Mark failed</SubmitButton>
             </form>
             <form action={markSkipped} className="stacked-form">
               <label>
@@ -203,9 +198,7 @@ export default async function MessageLogDetailPage({
                   required
                 />
               </label>
-              <button className="button secondary" type="submit">
-                Mark skipped
-              </button>
+              <SubmitButton>Mark skipped</SubmitButton>
             </form>
           </div>
         </section>

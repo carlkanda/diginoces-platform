@@ -456,6 +456,7 @@ export async function prepareProjectMessage(
     p_event_id: prepared.eventId,
     p_failure_reason: prepared.failureReason,
     p_guest_id: prepared.guestId,
+    p_id: prepared.id,
     p_invitation_id: prepared.invitationId,
     p_language: prepared.language,
     p_manual_whatsapp_url: prepared.manualWhatsappUrl,

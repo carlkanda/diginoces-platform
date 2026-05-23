@@ -432,7 +432,8 @@ create or replace function public.prepare_message_log_with_queue(
   p_manual_whatsapp_url text,
   p_failure_reason text default null,
   p_metadata jsonb default '{}'::jsonb,
-  p_previous_message_log_id uuid default null
+  p_previous_message_log_id uuid default null,
+  p_id uuid default null
 )
 returns public.message_logs
 language plpgsql
@@ -458,6 +459,7 @@ begin
     event_id,
     failure_reason,
     guest_id,
+    id,
     invitation_id,
     language,
     manual_whatsapp_url,
@@ -478,6 +480,7 @@ begin
     p_event_id,
     p_failure_reason,
     p_guest_id,
+    coalesce(p_id, gen_random_uuid()),
     p_invitation_id,
     p_language,
     p_manual_whatsapp_url,
@@ -537,6 +540,7 @@ revoke all on function public.prepare_message_log_with_queue(
   text,
   text,
   jsonb,
+  uuid,
   uuid
 ) from public;
 grant execute on function public.prepare_message_log_with_queue(
@@ -556,6 +560,7 @@ grant execute on function public.prepare_message_log_with_queue(
   text,
   text,
   jsonb,
+  uuid,
   uuid
 ) to authenticated;
 
@@ -654,6 +659,9 @@ begin
     p_reason
   );
 
+  -- This enum cast is intentionally limited to statuses shared by
+  -- message_delivery_status and invitation_status. Review this block if either
+  -- enum gains a divergent delivery or invitation lifecycle value.
   if v_log.invitation_id is not null and p_status in ('sent', 'resent') then
     update public.invitations
     set

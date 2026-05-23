@@ -98,10 +98,7 @@ function repoRootFromCwd() {
     current = parent;
   }
 
-  const cwd = process.cwd();
-  const normalizedCwd = cwd.replaceAll("\\", "/");
-
-  return normalizedCwd.endsWith("apps/web") ? resolve(cwd, "../..") : cwd;
+  throw new Error(`Unable to resolve repository root from ${process.cwd()}`);
 }
 
 function readRepoFile(pathFromRoot: string) {
