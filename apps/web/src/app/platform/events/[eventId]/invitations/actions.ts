@@ -14,7 +14,10 @@ import {
   requireInvitationEventPermission,
   requireInvitationProjectPermission,
 } from "@/lib/invitations/invitation-api";
-import { InvitationValidationError } from "@/lib/invitations/invitation-service";
+import {
+  InvitationValidationError,
+  PDF_ENGINE_IDENTIFIER,
+} from "@/lib/invitations/invitation-service";
 import type { InvitationFieldAlignment } from "@/lib/invitations/invitation-service";
 import { getEventDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -101,6 +104,23 @@ async function requireEventDetails(eventId: string) {
   return { context, details };
 }
 
+async function requireTemplateDetailsForEvent(
+  context: Awaited<ReturnType<typeof getActionContext>>,
+  eventId: string,
+  templateId: string,
+) {
+  const details = await getInvitationTemplateDetails(
+    context.supabase,
+    templateId,
+  );
+
+  if (!details || details.template.event_id !== eventId) {
+    throw new InvitationValidationError("Invitation template was not found.");
+  }
+
+  return details;
+}
+
 export async function registerInvitationTemplateAction(
   eventId: string,
   formData: FormData,
@@ -146,22 +166,16 @@ export async function saveInvitationTemplateFieldsAction(
     "invitation_templates.update",
   );
 
-  const details = await getInvitationTemplateDetails(
-    context.supabase,
+  const details = await requireTemplateDetailsForEvent(
+    context,
+    eventId,
     templateId,
   );
-
-  if (!details || details.template.event_id !== eventId) {
-    throw new InvitationValidationError("Invitation template was not found.");
-  }
 
   const fieldKeys = formData.getAll("fieldKey").map((value) => String(value));
   const fields = fieldKeys
     .map((key, index) => ({
-      alignment:
-        formValue(formData, `alignment:${index}`) === undefined
-          ? undefined
-          : parseAlignment(formValue(formData, `alignment:${index}`)),
+      alignment: parseAlignment(formValue(formData, `alignment:${index}`)),
       fontFamily: formValue(formData, `fontFamily:${index}`) ?? null,
       fontSize:
         formValue(formData, `fontSize:${index}`) === undefined
@@ -202,9 +216,10 @@ export async function generateInvitationPreviewAction(
     eventId,
     "invitation_templates.update",
   );
+  await requireTemplateDetailsForEvent(context, eventId, templateId);
 
   await markInvitationTemplatePreviewGenerated(context.supabase, templateId, {
-    engine: "tested_pdf_worker_abstraction",
+    engine: PDF_ENGINE_IDENTIFIER,
     scope: "technical_preview",
   });
 
@@ -221,6 +236,7 @@ export async function approveInvitationPreviewAction(
     eventId,
     "invitation_templates.approve",
   );
+  await requireTemplateDetailsForEvent(context, eventId, templateId);
 
   await approveInvitationTemplatePreview(context.supabase, templateId);
 
@@ -237,6 +253,7 @@ export async function enqueueInvitationGenerationAction(
     eventId,
     "invitations.generate",
   );
+  await requireTemplateDetailsForEvent(context, eventId, templateId);
 
   await enqueueInvitationGenerationJob(context.supabase, templateId, "event");
 

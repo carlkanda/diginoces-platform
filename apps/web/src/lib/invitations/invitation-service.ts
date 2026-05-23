@@ -13,6 +13,7 @@ export class InvitationValidationError extends Error {
 }
 
 export const MAX_INVITATION_TEMPLATE_PDF_BYTES = 20 * 1024 * 1024;
+export const PDF_ENGINE_IDENTIFIER = "tested_pdf_worker_abstraction";
 
 export type InvitationTemplateStatus =
   | "active"
@@ -239,6 +240,16 @@ function requiredPositiveNumber(value: unknown, fieldName: string) {
   return value;
 }
 
+function requiredNonNegativeNumber(value: unknown, fieldName: string) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    throw new InvitationValidationError(
+      `${fieldName} must be a non-negative number.`,
+    );
+  }
+
+  return value;
+}
+
 function optionalPositiveNumber(value: unknown, fieldName: string) {
   if (value === undefined || value === null || value === "") {
     return null;
@@ -313,8 +324,8 @@ function parsePosition(value: unknown) {
   const parsed = {
     height: requiredPositiveNumber(position.height, "position.height"),
     width: requiredPositiveNumber(position.width, "position.width"),
-    x: requiredPositiveNumber(position.x, "position.x"),
-    y: requiredPositiveNumber(position.y, "position.y"),
+    x: requiredNonNegativeNumber(position.x, "position.x"),
+    y: requiredNonNegativeNumber(position.y, "position.y"),
   };
 
   if (
@@ -621,7 +632,7 @@ export function renderInvitationPdfWithWorkerAbstraction(input: {
 
   return {
     bytes: new TextEncoder().encode(pdfBody),
-    engine: "tested_pdf_worker_abstraction",
+    engine: PDF_ENGINE_IDENTIFIER,
     metadata: {
       fieldCount: fields.length,
       generated: true,

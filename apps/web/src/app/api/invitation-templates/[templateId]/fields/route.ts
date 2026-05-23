@@ -50,6 +50,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
 
     const body = await readJson(request);
+
+    if (
+      Object.prototype.hasOwnProperty.call(body, "fields") &&
+      !Array.isArray(body.fields)
+    ) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "invalid_fields",
+            message: "fields must be an array.",
+          },
+        },
+        { status: 400 },
+      );
+    }
+
     const fields = await saveInvitationTemplateFields(
       apiContext.supabase,
       details.template,

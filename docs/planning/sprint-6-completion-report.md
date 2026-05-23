@@ -75,6 +75,8 @@ Coverage includes:
 - `npx.cmd supabase@latest db push --linked --dry-run`
 - `git diff --check`
 - targeted secret scan with `rg`
+- `coderabbit review --agent --base main -c AGENTS.md` from WSL
+- post-CodeRabbit reruns: `npm run lint`, `npm run typecheck`, targeted Sprint 6 test, `npm run db:lint`, and linked Supabase dry-run
 
 ## Checks Passed Or Failed
 
@@ -89,6 +91,7 @@ Coverage includes:
 - `npx supabase@latest db push --linked --dry-run`: passed; dry run reports one pending migration, `20260523120452_sprint_6_invitation_template_pdf_generation.sql`.
 - `git diff --check`: passed; only line-ending warnings were reported for touched text files.
 - Targeted secret scan: no real secrets found. The scan matched only `.env.example` placeholder `DATABASE_URL` and package-lock integrity hashes in the broader pass.
+- Local CodeRabbit CLI review: raised 11 issues. All valid fixes were applied, including template/event binding checks for server actions, zero coordinate support, atomic template field saving through an RPC, stricter API fields payload validation, centralized PDF engine metadata, and invitation file update audit coverage.
 
 ## Security Checks Performed
 
@@ -99,6 +102,8 @@ Implemented security controls include:
 - audit triggers for template, preview, generation job, invitation, and file-version actions;
 - source filename, storage path, checksum, and error message redaction from invitation audit snapshots;
 - public guest page token usage remains separate from future `check_in` token scope.
+- template preview, approval, and generation server actions re-check that the template belongs to the current event before mutating it.
+- template field replacement is atomic through the `save_invitation_template_fields` RPC.
 
 ## Assumptions Made
 

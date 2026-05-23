@@ -84,13 +84,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
+    const body = await readJson(request);
     const template = await registerInvitationTemplate(
       apiContext.supabase,
       details.project.id,
       {
-        ...((await readJson(request)) as Record<string, unknown>),
         eventId,
-      },
+        fileSizeBytes: body.fileSizeBytes,
+        mimeType: body.mimeType,
+        sourceFilename: body.sourceFilename,
+        templateName: body.templateName,
+      } satisfies Record<string, unknown>,
       apiContext.user.id,
     );
 

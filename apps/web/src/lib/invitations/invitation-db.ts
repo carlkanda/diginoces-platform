@@ -254,52 +254,35 @@ export async function saveInvitationTemplateFields(
   actorUserId?: string | null,
 ) {
   const validatedFields = validateInvitationFieldConfiguration(fields);
-
-  const { error: deleteError } = await supabase
-    .from("invitation_template_fields")
-    .delete()
-    .eq("template_id", template.id);
-
-  if (deleteError) {
-    throw deleteError;
-  }
-
   const rows = validatedFields.map((field, index) => ({
     alignment: field.alignment ?? null,
-    created_by: actorUserId ?? null,
-    event_id: template.event_id,
-    field_key: field.key,
-    font_family: field.fontFamily ?? null,
-    font_size: field.fontSize ?? null,
+    fieldKey: field.key,
+    fontFamily: field.fontFamily ?? null,
+    fontSize: field.fontSize ?? null,
     label: field.label,
-    page_number: field.pageNumber,
+    pageNumber: field.pageNumber,
     position: field.position,
-    project_id: template.project_id,
-    sort_order: index,
-    template_id: template.id,
-    updated_by: actorUserId ?? null,
+    sortOrder: index,
   }));
 
-  const { data, error } = await supabase
-    .from("invitation_template_fields")
-    .insert(rows)
-    .select("*")
-    .order("sort_order", { ascending: true });
+  const { error } = await supabase.rpc("save_invitation_template_fields", {
+    p_actor_user_id: actorUserId ?? null,
+    p_fields: rows,
+    p_template_id: template.id,
+  });
 
   if (error) {
     throw error;
   }
 
-  const { error: updateError } = await supabase
-    .from("invitation_templates")
-    .update({
-      status: "configured",
-      updated_by: actorUserId ?? null,
-    })
-    .eq("id", template.id);
+  const { data, error: selectError } = await supabase
+    .from("invitation_template_fields")
+    .select("*")
+    .eq("template_id", template.id)
+    .order("sort_order", { ascending: true });
 
-  if (updateError) {
-    throw updateError;
+  if (selectError) {
+    throw selectError;
   }
 
   return (data ?? []) as InvitationTemplateFieldRow[];

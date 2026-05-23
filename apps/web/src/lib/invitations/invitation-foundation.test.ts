@@ -174,7 +174,7 @@ describe("Sprint 6 invitation template and PDF generation foundation", () => {
         key: "public_guest_page_qr",
         label: "Guest QR",
         pageNumber: 1,
-        position: { height: 0.16, width: 0.16, x: 0.7, y: 0.7 },
+        position: { height: 0.16, width: 0.16, x: 0, y: 0.7 },
       },
     ];
 

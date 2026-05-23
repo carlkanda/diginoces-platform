@@ -423,6 +423,7 @@ begin
     when tg_table_name = 'invitations' and tg_op = 'UPDATE' and new.status = 'needs_regeneration' then 'invitations.regeneration_required'
     when tg_table_name = 'invitations' and tg_op = 'UPDATE' and new.status = 'generated' then 'invitations.generated'
     when tg_table_name = 'invitation_files' and tg_op = 'INSERT' then 'invitation_files.versioned'
+    when tg_table_name = 'invitation_files' and tg_op = 'UPDATE' then 'invitation_files.versioned'
     else lower(tg_table_name || '.' || tg_op)
   end;
 
@@ -512,6 +513,134 @@ create trigger audit_invitation_files_insert
 after insert on public.invitation_files
 for each row
 execute function app_private.audit_invitation_change();
+
+drop trigger if exists audit_invitation_files_update on public.invitation_files;
+create trigger audit_invitation_files_update
+after update of is_active on public.invitation_files
+for each row
+when (old.is_active is distinct from new.is_active)
+execute function app_private.audit_invitation_change();
+
+create or replace function public.save_invitation_template_fields(
+  p_template_id uuid,
+  p_fields jsonb,
+  p_actor_user_id uuid default null
+)
+returns jsonb
+language plpgsql
+set search_path = public, pg_temp
+as $$
+declare
+  v_actor_user_id uuid := (select auth.uid());
+  v_template public.invitation_templates%rowtype;
+  v_field_count integer;
+begin
+  if v_actor_user_id is null then
+    raise exception 'Authentication required.'
+      using errcode = '42501';
+  end if;
+
+  if p_actor_user_id is not null and p_actor_user_id <> v_actor_user_id then
+    raise exception 'Actor user mismatch.'
+      using errcode = '42501';
+  end if;
+
+  if jsonb_typeof(coalesce(p_fields, '[]'::jsonb)) <> 'array' then
+    raise exception 'Template fields must be an array.'
+      using errcode = '22023';
+  end if;
+
+  if jsonb_array_length(coalesce(p_fields, '[]'::jsonb)) = 0 then
+    raise exception 'At least one template field is required.'
+      using errcode = '23514';
+  end if;
+
+  select *
+  into v_template
+  from public.invitation_templates
+  where id = p_template_id
+  for update;
+
+  if not found then
+    raise exception 'Invitation template was not found.'
+      using errcode = 'P0002';
+  end if;
+
+  if not app_private.user_can_access_project(v_actor_user_id, v_template.project_id, 'invitation_templates.update') then
+    raise exception 'Invitation template update permission denied.'
+      using errcode = '42501';
+  end if;
+
+  delete from public.invitation_template_fields
+  where template_id = p_template_id;
+
+  with parsed_fields as (
+    select
+      coalesce(field_record."sortOrder", (row_number() over ())::integer - 1) as sort_order,
+      field_record."fieldKey" as field_key,
+      field_record.label,
+      field_record."pageNumber" as page_number,
+      field_record.position,
+      field_record."fontFamily" as font_family,
+      field_record."fontSize" as font_size,
+      field_record.alignment
+    from jsonb_to_recordset(p_fields) as field_record(
+      "fieldKey" public.invitation_template_field_target,
+      label text,
+      "pageNumber" integer,
+      position jsonb,
+      "fontFamily" text,
+      "fontSize" numeric,
+      alignment text,
+      "sortOrder" integer
+    )
+  )
+  insert into public.invitation_template_fields (
+    project_id,
+    event_id,
+    template_id,
+    field_key,
+    label,
+    page_number,
+    position,
+    font_family,
+    font_size,
+    alignment,
+    sort_order,
+    created_by,
+    updated_by
+  )
+  select
+    v_template.project_id,
+    v_template.event_id,
+    v_template.id,
+    parsed_fields.field_key,
+    parsed_fields.label,
+    parsed_fields.page_number,
+    parsed_fields.position,
+    parsed_fields.font_family,
+    parsed_fields.font_size,
+    parsed_fields.alignment,
+    parsed_fields.sort_order,
+    v_actor_user_id,
+    v_actor_user_id
+  from parsed_fields;
+
+  get diagnostics v_field_count = row_count;
+
+  update public.invitation_templates
+  set
+    status = 'configured',
+    updated_by = v_actor_user_id
+  where id = p_template_id;
+
+  return jsonb_build_object(
+    'templateId', p_template_id,
+    'fieldCount', v_field_count,
+    'status', 'configured'
+  );
+end;
+$$;
 
 create or replace function public.mark_invitation_template_preview_generated(
   p_template_id uuid,
@@ -766,10 +895,12 @@ end;
 $$;
 
 revoke all on function public.mark_invitation_template_preview_generated(uuid, jsonb) from public;
+revoke all on function public.save_invitation_template_fields(uuid, jsonb, uuid) from public;
 revoke all on function public.approve_invitation_template_preview(uuid) from public;
 revoke all on function public.enqueue_invitation_generation_job(uuid, public.invitation_generation_mode, uuid[]) from public;
 
 grant execute on function public.mark_invitation_template_preview_generated(uuid, jsonb) to authenticated;
+grant execute on function public.save_invitation_template_fields(uuid, jsonb, uuid) to authenticated;
 grant execute on function public.approve_invitation_template_preview(uuid) to authenticated;
 grant execute on function public.enqueue_invitation_generation_job(uuid, public.invitation_generation_mode, uuid[]) to authenticated;
 

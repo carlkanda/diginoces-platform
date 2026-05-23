@@ -9,6 +9,8 @@ import {
 import { InvitationValidationError } from "@/lib/invitations/invitation-service";
 import type { PermissionSlug } from "@/lib/security/permissions";
 
+// Invitation routes use these aliases so Sprint 6 permission checks read in
+// domain language while delegating to the shared project/event guards.
 export async function requireInvitationEventPermission(
   context: ProjectApiContext,
   eventId: string,

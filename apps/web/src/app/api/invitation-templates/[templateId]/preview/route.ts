@@ -7,6 +7,7 @@ import {
   getInvitationTemplateDetails,
   markInvitationTemplatePreviewGenerated,
 } from "@/lib/invitations/invitation-db";
+import { PDF_ENGINE_IDENTIFIER } from "@/lib/invitations/invitation-service";
 import {
   getProjectApiContext,
   handleProjectApiError,
@@ -52,7 +53,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       apiContext.supabase,
       templateId,
       {
-        engine: "tested_pdf_worker_abstraction",
+        engine: PDF_ENGINE_IDENTIFIER,
         fieldCount: details.fields.length,
       },
     );
