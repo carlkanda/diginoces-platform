@@ -1642,7 +1642,7 @@ export const Constants = {
         "brunch",
         "other",
       ],
-      file_scope_type: ["platform", "project", "event", "guest"],
+      file_scope_type: ["platform", "project", "event", "guest", "invitation"],
       guest_duplicate_reason: [
         "normalized_name",
         "title_and_name",

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   approveTechnicalPreview,
@@ -54,7 +54,7 @@ const readyGuest: InvitationGenerationGuest = {
 
 function repoRootFromCwd() {
   const cwd = process.cwd();
-  const normalizedCwd = cwd.replaceAll("\\", "/");
+  const normalizedCwd = cwd.split(sep).join("/");
 
   return normalizedCwd.endsWith("apps/web") ? resolve(cwd, "../..") : cwd;
 }

@@ -11,6 +11,7 @@ import { PDF_ENGINE_IDENTIFIER } from "@/lib/invitations/invitation-service";
 import {
   getProjectApiContext,
   isProjectApiContext,
+  ProjectAccessError,
 } from "@/lib/projects/project-api";
 
 export const dynamic = "force-dynamic";
@@ -42,11 +43,22 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    await requireInvitationEventPermission(
-      apiContext,
-      details.template.event_id,
-      "invitation_templates.update",
-    );
+    try {
+      await requireInvitationEventPermission(
+        apiContext,
+        details.template.event_id,
+        "invitation_templates.update",
+      );
+    } catch (permissionError) {
+      if (permissionError instanceof ProjectAccessError) {
+        return NextResponse.json(
+          { error: { code: "not_found", message: "Template was not found." } },
+          { status: 404 },
+        );
+      }
+
+      throw permissionError;
+    }
 
     const result = await markInvitationTemplatePreviewGenerated(
       apiContext.supabase,

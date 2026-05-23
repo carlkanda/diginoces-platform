@@ -14,7 +14,6 @@ import {
 } from "@/lib/invitations/invitation-service";
 import {
   getProjectApiContext,
-  handleProjectApiError,
   isProjectApiContext,
 } from "@/lib/projects/project-api";
 
@@ -56,7 +55,9 @@ function parseGuestIds(value: unknown) {
   }
 
   if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
-    return undefined;
+    throw new InvitationValidationError(
+      "guestIds must be an array of strings.",
+    );
   }
 
   return value;
@@ -99,10 +100,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ generationJob }, { status: 202 });
   } catch (error) {
-    try {
-      return handleInvitationApiError(error);
-    } catch (projectError) {
-      return handleProjectApiError(projectError);
-    }
+    return handleInvitationApiError(error);
   }
 }

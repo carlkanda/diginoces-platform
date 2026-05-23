@@ -10,7 +10,6 @@ import {
 } from "@/lib/invitations/invitation-db";
 import {
   getProjectApiContext,
-  handleProjectApiError,
   isProjectApiContext,
 } from "@/lib/projects/project-api";
 import { getEventDetails } from "@/lib/projects/project-service";
@@ -52,11 +51,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       },
     );
   } catch (error) {
-    try {
-      return handleInvitationApiError(error);
-    } catch (projectError) {
-      return handleProjectApiError(projectError);
-    }
+    return handleInvitationApiError(error);
   }
 }
 
@@ -100,10 +95,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ template }, { status: 201 });
   } catch (error) {
-    try {
-      return handleInvitationApiError(error);
-    } catch (projectError) {
-      return handleProjectApiError(projectError);
-    }
+    return handleInvitationApiError(error);
   }
 }

@@ -68,6 +68,20 @@ function parseAlignment(
   );
 }
 
+async function fileLooksLikePdf(file: File) {
+  if (file.type === "application/pdf") {
+    return true;
+  }
+
+  const header = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+  return (
+    header[0] === 0x25 &&
+    header[1] === 0x50 &&
+    header[2] === 0x44 &&
+    header[3] === 0x46
+  );
+}
+
 async function getActionContext() {
   const authContext = await getAuthContext();
 
@@ -130,6 +144,10 @@ export async function registerInvitationTemplateAction(
   const file = formData.get("templateFile");
 
   if (!(file instanceof File) || file.size === 0) {
+    throw new InvitationValidationError("Upload a Canva-exported PDF file.");
+  }
+
+  if (!(await fileLooksLikePdf(file))) {
     throw new InvitationValidationError("Upload a Canva-exported PDF file.");
   }
 

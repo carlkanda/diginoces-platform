@@ -125,10 +125,32 @@ function templateStoragePath(
 
 function asRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return {};
+    throw new TypeError(
+      `Expected non-null object from Supabase RPC, received ${typeof value}.`,
+    );
   }
 
   return value as Record<string, unknown>;
+}
+
+function requiredRpcString(record: Record<string, unknown>, fieldName: string) {
+  const value = record[fieldName];
+
+  if (typeof value !== "string" || value.length === 0) {
+    throw new TypeError(`Invalid RPC response: ${fieldName} is required.`);
+  }
+
+  return value;
+}
+
+function requiredRpcNumber(record: Record<string, unknown>, fieldName: string) {
+  const value = record[fieldName];
+
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new TypeError(`Invalid RPC response: ${fieldName} must be numeric.`);
+  }
+
+  return value;
 }
 
 export async function listEventInvitationTemplates(
@@ -346,12 +368,17 @@ export async function enqueueInvitationGenerationJob(
   }
 
   const record = asRecord(data);
+  const status = requiredRpcString(record, "status");
+
+  if (status !== "queued") {
+    throw new TypeError("Invalid RPC response: unexpected generation status.");
+  }
 
   return {
-    eventId: String(record.eventId),
-    generationJobId: String(record.generationJobId),
-    readyCount: Number(record.readyCount ?? 0),
-    status: "queued",
-    templateId: String(record.templateId),
+    eventId: requiredRpcString(record, "eventId"),
+    generationJobId: requiredRpcString(record, "generationJobId"),
+    readyCount: requiredRpcNumber(record, "readyCount"),
+    status,
+    templateId: requiredRpcString(record, "templateId"),
   };
 }

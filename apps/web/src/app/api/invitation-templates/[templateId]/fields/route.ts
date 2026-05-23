@@ -10,7 +10,6 @@ import {
 } from "@/lib/invitations/invitation-db";
 import {
   getProjectApiContext,
-  handleProjectApiError,
   isProjectApiContext,
 } from "@/lib/projects/project-api";
 
@@ -75,10 +74,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ fields });
   } catch (error) {
-    try {
-      return handleInvitationApiError(error);
-    } catch (projectError) {
-      return handleProjectApiError(projectError);
-    }
+    return handleInvitationApiError(error);
   }
 }

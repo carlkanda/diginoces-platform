@@ -333,6 +333,15 @@ export default async function InvitationTemplateDetailPage({
                   />
                 </label>
                 <label>
+                  Font family
+                  <input
+                    defaultValue={field.font_family ?? ""}
+                    disabled={!canUpdate}
+                    name={`fontFamily:${index}`}
+                    placeholder="Inter"
+                  />
+                </label>
+                <label>
                   Alignment
                   <select
                     defaultValue={field.alignment ?? "center"}

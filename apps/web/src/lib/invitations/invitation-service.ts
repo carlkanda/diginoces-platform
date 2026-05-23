@@ -565,6 +565,8 @@ export function createInvitationFileVersion(
 }
 
 function estimatedTextWidth(text: string, fontSize: number) {
+  // estimatedTextWidth uses a placeholder average character-width heuristic
+  // for proportional fonts until the PDF worker abstraction has real metrics.
   return text.length * fontSize * 0.34;
 }
 
