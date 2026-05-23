@@ -168,6 +168,16 @@ The migration:
 
 This review did not apply remote database migrations because the approved plan required a dry-run only. Before relying on the linked remote environment for manual QA, an operator should decide whether to apply those already-merged migrations with `npx supabase@latest db push --linked --yes`.
 
+## Post-Merge Operational Update
+
+After PR `#17` merged, the linked Supabase dev project was approved for mutation and the pending migrations were applied with `npx supabase@latest db push --linked --yes`:
+
+- `20260522211108_sprint_3_post_merge_hardening.sql`
+- `20260522221804_sprint_4_post_merge_hardening.sql`
+- `20260523063041_cross_sprint_integration_hardening.sql`
+
+The follow-up dry run now reports `Remote database is up to date.` and `npm run db:lint` reports no schema errors for `public` or `app_private`.
+
 ## Security Checks Performed
 
 - Verified platform login redirect paths are encoded through a single helper and still normalize to internal paths only.
@@ -190,12 +200,11 @@ This review did not apply remote database migrations because the approved plan r
 
 ## Open Issues Or Blockers
 
-- The linked Supabase remote reports previously merged Sprint 3 and Sprint 4 hardening migrations as pending during dry-run. This is an operational deployment blocker for linked-remote QA, not a repository build blocker.
 - Full-diff local CodeRabbit CLI review from WSL is blocked by a non-recoverable `TRPCClientError`. Directory-scoped local reviews work after aligning WSL Git line-ending config, and the PR can still be reviewed by the GitHub CodeRabbit check after push.
 
 ## Recommended Sprint 6 Readiness Notes
 
-- Apply or intentionally defer the pending linked Supabase migrations before manual QA on the linked project.
+- Confirm linked Supabase migrations are still current before manual QA on the linked project.
 - Keep invitation/PDF/QR work separated from existing public guest tokens and future check-in tokens.
 - Reuse `buildLoginRedirectPath()` for any new authenticated Sprint 6 routes.
 - Extend `AuditAction` and database audit triggers together whenever Sprint 6 adds invitation/template actions.
