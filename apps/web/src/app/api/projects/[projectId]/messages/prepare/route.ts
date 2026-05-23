@@ -7,7 +7,6 @@ import {
 } from "@/lib/messages/message-api";
 import {
   getProjectApiContext,
-  handleProjectApiError,
   isProjectApiContext,
 } from "@/lib/projects/project-api";
 
@@ -43,10 +42,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ messageLog }, { status: 201 });
   } catch (error) {
-    try {
-      return handleMessageApiError(error);
-    } catch (projectError) {
-      return handleProjectApiError(projectError);
-    }
+    return handleMessageApiError(error);
   }
 }

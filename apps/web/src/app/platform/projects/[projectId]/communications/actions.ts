@@ -110,12 +110,17 @@ export async function markProjectMessageStatusAction(
   formData: FormData,
 ) {
   const context = await getActionContext(projectId, "messages.send");
+  const reason = formValue(formData, "reason");
+
+  if ((status === "failed" || status === "skipped") && !reason) {
+    throw new MessageValidationError("reason is required for this status.");
+  }
 
   await markGuidedManualMessageStatus(
     context.supabase,
     messageLogId,
     status,
-    formValue(formData, "reason") ?? null,
+    reason ?? null,
   );
 
   redirect(`/platform/projects/${projectId}/communications/${messageLogId}`);

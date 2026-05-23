@@ -1,11 +1,12 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join, resolve, sep } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   buildGuidedManualWhatsappUrl,
   buildMessageAuditActions,
   canPerformMessageAction,
   createApiReadyMessagingAdapter,
+  extractMessageVariables,
   filterMaybeFollowUpCandidates,
   getSprint7CommunicationStatus,
   markGuidedManualMessage,
@@ -81,8 +82,24 @@ const basePreparationInput: MessagePreparationInput = {
 };
 
 function repoRootFromCwd() {
+  let current = resolve(process.cwd());
+
+  while (true) {
+    if (existsSync(join(current, ".git"))) {
+      return current;
+    }
+
+    const parent = dirname(current);
+
+    if (parent === current) {
+      break;
+    }
+
+    current = parent;
+  }
+
   const cwd = process.cwd();
-  const normalizedCwd = cwd.split(sep).join("/");
+  const normalizedCwd = cwd.replaceAll("\\", "/");
 
   return normalizedCwd.endsWith("apps/web") ? resolve(cwd, "../..") : cwd;
 }
@@ -200,6 +217,32 @@ describe("Sprint 7 WhatsApp communication workflow foundation", () => {
     expect(rendered.missingRequiredVariables).toEqual([]);
 
     expect(
+      extractMessageVariables(
+        "{{guest.display_name}} {{ event.name }} {{guest.display_name}}",
+      ),
+    ).toEqual(["guest.display_name", "event.name"]);
+
+    const englishDate = new Intl.DateTimeFormat("en", {
+      dateStyle: "medium",
+      timeZone: "UTC",
+    }).format(new Date(basePreparationInput.event.startsAt ?? ""));
+    const englishRendered = renderMessageTemplate(
+      {
+        ...englishInvitationTemplate,
+        body: "Date: {{event.date}}",
+        variables: ["event.date"],
+      },
+      {
+        event: basePreparationInput.event,
+        guest: basePreparationInput.guest,
+        invitation: basePreparationInput.invitation,
+        project: basePreparationInput.project,
+      },
+    );
+
+    expect(englishRendered.renderedBody).toContain(englishDate);
+
+    expect(
       renderMessageTemplate(
         {
           ...frenchInvitationTemplate,
@@ -296,6 +339,34 @@ describe("Sprint 7 WhatsApp communication workflow foundation", () => {
       sentAt: "2026-05-23T21:49:00.000Z",
       sentConfirmedBy: "staff-user",
       status: "sent",
+    });
+
+    expect(() =>
+      markGuidedManualMessage(sent, {
+        actorUserId: "staff-user",
+        markedAt: "2026-05-23T21:50:00.000Z",
+        nextStatus: "opened_manually",
+      }),
+    ).toThrow(/Cannot mark/i);
+
+    expect(() =>
+      markGuidedManualMessage(prepared, {
+        actorUserId: "staff-user",
+        markedAt: "2026-05-23T21:50:00.000Z",
+        nextStatus: "failed",
+      }),
+    ).toThrow(/reason/i);
+
+    expect(
+      markGuidedManualMessage(prepared, {
+        actorUserId: "staff-user",
+        markedAt: "2026-05-23T21:50:00.000Z",
+        nextStatus: "skipped",
+        reason: "printed_only_manual",
+      }),
+    ).toMatchObject({
+      skippedReason: "printed_only_manual",
+      status: "skipped",
     });
   });
 
@@ -442,6 +513,7 @@ describe("Sprint 7 WhatsApp communication workflow foundation", () => {
     expect(migration).toContain("guided_manual");
     expect(migration).toContain("api_ready");
     expect(migration).toContain("alter type public.invitation_status");
+    expect(migration).toContain("prepare_message_log_with_queue");
 
     expect(
       readRepoFile("docs/planning/sprint-7-completion-report.md"),

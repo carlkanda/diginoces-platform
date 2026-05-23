@@ -270,7 +270,7 @@ textarea {
   white-space: pre-wrap;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   padding: 16px;
   color: var(--foreground);
   font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;

@@ -9,6 +9,7 @@ import {
   listProjectMessageLogs,
   listProjectMessageQueue,
 } from "@/lib/messages/message-db";
+import { formatStatus } from "@/lib/messages/message-format";
 import {
   ProjectAccessError,
   requireProjectPermission,
@@ -25,10 +26,6 @@ type MessageQueuePageProps = {
     projectId: string;
   }>;
 };
-
-function formatStatus(status: string) {
-  return status.replaceAll("_", " ");
-}
 
 export default async function MessageQueuePage({
   params,
@@ -139,7 +136,10 @@ export default async function MessageQueuePage({
               </label>
               <label>
                 Event
-                <select name="eventId" required>
+                <select defaultValue="" name="eventId" required>
+                  <option disabled value="">
+                    Please select an event
+                  </option>
                   {details.events.map((event) => (
                     <option key={event.id} value={event.id}>
                       {event.name}
@@ -149,7 +149,10 @@ export default async function MessageQueuePage({
               </label>
               <label>
                 Guest
-                <select name="guestId" required>
+                <select defaultValue="" name="guestId" required>
+                  <option disabled value="">
+                    Please select a guest
+                  </option>
                   {guests.map((guest) => (
                     <option key={guest.id} value={guest.id}>
                       {guest.display_name}

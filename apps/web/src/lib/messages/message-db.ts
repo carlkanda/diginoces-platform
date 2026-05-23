@@ -377,6 +377,14 @@ async function getPreparationInput(
   const latestFile = latestFileResult.data?.[0] as
     | { id?: string | null }
     | undefined;
+  const projectName =
+    [
+      nullableString(projectRecord.bride_name),
+      nullableString(projectRecord.groom_name),
+    ]
+      .map((name) => name?.trim())
+      .filter((name): name is string => Boolean(name))
+      .join(" & ") || "Unnamed Project";
 
   return {
     changeReason: payload.changeReason,
@@ -423,7 +431,7 @@ async function getPreparationInput(
     project: {
       defaultLanguage: nullableString(projectRecord.preferred_language),
       id: requireString(projectRecord, "id"),
-      name: `${projectRecord.bride_name ?? ""} & ${projectRecord.groom_name ?? ""}`.trim(),
+      name: projectName,
     },
     templates: templates.map(toMessageTemplate),
   };
@@ -443,58 +451,35 @@ export async function prepareProjectMessage(
   );
   const prepared = prepareCommunicationMessage(input);
 
-  const { data, error } = await supabase
-    .from("message_logs")
-    .insert({
-      channel: prepared.channel,
-      event_id: prepared.eventId,
-      failure_reason: prepared.failureReason,
-      guest_id: prepared.guestId,
-      invitation_id: prepared.invitationId,
-      language: prepared.language,
-      manual_whatsapp_url: prepared.manualWhatsappUrl,
-      message_type: prepared.messageType,
-      metadata: { auditActions: prepared.auditActions },
-      opened_at: prepared.openedAt,
-      opened_by: prepared.openedBy,
-      prepared_by: prepared.preparedBy,
-      previous_message_log_id: prepared.previousMessageLogId,
-      project_id: prepared.projectId,
-      rendered_body: prepared.renderedBody,
-      sending_mode: prepared.sendingMode,
-      sent_at: prepared.sentAt,
-      sent_confirmed_by: prepared.sentConfirmedBy,
-      skipped_reason: prepared.skippedReason,
-      status: prepared.status,
-      target_whatsapp_number: prepared.targetWhatsappNumber,
-      template_id: prepared.templateId,
-      template_version: prepared.templateVersion,
-    })
-    .select("*")
-    .single();
+  const { data, error } = await supabase.rpc("prepare_message_log_with_queue", {
+    p_channel: prepared.channel,
+    p_event_id: prepared.eventId,
+    p_failure_reason: prepared.failureReason,
+    p_guest_id: prepared.guestId,
+    p_invitation_id: prepared.invitationId,
+    p_language: prepared.language,
+    p_manual_whatsapp_url: prepared.manualWhatsappUrl,
+    p_message_type: prepared.messageType,
+    p_metadata: { auditActions: prepared.auditActions },
+    p_previous_message_log_id: prepared.previousMessageLogId,
+    p_project_id: prepared.projectId,
+    p_rendered_body: prepared.renderedBody,
+    p_sending_mode: prepared.sendingMode,
+    p_status: prepared.status,
+    p_target_whatsapp_number: prepared.targetWhatsappNumber,
+    p_template_id: prepared.templateId,
+    p_template_version: prepared.templateVersion,
+  });
 
   if (error) {
     throw error;
   }
 
-  const messageLog = data as MessageLogRow;
-
-  const queueResult = await supabase.from("message_queue_items").insert({
-    created_by: actorUserId,
-    event_id: messageLog.event_id,
-    guest_id: messageLog.guest_id,
-    message_log_id: messageLog.id,
-    message_type: messageLog.message_type,
-    project_id: messageLog.project_id,
-    sending_mode: messageLog.sending_mode,
-    status: "queued",
-  });
-
-  if (queueResult.error) {
-    throw queueResult.error;
+  if (!data) {
+    throw new MessageValidationError("Message log was not created.");
   }
 
-  return messageLog;
+  return data as MessageLogRow;
 }
 
 export async function markGuidedManualMessageStatus(

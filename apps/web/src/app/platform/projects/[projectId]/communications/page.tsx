@@ -5,6 +5,7 @@ import {
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import { getProjectMessageOverview } from "@/lib/messages/message-db";
+import { formatStatus } from "@/lib/messages/message-format";
 import {
   hasProjectPermission,
   ProjectAccessError,
@@ -20,10 +21,6 @@ type CommunicationsPageProps = {
     projectId: string;
   }>;
 };
-
-function formatStatus(status: string) {
-  return status.replaceAll("_", " ");
-}
 
 export default async function CommunicationsPage({
   params,

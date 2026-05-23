@@ -394,8 +394,12 @@ export function parsePrepareMessagePayload(
 }
 
 export function extractMessageVariables(body: string) {
-  return [...body.matchAll(/{{\s*([a-zA-Z0-9_.]+)\s*}}/g)].map(
-    (match) => match[1],
+  return Array.from(
+    new Set(
+      [...body.matchAll(/{{\s*([a-zA-Z0-9_.]+)\s*}}/g)].map(
+        (match) => match[1],
+      ),
+    ),
   );
 }
 
@@ -446,6 +450,7 @@ export function selectMessageTemplate(input: {
 function formatDateTime(
   value: string | null,
   options: Intl.DateTimeFormatOptions,
+  locale = "fr",
 ) {
   if (!value) {
     return null;
@@ -457,7 +462,7 @@ function formatDateTime(
     return null;
   }
 
-  return new Intl.DateTimeFormat("fr", {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     ...options,
   }).format(date);
@@ -466,6 +471,7 @@ function formatDateTime(
 function resolveVariable(
   variable: string,
   context: MessageRenderingContext,
+  locale: string,
 ): string | null {
   switch (variable) {
     case "change.reason":
@@ -473,11 +479,19 @@ function resolveVariable(
     case "couple.names":
       return context.project.name;
     case "event.date":
-      return formatDateTime(context.event.startsAt, { dateStyle: "medium" });
+      return formatDateTime(
+        context.event.startsAt,
+        { dateStyle: "medium" },
+        locale,
+      );
     case "event.name":
       return context.event.name;
     case "event.time":
-      return formatDateTime(context.event.startsAt, { timeStyle: "short" });
+      return formatDateTime(
+        context.event.startsAt,
+        { timeStyle: "short" },
+        locale,
+      );
     case "event.venue":
       return context.event.venueName;
     case "guest.display_name":
@@ -491,9 +505,13 @@ function resolveVariable(
     case "public_guest_page_link":
       return context.invitation?.publicGuestPageLink ?? null;
     case "rsvp_deadline":
-      return formatDateTime(context.event.rsvpDeadlineAt, {
-        dateStyle: "medium",
-      });
+      return formatDateTime(
+        context.event.rsvpDeadlineAt,
+        {
+          dateStyle: "medium",
+        },
+        locale,
+      );
     default:
       return null;
   }
@@ -511,7 +529,7 @@ export function renderMessageTemplate(
   let renderedBody = template.body;
 
   for (const variable of variables) {
-    const value = resolveVariable(variable, context);
+    const value = resolveVariable(variable, context, template.language);
 
     if (value === null || value.length === 0) {
       if (optionalVariableNames.has(variable)) {
@@ -778,6 +796,22 @@ export function markGuidedManualMessage(
     );
   }
 
+  const allowedTransitions: Partial<
+    Record<MessageDeliveryStatus, MessageDeliveryStatus[]>
+  > = {
+    opened_manually: ["sent", "resent", "failed", "skipped"],
+    prepared: ["opened_manually", "sent", "resent", "failed", "skipped"],
+    resent: ["resent"],
+    sent: ["resent"],
+  };
+  const allowedNextStatuses = allowedTransitions[message.status] ?? [];
+
+  if (!allowedNextStatuses.includes(input.nextStatus)) {
+    throw new MessageValidationError(
+      `Cannot mark a ${message.status} message as ${input.nextStatus}.`,
+    );
+  }
+
   if (input.nextStatus === "opened_manually") {
     return {
       ...message,
@@ -797,16 +831,24 @@ export function markGuidedManualMessage(
   }
 
   if (input.nextStatus === "failed") {
+    if (!input.reason?.trim()) {
+      throw new MessageValidationError("Failure reason is required.");
+    }
+
     return {
       ...message,
-      failureReason: input.reason ?? "manual_failure",
+      failureReason: input.reason.trim(),
       status: "failed",
     };
   }
 
+  if (!input.reason?.trim()) {
+    throw new MessageValidationError("Skip reason is required.");
+  }
+
   return {
     ...message,
-    skippedReason: input.reason ?? "manual_skip",
+    skippedReason: input.reason.trim(),
     status: "skipped",
   };
 }

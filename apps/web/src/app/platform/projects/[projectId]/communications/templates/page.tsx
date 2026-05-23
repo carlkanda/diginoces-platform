@@ -5,6 +5,7 @@ import {
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import { listProjectMessageTemplates } from "@/lib/messages/message-db";
+import { formatStatus } from "@/lib/messages/message-format";
 import {
   hasProjectPermission,
   ProjectAccessError,
@@ -24,10 +25,6 @@ type MessageTemplatesPageProps = {
 
 const defaultTemplateBody =
   "Bonjour {{guest.display_name}}, votre invitation pour {{event.name}} est prete: {{public_guest_page_link}}";
-
-function formatStatus(status: string) {
-  return status.replaceAll("_", " ");
-}
 
 export default async function MessageTemplatesPage({
   params,

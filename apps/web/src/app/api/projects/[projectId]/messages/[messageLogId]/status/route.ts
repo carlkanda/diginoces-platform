@@ -12,7 +12,6 @@ import { MessageValidationError } from "@/lib/messages/message-service";
 import type { MessageDeliveryStatus } from "@/lib/messages/message-service";
 import {
   getProjectApiContext,
-  handleProjectApiError,
   isProjectApiContext,
 } from "@/lib/projects/project-api";
 
@@ -30,19 +29,25 @@ type ManualMessageStatus = Extract<
   "failed" | "opened_manually" | "resent" | "sent" | "skipped"
 >;
 
+const allowedManualStatuses = new Set<string>([
+  "failed",
+  "opened_manually",
+  "resent",
+  "sent",
+  "skipped",
+]);
+
 function parseStatusPayload(payload: Record<string, unknown>): {
   reason: string | null;
   status: ManualMessageStatus;
 } {
   const status = payload.status;
 
-  if (
-    status !== "opened_manually" &&
-    status !== "sent" &&
-    status !== "failed" &&
-    status !== "skipped" &&
-    status !== "resent"
-  ) {
+  if (typeof status !== "string") {
+    throw new MessageValidationError("status must be a string.");
+  }
+
+  if (!allowedManualStatuses.has(status)) {
     throw new MessageValidationError("Unsupported manual message status.");
   }
 
@@ -56,7 +61,7 @@ function parseStatusPayload(payload: Record<string, unknown>): {
 
   return {
     reason: payload.reason ?? null,
-    status,
+    status: status as ManualMessageStatus,
   };
 }
 
@@ -103,10 +108,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ result });
   } catch (error) {
-    try {
-      return handleMessageApiError(error);
-    } catch (projectError) {
-      return handleProjectApiError(projectError);
-    }
+    return handleMessageApiError(error);
   }
 }

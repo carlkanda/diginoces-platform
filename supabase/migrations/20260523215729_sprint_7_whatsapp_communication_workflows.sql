@@ -415,6 +415,150 @@ after update on public.message_queue_items
 for each row
 execute function app_private.audit_message_change();
 
+create or replace function public.prepare_message_log_with_queue(
+  p_project_id uuid,
+  p_event_id uuid,
+  p_guest_id uuid,
+  p_invitation_id uuid,
+  p_template_id uuid,
+  p_template_version integer,
+  p_message_type public.message_type,
+  p_language public.message_language,
+  p_channel public.message_channel,
+  p_sending_mode public.message_sending_mode,
+  p_status public.message_delivery_status,
+  p_rendered_body text,
+  p_target_whatsapp_number text,
+  p_manual_whatsapp_url text,
+  p_failure_reason text default null,
+  p_metadata jsonb default '{}'::jsonb,
+  p_previous_message_log_id uuid default null
+)
+returns public.message_logs
+language plpgsql
+security invoker
+set search_path = public, app_private
+as $$
+declare
+  v_actor_user_id uuid := (select auth.uid());
+  v_log public.message_logs;
+begin
+  if v_actor_user_id is null then
+    raise exception 'Authentication required.'
+      using errcode = '42501';
+  end if;
+
+  if not app_private.user_can_access_project(v_actor_user_id, p_project_id, 'messages.prepare') then
+    raise exception 'Message prepare permission denied.'
+      using errcode = '42501';
+  end if;
+
+  insert into public.message_logs (
+    channel,
+    event_id,
+    failure_reason,
+    guest_id,
+    invitation_id,
+    language,
+    manual_whatsapp_url,
+    message_type,
+    metadata,
+    prepared_by,
+    previous_message_log_id,
+    project_id,
+    rendered_body,
+    sending_mode,
+    status,
+    target_whatsapp_number,
+    template_id,
+    template_version
+  )
+  values (
+    p_channel,
+    p_event_id,
+    p_failure_reason,
+    p_guest_id,
+    p_invitation_id,
+    p_language,
+    p_manual_whatsapp_url,
+    p_message_type,
+    coalesce(p_metadata, '{}'::jsonb),
+    v_actor_user_id,
+    p_previous_message_log_id,
+    p_project_id,
+    p_rendered_body,
+    p_sending_mode,
+    p_status,
+    p_target_whatsapp_number,
+    p_template_id,
+    p_template_version
+  )
+  returning * into v_log;
+
+  insert into public.message_queue_items (
+    created_by,
+    event_id,
+    guest_id,
+    message_log_id,
+    message_type,
+    project_id,
+    sending_mode,
+    status
+  )
+  values (
+    v_actor_user_id,
+    v_log.event_id,
+    v_log.guest_id,
+    v_log.id,
+    v_log.message_type,
+    v_log.project_id,
+    v_log.sending_mode,
+    'queued'
+  );
+
+  return v_log;
+end;
+$$;
+
+revoke all on function public.prepare_message_log_with_queue(
+  uuid,
+  uuid,
+  uuid,
+  uuid,
+  uuid,
+  integer,
+  public.message_type,
+  public.message_language,
+  public.message_channel,
+  public.message_sending_mode,
+  public.message_delivery_status,
+  text,
+  text,
+  text,
+  text,
+  jsonb,
+  uuid
+) from public;
+grant execute on function public.prepare_message_log_with_queue(
+  uuid,
+  uuid,
+  uuid,
+  uuid,
+  uuid,
+  integer,
+  public.message_type,
+  public.message_language,
+  public.message_channel,
+  public.message_sending_mode,
+  public.message_delivery_status,
+  text,
+  text,
+  text,
+  text,
+  jsonb,
+  uuid
+) to authenticated;
+
 create or replace function public.mark_guided_manual_message_status(
   p_message_log_id uuid,
   p_status public.message_delivery_status,
@@ -461,6 +605,25 @@ begin
   end if;
 
   v_old_status := v_log.status;
+
+  if not (
+    (v_old_status = 'prepared' and p_status in ('opened_manually', 'sent', 'resent', 'failed', 'skipped'))
+    or (v_old_status = 'opened_manually' and p_status in ('sent', 'resent', 'failed', 'skipped'))
+    or (v_old_status in ('sent', 'resent') and p_status = 'resent')
+  ) then
+    raise exception 'Unsupported manual message status transition.'
+      using errcode = '22023';
+  end if;
+
+  if p_status = 'failed' and nullif(trim(coalesce(p_reason, '')), '') is null then
+    raise exception 'Failure reason is required.'
+      using errcode = '22023';
+  end if;
+
+  if p_status = 'skipped' and nullif(trim(coalesce(p_reason, '')), '') is null then
+    raise exception 'Skip reason is required.'
+      using errcode = '22023';
+  end if;
 
   update public.message_logs
   set

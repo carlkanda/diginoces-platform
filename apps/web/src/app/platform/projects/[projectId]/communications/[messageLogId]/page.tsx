@@ -5,6 +5,7 @@ import {
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import { getMessageLogDetails } from "@/lib/messages/message-db";
+import { formatStatus } from "@/lib/messages/message-format";
 import {
   hasProjectPermission,
   ProjectAccessError,
@@ -21,10 +22,6 @@ type MessageLogDetailPageProps = {
     projectId: string;
   }>;
 };
-
-function formatStatus(status: string) {
-  return status.replaceAll("_", " ");
-}
 
 export default async function MessageLogDetailPage({
   params,
@@ -191,7 +188,7 @@ export default async function MessageLogDetailPage({
             <form action={markFailed} className="stacked-form">
               <label>
                 Failure reason
-                <input name="reason" placeholder="wrong_number" />
+                <input name="reason" placeholder="wrong_number" required />
               </label>
               <button className="button secondary" type="submit">
                 Mark failed
@@ -200,7 +197,11 @@ export default async function MessageLogDetailPage({
             <form action={markSkipped} className="stacked-form">
               <label>
                 Skip reason
-                <input name="reason" placeholder="printed_only_manual" />
+                <input
+                  name="reason"
+                  placeholder="printed_only_manual"
+                  required
+                />
               </label>
               <button className="button secondary" type="submit">
                 Mark skipped
