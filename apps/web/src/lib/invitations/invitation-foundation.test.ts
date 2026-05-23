@@ -84,6 +84,20 @@ function readSprint6Migration() {
   return readFileSync(join(migrationDir, filename), "utf8");
 }
 
+function readSprint6HardeningMigration() {
+  const repoRoot = repoRootFromCwd();
+  const migrationDir = join(repoRoot, "supabase", "migrations");
+  const filename = readdirSync(migrationDir).find((entry) =>
+    entry.endsWith("_sprint_6_post_merge_hardening.sql"),
+  );
+
+  if (!filename) {
+    throw new Error("Expected Sprint 6 post-merge hardening migration file.");
+  }
+
+  return readFileSync(join(migrationDir, filename), "utf8");
+}
+
 describe("Sprint 6 invitation template and PDF generation foundation", () => {
   it("maps the implemented scope to EPIC-INV, issue 12, and approved backlog IDs", () => {
     const status = getSprint6InvitationStatus();
@@ -458,5 +472,23 @@ describe("Sprint 6 invitation template and PDF generation foundation", () => {
     expect(
       readRepoFile("docs/planning/sprint-6-completion-report.md"),
     ).toContain("Sprint 6");
+  });
+
+  it("documents Sprint 6 post-merge database hardening fixes", () => {
+    const migration = readSprint6HardeningMigration();
+
+    expect(migration).toMatch(
+      /grant execute on function app_private\.user_has_permission\(\s*uuid,\s*text,\s*public\.role_scope_type,\s*uuid\s*\) to authenticated;/,
+    );
+    expect(migration).toMatch(
+      /grant execute on function app_private\.user_can_access_project\(\s*uuid,\s*uuid,\s*text\s*\) to authenticated;/,
+    );
+    expect(migration).toMatch(
+      /grant execute on function app_private\.user_can_access_event\(\s*uuid,\s*uuid,\s*text\s*\) to authenticated;/,
+    );
+    expect(migration).toContain("if tg_table_name = 'guests' then");
+    expect(migration).toContain(
+      "elsif tg_op = 'UPDATE' and old.is_active and not new.is_active then",
+    );
   });
 });
