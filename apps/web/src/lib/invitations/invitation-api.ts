@@ -40,5 +40,11 @@ export function handleInvitationApiError(error: unknown) {
     return jsonError(error.status, "permission_denied", error.message);
   }
 
-  throw error;
+  if (error instanceof Error) {
+    console.error("Invitation API error:", error);
+    return jsonError(500, "server_error", "Unexpected server error.");
+  }
+
+  console.error("Unexpected invitation API error:", error);
+  return jsonError(500, "server_error", "Unexpected server error.");
 }

@@ -52,10 +52,15 @@ const readyGuest: InvitationGenerationGuest = {
   whatsappNumber: "+243810000001",
 };
 
+function repoRootFromCwd() {
+  const cwd = process.cwd();
+  const normalizedCwd = cwd.replaceAll("\\", "/");
+
+  return normalizedCwd.endsWith("apps/web") ? resolve(cwd, "../..") : cwd;
+}
+
 function readRepoFile(pathFromRoot: string) {
-  const repoRoot = process.cwd().endsWith(join("apps", "web"))
-    ? resolve(process.cwd(), "../..")
-    : process.cwd();
+  const repoRoot = repoRootFromCwd();
   const fullPath = join(repoRoot, pathFromRoot);
 
   if (!existsSync(fullPath)) {
@@ -66,9 +71,7 @@ function readRepoFile(pathFromRoot: string) {
 }
 
 function readSprint6Migration() {
-  const repoRoot = process.cwd().endsWith(join("apps", "web"))
-    ? resolve(process.cwd(), "../..")
-    : process.cwd();
+  const repoRoot = repoRootFromCwd();
   const migrationDir = join(repoRoot, "supabase", "migrations");
   const filename = readdirSync(migrationDir).find((entry) =>
     entry.endsWith("_sprint_6_invitation_template_pdf_generation.sql"),

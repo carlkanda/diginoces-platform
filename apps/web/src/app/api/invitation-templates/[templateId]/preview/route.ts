@@ -10,7 +10,6 @@ import {
 import { PDF_ENGINE_IDENTIFIER } from "@/lib/invitations/invitation-service";
 import {
   getProjectApiContext,
-  handleProjectApiError,
   isProjectApiContext,
 } from "@/lib/projects/project-api";
 
@@ -60,10 +59,6 @@ export async function POST(_request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ preview: result });
   } catch (error) {
-    try {
-      return handleInvitationApiError(error);
-    } catch (projectError) {
-      return handleProjectApiError(projectError);
-    }
+    return handleInvitationApiError(error);
   }
 }

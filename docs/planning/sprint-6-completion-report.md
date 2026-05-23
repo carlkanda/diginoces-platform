@@ -77,6 +77,8 @@ Coverage includes:
 - targeted secret scan with `rg`
 - `coderabbit review --agent --base main -c AGENTS.md` from WSL
 - post-CodeRabbit reruns: `npm run lint`, `npm run typecheck`, targeted Sprint 6 test, `npm run db:lint`, and linked Supabase dry-run
+- second `coderabbit review --agent --base main -c AGENTS.md` from WSL
+- second post-CodeRabbit reruns: `npm run lint`, `npm run typecheck`, targeted Sprint 6 test, `npm run db:lint`, and linked Supabase dry-run
 
 ## Checks Passed Or Failed
 
@@ -92,6 +94,7 @@ Coverage includes:
 - `git diff --check`: passed; only line-ending warnings were reported for touched text files.
 - Targeted secret scan: no real secrets found. The scan matched only `.env.example` placeholder `DATABASE_URL` and package-lock integrity hashes in the broader pass.
 - Local CodeRabbit CLI review: raised 11 issues. All valid fixes were applied, including template/event binding checks for server actions, zero coordinate support, atomic template field saving through an RPC, stricter API fields payload validation, centralized PDF engine metadata, and invitation file update audit coverage.
+- Local CodeRabbit CLI rerun: raised 5 issues. All valid fixes were applied, including stricter generation mode validation, platform-neutral repo-root test helpers, reduced duplicate server-action permission checks, simpler preview route error handling, and set-based batch generation SQL.
 
 ## Security Checks Performed
 
@@ -104,6 +107,7 @@ Implemented security controls include:
 - public guest page token usage remains separate from future `check_in` token scope.
 - template preview, approval, and generation server actions re-check that the template belongs to the current event before mutating it.
 - template field replacement is atomic through the `save_invitation_template_fields` RPC.
+- invitation generation job enqueueing uses set-based inserts/upserts instead of row-by-row loops.
 
 ## Assumptions Made
 

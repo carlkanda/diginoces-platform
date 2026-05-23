@@ -10,14 +10,12 @@ import {
   registerInvitationTemplate,
   saveInvitationTemplateFields,
 } from "@/lib/invitations/invitation-db";
-import {
-  requireInvitationEventPermission,
-  requireInvitationProjectPermission,
-} from "@/lib/invitations/invitation-api";
+import { requireInvitationEventPermission } from "@/lib/invitations/invitation-api";
 import {
   InvitationValidationError,
   PDF_ENGINE_IDENTIFIER,
 } from "@/lib/invitations/invitation-service";
+import type { PermissionSlug } from "@/lib/security/permissions";
 import type { InvitationFieldAlignment } from "@/lib/invitations/invitation-service";
 import { getEventDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -87,13 +85,12 @@ async function getActionContext() {
   };
 }
 
-async function requireEventDetails(eventId: string) {
+async function requireEventDetails(
+  eventId: string,
+  permission: PermissionSlug = "invitation_templates.read",
+) {
   const context = await getActionContext();
-  await requireInvitationEventPermission(
-    context,
-    eventId,
-    "invitation_templates.read",
-  );
+  await requireInvitationEventPermission(context, eventId, permission);
 
   const details = await getEventDetails(context.supabase, eventId);
 
@@ -125,10 +122,8 @@ export async function registerInvitationTemplateAction(
   eventId: string,
   formData: FormData,
 ) {
-  const { context, details } = await requireEventDetails(eventId);
-  await requireInvitationProjectPermission(
-    context,
-    details.project.id,
+  const { context, details } = await requireEventDetails(
+    eventId,
     "invitation_templates.create",
   );
 
@@ -159,9 +154,7 @@ export async function saveInvitationTemplateFieldsAction(
   templateId: string,
   formData: FormData,
 ) {
-  const { context } = await requireEventDetails(eventId);
-  await requireInvitationEventPermission(
-    context,
+  const { context } = await requireEventDetails(
     eventId,
     "invitation_templates.update",
   );
@@ -210,9 +203,7 @@ export async function generateInvitationPreviewAction(
   eventId: string,
   templateId: string,
 ) {
-  const { context } = await requireEventDetails(eventId);
-  await requireInvitationEventPermission(
-    context,
+  const { context } = await requireEventDetails(
     eventId,
     "invitation_templates.update",
   );
@@ -230,9 +221,7 @@ export async function approveInvitationPreviewAction(
   eventId: string,
   templateId: string,
 ) {
-  const { context } = await requireEventDetails(eventId);
-  await requireInvitationEventPermission(
-    context,
+  const { context } = await requireEventDetails(
     eventId,
     "invitation_templates.approve",
   );
@@ -247,9 +236,7 @@ export async function enqueueInvitationGenerationAction(
   eventId: string,
   templateId: string,
 ) {
-  const { context } = await requireEventDetails(eventId);
-  await requireInvitationEventPermission(
-    context,
+  const { context } = await requireEventDetails(
     eventId,
     "invitations.generate",
   );

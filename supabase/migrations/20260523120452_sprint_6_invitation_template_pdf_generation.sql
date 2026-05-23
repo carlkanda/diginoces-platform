@@ -760,8 +760,6 @@ declare
   v_actor_user_id uuid := (select auth.uid());
   v_template public.invitation_templates%rowtype;
   v_job_id uuid;
-  v_guest_id uuid;
-  v_invitation_id uuid;
   v_ready_count integer := 0;
 begin
   if v_actor_user_id is null then
@@ -808,8 +806,8 @@ begin
   )
   returning id into v_job_id;
 
-  for v_guest_id in
-    select g.id
+  with eligible_guests as (
+    select g.id as guest_id
     from public.guests g
     join public.guest_event_assignments gea
       on gea.guest_id = g.id
@@ -824,7 +822,8 @@ begin
         or cardinality(p_guest_ids) = 0
         or g.id = any(p_guest_ids)
       )
-  loop
+  ),
+  upserted_invitations as (
     insert into public.invitations (
       project_id,
       event_id,
@@ -834,15 +833,15 @@ begin
       created_by,
       updated_by
     )
-    values (
+    select
       v_template.project_id,
       v_template.event_id,
-      v_guest_id,
+      eligible_guests.guest_id,
       v_template.id,
       'not_generated',
       v_actor_user_id,
       v_actor_user_id
-    )
+    from eligible_guests
     on conflict (guest_id, event_id)
     do update set
       template_id = excluded.template_id,
@@ -855,8 +854,9 @@ begin
         else public.invitations.needs_regeneration_reason
       end,
       updated_by = v_actor_user_id
-    returning id into v_invitation_id;
-
+    returning id, guest_id
+  ),
+  inserted_job_items as (
     insert into public.invitation_generation_job_items (
       project_id,
       event_id,
@@ -865,18 +865,20 @@ begin
       invitation_id,
       status
     )
-    values (
+    select
       v_template.project_id,
       v_template.event_id,
       v_job_id,
-      v_guest_id,
-      v_invitation_id,
+      upserted_invitations.guest_id,
+      upserted_invitations.id,
       'queued'
-    )
-    on conflict (generation_job_id, guest_id) do nothing;
-
-    v_ready_count := v_ready_count + 1;
-  end loop;
+    from upserted_invitations
+    on conflict (generation_job_id, guest_id) do nothing
+    returning id
+  )
+  select count(*)::integer
+  into v_ready_count
+  from inserted_job_items;
 
   update public.invitation_generation_jobs
   set

@@ -8,7 +8,10 @@ import {
   enqueueInvitationGenerationJob,
   getInvitationTemplateDetails,
 } from "@/lib/invitations/invitation-db";
-import type { InvitationGenerationMode } from "@/lib/invitations/invitation-service";
+import {
+  InvitationValidationError,
+  type InvitationGenerationMode,
+} from "@/lib/invitations/invitation-service";
 import {
   getProjectApiContext,
   handleProjectApiError,
@@ -31,6 +34,10 @@ const generationModes = new Set<InvitationGenerationMode>([
 ]);
 
 function parseMode(value: unknown): InvitationGenerationMode {
+  if (value === undefined || value === null) {
+    return "event";
+  }
+
   if (
     typeof value === "string" &&
     generationModes.has(value as InvitationGenerationMode)
@@ -38,7 +45,9 @@ function parseMode(value: unknown): InvitationGenerationMode {
     return value as InvitationGenerationMode;
   }
 
-  return "event";
+  throw new InvitationValidationError(
+    "mode must be one of: event, regenerate_selected, selected_guests, technical_preview.",
+  );
 }
 
 function parseGuestIds(value: unknown) {
