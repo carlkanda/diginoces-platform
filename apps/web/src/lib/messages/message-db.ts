@@ -295,7 +295,15 @@ async function getPreparationInput(
   payload: PrepareMessagePayload,
   actorUserId: string,
 ): Promise<MessagePreparationInput> {
-  const [project, event, guest, templates, invitation] = await Promise.all([
+  const [
+    project,
+    event,
+    guest,
+    templates,
+    invitation,
+    assignmentsResult,
+    latestFileResult,
+  ] = await Promise.all([
     maybeSingleRecord(
       supabase
         .from("wedding_projects")
@@ -334,32 +342,30 @@ async function getPreparationInput(
             .maybeSingle(),
         )
       : Promise.resolve(null),
+    supabase
+      .from("guest_event_assignments")
+      .select("event_id, invited")
+      .eq("project_id", projectId)
+      .eq("guest_id", payload.guestId),
+    payload.invitationId
+      ? supabase
+          .from("invitation_files")
+          .select("id")
+          .eq("project_id", projectId)
+          .eq("invitation_id", payload.invitationId)
+          .eq("is_active", true)
+          .order("version", { ascending: false })
+          .limit(1)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   const projectRecord = asRecord(project, "Project");
   const eventRecord = asRecord(event, "Event");
   const guestRecord = asRecord(guest, "Guest");
 
-  const assignmentsResult = await supabase
-    .from("guest_event_assignments")
-    .select("event_id, invited")
-    .eq("project_id", projectId)
-    .eq("guest_id", payload.guestId);
-
   if (assignmentsResult.error) {
     throw assignmentsResult.error;
   }
-
-  const latestFileResult = payload.invitationId
-    ? await supabase
-        .from("invitation_files")
-        .select("id")
-        .eq("project_id", projectId)
-        .eq("invitation_id", payload.invitationId)
-        .eq("is_active", true)
-        .order("version", { ascending: false })
-        .limit(1)
-    : { data: [], error: null };
 
   if (latestFileResult.error) {
     throw latestFileResult.error;

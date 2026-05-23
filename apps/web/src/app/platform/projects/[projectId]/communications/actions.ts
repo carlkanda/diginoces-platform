@@ -20,7 +20,11 @@ function formValue(formData: FormData, key: string) {
     return undefined;
   }
 
-  const normalized = String(value).trim();
+  if (typeof value !== "string") {
+    throw new MessageValidationError(`${key} must be a text value.`);
+  }
+
+  const normalized = value.trim();
   return normalized.length > 0 ? normalized : undefined;
 }
 

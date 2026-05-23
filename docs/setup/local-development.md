@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, and the Sprint 6 invitation template/PDF generation foundation for issue `#12`. It does not include Excel import, invitation sending, WhatsApp sending, table planning, check-in, contracts, pricing, payments, partner project creation, automatic duplicate merging, full Canva API integration, or full dashboards.
+This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, and the Sprint 7 guided WhatsApp communication workflow for issue `#21`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, table planning, check-in, contracts, pricing, payments, partner project creation, automatic duplicate merging, full Canva API integration, or full dashboards.
 
 ## Prerequisites
 

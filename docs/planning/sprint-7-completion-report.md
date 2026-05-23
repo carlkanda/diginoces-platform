@@ -86,6 +86,8 @@ Coverage includes template language selection/fallback, inactive template blocki
 - `npx.cmd supabase@latest db push --linked --dry-run` - passed; would push only `20260523215729_sprint_7_whatsapp_communication_workflows.sql`.
 - `git diff --check` - passed; emitted only a CRLF advisory for `docs/setup/local-development.md`.
 - Targeted `rg` secret scan for service-role keys, database URLs/passwords, WhatsApp tokens/secrets, Google secrets, private keys, and production payment keys - passed with no matches.
+- Hosted CodeRabbit review fixes applied for strict FormData text handling, queue-page prerequisites, whitespace-preserving template previews, parallel preparation reads, and local setup scope wording.
+- Post-review rerun: `npm.cmd run format:check`, `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run test`, `npm.cmd run build`, `git diff --check`, and targeted secret scan passed.
 
 ## Checks Passed Or Failed
 

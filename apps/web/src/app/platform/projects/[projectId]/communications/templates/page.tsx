@@ -141,7 +141,7 @@ export default async function MessageTemplatesPage({
                 <p className="meta-list">
                   {formatStatus(template.message_type)}
                 </p>
-                <code>{template.body}</code>
+                <pre className="message-preview">{template.body}</pre>
               </article>
             ))}
           </div>

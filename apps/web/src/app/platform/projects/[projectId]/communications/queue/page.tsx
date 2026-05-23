@@ -85,6 +85,8 @@ export default async function MessageQueuePage({
 
   const prepareMessage = prepareProjectMessageAction.bind(null, projectId);
   const invitationOptions = invitations;
+  const hasMessagePrerequisites =
+    details.events.length > 0 && guests.length > 0;
 
   return (
     <>
@@ -119,70 +121,78 @@ export default async function MessageQueuePage({
           <h2>Prepare message</h2>
           <span className="meta-list">Manual WhatsApp workflow</span>
         </div>
-        <form action={prepareMessage} className="stacked-form">
-          <div className="form-grid">
-            <label>
-              Message type
-              <select defaultValue="invitation" name="messageType" required>
-                <option value="invitation">Invitation</option>
-                <option value="invitation_resend">Invitation resend</option>
-                <option value="maybe_follow_up">Maybe follow-up</option>
-                <option value="event_reminder">Event reminder</option>
-                <option value="modification_notice">Modification notice</option>
-                <option value="manual_custom">Manual custom</option>
-              </select>
-            </label>
-            <label>
-              Event
-              <select name="eventId" required>
-                {details.events.map((event) => (
-                  <option key={event.id} value={event.id}>
-                    {event.name}
+        {hasMessagePrerequisites ? (
+          <form action={prepareMessage} className="stacked-form">
+            <div className="form-grid">
+              <label>
+                Message type
+                <select defaultValue="invitation" name="messageType" required>
+                  <option value="invitation">Invitation</option>
+                  <option value="invitation_resend">Invitation resend</option>
+                  <option value="maybe_follow_up">Maybe follow-up</option>
+                  <option value="event_reminder">Event reminder</option>
+                  <option value="modification_notice">
+                    Modification notice
                   </option>
-                ))}
-              </select>
+                  <option value="manual_custom">Manual custom</option>
+                </select>
+              </label>
+              <label>
+                Event
+                <select name="eventId" required>
+                  {details.events.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Guest
+                <select name="guestId" required>
+                  {guests.map((guest) => (
+                    <option key={guest.id} value={guest.id}>
+                      {guest.display_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Invitation
+                <select name="invitationId">
+                  <option value="">None</option>
+                  {invitationOptions.map((invitation) => (
+                    <option key={invitation.id} value={invitation.id}>
+                      {invitation.status} - {invitation.guest_id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <label>
+              Public guest page link
+              <input
+                name="publicGuestPageLink"
+                placeholder="https://example.com/g/secure-token"
+                type="url"
+              />
             </label>
             <label>
-              Guest
-              <select name="guestId" required>
-                {guests.map((guest) => (
-                  <option key={guest.id} value={guest.id}>
-                    {guest.display_name}
-                  </option>
-                ))}
-              </select>
+              Change reason
+              <input
+                name="changeReason"
+                placeholder="event_time_changed, guest_name_corrected"
+              />
             </label>
-            <label>
-              Invitation
-              <select name="invitationId">
-                <option value="">None</option>
-                {invitationOptions.map((invitation) => (
-                  <option key={invitation.id} value={invitation.id}>
-                    {invitation.status} - {invitation.guest_id}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <button className="button" type="submit">
+              Prepare guided message
+            </button>
+          </form>
+        ) : (
+          <div className="alert">
+            Add at least one event and one guest before preparing a message.
           </div>
-          <label>
-            Public guest page link
-            <input
-              name="publicGuestPageLink"
-              placeholder="https://example.com/g/secure-token"
-              type="url"
-            />
-          </label>
-          <label>
-            Change reason
-            <input
-              name="changeReason"
-              placeholder="event_time_changed, guest_name_corrected"
-            />
-          </label>
-          <button className="button" type="submit">
-            Prepare guided message
-          </button>
-        </form>
+        )}
       </section>
 
       <section className="section">
