@@ -957,17 +957,16 @@ to authenticated
 with check (app_private.user_can_access_project((select auth.uid()), project_id, 'invitation_templates.create'));
 
 drop policy if exists "Invitation templates updatable by template editors or approvers" on public.invitation_templates;
-create policy "Invitation templates updatable by template editors or approvers"
+drop policy if exists "Invitation templates updatable by template editors" on public.invitation_templates;
+create policy "Invitation templates updatable by template editors"
 on public.invitation_templates
 for update
 to authenticated
 using (
   app_private.user_can_access_project((select auth.uid()), project_id, 'invitation_templates.update')
-  or app_private.user_can_access_project((select auth.uid()), project_id, 'invitation_templates.approve')
 )
 with check (
   app_private.user_can_access_project((select auth.uid()), project_id, 'invitation_templates.update')
-  or app_private.user_can_access_project((select auth.uid()), project_id, 'invitation_templates.approve')
 );
 
 drop policy if exists "Invitation template fields visible to template readers" on public.invitation_template_fields;

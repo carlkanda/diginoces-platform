@@ -87,6 +87,7 @@ Coverage includes:
 - fifth post-CodeRabbit reruns: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, `git diff --check`, and targeted secret scan
 - sixth `coderabbit review --agent --base main -c AGENTS.md` from WSL
 - sixth post-CodeRabbit reruns: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, `git diff --check`, and targeted secret scan
+- stale hosted review follow-up reruns: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, `npm audit --omit=dev`, `npm run db:lint`, linked Supabase dry-run, and `git diff --check`
 
 ## Checks Passed Or Failed
 
@@ -107,6 +108,7 @@ Coverage includes:
 - Fourth local CodeRabbit CLI rerun: raised 10 issues. Valid fixes were applied, including form-control consistency, operations manager requirement traceability, typed default field alignment, server-side upload size and coordinate validation, consistent preview route authorization errors, template-detail pagination defaults, fields parsing helper, and event-assignment validation in the PDF worker abstraction.
 - Fifth local CodeRabbit CLI rerun: raised 7 low-severity issues. Valid fixes were applied, including fuller operations manager requirement traceability, form CSS consolidation/comments, template upload metadata-only documentation, binary-search text fitting, text-width heuristic documentation, and structured invitation API error logging.
 - Sixth local CodeRabbit CLI rerun: raised 9 low-severity issues. Valid fixes were applied, including generation mode/guest ID cross-field validation, template registration API validation, API and RPC template-field validation, a unique per-template dynamic-field key constraint, invitation job row type parity, audit trigger fallback object types, and updated Sprint 6 setup wording.
+- Stale hosted CodeRabbit requested-changes reviews on older commits were dismissed after the latest hosted rerun passed. Remaining stale hardening items were still applied: logger serialization is guarded, and direct template updates now require `invitation_templates.update` instead of accepting approve-only permission.
 
 ## Security Checks Performed
 

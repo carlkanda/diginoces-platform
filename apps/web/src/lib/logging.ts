@@ -20,17 +20,46 @@ function serializeUnknown(value: unknown) {
   return String(value);
 }
 
+function serializeContext(context: LogContext) {
+  return Object.fromEntries(
+    Object.entries(context).map(([key, value]) => {
+      if (value instanceof Error) {
+        return [key, serializeUnknown(value)];
+      }
+
+      if (typeof value === "bigint") {
+        return [key, value.toString()];
+      }
+
+      if (typeof value === "object" && value !== null) {
+        return [key, serializeUnknown(value)];
+      }
+
+      return [key, value];
+    }),
+  );
+}
+
 export const serverLogger = {
   error(message: string, context: LogContext = {}) {
     const { error, ...rest } = context;
+    const payload = {
+      level: "error",
+      message,
+      ...serializeContext(rest),
+      ...(error === undefined ? {} : { error: serializeUnknown(error) }),
+    };
 
-    console.error(
-      JSON.stringify({
-        level: "error",
-        message,
-        ...rest,
-        ...(error === undefined ? {} : { error: serializeUnknown(error) }),
-      }),
-    );
+    try {
+      console.error(JSON.stringify(payload));
+    } catch {
+      console.error(
+        JSON.stringify({
+          level: "error",
+          message: "Failed to serialize log payload.",
+          originalMessage: message,
+        }),
+      );
+    }
   },
 };
