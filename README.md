@@ -11,17 +11,18 @@ Completed:
 - Sprint 3 — Guest Management & Guest Lists Foundation
 - Sprint 4 — Guest Import & Approval Workflow
 - Sprint 5 — RSVP & Public Guest Page
+- Sprint 6 — Invitation Template & PDF Generation
 
 Active sprint:
 
 ```text
-Sprint 6 — Invitation Template & PDF Generation
-Issue: #12
-Issue URL: https://github.com/carlkanda/diginoces-platform/issues/12
-Sprint plan: docs/planning/sprint-6-plan.md
-Expected branch: codex/sprint-6-invitation-template-pdf-generation
-Expected PR title: Sprint 6 — Invitation Template & PDF Generation
-Expected report: docs/planning/sprint-6-completion-report.md
+Sprint 7 — WhatsApp Communication Workflows
+Issue: #21
+Issue URL: https://github.com/carlkanda/diginoces-platform/issues/21
+Sprint plan: docs/planning/sprint-7-plan.md
+Expected branch: codex/sprint-7-whatsapp-communication-workflows
+Expected PR title: Sprint 7 — WhatsApp Communication Workflows
+Expected report: docs/planning/sprint-7-completion-report.md
 ```
 
 ## Agent instructions
@@ -45,7 +46,7 @@ No requirement may be marked complete unless it has been implemented, tested, re
 
 ```text
 AGENTS.md
-docs/planning/sprint-6-plan.md
+docs/planning/sprint-7-plan.md
 docs/backlog/master-requirements-register.csv
 docs/backlog/traceability_matrix.csv
 docs/backlog/module_coverage.csv
@@ -67,8 +68,8 @@ docs/backlog/initial-product-backlog-lists.csv
 |      3 | Guest Management & Guest Lists Foundation       | Completed           |
 |      4 | Guest Import & Approval Workflow                | Completed           |
 |      5 | RSVP & Public Guest Page                        | Completed           |
-|      6 | Invitation Template & PDF Generation            | Active              |
-|      7 | WhatsApp Communication Workflows                | Planned             |
+|      6 | Invitation Template & PDF Generation            | Completed           |
+|      7 | WhatsApp Communication Workflows                | Active              |
 |      8 | Tables, Seating & Print Materials               | Planned             |
 |      9 | Check-in & Wedding-Day Operations               | Planned             |
 |     10 | Contracts, Pricing & Payment Controls           | Planned             |
