@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, and the Sprint 5 RSVP/public guest page foundation for issue `#10`. It does not include Excel import, invitation PDF generation, invitation template upload, QR image generation, WhatsApp sending, table planning, check-in, contracts, pricing, payments, partner project creation, automatic duplicate merging, or full dashboards.
+This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, and the Sprint 6 invitation template/PDF generation foundation for issue `#12`. It does not include Excel import, invitation sending, WhatsApp sending, table planning, check-in, contracts, pricing, payments, partner project creation, automatic duplicate merging, full Canva API integration, or full dashboards.
 
 ## Prerequisites
 
@@ -127,7 +127,22 @@ Sprint 5 RSVP behavior:
 - Guests can RSVP only to events assigned to their guest record.
 - RSVP deadlines route late responses into manual review instead of silently overwriting operational state.
 - Printed-only guests remain a manual RSVP workflow.
-- Invitation download is a placeholder only; PDF generation, QR images, WhatsApp sending, seating, and check-in are deferred to later sprints.
+- Sprint 6 implements invitation generation foundation with a PDF worker abstraction and metadata persistence; full production PDF composition and sending, WhatsApp sending, seating, and check-in are deferred to later sprints. See `docs/planning/sprint-6-completion-report.md` for details.
+
+Sprint 6 invitation template and PDF generation foundation routes:
+
+```text
+http://127.0.0.1:3000/platform/events/{eventId}/invitations
+http://127.0.0.1:3000/platform/events/{eventId}/invitations/new
+http://127.0.0.1:3000/platform/events/{eventId}/invitations/{templateId}
+http://127.0.0.1:3000/api/events/{eventId}/invitation-templates
+http://127.0.0.1:3000/api/invitation-templates/{templateId}/fields
+http://127.0.0.1:3000/api/invitation-templates/{templateId}/preview
+http://127.0.0.1:3000/api/invitation-templates/{templateId}/approve
+http://127.0.0.1:3000/api/invitation-templates/{templateId}/generate
+```
+
+Sprint 6 registers Canva-exported PDF template metadata, stores dynamic field coordinates, supports technical preview generation through a tested PDF worker abstraction, gates preview approval and batch generation with backend permissions, and records invitation/job/file-version metadata in Supabase. The public guest page QR/link field uses Sprint 5 `guest_public_page` tokens; future check-in tokens remain separate and inactive until the check-in sprint.
 
 ## Supabase
 
@@ -192,5 +207,6 @@ npx supabase@latest migration new descriptive_name
 - Sprint 4 apply actions use a permission-gated Supabase RPC to create approved guest records and event/tag assignments atomically within the database transaction.
 - The Sprint 5 migration enables RLS on public guest tokens and event-specific RSVP records. Public tokens are stored as SHA-256 hashes only, and public page access/RSVP actions are audited by RPCs and audit triggers.
 - Sprint 5 public RSVP RPCs are callable without a signed-in Supabase user only through token resolution and guest-scoped checks. Admin/operations preview, token generation, token revocation, and RSVP summary remain authenticated and permission-gated.
-- The storage adapter is fail-closed until a real provider is configured.
+- The Sprint 6 migration enables RLS on invitation templates, template fields, generation jobs, job items, invitation records, and invitation files. Template source filename, storage path, checksum, and error messages are redacted from invitation audit snapshots.
+- Sprint 6 stores generated file metadata and app-owned storage paths, while the storage adapter remains fail-closed until a real provider is configured.
 - A historical PR `#17` WSL CodeRabbit full-diff review failed with `TRPCClientError` even when `coderabbit doctor` passed; a later PR `#18` full-diff review completed successfully. If the `TRPCClientError` recurs, use scoped directory reviews such as `coderabbit review --agent --base main --dir apps/web/src/lib/auth -c AGENTS.md`, then rely on the hosted CodeRabbit PR review as the full-diff backstop.

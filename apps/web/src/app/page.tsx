@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 import { getSprint4ImportStatus } from "@/lib/guest-imports/guest-import-service";
 import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
+import { getSprint6InvitationStatus } from "@/lib/invitations/invitation-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
 import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
 import { getSprint5RsvpStatus } from "@/lib/rsvp/rsvp-service";
@@ -39,9 +40,22 @@ const projectRouteExamples = [
   },
 ];
 
+const eventRouteExamples = [
+  {
+    description:
+      "Sprint 6 event-level invitation templates, field editor, preview approval, and generation jobs.",
+    label: "Invitation templates",
+    path: "/platform/events/{eventId}/invitations",
+  },
+  {
+    description: "Sprint 6 Canva PDF registration foundation.",
+    label: "Register template",
+    path: "/platform/events/{eventId}/invitations/new",
+  },
+];
+
 const deferredScope = [
-  "invitation templates and PDF generation",
-  "QR image generation",
+  "invitation sending workflow",
   "WhatsApp sending",
   "seating and check-in",
   "contracts, pricing, and full payments",
@@ -55,6 +69,7 @@ export default function HomePage() {
   const sprint3Foundation = getSprint3FoundationStatus();
   const sprint4Foundation = getSprint4ImportStatus();
   const sprint5Foundation = getSprint5RsvpStatus();
+  const sprint6Foundation = getSprint6InvitationStatus();
   const env = getPublicEnvironment();
   const coveredRequirementIds = Array.from(
     new Set([
@@ -63,6 +78,7 @@ export default function HomePage() {
       ...sprint3Foundation.modules.flatMap((module) => module.requirementIds),
       ...sprint4Foundation.requirementIds,
       ...sprint5Foundation.requirementIds,
+      ...sprint6Foundation.requirementIds,
     ]),
   ).sort();
 
@@ -108,17 +124,26 @@ export default function HomePage() {
       sprint: sprint5Foundation.sprint,
       stories: sprint5Foundation.stories,
     },
+    {
+      description:
+        "Event invitation template registration, coordinate field configuration, technical preview approval, invitation record/file versions, public guest page QR/link fields, batch generation jobs, and tested PDF worker abstraction.",
+      features: sprint6Foundation.features,
+      issue: sprint6Foundation.issue,
+      modules: sprint6Foundation.modules,
+      sprint: sprint6Foundation.sprint,
+      stories: sprint6Foundation.stories,
+    },
   ];
 
   return (
     <>
       <section className="hero">
         <div>
-          <p className="eyebrow">Sprint 1-5 implementation status</p>
+          <p className="eyebrow">Sprint 1-6 implementation status</p>
           <h1>Diginoces platform progress</h1>
           <p>
             The home page surfaces the foundations already delivered across the
-            first five sprints, while keeping future wedding operations out of
+            first six sprints, while keeping future wedding operations out of
             scope until their documented sprint begins.
           </p>
           <div className="requirement-list" aria-label="Requirements covered">
@@ -151,7 +176,7 @@ export default function HomePage() {
       <section className="section" aria-label="Sprint progress">
         <div className="section-heading">
           <h2>What has been built so far</h2>
-          <span className="meta-list">5 sprint foundations</span>
+          <span className="meta-list">6 sprint foundations</span>
         </div>
         <div className="progress-overview">
           {sprintSummaries.map((sprint) => (
@@ -227,6 +252,22 @@ export default function HomePage() {
             </p>
             <div className="code-list">
               {projectRouteExamples.map((route) => (
+                <div key={route.path}>
+                  <strong>{route.label}</strong>
+                  <code>{route.path}</code>
+                  <span>{route.description}</span>
+                </div>
+              ))}
+            </div>
+          </article>
+          <article className="route-card">
+            <strong>Event-specific foundations</strong>
+            <p className="meta-list">
+              Replace <code>{"{eventId}"}</code> with a real event from a
+              project after Supabase auth is configured.
+            </p>
+            <div className="code-list">
+              {eventRouteExamples.map((route) => (
                 <div key={route.path}>
                   <strong>{route.label}</strong>
                   <code>{route.path}</code>

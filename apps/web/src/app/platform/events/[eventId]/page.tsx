@@ -9,6 +9,7 @@ import {
   getEventTypeLabel,
 } from "@/lib/projects/project-foundation";
 import {
+  hasProjectPermission,
   ProjectAccessError,
   requireEventPermission,
 } from "@/lib/projects/project-api";
@@ -87,6 +88,15 @@ export default async function EventDetailPage({
     notFound();
   }
 
+  const canReadInvitations = await hasProjectPermission(
+    {
+      supabase,
+      user: authContext.user,
+    },
+    details.project.id,
+    "invitation_templates.read",
+  );
+
   return (
     <>
       <div className="page-heading">
@@ -104,6 +114,14 @@ export default async function EventDetailPage({
         >
           Project
         </Link>
+        {canReadInvitations ? (
+          <Link
+            className="button"
+            href={`/platform/events/${eventId}/invitations`}
+          >
+            Invitations
+          </Link>
+        ) : null}
       </div>
 
       <section className="section">

@@ -381,6 +381,60 @@ textarea {
   outline: 3px solid rgba(0, 107, 95, 0.15);
 }
 
+.form-grid,
+.stacked-form {
+  display: grid;
+  gap: 14px;
+}
+
+.form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-grid.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+:is(.form-grid, .stacked-form) label {
+  display: grid;
+  gap: 6px;
+  color: var(--foreground);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+:is(.form-grid, .stacked-form) :is(input, select, textarea) {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px 12px;
+  color: var(--foreground);
+}
+
+:is(.form-grid, .stacked-form) select[multiple] {
+  min-height: 128px;
+}
+
+:is(.form-grid, .stacked-form) textarea {
+  resize: vertical;
+}
+
+:is(.form-grid, .stacked-form) :is(input, select, textarea):focus {
+  border-color: var(--accent);
+  outline: 3px solid rgba(0, 107, 95, 0.15);
+}
+
+/* .form-panel is a lightweight form container: it keeps padding directly and
+   skips the standard .panel shadow/.panel-body split used by larger panels. */
+.form-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
 .check-field {
   display: flex;
   align-items: center;
@@ -657,7 +711,9 @@ textarea {
   }
 
   .progress-overview,
-  .route-grid {
+  .route-grid,
+  .form-grid,
+  .form-grid.compact {
     grid-template-columns: 1fr;
   }
 

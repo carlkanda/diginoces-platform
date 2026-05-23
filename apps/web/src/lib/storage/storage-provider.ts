@@ -1,4 +1,9 @@
-export type FileScopeType = "platform" | "project" | "event" | "guest";
+export type FileScopeType =
+  | "event"
+  | "guest"
+  | "invitation"
+  | "platform"
+  | "project";
 
 export type RegisterFileInput = {
   bucket: string;
@@ -40,7 +45,13 @@ export function getStorageFoundationSummary() {
   return {
     accessControlled: true,
     provider: "supabase",
-    requirementIds: ["FILE-001", "TECH-004"],
+    requirementIds: [
+      "FILE-001",
+      "FILE-004",
+      "FILE-005",
+      "FILE-006",
+      "TECH-004",
+    ],
     status: "placeholder",
   };
 }
