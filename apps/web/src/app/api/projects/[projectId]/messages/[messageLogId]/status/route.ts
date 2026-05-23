@@ -57,6 +57,15 @@ function parseStatusPayload(payload: Record<string, unknown>): {
     throw new MessageValidationError("reason must be text.");
   }
 
+  if (
+    (status === "failed" || status === "skipped") &&
+    (typeof payload.reason !== "string" || payload.reason.trim().length === 0)
+  ) {
+    throw new MessageValidationError(
+      "reason is required for failed/skipped statuses.",
+    );
+  }
+
   return {
     reason: payload.reason ?? null,
     status: status as ManualMessageStatus,

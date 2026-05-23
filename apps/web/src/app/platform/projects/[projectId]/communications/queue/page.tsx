@@ -25,13 +25,18 @@ type MessageQueuePageProps = {
   params: Promise<{
     projectId: string;
   }>;
+  searchParams: Promise<{
+    messageError?: string;
+  }>;
 };
 
 export default async function MessageQueuePage({
   params,
+  searchParams,
 }: MessageQueuePageProps) {
   const authContext = await getAuthContext();
   const { projectId } = await params;
+  const feedback = await searchParams;
 
   if (authContext.status === "anonymous") {
     redirect(
@@ -117,6 +122,9 @@ export default async function MessageQueuePage({
           <h2>Prepare message</h2>
           <span className="meta-list">Manual WhatsApp workflow</span>
         </div>
+        {feedback.messageError ? (
+          <div className="alert">{feedback.messageError}</div>
+        ) : null}
         {hasMessagePrerequisites ? (
           <form action={prepareMessage} className="stacked-form">
             <div className="form-grid">

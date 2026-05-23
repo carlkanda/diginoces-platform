@@ -21,6 +21,10 @@ type MessageTemplatesPageProps = {
   params: Promise<{
     projectId: string;
   }>;
+  searchParams: Promise<{
+    messageError?: string;
+    messageStatus?: string;
+  }>;
 };
 
 const defaultTemplateBody =
@@ -28,9 +32,11 @@ const defaultTemplateBody =
 
 export default async function MessageTemplatesPage({
   params,
+  searchParams,
 }: MessageTemplatesPageProps) {
   const authContext = await getAuthContext();
   const { projectId } = await params;
+  const feedback = await searchParams;
 
   if (authContext.status === "anonymous") {
     redirect(
@@ -110,6 +116,15 @@ export default async function MessageTemplatesPage({
           </Link>
         </div>
       </div>
+
+      {feedback.messageError ? (
+        <div className="alert">{feedback.messageError}</div>
+      ) : null}
+      {feedback.messageStatus ? (
+        <div className="alert">
+          Message template saved and ready for review.
+        </div>
+      ) : null}
 
       <section className="section">
         <div className="section-heading">

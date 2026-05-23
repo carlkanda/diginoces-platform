@@ -43,9 +43,16 @@ function messageDetailPath(
   messageLogId: string,
   params: Record<string, string>,
 ) {
+  return withSearchParams(
+    `/platform/projects/${projectId}/communications/${messageLogId}`,
+    params,
+  );
+}
+
+function withSearchParams(path: string, params: Record<string, string>) {
   const searchParams = new URLSearchParams(params);
 
-  return `/platform/projects/${projectId}/communications/${messageLogId}?${searchParams.toString()}`;
+  return `${path}?${searchParams.toString()}`;
 }
 
 async function getActionContext(projectId: string, permission: PermissionSlug) {
@@ -75,20 +82,41 @@ export async function createMessageTemplateAction(
 ) {
   const context = await getActionContext(projectId, "message_templates.manage");
 
-  await createMessageTemplate(
-    context.supabase,
-    projectId,
-    {
-      body: requiredFormValue(formData, "body"),
-      language: requiredFormValue(formData, "language"),
-      messageType: requiredFormValue(formData, "messageType"),
-      status: formValue(formData, "status") ?? "active",
-      title: requiredFormValue(formData, "title"),
-    },
-    context.user.id,
-  );
+  try {
+    await createMessageTemplate(
+      context.supabase,
+      projectId,
+      {
+        body: requiredFormValue(formData, "body"),
+        language: requiredFormValue(formData, "language"),
+        messageType: requiredFormValue(formData, "messageType"),
+        status: formValue(formData, "status") ?? "active",
+        title: requiredFormValue(formData, "title"),
+      },
+      context.user.id,
+    );
+  } catch (error) {
+    redirect(
+      withSearchParams(
+        `/platform/projects/${projectId}/communications/templates`,
+        {
+          messageError:
+            error instanceof MessageValidationError
+              ? error.message
+              : "Unable to create message template.",
+        },
+      ),
+    );
+  }
 
-  redirect(`/platform/projects/${projectId}/communications/templates`);
+  redirect(
+    withSearchParams(
+      `/platform/projects/${projectId}/communications/templates`,
+      {
+        messageStatus: "template_created",
+      },
+    ),
+  );
 }
 
 export async function prepareProjectMessageAction(
@@ -96,19 +124,33 @@ export async function prepareProjectMessageAction(
   formData: FormData,
 ) {
   const context = await getActionContext(projectId, "messages.prepare");
-  const messageLog = await prepareProjectMessage(
-    context.supabase,
-    projectId,
-    {
-      changeReason: formValue(formData, "changeReason"),
-      eventId: requiredFormValue(formData, "eventId"),
-      guestId: requiredFormValue(formData, "guestId"),
-      invitationId: formValue(formData, "invitationId"),
-      messageType: requiredFormValue(formData, "messageType"),
-      publicGuestPageLink: formValue(formData, "publicGuestPageLink"),
-    },
-    context.user.id,
-  );
+
+  let messageLog: Awaited<ReturnType<typeof prepareProjectMessage>>;
+
+  try {
+    messageLog = await prepareProjectMessage(
+      context.supabase,
+      projectId,
+      {
+        changeReason: formValue(formData, "changeReason"),
+        eventId: requiredFormValue(formData, "eventId"),
+        guestId: requiredFormValue(formData, "guestId"),
+        invitationId: formValue(formData, "invitationId"),
+        messageType: requiredFormValue(formData, "messageType"),
+        publicGuestPageLink: formValue(formData, "publicGuestPageLink"),
+      },
+      context.user.id,
+    );
+  } catch (error) {
+    redirect(
+      withSearchParams(`/platform/projects/${projectId}/communications/queue`, {
+        messageError:
+          error instanceof MessageValidationError
+            ? error.message
+            : "Unable to prepare message.",
+      }),
+    );
+  }
 
   redirect(`/platform/projects/${projectId}/communications/${messageLog.id}`);
 }

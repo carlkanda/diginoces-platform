@@ -46,6 +46,8 @@ Branch: `codex/sprint-7-whatsapp-communication-workflows`
 - `apps/web/src/app/platform/projects/[projectId]/communications/templates/page.tsx`
 - `apps/web/src/app/platform/projects/[projectId]/communications/queue/page.tsx`
 - `apps/web/src/app/platform/projects/[projectId]/communications/[messageLogId]/page.tsx`
+- `apps/web/src/app/platform/projects/[projectId]/communications/submit-button.tsx`
+- `apps/web/src/lib/messages/message-format.ts`
 - `apps/web/src/app/api/health/route.ts`
 - `apps/web/src/app/page.tsx`
 - `apps/web/src/app/globals.css`
