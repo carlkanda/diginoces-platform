@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   formatEventCode,
@@ -17,6 +19,19 @@ import {
   ProjectValidationError,
 } from "@/lib/projects/project-service";
 import type { RoleAssignment } from "@/lib/security/permissions";
+
+function readRepoFile(pathFromRoot: string) {
+  const repoRoot = process.cwd().endsWith(join("apps", "web"))
+    ? resolve(process.cwd(), "../..")
+    : process.cwd();
+  const fullPath = join(repoRoot, pathFromRoot);
+
+  if (!existsSync(fullPath)) {
+    throw new Error(`Expected repository file at ${fullPath}`);
+  }
+
+  return readFileSync(fullPath, "utf8");
+}
 
 describe("Sprint 2 projects and events foundation", () => {
   it("maps the implemented scope to EPIC-PROJ and the approved feature IDs", () => {
@@ -254,5 +269,22 @@ describe("Sprint 2 projects and events foundation", () => {
     expect(taskKeys.join(" ")).not.toMatch(
       /guest|rsvp|invitation|whatsapp|payment|contract|check/i,
     );
+  });
+
+  it("keeps database code generation bounded and validation errors explicit", () => {
+    const migration = readRepoFile(
+      "supabase/migrations/20260523063041_cross_sprint_integration_hardening.sql",
+    );
+
+    expect(migration).toContain("while sequence_number <= max_sequence loop");
+    expect(migration).toContain(
+      "Unable to generate a unique project code after",
+    );
+    expect(migration).toContain("Unable to generate a unique event code after");
+    expect(migration).toContain("replace_guest_foundation_assignments");
+    expect(migration).toContain("using errcode = '22023';");
+    expect(migration).toContain("'guest_event_assignments.manage'");
+    expect(migration).toContain("'guest_tags.manage'");
+    expect(migration).toContain("public.guest_event_assignments.status");
   });
 });

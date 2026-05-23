@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  buildLoginRedirectPath,
+  getAuthContext,
+} from "@/lib/auth/auth-service";
 import {
   getEventLifecycleLabel,
   getEventTypeLabel,
   getProjectLifecycleLabel,
 } from "@/lib/projects/project-foundation";
 import {
+  hasProjectPermission,
   ProjectAccessError,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
@@ -43,7 +47,7 @@ export default async function ProjectDetailPage({
   const { projectId } = await params;
 
   if (authContext.status === "anonymous") {
-    redirect(`/login?next=/platform/projects/${projectId}`);
+    redirect(buildLoginRedirectPath(`/platform/projects/${projectId}`));
   }
 
   if (authContext.status === "not_configured") {
@@ -85,6 +89,15 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
+  const permissionContext = {
+    supabase,
+    user: authContext.user,
+  };
+  const [canReadGuests, canReadGuestImports, canReadRsvps] = await Promise.all([
+    hasProjectPermission(permissionContext, projectId, "guests.read"),
+    hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
+    hasProjectPermission(permissionContext, projectId, "rsvps.read"),
+  ]);
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",
   );
@@ -104,24 +117,30 @@ export default async function ProjectDetailPage({
         <Link className="button secondary" href="/platform/projects">
           Projects
         </Link>
-        <Link
-          className="button"
-          href={`/platform/projects/${projectId}/guests`}
-        >
-          Guests
-        </Link>
-        <Link
-          className="button secondary"
-          href={`/platform/projects/${projectId}/guest-imports`}
-        >
-          Guest imports
-        </Link>
-        <Link
-          className="button secondary"
-          href={`/platform/projects/${projectId}/rsvps`}
-        >
-          RSVP summary
-        </Link>
+        {canReadGuests ? (
+          <Link
+            className="button"
+            href={`/platform/projects/${projectId}/guests`}
+          >
+            Guests
+          </Link>
+        ) : null}
+        {canReadGuestImports ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/guest-imports`}
+          >
+            Guest imports
+          </Link>
+        ) : null}
+        {canReadRsvps ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/rsvps`}
+          >
+            RSVP summary
+          </Link>
+        ) : null}
       </div>
 
       <section className="section">
@@ -160,24 +179,30 @@ export default async function ProjectDetailPage({
           title types, event assignments, import history, and RSVP summary
           foundation without invitations, seating, or check-in workflows.
         </p>
-        <Link
-          className="button"
-          href={`/platform/projects/${projectId}/guests`}
-        >
-          Open guest list
-        </Link>
-        <Link
-          className="button secondary"
-          href={`/platform/projects/${projectId}/guest-imports`}
-        >
-          Open imports
-        </Link>
-        <Link
-          className="button secondary"
-          href={`/platform/projects/${projectId}/rsvps`}
-        >
-          RSVP summary
-        </Link>
+        {canReadGuests ? (
+          <Link
+            className="button"
+            href={`/platform/projects/${projectId}/guests`}
+          >
+            Open guest list
+          </Link>
+        ) : null}
+        {canReadGuestImports ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/guest-imports`}
+          >
+            Open imports
+          </Link>
+        ) : null}
+        {canReadRsvps ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/rsvps`}
+          >
+            RSVP summary
+          </Link>
+        ) : null}
       </section>
 
       <section className="section">

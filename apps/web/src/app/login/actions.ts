@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import {
+  buildLoginRedirectPath,
   normalizeInternalPath,
   requestMagicLink,
 } from "@/lib/auth/auth-service";
@@ -14,8 +15,17 @@ export async function signInWithMagicLink(formData: FormData) {
   const result = await requestMagicLink(email, next);
 
   if (result.status === "sent") {
-    redirect(`/login?sent=1&email=${encodeURIComponent(email)}`);
+    redirect(
+      `/login?${new URLSearchParams({
+        email,
+        sent: "1",
+      }).toString()}`,
+    );
   }
 
-  redirect(`/login?error=${encodeURIComponent(result.message)}&next=${next}`);
+  redirect(
+    `${buildLoginRedirectPath(next)}&${new URLSearchParams({
+      error: result.message,
+    }).toString()}`,
+  );
 }

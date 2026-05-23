@@ -13,12 +13,19 @@ Google Sheets remain the working/editable source. GitHub should contain exported
 
 ## Required exports
 
-Recommended files for this folder:
+Required CSV snapshots for this folder:
 
 ```text
 master-requirements-register.csv
-initial-product-backlog.csv
-product-backlog-structure.md
+traceability_matrix.csv
+module_coverage.csv
+requirements-lists.csv
+initial-product-backlog-epics.csv
+initial-product-backlog-features.csv
+initial-product-backlog-user-stories.csv
+initial-product-backlog-tasks.csv
+initial-product-backlog-test-cases.csv
+initial-product-backlog-lists.csv
 ```
 
 ## Export rule

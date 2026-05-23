@@ -25,6 +25,17 @@ export type AuditAction =
   | "guest_title_types.updated"
   | "guest_duplicates.detected"
   | "guest_duplicates.reviewed"
+  | "guest_imports.applied"
+  | "guest_imports.created"
+  | "guest_imports.mapping_saved"
+  | "guest_imports.reviewed"
+  | "guest_imports.submitted"
+  | "guest_imports.updated"
+  | "guest_imports.validation_completed"
+  | "guest_import_rows.applied"
+  | "guest_import_rows.reviewed"
+  | "guest_import_rows.staged"
+  | "guest_import_rows.validation_updated"
   | "guest_public_pages.accessed"
   | "guest_public_pages.previewed"
   | "guest_public_tokens.created"
@@ -82,6 +93,8 @@ export function getAuditFoundationSummary() {
       "workflow_tasks",
       "files",
       "guests",
+      "guest_imports",
+      "guest_import_rows",
       "guest_public_pages",
       "guest_public_tokens",
       "rsvps",

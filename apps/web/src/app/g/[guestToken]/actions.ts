@@ -8,6 +8,12 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 const publicResponses = new Set<RsvpResponseStatus>(["maybe", "no", "yes"]);
 const supportedLanguages = new Set(["en", "fr"]);
 
+function guestPageResultPath(guestToken: string, rsvp: string) {
+  return `/g/${encodeURIComponent(guestToken)}?${new URLSearchParams({
+    rsvp,
+  }).toString()}`;
+}
+
 export async function submitPublicRsvpAction(
   guestToken: string,
   eventId: string,
@@ -19,7 +25,7 @@ export async function submitPublicRsvpAction(
     .toLowerCase();
 
   if (!publicResponses.has(response as RsvpResponseStatus)) {
-    redirect(`/g/${guestToken}?rsvp=invalid_response`);
+    redirect(guestPageResultPath(guestToken, "invalid_response"));
   }
 
   if (
@@ -28,7 +34,7 @@ export async function submitPublicRsvpAction(
       (!/^[a-z]+$/.test(rawPreferredLanguage) ||
         !supportedLanguages.has(rawPreferredLanguage)))
   ) {
-    redirect(`/g/${guestToken}?rsvp=invalid_language`);
+    redirect(guestPageResultPath(guestToken, "invalid_language"));
   }
 
   const preferredLanguage = rawPreferredLanguage || null;
@@ -44,14 +50,14 @@ export async function submitPublicRsvpAction(
     );
   } catch {
     console.error("Public RSVP submission failed.");
-    redirect(`/g/${guestToken}?rsvp=error`);
+    redirect(guestPageResultPath(guestToken, "error"));
   }
 
   const status = result?.status ?? "error";
 
   if (status === "saved") {
-    redirect(`/g/${guestToken}?rsvp=saved`);
+    redirect(guestPageResultPath(guestToken, "saved"));
   }
 
-  redirect(`/g/${guestToken}?rsvp=${encodeURIComponent(status)}`);
+  redirect(guestPageResultPath(guestToken, status));
 }

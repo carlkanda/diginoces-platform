@@ -106,10 +106,52 @@ export async function requestMagicLink(
   };
 }
 
+const controlCharacterPattern = /[\u0000-\u001F\u007F]/;
+const backslashPattern = /\\/;
+const encodedBackslashPattern = /%5c/i;
+const encodedControlCharacterPattern = /%(?:0[0-9A-Fa-f]|1[0-9A-Fa-f]|7[Ff])/;
+const encodedDotSegmentPattern = /(?:^|\/)(?:\.|%2e)(?:\.|%2e)(?:\/|$)/i;
+const pathTraversalSegmentPattern = /(?:^|\/)\.\.(?:\/|$)/;
+const maxDecodeIterations = 3;
+
 export function normalizeInternalPath(path: string) {
-  if (!path.startsWith("/") || path.startsWith("//")) {
-    return "/platform";
+  const normalized = path.trim();
+  let candidate = normalized;
+
+  for (let iteration = 0; iteration < maxDecodeIterations; iteration += 1) {
+    const candidatePath = candidate.split(/[?#]/, 1)[0] ?? "";
+
+    if (
+      !candidate.startsWith("/") ||
+      candidate.startsWith("//") ||
+      backslashPattern.test(candidate) ||
+      encodedBackslashPattern.test(candidate) ||
+      controlCharacterPattern.test(candidate) ||
+      encodedControlCharacterPattern.test(candidate) ||
+      encodedDotSegmentPattern.test(candidatePath) ||
+      pathTraversalSegmentPattern.test(candidatePath)
+    ) {
+      return "/platform";
+    }
+
+    try {
+      const decoded = decodeURIComponent(candidate);
+
+      if (decoded === candidate) {
+        return normalized;
+      }
+
+      candidate = decoded;
+    } catch {
+      return "/platform";
+    }
   }
 
-  return path;
+  return "/platform";
+}
+
+export function buildLoginRedirectPath(nextPath: string) {
+  return `/login?${new URLSearchParams({
+    next: normalizeInternalPath(nextPath),
+  }).toString()}`;
 }

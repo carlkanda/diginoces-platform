@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  buildLoginRedirectPath,
+  getAuthContext,
+} from "@/lib/auth/auth-service";
 import {
   getGuestImportActionCapabilities,
   requireGuestImportReadPermission,
@@ -42,8 +45,11 @@ export default async function GuestImportDetailPage({
   const { importId, projectId } = await params;
 
   if (authContext.status === "anonymous") {
-    const nextPath = `/platform/projects/${projectId}/guest-imports/${importId}`;
-    redirect(`/login?${new URLSearchParams({ next: nextPath }).toString()}`);
+    redirect(
+      buildLoginRedirectPath(
+        `/platform/projects/${projectId}/guest-imports/${importId}`,
+      ),
+    );
   }
 
   if (authContext.status === "not_configured") {

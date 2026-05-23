@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  buildLoginRedirectPath,
+  getAuthContext,
+} from "@/lib/auth/auth-service";
 import {
   getEventLifecycleLabel,
   getEventTypeLabel,
@@ -42,7 +45,7 @@ export default async function EventDetailPage({
   const { eventId } = await params;
 
   if (authContext.status === "anonymous") {
-    redirect(`/login?next=/platform/events/${eventId}`);
+    redirect(buildLoginRedirectPath(`/platform/events/${eventId}`));
   }
 
   if (authContext.status === "not_configured") {

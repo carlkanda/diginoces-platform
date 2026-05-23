@@ -187,15 +187,16 @@ export const MAX_GUEST_IMPORT_CSV_BYTES = 5 * 1024 * 1024;
 
 const importAuditActions = [
   "guest_imports.created",
-  "guest_imports.file_parsed",
   "guest_imports.mapping_saved",
   "guest_imports.validation_completed",
   "guest_imports.submitted",
   "guest_imports.reviewed",
   "guest_imports.applied",
+  "guest_imports.updated",
   "guest_import_rows.staged",
   "guest_import_rows.reviewed",
   "guest_import_rows.applied",
+  "guest_import_rows.validation_updated",
 ] as const;
 
 const headerMatchers: Record<ImportColumnTarget, string[]> = {
@@ -717,6 +718,10 @@ export function canPerformGuestImportAction(
   action: GuestImportAction,
   side: GuestSide,
   projectId: string,
+  visibility?: {
+    currentUserId?: string | null;
+    uploadedBy?: string | null;
+  },
 ) {
   const permissionByAction: Record<GuestImportAction, PermissionSlug> = {
     apply: "guest_imports.apply",
@@ -742,7 +747,10 @@ export function canPerformGuestImportAction(
     return (
       hasScopedPermission(assignments, "guest_imports.review", target) ||
       hasScopedPermission(assignments, "guest_imports.apply", target) ||
-      canManageGuestSide(assignments, side, projectId)
+      canManageGuestSide(assignments, side, projectId) ||
+      (typeof visibility?.currentUserId === "string" &&
+        visibility.currentUserId.length > 0 &&
+        visibility.uploadedBy === visibility.currentUserId)
     );
   }
 
