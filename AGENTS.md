@@ -18,38 +18,38 @@ No requirement may be marked complete unless it is implemented, tested, reviewed
 ## Active sprint
 
 ```text
-Sprint 6 — Invitation Template & PDF Generation
+Sprint 7 — WhatsApp Communication Workflows
 ```
 
 GitHub issue:
 
 ```text
-#12 — Sprint 6 — Invitation Template & PDF Generation
-https://github.com/carlkanda/diginoces-platform/issues/12
+#21 — Sprint 7 — WhatsApp Communication Workflows
+https://github.com/carlkanda/diginoces-platform/issues/21
 ```
 
 Authoritative sprint plan:
 
 ```text
-docs/planning/sprint-6-plan.md
+docs/planning/sprint-7-plan.md
 ```
 
 Expected branch:
 
 ```text
-codex/sprint-6-invitation-template-pdf-generation
+codex/sprint-7-whatsapp-communication-workflows
 ```
 
 Expected PR title:
 
 ```text
-Sprint 6 — Invitation Template & PDF Generation
+Sprint 7 — WhatsApp Communication Workflows
 ```
 
 Expected completion report:
 
 ```text
-docs/planning/sprint-6-completion-report.md
+docs/planning/sprint-7-completion-report.md
 ```
 
 ## Active sprint sync rule
@@ -78,60 +78,58 @@ Always read:
 - relevant product documents in `docs/product/`
 - relevant technical design documents in `docs/technical-design/`
 
-For Sprint 6, specifically read:
+For Sprint 7, specifically read:
 
+- `docs/planning/sprint-7-plan.md`
 - `docs/planning/sprint-6-plan.md`
-- `docs/planning/sprint-5-plan.md`
+- `docs/product/07-whatsapp-communication-message-workflows.md`
 - `docs/product/06-invitation-template-pdf-generation.md`
 - `docs/product/05-rsvp-public-guest-page.md`
 - `docs/product/04-guest-management-guest-lists.md`
-- `docs/product/03-wedding-project-structure.md`
-- `docs/product/14-files-storage-retention-security.md`
-- `docs/technical-design/database-schema-core-entities.md`
+- `docs/product/10-contracts-pricing-payment-controls.md`
 - `docs/technical-design/api-backend-service-design.md`
 - `docs/technical-design/background-jobs-pdf-qr-whatsapp-offline-checkin.md`
 - `docs/technical-design/security-permissions-access-control.md`
 
-## Sprint 6 scope
+## Sprint 7 scope
 
-Implement only the Invitation Template & PDF Generation foundation:
+Implement only the WhatsApp Communication Workflows foundation:
 
-- event-level invitation template model;
-- Canva-exported PDF template upload/registration foundation;
-- dynamic field configuration foundation;
-- visual/coordinate editor foundation;
-- technical preview generation workflow;
-- technical preview approval workflow;
-- invitation record model;
-- invitation file/version foundation;
-- secure public guest page QR/link dynamic field foundation;
-- separation between public guest page token and future check-in token;
-- generation validation workflow;
-- batch generation job foundation;
-- PDF generation or tested PDF worker abstraction;
-- long-name/text-fitting foundation;
-- permission checks for template/generation operations;
-- audit logging for template/generation actions;
-- basic UI for upload, field configuration, preview, approval, and generation results;
+- message template foundation;
+- French/English template support;
+- dynamic message variable rendering;
+- message readiness validation;
+- guided manual WhatsApp sending workflow;
+- API-ready messaging adapter abstraction without real credentials;
+- message logs and status tracking;
+- invitation send/resend preparation workflow;
+- Maybe RSVP follow-up foundation;
+- event reminder foundation or controlled placeholder;
+- modification/update message foundation;
+- communication history for authorized users;
+- permission checks for template and message actions;
+- audit logging for communication actions;
+- basic UI for templates, sending queue, guided manual send, and history;
 - tests;
 - documentation updates;
-- `docs/planning/sprint-6-completion-report.md`.
+- `docs/planning/sprint-7-completion-report.md`.
 
-## Sprint 6 out of scope
+## Sprint 7 out of scope
 
 Do not implement:
 
-- WhatsApp sending;
-- invitation sending workflow;
+- unofficial WhatsApp Web automation;
+- production WhatsApp API integration requiring real credentials;
 - seating;
 - check-in;
 - contracts;
 - pricing;
 - payments;
-- partner project creation;
-- full Canva API integration.
+- invitation PDF generation;
+- QR generation;
+- partner project creation.
 
-WhatsApp communication workflows begin in Sprint 7.
+Tables, seating, and print materials begin in Sprint 8.
 
 ## Workflow
 
