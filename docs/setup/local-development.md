@@ -144,6 +144,20 @@ http://127.0.0.1:3000/api/invitation-templates/{templateId}/generate
 
 Sprint 6 registers Canva-exported PDF template metadata, stores dynamic field coordinates, supports technical preview generation through a tested PDF worker abstraction, gates preview approval and batch generation with backend permissions, and records invitation/job/file-version metadata in Supabase. The public guest page QR/link field uses Sprint 5 `guest_public_page` tokens; future check-in tokens remain separate and inactive until the check-in sprint.
 
+Sprint 7 WhatsApp communication workflow foundation routes:
+
+```text
+http://127.0.0.1:3000/platform/projects/{projectId}/communications
+http://127.0.0.1:3000/platform/projects/{projectId}/communications/templates
+http://127.0.0.1:3000/platform/projects/{projectId}/communications/queue
+http://127.0.0.1:3000/platform/projects/{projectId}/communications/{messageLogId}
+http://127.0.0.1:3000/api/projects/{projectId}/messages/templates
+http://127.0.0.1:3000/api/projects/{projectId}/messages/prepare
+http://127.0.0.1:3000/api/projects/{projectId}/messages/{messageLogId}/status
+```
+
+Sprint 7 is guided-manual first. It prepares WhatsApp messages, builds `wa.me` links, records staff status changes, and keeps a credential-free API-ready adapter for future official provider work. It does not automate WhatsApp Web and does not require production WhatsApp API credentials. Readiness checks use the existing payment/public-page gate, generated invitation record, active invitation file, event assignment, public guest page link, and guest WhatsApp number. Printed-only guests remain manual.
+
 ## Supabase
 
 The project has been initialized with Supabase CLI metadata in `supabase/config.toml`.
@@ -209,4 +223,6 @@ npx supabase@latest migration new descriptive_name
 - Sprint 5 public RSVP RPCs are callable without a signed-in Supabase user only through token resolution and guest-scoped checks. Admin/operations preview, token generation, token revocation, and RSVP summary remain authenticated and permission-gated.
 - The Sprint 6 migration enables RLS on invitation templates, template fields, generation jobs, job items, invitation records, and invitation files. Template source filename, storage path, checksum, and error messages are redacted from invitation audit snapshots.
 - Sprint 6 stores generated file metadata and app-owned storage paths, while the storage adapter remains fail-closed until a real provider is configured.
+- The Sprint 7 migration enables RLS on message templates, message logs, message queue items, and message status events. Message audit snapshots redact rendered bodies, target WhatsApp numbers, manual WhatsApp URLs, and external provider identifiers.
+- Sprint 7 uses guided manual WhatsApp links and status tracking only. Real WhatsApp API credentials, unofficial WhatsApp Web automation, automatic sending, seating, check-in, contracts, pricing, payments, and partner features are intentionally out of scope.
 - A historical PR `#17` WSL CodeRabbit full-diff review failed with `TRPCClientError` even when `coderabbit doctor` passed; a later PR `#18` full-diff review completed successfully. If the `TRPCClientError` recurs, use scoped directory reviews such as `coderabbit review --agent --base main --dir apps/web/src/lib/auth -c AGENTS.md`, then rely on the hosted CodeRabbit PR review as the full-diff backstop.
