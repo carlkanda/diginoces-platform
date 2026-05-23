@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  buildLoginRedirectPath,
+  getAuthContext,
+} from "@/lib/auth/auth-service";
 import {
   getProjectLifecycleLabel,
   getSprint2FoundationStatus,
@@ -21,7 +24,7 @@ export default async function ProjectsPage() {
   const foundation = getSprint2FoundationStatus();
 
   if (authContext.status === "anonymous") {
-    redirect("/login?next=/platform/projects");
+    redirect(buildLoginRedirectPath("/platform/projects"));
   }
 
   const projects =

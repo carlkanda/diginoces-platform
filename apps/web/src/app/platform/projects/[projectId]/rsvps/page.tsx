@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  buildLoginRedirectPath,
+  getAuthContext,
+} from "@/lib/auth/auth-service";
+import {
+  ProjectAccessError,
+  requireProjectPermission,
+} from "@/lib/projects/project-api";
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { getProjectRsvpSummary } from "@/lib/rsvp/rsvp-db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -31,7 +38,7 @@ export default async function ProjectRsvpSummaryPage({
   const { projectId } = await params;
 
   if (authContext.status === "anonymous") {
-    redirect(`/login?next=/platform/projects/${projectId}/rsvps`);
+    redirect(buildLoginRedirectPath(`/platform/projects/${projectId}/rsvps`));
   }
 
   if (authContext.status === "not_configured") {
@@ -49,20 +56,22 @@ export default async function ProjectRsvpSummaryPage({
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data: canReadRsvps, error: permissionError } = await supabase.rpc(
-    "current_user_can_access_project",
-    {
-      p_permission: "rsvps.read",
-      p_project_id: projectId,
-    },
-  );
 
-  if (permissionError) {
-    throw permissionError;
-  }
+  try {
+    await requireProjectPermission(
+      {
+        supabase,
+        user: authContext.user,
+      },
+      projectId,
+      "rsvps.read",
+    );
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
 
-  if (!canReadRsvps) {
-    notFound();
+    throw error;
   }
 
   const [projectDetails, summary] = await Promise.all([

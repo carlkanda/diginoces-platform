@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  buildLoginRedirectPath,
+  getAuthContext,
+} from "@/lib/auth/auth-service";
+import { requireAnyGuestCreatePermission } from "@/lib/guests/guest-api";
 import {
   getProjectDetails,
   listProjectEvents,
@@ -11,6 +15,7 @@ import {
   type GuestSide,
 } from "@/lib/guests/guest-service";
 import {
+  hasProjectPermission,
   ProjectAccessError,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
@@ -41,7 +46,7 @@ export default async function ProjectGuestsPage({
   const filters = await searchParams;
 
   if (authContext.status === "anonymous") {
-    redirect(`/login?next=/platform/projects/${projectId}/guests`);
+    redirect(buildLoginRedirectPath(`/platform/projects/${projectId}/guests`));
   }
 
   if (authContext.status === "not_configured") {
@@ -59,16 +64,13 @@ export default async function ProjectGuestsPage({
   }
 
   const supabase = await createSupabaseServerClient();
+  const permissionContext = {
+    supabase,
+    user: authContext.user,
+  };
 
   try {
-    await requireProjectPermission(
-      {
-        supabase,
-        user: authContext.user,
-      },
-      projectId,
-      "guests.read",
-    );
+    await requireProjectPermission(permissionContext, projectId, "guests.read");
   } catch (error) {
     if (error instanceof ProjectAccessError) {
       notFound();
@@ -77,6 +79,20 @@ export default async function ProjectGuestsPage({
     throw error;
   }
 
+  let canCreateGuest = false;
+  try {
+    await requireAnyGuestCreatePermission(permissionContext, projectId);
+    canCreateGuest = true;
+  } catch (error) {
+    if (!(error instanceof ProjectAccessError)) {
+      throw error;
+    }
+  }
+
+  const [canReadGuestImports, canReadRsvps] = await Promise.all([
+    hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
+    hasProjectPermission(permissionContext, projectId, "rsvps.read"),
+  ]);
   const projectDetails = await getProjectDetails(supabase, projectId);
 
   if (!projectDetails) {
@@ -133,24 +149,30 @@ export default async function ProjectGuestsPage({
           >
             Project
           </Link>
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/guest-imports`}
-          >
-            Imports
-          </Link>
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/rsvps`}
-          >
-            RSVP summary
-          </Link>
-          <Link
-            className="button"
-            href={`/platform/projects/${projectId}/guests/new`}
-          >
-            Add guest
-          </Link>
+          {canReadGuestImports ? (
+            <Link
+              className="button secondary"
+              href={`/platform/projects/${projectId}/guest-imports`}
+            >
+              Imports
+            </Link>
+          ) : null}
+          {canReadRsvps ? (
+            <Link
+              className="button secondary"
+              href={`/platform/projects/${projectId}/rsvps`}
+            >
+              RSVP summary
+            </Link>
+          ) : null}
+          {canCreateGuest ? (
+            <Link
+              className="button"
+              href={`/platform/projects/${projectId}/guests/new`}
+            >
+              Add guest
+            </Link>
+          ) : null}
         </div>
       </div>
 

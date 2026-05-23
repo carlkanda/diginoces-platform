@@ -84,7 +84,7 @@ export async function requireGlobalPermission(
   }
 }
 
-export async function requireProjectPermission(
+export async function hasProjectPermission(
   context: ProjectApiContext,
   projectId: string,
   permission: PermissionSlug,
@@ -101,7 +101,15 @@ export async function requireProjectPermission(
     throw error;
   }
 
-  if (!data) {
+  return Boolean(data);
+}
+
+export async function requireProjectPermission(
+  context: ProjectApiContext,
+  projectId: string,
+  permission: PermissionSlug,
+) {
+  if (!(await hasProjectPermission(context, projectId, permission))) {
     throw new ProjectAccessError("Project access denied.", 403);
   }
 }

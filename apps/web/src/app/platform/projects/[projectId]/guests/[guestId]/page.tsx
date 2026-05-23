@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  buildLoginRedirectPath,
+  getAuthContext,
+} from "@/lib/auth/auth-service";
 import { requireGuestSidePermission } from "@/lib/guests/guest-api";
 import {
   getGuestDetails,
@@ -26,7 +29,11 @@ export default async function EditGuestPage({ params }: EditGuestPageProps) {
   const { guestId, projectId } = await params;
 
   if (authContext.status === "anonymous") {
-    redirect(`/login?next=/platform/projects/${projectId}/guests/${guestId}`);
+    redirect(
+      buildLoginRedirectPath(
+        `/platform/projects/${projectId}/guests/${guestId}`,
+      ),
+    );
   }
 
   if (authContext.status === "not_configured") {

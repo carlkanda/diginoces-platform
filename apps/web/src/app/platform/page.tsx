@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  buildLoginRedirectPath,
+  getAuthContext,
+} from "@/lib/auth/auth-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
 import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
 
@@ -14,7 +17,7 @@ export default async function PlatformPage() {
   const sprint2Foundation = getSprint2FoundationStatus();
 
   if (authContext.status === "anonymous") {
-    redirect("/login?next=/platform");
+    redirect(buildLoginRedirectPath("/platform"));
   }
 
   return (

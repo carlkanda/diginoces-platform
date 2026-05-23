@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { recordAuditEvent } from "@/lib/audit/audit-log";
+import {
+  getAuditFoundationSummary,
+  recordAuditEvent,
+} from "@/lib/audit/audit-log";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
 import {
   hasPermission,
@@ -76,6 +79,32 @@ describe("Sprint 1 platform foundation smoke test", () => {
         action: "system.foundation_health_checked",
         objectType: "platform_foundation",
         source: "system",
+      },
+    );
+
+    expect(events).toHaveLength(1);
+  });
+
+  it("keeps later sprint audit domains in the foundation summary", async () => {
+    const events: unknown[] = [];
+
+    expect(getAuditFoundationSummary().sensitiveActionsTracked).toContain(
+      "guest_imports",
+    );
+    expect(getAuditFoundationSummary().sensitiveActionsTracked).toContain(
+      "guest_import_rows",
+    );
+
+    await recordAuditEvent(
+      {
+        async record(event) {
+          events.push(event);
+        },
+      },
+      {
+        action: "guest_import_rows.validation_updated",
+        objectType: "guest_import_row",
+        source: "api",
       },
     );
 

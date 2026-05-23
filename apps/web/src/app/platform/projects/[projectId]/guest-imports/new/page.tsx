@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  buildLoginRedirectPath,
+  getAuthContext,
+} from "@/lib/auth/auth-service";
 import { requireAnyGuestImportCreatePermission } from "@/lib/guest-imports/guest-import-api";
 import { ProjectAccessError } from "@/lib/projects/project-api";
 import { getProjectDetails } from "@/lib/projects/project-service";
@@ -22,8 +25,11 @@ export default async function NewGuestImportPage({
   const { projectId } = await params;
 
   if (authContext.status === "anonymous") {
-    const nextPath = `/platform/projects/${projectId}/guest-imports/new`;
-    redirect(`/login?${new URLSearchParams({ next: nextPath }).toString()}`);
+    redirect(
+      buildLoginRedirectPath(
+        `/platform/projects/${projectId}/guest-imports/new`,
+      ),
+    );
   }
 
   if (authContext.status === "not_configured") {

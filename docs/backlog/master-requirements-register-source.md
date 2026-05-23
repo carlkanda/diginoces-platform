@@ -18,9 +18,15 @@ The following snapshots should be placed in this folder:
 
 ```text
 master-requirements-register.csv
-traceability-matrix.csv
-module-coverage.csv
-lists.csv
+traceability_matrix.csv
+module_coverage.csv
+requirements-lists.csv
+initial-product-backlog-epics.csv
+initial-product-backlog-features.csv
+initial-product-backlog-user-stories.csv
+initial-product-backlog-tasks.csv
+initial-product-backlog-test-cases.csv
+initial-product-backlog-lists.csv
 ```
 
 ## Rule

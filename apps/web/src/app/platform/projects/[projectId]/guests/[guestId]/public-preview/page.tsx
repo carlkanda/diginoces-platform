@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getAuthContext } from "@/lib/auth/auth-service";
+import {
+  buildLoginRedirectPath,
+  getAuthContext,
+} from "@/lib/auth/auth-service";
+import {
+  ProjectAccessError,
+  requireProjectPermission,
+} from "@/lib/projects/project-api";
 import { PublicGuestPageView } from "@/lib/rsvp/public-guest-page-view";
 import { previewPublicGuestPage } from "@/lib/rsvp/rsvp-db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -22,7 +29,9 @@ export default async function GuestPublicPreviewPage({
 
   if (authContext.status === "anonymous") {
     redirect(
-      `/login?next=/platform/projects/${projectId}/guests/${guestId}/public-preview`,
+      buildLoginRedirectPath(
+        `/platform/projects/${projectId}/guests/${guestId}/public-preview`,
+      ),
     );
   }
 
@@ -40,10 +49,26 @@ export default async function GuestPublicPreviewPage({
     );
   }
 
-  const payload = await previewPublicGuestPage(
-    await createSupabaseServerClient(),
-    guestId,
-  );
+  const supabase = await createSupabaseServerClient();
+
+  try {
+    await requireProjectPermission(
+      {
+        supabase,
+        user: authContext.user,
+      },
+      projectId,
+      "guest_public_pages.preview",
+    );
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
+  }
+
+  const payload = await previewPublicGuestPage(supabase, guestId);
 
   if (payload.status !== "ok" || payload.project.id !== projectId) {
     notFound();

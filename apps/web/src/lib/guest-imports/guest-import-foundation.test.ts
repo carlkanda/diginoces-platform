@@ -367,6 +367,18 @@ describe("Sprint 4 guest import foundation", () => {
     ).toBe(false);
     expect(
       canPerformGuestImportAction(
+        groomAssignments,
+        "read",
+        "bride",
+        projectId,
+        {
+          currentUserId: "groom-user",
+          uploadedBy: "groom-user",
+        },
+      ),
+    ).toBe(true);
+    expect(
+      canPerformGuestImportAction(
         brideAssignments,
         "submit",
         "bride",
@@ -457,9 +469,15 @@ describe("Sprint 4 guest import foundation", () => {
         "guest_imports.submitted",
         "guest_imports.reviewed",
         "guest_imports.applied",
+        "guest_imports.updated",
+        "guest_import_rows.staged",
         "guest_import_rows.reviewed",
         "guest_import_rows.applied",
+        "guest_import_rows.validation_updated",
       ]),
+    );
+    expect(getGuestImportAuditActions()).not.toContain(
+      "guest_imports.file_parsed",
     );
   });
 });
