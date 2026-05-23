@@ -43,6 +43,13 @@ export const permissionSlugs = [
   "guest_public_tokens.manage",
   "rsvps.read",
   "rsvps.manage",
+  "invitation_templates.read",
+  "invitation_templates.create",
+  "invitation_templates.update",
+  "invitation_templates.approve",
+  "invitations.read",
+  "invitations.generate",
+  "invitation_files.read",
 ] as const;
 
 export type PermissionSlug = (typeof permissionSlugs)[number];
@@ -202,6 +209,13 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "guest_public_tokens.manage",
       "rsvps.read",
       "rsvps.manage",
+      "invitation_templates.read",
+      "invitation_templates.create",
+      "invitation_templates.update",
+      "invitation_templates.approve",
+      "invitations.read",
+      "invitations.generate",
+      "invitation_files.read",
     ],
     requirementIds: [
       "PV-001",

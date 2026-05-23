@@ -381,6 +381,57 @@ textarea {
   outline: 3px solid rgba(0, 107, 95, 0.15);
 }
 
+.form-grid,
+.stacked-form {
+  display: grid;
+  gap: 14px;
+}
+
+.form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-grid.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.form-grid label,
+.stacked-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--foreground);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.form-grid input,
+.form-grid select,
+.stacked-form input,
+.stacked-form select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 9px 11px;
+  color: var(--foreground);
+}
+
+.form-grid input:focus,
+.form-grid select:focus,
+.stacked-form input:focus,
+.stacked-form select:focus {
+  border-color: var(--accent);
+  outline: 3px solid rgba(0, 107, 95, 0.15);
+}
+
+.form-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
 .check-field {
   display: flex;
   align-items: center;
@@ -657,7 +708,9 @@ textarea {
   }
 
   .progress-overview,
-  .route-grid {
+  .route-grid,
+  .form-grid,
+  .form-grid.compact {
     grid-template-columns: 1fr;
   }
 

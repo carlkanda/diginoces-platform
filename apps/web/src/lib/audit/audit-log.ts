@@ -45,6 +45,16 @@ export type AuditAction =
   | "rsvps.deadline_review_required"
   | "rsvps.manual_recorded"
   | "rsvps.submitted"
+  | "invitation_templates.created"
+  | "invitation_templates.updated"
+  | "invitation_templates.preview_generated"
+  | "invitation_templates.preview_approved"
+  | "invitation_generation_jobs.created"
+  | "invitation_generation_jobs.updated"
+  | "invitations.created"
+  | "invitations.generated"
+  | "invitations.regeneration_required"
+  | "invitation_files.versioned"
   | "storage.file_registered"
   | "system.foundation_health_checked";
 
@@ -98,6 +108,10 @@ export function getAuditFoundationSummary() {
       "guest_public_pages",
       "guest_public_tokens",
       "rsvps",
+      "invitation_templates",
+      "invitation_generation_jobs",
+      "invitations",
+      "invitation_files",
       "future check-in/payment actions",
     ],
   };
