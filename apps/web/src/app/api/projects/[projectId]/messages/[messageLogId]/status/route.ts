@@ -58,6 +58,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const input = parseManualStatusUpdatePayload(await readJson(request));
     const result = await markGuidedManualMessageStatus(
       apiContext.supabase,
+      projectId,
       messageLogId,
       input.status,
       input.reason,

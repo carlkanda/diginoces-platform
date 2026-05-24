@@ -195,6 +195,7 @@ export async function markProjectMessageStatusAction(
 
     await markGuidedManualMessageStatus(
       context.supabase,
+      projectId,
       messageLogId,
       input.status,
       input.reason,

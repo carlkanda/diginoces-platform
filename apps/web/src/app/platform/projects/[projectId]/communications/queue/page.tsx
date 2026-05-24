@@ -9,7 +9,11 @@ import {
   listProjectMessageLogs,
   listProjectMessageQueue,
 } from "@/lib/messages/message-db";
-import { formatStatus, shortId } from "@/lib/messages/message-format";
+import {
+  formatStatus,
+  sanitizeFeedbackMessage,
+  shortId,
+} from "@/lib/messages/message-format";
 import {
   ProjectAccessError,
   requireProjectPermission,
@@ -47,7 +51,11 @@ function formatQueueContext(item: {
   }
 
   if (item.scheduled_for) {
-    return `Scheduled ${queueTimestampFormatter.format(new Date(item.scheduled_for))}`;
+    const scheduledDate = new Date(item.scheduled_for);
+
+    if (!Number.isNaN(scheduledDate.getTime())) {
+      return `Scheduled ${queueTimestampFormatter.format(scheduledDate)}`;
+    }
   }
 
   return `Log ${shortId(item.message_log_id) ?? "unlinked"}`;
@@ -59,7 +67,10 @@ export default async function MessageQueuePage({
 }: MessageQueuePageProps) {
   const authContext = await getAuthContext();
   const { projectId } = await params;
-  const feedback = await searchParams;
+  const feedbackParams = await searchParams;
+  const feedback = {
+    messageError: sanitizeFeedbackMessage(feedbackParams.messageError),
+  };
 
   if (authContext.status === "anonymous") {
     redirect(

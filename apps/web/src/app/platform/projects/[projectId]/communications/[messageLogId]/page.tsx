@@ -5,7 +5,11 @@ import {
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import { getMessageLogDetails } from "@/lib/messages/message-db";
-import { formatStatus } from "@/lib/messages/message-format";
+import {
+  formatStatus,
+  sanitizeFeedbackMessage,
+  shortId,
+} from "@/lib/messages/message-format";
 import {
   hasProjectPermission,
   ProjectAccessError,
@@ -35,16 +39,6 @@ type MessageLogDetailPageProps = {
     messageStatus?: string;
   }>;
 };
-
-function sanitizeFeedbackMessage(value: string | undefined) {
-  const sanitized = value
-    ?.replace(/[<>]/g, "")
-    .replace(/[\u0000-\u001f\u007f]+/g, " ")
-    .trim()
-    .slice(0, 180);
-
-  return sanitized && sanitized.length > 0 ? sanitized : undefined;
-}
 
 function sanitizeFeedbackStatus(value: string | undefined) {
   return value && allowedFeedbackStatuses.has(value) ? value : undefined;
@@ -142,7 +136,9 @@ export default async function MessageLogDetailPage({
           <p className="page-summary">
             {messageLog.language.toUpperCase()} -{" "}
             {formatStatus(messageLog.status)} - guest{" "}
-            {messageLog.guest_id ?? "Unlinked"}
+            {messageLog.guest_display_name ??
+              shortId(messageLog.guest_id) ??
+              "Unlinked"}
           </p>
         </div>
         <div className="button-group">

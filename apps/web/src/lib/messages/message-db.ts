@@ -585,10 +585,21 @@ export async function prepareProjectMessage(
 
 export async function markGuidedManualMessageStatus(
   supabase: SupabaseClient,
+  projectId: string,
   messageLogId: string,
   status: MessageDeliveryStatus,
   reason?: string | null,
 ): Promise<MarkGuidedManualMessageStatusResult> {
+  const messageLog = await getMessageLogDetails(
+    supabase,
+    projectId,
+    messageLogId,
+  );
+
+  if (!messageLog) {
+    throw new MessageValidationError("Message log was not found for project.");
+  }
+
   const { data, error } = await supabase.rpc(
     "mark_guided_manual_message_status",
     {
@@ -602,5 +613,11 @@ export async function markGuidedManualMessageStatus(
     throw error;
   }
 
-  return data as MarkGuidedManualMessageStatusResult;
+  const result = data as MarkGuidedManualMessageStatusResult;
+
+  if (result.projectId !== projectId) {
+    throw new MessageValidationError("Message log project mismatch.");
+  }
+
+  return result;
 }

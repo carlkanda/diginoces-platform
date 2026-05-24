@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { readJson } from "@/lib/api/read-json";
 import { prepareProjectMessage } from "@/lib/messages/message-db";
 import { handleMessageApiError } from "@/lib/messages/message-api";
-import { parsePrepareMessagePayload } from "@/lib/messages/message-service";
 import {
   getProjectApiContext,
   isProjectApiContext,
@@ -28,7 +27,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const { projectId } = await context.params;
     await requireProjectPermission(apiContext, projectId, "messages.prepare");
 
-    const payload = parsePrepareMessagePayload(await readJson(request));
+    const payload = await readJson(request);
     const messageLog = await prepareProjectMessage(
       apiContext.supabase,
       projectId,

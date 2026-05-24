@@ -15,6 +15,7 @@ import { getProjectDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createMessageTemplateAction } from "../actions";
 import { SubmitButton } from "../submit-button";
+import { sanitizeFeedbackMessage } from "@/lib/messages/message-format";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,11 @@ export default async function MessageTemplatesPage({
 }: MessageTemplatesPageProps) {
   const authContext = await getAuthContext();
   const { projectId } = await params;
-  const feedback = await searchParams;
+  const feedbackParams = await searchParams;
+  const feedback = {
+    messageError: sanitizeFeedbackMessage(feedbackParams.messageError),
+    messageStatus: feedbackParams.messageStatus,
+  };
 
   if (authContext.status === "anonymous") {
     redirect(
