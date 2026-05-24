@@ -266,8 +266,8 @@ textarea {
 }
 
 .message-preview {
-  overflow-x: auto;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--panel);
