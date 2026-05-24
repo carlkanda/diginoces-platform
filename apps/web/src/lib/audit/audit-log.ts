@@ -126,6 +126,7 @@ export function getAuditFoundationSummary() {
       "invitations",
       "invitation_files",
       "message_templates",
+      // Table/object names are listed here for redaction coverage; their AuditAction values use the messages.* action prefix.
       "message_logs",
       "message_queue_items",
       "future check-in/payment actions",
