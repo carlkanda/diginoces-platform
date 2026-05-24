@@ -108,7 +108,8 @@ export type TableOccupancySummary = {
   assignedGuestCount: number;
   assignedGuests: SeatingGuest[];
   capacity: number;
-  hasWarning: boolean;
+  isFull: boolean;
+  isOverCapacity: boolean;
   overCapacityBy: number;
   remainingCapacity: number;
   table: EventTable;
@@ -125,7 +126,7 @@ export type SeatingPlanSummary = {
 };
 
 export type TableCardCsvRow = {
-  assignedGuestCount: number;
+  activeGuestCount: number;
   capacity: number;
   coupleNames: string;
   eventDate: string;
@@ -389,7 +390,8 @@ export function calculateSeatingPlan(input: {
       assignedGuestCount,
       assignedGuests,
       capacity: table.capacity,
-      hasWarning: overCapacityBy > 0 || remainingCapacity === 0,
+      isFull: remainingCapacity === 0,
+      isOverCapacity: overCapacityBy > 0,
       overCapacityBy,
       remainingCapacity,
       table,
@@ -556,7 +558,7 @@ export function buildTableCardCsvRows(input: {
   summary: SeatingPlanSummary;
 }): TableCardCsvRow[] {
   return input.summary.tableSummaries.map((summary) => ({
-    assignedGuestCount: summary.activeGuestCount,
+    activeGuestCount: summary.activeGuestCount,
     capacity: summary.capacity,
     coupleNames: input.coupleNames,
     eventDate: input.eventDate ?? "",
@@ -586,7 +588,7 @@ export function buildTableCardCsv(rows: TableCardCsvRow[]) {
     "table_name",
     "table_description",
     "capacity",
-    "assigned_guest_count",
+    "active_guest_count",
     "guest_display_names",
     "vip_protocol_marker",
   ];
@@ -601,7 +603,7 @@ export function buildTableCardCsv(rows: TableCardCsvRow[]) {
       row.tableName,
       row.tableDescription,
       row.capacity,
-      row.assignedGuestCount,
+      row.activeGuestCount,
       row.guestDisplayNames,
       row.vipProtocolMarker,
     ]

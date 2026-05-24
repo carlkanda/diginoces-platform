@@ -143,6 +143,7 @@ export function getAuditFoundationSummary() {
       "message_queue_items",
       "event_tables",
       "guest_table_assignments",
+      // Export table redaction is tracked by table name; audit actions use the semantic seating_exports.* prefix.
       "seating_export_files",
       "future check-in/payment actions",
     ],

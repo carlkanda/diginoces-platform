@@ -63,6 +63,12 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
 
   const overview = await getEventSeatingOverview(supabase, eventId);
   const mapTables = buildVisualSeatingMapPlaceholder(overview.tables);
+  const summaryByTableId = new Map(
+    overview.summary.tableSummaries.map((summary) => [
+      summary.table.id,
+      summary,
+    ]),
+  );
 
   return (
     <>
@@ -100,9 +106,7 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
         ) : (
           <div className="seating-map">
             {mapTables.map((table) => {
-              const summary = overview.summary.tableSummaries.find(
-                (item) => item.table.id === table.id,
-              );
+              const summary = summaryByTableId.get(table.id);
 
               return (
                 <div

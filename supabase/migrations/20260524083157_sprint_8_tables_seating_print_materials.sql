@@ -560,6 +560,11 @@ begin
       using errcode = '42501';
   end if;
 
+  perform pg_advisory_xact_lock(
+    hashtext(p_project_id::text),
+    hashtext(p_event_id::text || ':' || p_guest_id::text)
+  );
+
   select *
     into v_table
   from public.event_tables
@@ -572,6 +577,11 @@ begin
   if not found then
     raise exception 'Event table was not found.'
       using errcode = '02000';
+  end if;
+
+  if v_table.assignment_mode = 'seat_level' and p_seat_id is null then
+    raise exception 'Seat-level seating requires a seat ID.'
+      using errcode = '22004';
   end if;
 
   if p_seat_id is not null and not exists (

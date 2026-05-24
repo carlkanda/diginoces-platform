@@ -82,6 +82,19 @@ export type SeatingExportFileRow = {
   version: number;
 };
 
+type SeatingGuestRow = {
+  display_name: string;
+  guest_side: SeatingGuest["guestSide"];
+  guest_title_type_id: string | null;
+  id: string;
+  is_printed_only: boolean;
+};
+
+type GuestTagAssignmentRow = {
+  guest_id: string;
+  tag_id: string;
+};
+
 export type EventSeatingOverview = {
   event: SeatingEventRow;
   exports: SeatingExportFileRow[];
@@ -135,6 +148,16 @@ function buildCoupleNames(project: SeatingProjectRow) {
   return `${project.bride_name} & ${project.groom_name}`;
 }
 
+function chunkArray<T>(items: T[], size: number) {
+  const chunks: T[][] = [];
+
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
 async function fetchRows<T>(
   promise: PromiseLike<{ data: T[] | null; error: unknown }>,
 ) {
@@ -157,6 +180,49 @@ async function maybeSingle<T>(
   }
 
   return data;
+}
+
+function isSeatingExportFileRow(value: unknown): value is SeatingExportFileRow {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const row = value as Partial<SeatingExportFileRow>;
+  const requiredStringFields = [
+    "created_at",
+    "event_id",
+    "filename",
+    "id",
+    "mime_type",
+    "project_id",
+    "status",
+    "storage_bucket",
+    "storage_path",
+    "updated_at",
+  ] satisfies Array<keyof SeatingExportFileRow>;
+
+  const hasRequiredStrings = requiredStringFields.every((field) => {
+    const fieldValue = row[field];
+
+    return typeof fieldValue === "string" && fieldValue.length > 0;
+  });
+
+  return (
+    hasRequiredStrings &&
+    row.export_type === "table_cards_csv" &&
+    typeof row.row_count === "number" &&
+    typeof row.version === "number" &&
+    Boolean(row.metadata) &&
+    typeof row.metadata === "object"
+  );
+}
+
+function requireSeatingExportFileRow(value: unknown): SeatingExportFileRow {
+  if (!isSeatingExportFileRow(value)) {
+    throw new SeatingValidationError("Seating export response was invalid.");
+  }
+
+  return value;
 }
 
 export async function getSeatingEventContext(
@@ -208,6 +274,60 @@ async function listActiveAssignments(
   );
 
   return rows.map(toSeatingAssignment);
+}
+
+async function listSeatingGuestRows(
+  supabase: SupabaseClient,
+  projectId: string,
+  guestIds: string[],
+) {
+  if (guestIds.length === 0) {
+    return [];
+  }
+
+  return (
+    await Promise.all(
+      chunkArray(guestIds, 500).map((guestIdChunk) =>
+        fetchRows<SeatingGuestRow>(
+          supabase
+            .from("guests")
+            .select(
+              "id, display_name, guest_side, guest_title_type_id, is_printed_only",
+            )
+            .eq("project_id", projectId)
+            .eq("is_active", true)
+            .in("id", guestIdChunk)
+            .order("display_name", { ascending: true }),
+        ),
+      ),
+    )
+  )
+    .flat()
+    .sort((left, right) => left.display_name.localeCompare(right.display_name));
+}
+
+async function listGuestTagAssignments(
+  supabase: SupabaseClient,
+  projectId: string,
+  guestIds: string[],
+) {
+  if (guestIds.length === 0) {
+    return [];
+  }
+
+  return (
+    await Promise.all(
+      chunkArray(guestIds, 500).map((guestIdChunk) =>
+        fetchRows<GuestTagAssignmentRow>(
+          supabase
+            .from("guest_tag_assignments")
+            .select("guest_id, tag_id")
+            .eq("project_id", projectId)
+            .in("guest_id", guestIdChunk),
+        ),
+      ),
+    )
+  ).flat();
 }
 
 export async function getEventSeatingOverview(
@@ -301,39 +421,10 @@ export async function getEventSeatingOverview(
   ]);
 
   const guestIds = guestAssignments.map((assignment) => assignment.guest_id);
-  const guestRows =
-    guestIds.length === 0
-      ? []
-      : await fetchRows<{
-          display_name: string;
-          guest_side: SeatingGuest["guestSide"];
-          guest_title_type_id: string | null;
-          id: string;
-          is_printed_only: boolean;
-        }>(
-          supabase
-            .from("guests")
-            .select(
-              "id, display_name, guest_side, guest_title_type_id, is_printed_only",
-            )
-            .eq("project_id", projectId)
-            .eq("is_active", true)
-            .in("id", guestIds)
-            .order("display_name", { ascending: true }),
-        );
-  const tagAssignments =
-    guestIds.length === 0
-      ? []
-      : await fetchRows<{
-          guest_id: string;
-          tag_id: string;
-        }>(
-          supabase
-            .from("guest_tag_assignments")
-            .select("guest_id, tag_id")
-            .eq("project_id", projectId)
-            .in("guest_id", guestIds),
-        );
+  const [guestRows, tagAssignments] = await Promise.all([
+    listSeatingGuestRows(supabase, projectId, guestIds),
+    listGuestTagAssignments(supabase, projectId, guestIds),
+  ]);
 
   const titleTypeCountById = new Map(
     titleTypes.map((titleType) => [
@@ -589,5 +680,5 @@ export async function generateTableCardCsvExport(
     throw error;
   }
 
-  return data as SeatingExportFileRow;
+  return requireSeatingExportFileRow(data);
 }

@@ -263,6 +263,10 @@ export default async function ProjectDetailPage({
               </Link>
             ))}
           </div>
+        ) : details.events.length === 0 ? (
+          <div className="empty-state">
+            No events configured. Create an event to manage seating.
+          </div>
         ) : null}
       </section>
 

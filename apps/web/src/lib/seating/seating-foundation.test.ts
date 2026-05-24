@@ -279,6 +279,7 @@ describe("Sprint 8 seating foundation", () => {
     const csv = buildTableCardCsv(rows);
 
     expect(csv).toContain("project_code,event_name,event_date");
+    expect(csv).toContain("active_guest_count");
     expect(csv).toContain("VIP Guest");
     expect(csv).toContain("VIP/Protocol");
   });

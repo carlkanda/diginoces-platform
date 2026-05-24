@@ -14,7 +14,6 @@ import {
   getProjectApiContext,
   hasProjectPermission,
   isProjectApiContext,
-  ProjectAccessError,
   requireEventPermission,
 } from "@/lib/projects/project-api";
 
@@ -169,7 +168,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ exportFile }, { status: 201 });
     }
 
-    throw new ProjectAccessError("Unsupported seating action.", 400);
+    throw new SeatingValidationError("Unsupported seating action.");
   } catch (error) {
     const response = handleSeatingApiError(error);
     response.headers.set("Cache-Control", "no-store");

@@ -129,8 +129,9 @@ export default async function EventSeatingPage({
           <h1 className="page-title">Tables and seating</h1>
           <p className="page-summary">
             Event-specific seating for {overview.event.name} on{" "}
-            {formatDate(overview.event.event_date)}. RSVP No guests are kept in
-            history but excluded from active occupancy.
+            {formatDate(overview.event.event_date)}. Guests who responded
+            &quot;No&quot; to the RSVP are kept in history but excluded from
+            active occupancy.
           </p>
         </div>
         <div className="button-group">
@@ -427,16 +428,22 @@ export default async function EventSeatingPage({
                           type="number"
                         />
                       </label>
-                      <input
-                        name="description"
-                        type="hidden"
-                        value={summary.table.description ?? ""}
-                      />
-                      <input
-                        name="notes"
-                        type="hidden"
-                        value={summary.table.notes ?? ""}
-                      />
+                      <label>
+                        Description
+                        <textarea
+                          defaultValue={summary.table.description ?? ""}
+                          name="description"
+                          rows={2}
+                        />
+                      </label>
+                      <label>
+                        Notes
+                        <textarea
+                          defaultValue={summary.table.notes ?? ""}
+                          name="notes"
+                          rows={2}
+                        />
+                      </label>
                       <button className="button secondary" type="submit">
                         Save table
                       </button>
