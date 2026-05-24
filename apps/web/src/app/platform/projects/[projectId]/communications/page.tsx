@@ -61,18 +61,29 @@ export default async function CommunicationsPage({
     throw error;
   }
 
-  const [details, overview, canReadTemplates, canManageTemplates, canPrepare] =
-    await Promise.all([
-      getProjectDetails(supabase, projectId),
-      getProjectMessageOverview(supabase, projectId),
-      hasProjectPermission(context, projectId, "message_templates.read"),
-      hasProjectPermission(context, projectId, "message_templates.manage"),
-      hasProjectPermission(context, projectId, "messages.prepare"),
-    ]);
+  const [
+    details,
+    messageOverview,
+    canReadTemplates,
+    canManageTemplates,
+    canPrepare,
+  ] = await Promise.all([
+    getProjectDetails(supabase, projectId),
+    getProjectMessageOverview(supabase, projectId),
+    hasProjectPermission(context, projectId, "message_templates.read"),
+    hasProjectPermission(context, projectId, "message_templates.manage"),
+    hasProjectPermission(context, projectId, "messages.prepare"),
+  ]);
 
   if (!details) {
     notFound();
   }
+
+  const overview = messageOverview ?? {
+    logs: [],
+    queueItems: [],
+    templates: [],
+  };
 
   return (
     <>

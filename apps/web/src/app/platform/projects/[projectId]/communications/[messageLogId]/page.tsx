@@ -17,6 +17,14 @@ import { SubmitButton } from "../submit-button";
 
 export const dynamic = "force-dynamic";
 
+const allowedFeedbackStatuses = new Set([
+  "failed",
+  "opened_manually",
+  "resent",
+  "sent",
+  "skipped",
+]);
+
 type MessageLogDetailPageProps = {
   params: Promise<{
     messageLogId: string;
@@ -28,13 +36,31 @@ type MessageLogDetailPageProps = {
   }>;
 };
 
+function sanitizeFeedbackMessage(value: string | undefined) {
+  const sanitized = value
+    ?.replace(/[<>]/g, "")
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .trim()
+    .slice(0, 180);
+
+  return sanitized && sanitized.length > 0 ? sanitized : undefined;
+}
+
+function sanitizeFeedbackStatus(value: string | undefined) {
+  return value && allowedFeedbackStatuses.has(value) ? value : undefined;
+}
+
 export default async function MessageLogDetailPage({
   params,
   searchParams,
 }: MessageLogDetailPageProps) {
   const authContext = await getAuthContext();
   const { messageLogId, projectId } = await params;
-  const feedback = await searchParams;
+  const feedbackParams = await searchParams;
+  const feedback = {
+    messageError: sanitizeFeedbackMessage(feedbackParams.messageError),
+    messageStatus: sanitizeFeedbackStatus(feedbackParams.messageStatus),
+  };
 
   if (authContext.status === "anonymous") {
     redirect(

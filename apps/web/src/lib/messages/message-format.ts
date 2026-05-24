@@ -7,5 +7,9 @@ export function formatStatus(status: MessageDeliveryStatus | string) {
 }
 
 export function shortId(value: string | null) {
-  return value ? `${value.slice(0, 8)}...` : null;
+  if (!value) {
+    return null;
+  }
+
+  return value.length > 8 ? `${value.slice(0, 8)}...` : value;
 }

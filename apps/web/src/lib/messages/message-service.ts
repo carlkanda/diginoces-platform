@@ -239,7 +239,7 @@ export const manualMessageStatuses = [
   "resent",
   "sent",
   "skipped",
-] as const;
+] as const satisfies readonly MessageDeliveryStatus[];
 
 export type ManualMessageStatus = Extract<
   MessageDeliveryStatus,
@@ -250,12 +250,16 @@ export const allowedManualStatuses = new Set<MessageDeliveryStatus>(
   manualMessageStatuses,
 );
 
-export const allowedTemplateStatuses = new Set<MessageTemplateStatus>([
+const templateStatuses = [
   "active",
   "archived",
   "draft",
   "inactive",
-]);
+] as const satisfies readonly MessageTemplateStatus[];
+
+export const allowedTemplateStatuses = new Set<MessageTemplateStatus>(
+  templateStatuses,
+);
 
 const requiredInvitationMessageTypes = new Set<MessageType>([
   "invitation",

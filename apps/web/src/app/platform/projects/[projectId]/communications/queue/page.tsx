@@ -18,6 +18,7 @@ import { getProjectDetails } from "@/lib/projects/project-service";
 import { listProjectGuests } from "@/lib/guests/guest-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { prepareProjectMessageAction } from "../actions";
+import { SubmitButton } from "../submit-button";
 
 export const dynamic = "force-dynamic";
 
@@ -216,9 +217,9 @@ export default async function MessageQueuePage({
                 placeholder="event_time_changed, guest_name_corrected"
               />
             </label>
-            <button className="button" type="submit">
+            <SubmitButton className="button" pendingLabel="Preparing...">
               Prepare guided message
-            </button>
+            </SubmitButton>
           </form>
         ) : (
           <div className="alert">

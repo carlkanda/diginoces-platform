@@ -14,6 +14,7 @@ import {
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createMessageTemplateAction } from "../actions";
+import { SubmitButton } from "../submit-button";
 
 export const dynamic = "force-dynamic";
 
@@ -214,9 +215,9 @@ export default async function MessageTemplatesPage({
                 rows={5}
               />
             </label>
-            <button className="button" type="submit">
+            <SubmitButton className="button" pendingLabel="Creating...">
               Create template
-            </button>
+            </SubmitButton>
           </form>
         </section>
       ) : null}
