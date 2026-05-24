@@ -233,6 +233,30 @@ export const messageDeliveryStatuses = [
   "cancelled",
 ] as const satisfies readonly MessageDeliveryStatus[];
 
+export const manualMessageStatuses = [
+  "failed",
+  "opened_manually",
+  "resent",
+  "sent",
+  "skipped",
+] as const;
+
+export type ManualMessageStatus = Extract<
+  MessageDeliveryStatus,
+  (typeof manualMessageStatuses)[number]
+>;
+
+export const allowedManualStatuses = new Set<MessageDeliveryStatus>(
+  manualMessageStatuses,
+);
+
+export const allowedTemplateStatuses = new Set<MessageTemplateStatus>([
+  "active",
+  "archived",
+  "draft",
+  "inactive",
+]);
+
 const requiredInvitationMessageTypes = new Set<MessageType>([
   "invitation",
   "invitation_resend",
@@ -390,6 +414,40 @@ export function parsePrepareMessagePayload(
     invitationId: optionalPayloadText(body.invitationId),
     messageType: parseMessageType(body.messageType),
     publicGuestPageLink: optionalPayloadText(body.publicGuestPageLink),
+  };
+}
+
+export function validateManualStatusUpdate(
+  status: unknown,
+  reason: unknown,
+): {
+  reason: string | null;
+  status: ManualMessageStatus;
+} {
+  if (typeof status !== "string") {
+    throw new MessageValidationError("status must be a string.");
+  }
+
+  if (!allowedManualStatuses.has(status as MessageDeliveryStatus)) {
+    throw new MessageValidationError("Unsupported manual message status.");
+  }
+
+  if (reason !== undefined && reason !== null && typeof reason !== "string") {
+    throw new MessageValidationError("reason must be text.");
+  }
+
+  if (
+    (status === "failed" || status === "skipped") &&
+    (typeof reason !== "string" || reason.trim().length === 0)
+  ) {
+    throw new MessageValidationError(
+      "reason is required for failed/skipped statuses.",
+    );
+  }
+
+  return {
+    reason: reason ?? null,
+    status: status as ManualMessageStatus,
   };
 }
 

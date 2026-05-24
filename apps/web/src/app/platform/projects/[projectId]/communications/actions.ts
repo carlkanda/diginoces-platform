@@ -7,26 +7,18 @@ import {
   markGuidedManualMessageStatus,
   prepareProjectMessage,
 } from "@/lib/messages/message-db";
-import { MessageValidationError } from "@/lib/messages/message-service";
-import type { MessageDeliveryStatus } from "@/lib/messages/message-service";
+import {
+  allowedTemplateStatuses,
+  MessageValidationError,
+  validateManualStatusUpdate,
+} from "@/lib/messages/message-service";
+import type {
+  MessageDeliveryStatus,
+  MessageTemplateStatus,
+} from "@/lib/messages/message-service";
 import { requireProjectPermission } from "@/lib/projects/project-api";
 import type { PermissionSlug } from "@/lib/security/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-const allowedManualStatuses = new Set<MessageDeliveryStatus>([
-  "failed",
-  "opened_manually",
-  "resent",
-  "sent",
-  "skipped",
-]);
-
-const allowedTemplateStatuses = new Set([
-  "active",
-  "archived",
-  "draft",
-  "inactive",
-]);
 
 function formValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -55,12 +47,13 @@ function requiredFormValue(formData: FormData, key: string) {
 
 function templateStatusValue(formData: FormData) {
   const status = formValue(formData, "status") ?? "active";
+  const templateStatus = status as MessageTemplateStatus;
 
-  if (!allowedTemplateStatuses.has(status)) {
+  if (!allowedTemplateStatuses.has(templateStatus)) {
     throw new MessageValidationError("Unsupported template status.");
   }
 
-  return status;
+  return templateStatus;
 }
 
 function messageDetailPath(
@@ -191,23 +184,17 @@ export async function markProjectMessageStatusAction(
   formData: FormData,
 ) {
   try {
-    if (!allowedManualStatuses.has(status)) {
-      throw new MessageValidationError("Unsupported message status.");
-    }
-
-    const reason = formValue(formData, "reason");
-
-    if ((status === "failed" || status === "skipped") && !reason) {
-      throw new MessageValidationError("Reason is required for this status.");
-    }
-
     const context = await getActionContext(projectId, "messages.send");
+    const input = validateManualStatusUpdate(
+      status,
+      formValue(formData, "reason"),
+    );
 
     await markGuidedManualMessageStatus(
       context.supabase,
       messageLogId,
-      status,
-      reason ?? null,
+      input.status,
+      input.reason,
     );
   } catch (error) {
     redirect(
