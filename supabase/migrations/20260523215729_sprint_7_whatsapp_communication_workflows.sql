@@ -571,6 +571,7 @@ create or replace function public.mark_guided_manual_message_status(
 )
 returns jsonb
 language plpgsql
+security invoker
 set search_path = public, pg_temp
 as $$
 declare

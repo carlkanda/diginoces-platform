@@ -80,9 +80,12 @@ export async function createMessageTemplateAction(
   projectId: string,
   formData: FormData,
 ) {
-  const context = await getActionContext(projectId, "message_templates.manage");
-
   try {
+    const context = await getActionContext(
+      projectId,
+      "message_templates.manage",
+    );
+
     await createMessageTemplate(
       context.supabase,
       projectId,
@@ -123,12 +126,11 @@ export async function prepareProjectMessageAction(
   projectId: string,
   formData: FormData,
 ) {
-  const context = await getActionContext(projectId, "messages.prepare");
-
-  let messageLog: Awaited<ReturnType<typeof prepareProjectMessage>>;
+  let messageLogId = "";
 
   try {
-    messageLog = await prepareProjectMessage(
+    const context = await getActionContext(projectId, "messages.prepare");
+    const messageLog = await prepareProjectMessage(
       context.supabase,
       projectId,
       {
@@ -141,6 +143,8 @@ export async function prepareProjectMessageAction(
       },
       context.user.id,
     );
+
+    messageLogId = messageLog.id;
   } catch (error) {
     redirect(
       withSearchParams(`/platform/projects/${projectId}/communications/queue`, {
@@ -152,7 +156,7 @@ export async function prepareProjectMessageAction(
     );
   }
 
-  redirect(`/platform/projects/${projectId}/communications/${messageLog.id}`);
+  redirect(`/platform/projects/${projectId}/communications/${messageLogId}`);
 }
 
 export async function markProjectMessageStatusAction(
@@ -161,18 +165,15 @@ export async function markProjectMessageStatusAction(
   status: MessageDeliveryStatus,
   formData: FormData,
 ) {
-  const context = await getActionContext(projectId, "messages.send");
-  const reason = formValue(formData, "reason");
-
-  if ((status === "failed" || status === "skipped") && !reason) {
-    redirect(
-      messageDetailPath(projectId, messageLogId, {
-        messageError: "Reason is required for this status.",
-      }),
-    );
-  }
-
   try {
+    const reason = formValue(formData, "reason");
+
+    if ((status === "failed" || status === "skipped") && !reason) {
+      throw new MessageValidationError("Reason is required for this status.");
+    }
+
+    const context = await getActionContext(projectId, "messages.send");
+
     await markGuidedManualMessageStatus(
       context.supabase,
       messageLogId,

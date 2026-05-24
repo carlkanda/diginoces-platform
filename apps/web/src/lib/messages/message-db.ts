@@ -307,18 +307,14 @@ export async function getMessageLogDetails(
   projectId: string,
   messageLogId: string,
 ): Promise<MessageLogRow | null> {
-  const { data, error } = await supabase
-    .from("message_logs")
-    .select("*")
-    .eq("project_id", projectId)
-    .eq("id", messageLogId)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return data as MessageLogRow | null;
+  return maybeSingleRecord(
+    supabase
+      .from("message_logs")
+      .select("*")
+      .eq("project_id", projectId)
+      .eq("id", messageLogId)
+      .maybeSingle(),
+  ) as Promise<MessageLogRow | null>;
 }
 
 async function getPreparationInput(
