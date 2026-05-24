@@ -9,7 +9,7 @@ import {
   listProjectMessageLogs,
   listProjectMessageQueue,
 } from "@/lib/messages/message-db";
-import { formatStatus } from "@/lib/messages/message-format";
+import { formatStatus, shortId } from "@/lib/messages/message-format";
 import {
   ProjectAccessError,
   requireProjectPermission,
@@ -34,10 +34,6 @@ const queueTimestampFormatter = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
   timeStyle: "short",
 });
-
-function shortId(value: string | null) {
-  return value ? `${value.slice(0, 8)}...` : null;
-}
 
 function formatQueueContext(item: {
   created_at: string;

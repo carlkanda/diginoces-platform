@@ -5,3 +5,7 @@ export function formatStatus(status: MessageDeliveryStatus | string) {
     .replaceAll("_", " ")
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
+
+export function shortId(value: string | null) {
+  return value ? `${value.slice(0, 8)}...` : null;
+}
