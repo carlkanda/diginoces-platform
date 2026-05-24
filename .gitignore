@@ -38,3 +38,5 @@ tmp/
 # Generated local files
 uploads/
 exports/
+apps/web/AGENTS.md
+apps/web/CLAUDE.md
