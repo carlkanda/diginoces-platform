@@ -285,7 +285,9 @@ export default async function MessageQueuePage({
                   </small>
                 </span>
                 <span className="tag">{formatStatus(log.status)}</span>
-                <span className="meta-list">{log.language.toUpperCase()}</span>
+                <span className="meta-list">
+                  {(log.language ?? "fr").toUpperCase()}
+                </span>
               </Link>
             ))}
           </div>
