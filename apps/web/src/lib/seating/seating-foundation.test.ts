@@ -81,13 +81,21 @@ const here = fileURLToPath(new URL(".", import.meta.url));
 const migrationRoot = resolve(here, "../../../../../supabase/migrations");
 
 function sprint8Migration() {
-  const migrationName = readdirSync(migrationRoot).find((name) =>
-    name.endsWith("_sprint_8_tables_seating_print_materials.sql"),
+  const migrationMatches = readdirSync(migrationRoot).filter(
+    (name) =>
+      name.includes("sprint_8_tables_seating_print_materials") &&
+      name.endsWith(".sql"),
   );
 
-  if (!migrationName) {
+  if (migrationMatches.length === 0) {
     throw new Error("Sprint 8 migration was not found.");
   }
+
+  if (migrationMatches.length > 1) {
+    throw new Error("Multiple Sprint 8 migrations were found.");
+  }
+
+  const migrationName = migrationMatches[0]!;
 
   return readFileSync(join(migrationRoot, migrationName), "utf8");
 }

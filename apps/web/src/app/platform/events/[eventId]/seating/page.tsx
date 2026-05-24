@@ -463,6 +463,7 @@ export default async function EventSeatingPage({
                             <small>
                               {guest.guestSide} - RSVP {guest.rsvpStatus} -{" "}
                               {guest.guestCount ?? 1} seat unit
+                              {(guest.guestCount ?? 1) > 1 ? "s" : ""}
                               {guest.isVipProtocol ? " - VIP/protocol" : ""}
                             </small>
                           </span>

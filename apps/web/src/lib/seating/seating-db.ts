@@ -478,7 +478,8 @@ export async function getEventSeatingOverview(
       id: guest.id,
       isPrintedOnly: guest.is_printed_only,
       isVipProtocol: vipProtocol || Boolean(assignment?.vipProtocolNotes),
-      printedInvitationStatus: printedInvitationStatusByGuestId.get(guest.id),
+      printedInvitationStatus:
+        printedInvitationStatusByGuestId.get(guest.id) ?? "not_required",
       rsvpStatus: rsvpByGuestId.get(guest.id) ?? "pending",
       specialSeatingNotes: assignment?.vipProtocolNotes ?? null,
       tagNames,
