@@ -121,7 +121,7 @@ export default async function MessageTemplatesPage({
         <div className="alert">{feedback.messageError}</div>
       ) : null}
       {feedback.messageStatus ? (
-        <div className="alert">
+        <div className="alert success">
           Message template saved and ready for review.
         </div>
       ) : null}

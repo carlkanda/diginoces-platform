@@ -30,6 +30,32 @@ type MessageQueuePageProps = {
   }>;
 };
 
+const queueTimestampFormatter = new Intl.DateTimeFormat("en", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+function shortId(value: string | null) {
+  return value ? `${value.slice(0, 8)}...` : null;
+}
+
+function formatQueueContext(item: {
+  created_at: string;
+  guest_display_name?: string | null;
+  message_log_id: string;
+  scheduled_for: string | null;
+}) {
+  if (item.guest_display_name) {
+    return `Guest ${item.guest_display_name}`;
+  }
+
+  if (item.scheduled_for) {
+    return `Scheduled ${queueTimestampFormatter.format(new Date(item.scheduled_for))}`;
+  }
+
+  return `Log ${shortId(item.message_log_id) ?? "unlinked"}`;
+}
+
 export default async function MessageQueuePage({
   params,
   searchParams,
@@ -218,7 +244,7 @@ export default async function MessageQueuePage({
               <div className="task-row" key={item.id}>
                 <span>
                   <strong>{formatStatus(item.message_type)}</strong>
-                  <small>{item.message_log_id}</small>
+                  <small>{formatQueueContext(item)}</small>
                 </span>
                 <span className="tag">{formatStatus(item.status)}</span>
               </div>
@@ -244,7 +270,11 @@ export default async function MessageQueuePage({
               >
                 <span>
                   <strong>{formatStatus(log.message_type)}</strong>
-                  <small>{log.guest_id ?? "No guest"}</small>
+                  <small>
+                    {log.guest_display_name ??
+                      shortId(log.guest_id) ??
+                      "No guest"}
+                  </small>
                 </span>
                 <span className="tag">{formatStatus(log.status)}</span>
                 <span className="meta-list">{log.language.toUpperCase()}</span>

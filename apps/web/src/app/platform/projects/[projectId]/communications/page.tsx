@@ -22,6 +22,10 @@ type CommunicationsPageProps = {
   }>;
 };
 
+function shortId(value: string | null) {
+  return value ? `${value.slice(0, 8)}...` : null;
+}
+
 export default async function CommunicationsPage({
   params,
 }: CommunicationsPageProps) {
@@ -160,7 +164,8 @@ export default async function CommunicationsPage({
                 <span>
                   <strong>{formatStatus(log.message_type)}</strong>
                   <small>
-                    {log.language.toUpperCase()} - guest {log.guest_id ?? "n/a"}
+                    {log.language.toUpperCase()} - guest{" "}
+                    {log.guest_display_name ?? shortId(log.guest_id) ?? "n/a"}
                   </small>
                 </span>
                 <span className="tag">{formatStatus(log.status)}</span>

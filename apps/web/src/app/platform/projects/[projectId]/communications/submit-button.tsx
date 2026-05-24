@@ -23,11 +23,11 @@ export function SubmitButton({
       disabled={pending}
       type="submit"
     >
-      <span role="status">
+      <span>
         {pending ? (
-          <>
+          <span role="status">
             <span aria-hidden="true">...</span> {pendingLabel}
-          </>
+          </span>
         ) : (
           children
         )}

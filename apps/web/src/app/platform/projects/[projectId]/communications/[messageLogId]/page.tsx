@@ -173,7 +173,7 @@ export default async function MessageLogDetailPage({
             <div className="alert">{feedback.messageError}</div>
           ) : null}
           {feedback.messageStatus ? (
-            <div className="alert">
+            <div className="alert success">
               Message status updated to {formatStatus(feedback.messageStatus)}.
             </div>
           ) : null}

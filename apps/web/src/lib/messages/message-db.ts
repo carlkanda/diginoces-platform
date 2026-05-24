@@ -34,6 +34,7 @@ export type MessageLogRow = {
   created_at: string;
   event_id: string | null;
   failure_reason: string | null;
+  guest_display_name?: string | null;
   guest_id: string | null;
   id: string;
   invitation_id: string | null;
@@ -63,6 +64,7 @@ export type MessageQueueItemRow = {
   created_at: string;
   created_by: string | null;
   event_id: string | null;
+  guest_display_name?: string | null;
   guest_id: string | null;
   id: string;
   last_error: string | null;
@@ -136,6 +138,52 @@ function requireString(record: Record<string, unknown>, fieldName: string) {
   }
 
   return value;
+}
+
+async function fetchGuestDisplayNameMap(
+  supabase: SupabaseClient,
+  guestIds: string[],
+) {
+  const uniqueGuestIds = Array.from(new Set(guestIds));
+
+  if (uniqueGuestIds.length === 0) {
+    return new Map<string, string>();
+  }
+
+  const { data, error } = await supabase
+    .from("guests")
+    .select("id, display_name")
+    .in("id", uniqueGuestIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return new Map(
+    (data ?? []).map((guest) => [
+      guest.id as string,
+      guest.display_name as string,
+    ]),
+  );
+}
+
+async function withGuestDisplayNames<T extends { guest_id: string | null }>(
+  supabase: SupabaseClient,
+  records: T[],
+) {
+  const guestNames = await fetchGuestDisplayNameMap(
+    supabase,
+    records
+      .map((record) => record.guest_id)
+      .filter((guestId): guestId is string => Boolean(guestId)),
+  );
+
+  return records.map((record) => ({
+    ...record,
+    guest_display_name: record.guest_id
+      ? (guestNames.get(record.guest_id) ?? null)
+      : null,
+  }));
 }
 
 function parseInvitationStatus(value: string): MessageInvitationStatus {
@@ -294,7 +342,7 @@ export async function listProjectMessageLogs(
     throw error;
   }
 
-  return (data ?? []) as MessageLogRow[];
+  return withGuestDisplayNames(supabase, (data ?? []) as MessageLogRow[]);
 }
 
 export async function listProjectMessageQueue(
@@ -313,7 +361,7 @@ export async function listProjectMessageQueue(
     throw error;
   }
 
-  return (data ?? []) as MessageQueueItemRow[];
+  return withGuestDisplayNames(supabase, (data ?? []) as MessageQueueItemRow[]);
 }
 
 export async function getProjectMessageOverview(

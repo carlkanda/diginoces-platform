@@ -445,8 +445,13 @@ export function validateManualStatusUpdate(
     );
   }
 
+  const normalizedReason =
+    typeof reason === "string" && reason.trim().length > 0
+      ? reason.trim()
+      : null;
+
   return {
-    reason: reason ?? null,
+    reason: normalizedReason,
     status: status as ManualMessageStatus,
   };
 }
