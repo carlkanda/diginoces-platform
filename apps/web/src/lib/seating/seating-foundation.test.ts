@@ -1,5 +1,5 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { RoleAssignment } from "@/lib/security/permissions";
@@ -78,7 +78,24 @@ function guest(
 }
 
 const here = fileURLToPath(new URL(".", import.meta.url));
-const migrationRoot = resolve(here, "../../../../../supabase/migrations");
+
+function findMigrationRoot(startDirectory: string) {
+  let currentDirectory = startDirectory;
+
+  while (currentDirectory !== dirname(currentDirectory)) {
+    const candidate = join(currentDirectory, "supabase", "migrations");
+
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+
+    currentDirectory = dirname(currentDirectory);
+  }
+
+  throw new Error("Supabase migrations directory was not found.");
+}
+
+const migrationRoot = findMigrationRoot(here);
 
 function sprint8Migration() {
   const migrationMatches = readdirSync(migrationRoot).filter(

@@ -51,7 +51,7 @@ Traceability:
 
 - Added table-card CSV export foundation for Canva Bulk Create.
 - CSV fields include project code, event name/date, couple names, table code/name/description, capacity, active assigned guest count, guest names, and VIP/protocol marker.
-- Export records are stored in `seating_export_files` with filename, version, storage path placeholder, row count, metadata, and redacted audit snapshots.
+- Export records are stored in `seating_export_files` with filename, version, storage path placeholder, row count, metadata, generated CSV byte size, and audit snapshots.
 - Added `printed_invitation_status` foundation column to `invitations`.
 - Seating assignment changes mark generated/sent/resent invitations as `needs_regeneration` only when the event invitation template uses `table.name` or `table.code` fields.
 - Automatic PDF regeneration is intentionally not implemented.
@@ -72,7 +72,7 @@ Traceability:
 - Database RPCs enforce authentication, table/event/project compatibility, guest-event invitation, side-aware assignment rights, and seat release on moves/removals.
 - RLS enabled on `event_tables`, `event_table_seats`, `guest_table_assignments`, and `seating_export_files`.
 - Audit triggers added for table create/update/archive/capacity change, assignment assign/remove/move/update, and export generation/update.
-- CSV content is redacted from seating export audit snapshots.
+- CSV content is generated for validation and byte-size metadata, but it is not inlined into `seating_export_files`.
 
 ## Files Created or Changed
 
@@ -193,14 +193,14 @@ Not run/applied:
 - Confirmed backend/server actions and API route require authenticated project/event permission checks before seating reads or writes.
 - Confirmed database RLS is enabled on new seating tables.
 - Confirmed assignment RPCs enforce side-aware bride/groom boundaries and do not rely only on hidden UI controls.
-- Confirmed seating export audit redacts CSV content.
+- Confirmed seating export records do not inline generated CSV content.
 - Confirmed no `.env`, `.env.local`, Supabase service-role key, database password, WhatsApp token, Google secret, private key, real client data, or real guest data was added.
 
 ## Assumptions Made
 
 - Sprint 8 should remain table/list operational first; the visual seating map is a placeholder/foundation.
 - Seat-level and mixed-mode structures are safe to add in schema, but table-level assignment remains the primary functional path.
-- Table-card CSV export can store generated CSV content and a storage-path placeholder in app-owned metadata until the later storage/file sprint expands real object storage.
+- Table-card CSV export can store generated metadata and a storage-path placeholder until the later storage/file sprint expands real object storage.
 - Bride/groom users can assign only their own side through the database helper; both-side guests require staff/admin or both side permissions.
 - RSVP pending/manual review/locked states remain included in active seating until staff manually resolves them.
 
@@ -210,7 +210,7 @@ Not run/applied:
 - Supabase generated TypeScript database types were not regenerated because the pending Sprint 8 migration is not applied to the linked project during this PR. The service uses explicit internal row types following the Sprint 7 pattern.
 - Advanced drag-and-drop seating map behavior is intentionally deferred.
 - Full seating change request workflow after invitation sending is represented by permission/audit/regeneration awareness only; structured review queue belongs to a future hardening or operations sprint if required.
-- CSV files are registered/stored as database-backed export records with storage-path metadata; real object-storage persistence remains tied to the broader file/storage roadmap.
+- CSV files are registered as database-backed export records with storage-path and byte-size metadata; real object-storage persistence remains tied to the broader file/storage roadmap.
 
 ## Out-of-Scope Items Deferred
 

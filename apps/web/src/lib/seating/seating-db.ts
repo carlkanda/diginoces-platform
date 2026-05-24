@@ -66,7 +66,6 @@ export type GuestTableAssignmentRow = {
 export type SeatingExportFileRow = {
   created_at: string;
   created_by: string | null;
-  csv_content: string | null;
   event_id: string;
   export_type: "table_cards_csv";
   filename: string;
@@ -670,9 +669,10 @@ export async function generateTableCardCsvExport(
     summary: overview.summary,
   });
   const csvContent = buildTableCardCsv(rows);
+  const csvByteSize = new TextEncoder().encode(csvContent).byteLength;
 
   const { data, error } = await supabase.rpc("create_seating_export_file", {
-    p_csv_content: csvContent,
+    p_csv_byte_size: csvByteSize,
     p_event_id: eventId,
     p_row_count: rows.length,
     p_table_count: overview.tables.length,

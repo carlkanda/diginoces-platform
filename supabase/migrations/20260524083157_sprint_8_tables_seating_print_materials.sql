@@ -236,7 +236,6 @@ create table if not exists public.seating_export_files (
   storage_path text not null,
   version integer not null default 1,
   row_count integer not null default 0,
-  csv_content text,
   metadata jsonb not null default '{}'::jsonb,
   created_by uuid references auth.users (id) on delete set null,
   created_at timestamptz not null default now(),
@@ -385,7 +384,7 @@ set search_path = public, pg_temp
 as $$
   select case
     when p_snapshot is null then null
-    else p_snapshot - 'csv_content'
+    else p_snapshot
   end;
 $$;
 
@@ -806,7 +805,7 @@ grant execute on function public.remove_guest_from_event_table(uuid, uuid, uuid,
 
 create or replace function public.create_seating_export_file(
   p_event_id uuid,
-  p_csv_content text,
+  p_csv_byte_size integer,
   p_row_count integer,
   p_table_count integer default 0
 )
@@ -830,6 +829,11 @@ begin
 
   if p_row_count < 0 then
     raise exception 'Export row count cannot be negative.'
+      using errcode = '22023';
+  end if;
+
+  if p_csv_byte_size < 0 then
+    raise exception 'Export CSV byte size cannot be negative.'
       using errcode = '22023';
   end if;
 
@@ -884,7 +888,6 @@ begin
 
   insert into public.seating_export_files (
     created_by,
-    csv_content,
     event_id,
     export_type,
     filename,
@@ -896,12 +899,12 @@ begin
   )
   values (
     v_actor_user_id,
-    p_csv_content,
     v_event.event_id,
     'table_cards_csv',
     format('%s-%s-table-cards-v%s.csv', v_safe_project_code, v_safe_event_code, v_version),
     jsonb_build_object(
       'requirementIds', to_jsonb(array['SEAT-011', 'FILE-008']::text[]),
+      'csvByteSize', p_csv_byte_size,
       'tableCount', greatest(coalesce(p_table_count, 0), 0)
     ),
     v_event.project_id,
@@ -921,8 +924,8 @@ begin
 end;
 $$;
 
-revoke all on function public.create_seating_export_file(uuid, text, integer, integer) from public;
-grant execute on function public.create_seating_export_file(uuid, text, integer, integer) to authenticated;
+revoke all on function public.create_seating_export_file(uuid, integer, integer, integer) from public;
+grant execute on function public.create_seating_export_file(uuid, integer, integer, integer) to authenticated;
 
 alter table public.event_tables enable row level security;
 alter table public.event_table_seats enable row level security;

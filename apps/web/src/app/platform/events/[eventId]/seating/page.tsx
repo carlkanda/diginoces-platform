@@ -34,10 +34,12 @@ function formatDate(value: string | null) {
     return "Not scheduled";
   }
 
+  const dateValue = value.includes("T") ? value : `${value}T00:00:00Z`;
+
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeZone: "UTC",
-  }).format(new Date(`${value}T00:00:00Z`));
+  }).format(new Date(dateValue));
 }
 
 function searchParamText(
