@@ -487,7 +487,7 @@ begin
     p_event_id,
     p_failure_reason,
     p_guest_id,
-    coalesce(p_id, gen_random_uuid()),
+    coalesce(p_id, extensions.gen_random_uuid()),
     p_invitation_id,
     p_language,
     p_manual_whatsapp_url,
@@ -573,6 +573,7 @@ grant execute on function public.prepare_message_log_with_queue(
 
 create or replace function public.mark_guided_manual_message_status(
   p_message_log_id uuid,
+  p_project_id uuid,
   p_status public.message_delivery_status,
   p_reason text default null
 )
@@ -600,6 +601,7 @@ begin
     into v_log
   from public.message_logs
   where id = p_message_log_id
+    and project_id = p_project_id
   for update;
 
   if not found then
@@ -686,8 +688,8 @@ begin
 end;
 $$;
 
-revoke all on function public.mark_guided_manual_message_status(uuid, public.message_delivery_status, text) from public;
-grant execute on function public.mark_guided_manual_message_status(uuid, public.message_delivery_status, text) to authenticated;
+revoke all on function public.mark_guided_manual_message_status(uuid, uuid, public.message_delivery_status, text) from public;
+grant execute on function public.mark_guided_manual_message_status(uuid, uuid, public.message_delivery_status, text) to authenticated;
 
 alter table public.message_templates enable row level security;
 alter table public.message_logs enable row level security;

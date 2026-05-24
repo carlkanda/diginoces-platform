@@ -590,20 +590,11 @@ export async function markGuidedManualMessageStatus(
   status: MessageDeliveryStatus,
   reason?: string | null,
 ): Promise<MarkGuidedManualMessageStatusResult> {
-  const messageLog = await getMessageLogDetails(
-    supabase,
-    projectId,
-    messageLogId,
-  );
-
-  if (!messageLog) {
-    throw new MessageValidationError("Message log was not found for project.");
-  }
-
   const { data, error } = await supabase.rpc(
     "mark_guided_manual_message_status",
     {
       p_message_log_id: messageLogId,
+      p_project_id: projectId,
       p_reason: reason ?? null,
       p_status: status,
     },

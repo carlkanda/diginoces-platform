@@ -18,6 +18,7 @@ export function sanitizeFeedbackMessage(value: string | undefined) {
   const sanitized = value
     ?.replace(/[<>]/g, "")
     .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .replace(/[\u200b-\u200d\u2028-\u2029\u202a-\u202e\ufeff]+/g, "")
     .trim()
     .slice(0, 180);
 

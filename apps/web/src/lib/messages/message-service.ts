@@ -952,10 +952,10 @@ export function createApiReadyMessagingAdapter() {
         status: "queued" as const,
       };
     },
-    async send(message?: PreparedMessageLog) {
-      void message;
+    async send(_message?: PreparedMessageLog) {
+      const attemptedMessage = _message ? " for a prepared message" : "";
       throw new MessageValidationError(
-        "Sprint 7 does not use real WhatsApp API credentials.",
+        `Sprint 7 does not use real WhatsApp API credentials${attemptedMessage}.`,
       );
     },
   };

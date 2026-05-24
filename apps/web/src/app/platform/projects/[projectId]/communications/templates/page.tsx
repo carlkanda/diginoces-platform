@@ -29,6 +29,7 @@ type MessageTemplatesPageProps = {
   }>;
 };
 
+// Sprint 7 keeps a French-first starter template; template localization stays editable here and externalized later.
 const defaultTemplateBody =
   "Bonjour {{guest.display_name}}, votre invitation pour {{event.name}} est prete: {{public_guest_page_link}}";
 
