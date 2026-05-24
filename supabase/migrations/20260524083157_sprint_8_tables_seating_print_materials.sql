@@ -441,6 +441,12 @@ begin
       action_name := 'event_tables.updated';
     end if;
     changed_object_type := 'event_table';
+  elsif tg_table_name = 'event_table_seats' then
+    action_name := case
+      when tg_op = 'INSERT' then 'event_table_seats.created'
+      else 'event_table_seats.updated'
+    end;
+    changed_object_type := 'event_table_seat';
   elsif tg_table_name = 'guest_table_assignments' then
     if tg_op = 'INSERT' then
       action_name := 'guest_table_assignments.assigned';
@@ -500,6 +506,18 @@ execute function app_private.audit_seating_change();
 drop trigger if exists audit_event_tables_update on public.event_tables;
 create trigger audit_event_tables_update
 after update on public.event_tables
+for each row
+execute function app_private.audit_seating_change();
+
+drop trigger if exists audit_event_table_seats_insert on public.event_table_seats;
+create trigger audit_event_table_seats_insert
+after insert on public.event_table_seats
+for each row
+execute function app_private.audit_seating_change();
+
+drop trigger if exists audit_event_table_seats_update on public.event_table_seats;
+create trigger audit_event_table_seats_update
+after update on public.event_table_seats
 for each row
 execute function app_private.audit_seating_change();
 

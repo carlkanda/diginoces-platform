@@ -74,6 +74,8 @@ export type AuditAction =
   | "event_tables.updated"
   | "event_tables.archived"
   | "event_tables.capacity_changed"
+  | "event_table_seats.created"
+  | "event_table_seats.updated"
   | "guest_table_assignments.assigned"
   | "guest_table_assignments.removed"
   | "guest_table_assignments.moved"
@@ -142,6 +144,7 @@ export function getAuditFoundationSummary() {
       "message_logs",
       "message_queue_items",
       "event_tables",
+      "event_table_seats",
       "guest_table_assignments",
       // Export table redaction is tracked by table name; audit actions use the semantic seating_exports.* prefix.
       "seating_export_files",
