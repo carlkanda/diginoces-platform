@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import type { CSSProperties } from "react";
 import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import {
+  hasProjectPermission,
   ProjectAccessError,
   requireEventPermission,
 } from "@/lib/projects/project-api";
@@ -43,16 +45,13 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const context = {
+    supabase,
+    user: authContext.user,
+  };
 
   try {
-    await requireEventPermission(
-      {
-        supabase,
-        user: authContext.user,
-      },
-      eventId,
-      "seating.read",
-    );
+    await requireEventPermission(context, eventId, "seating.read");
   } catch (error) {
     if (error instanceof ProjectAccessError) {
       notFound();
@@ -63,6 +62,14 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
 
   const overview = await getEventSeatingOverview(supabase, eventId);
   const mapTables = buildVisualSeatingMapPlaceholder(overview.tables);
+  const canManageTables: boolean | null =
+    mapTables.length === 0
+      ? await hasProjectPermission(
+          context,
+          overview.project.id,
+          "seating.tables.manage",
+        )
+      : null;
   const summaryByTableId = new Map(
     overview.summary.tableSummaries.map((summary) => [
       summary.table.id,
@@ -101,7 +108,9 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
       <section className="section">
         {mapTables.length === 0 ? (
           <div className="empty-state">
-            Create event tables before using the map foundation.
+            {canManageTables === true
+              ? "Create event tables before using the map foundation."
+              : "No tables have been configured for this event yet."}
           </div>
         ) : (
           <div className="seating-map">
@@ -112,10 +121,12 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
                 <div
                   className="seating-map-table"
                   key={table.id}
-                  style={{
-                    left: `${table.positionX}px`,
-                    top: `${table.positionY}px`,
-                  }}
+                  style={
+                    {
+                      "--table-x": `${table.positionX}px`,
+                      "--table-y": `${table.positionY}px`,
+                    } as CSSProperties
+                  }
                 >
                   <strong>{table.label}</strong>
                   <span>

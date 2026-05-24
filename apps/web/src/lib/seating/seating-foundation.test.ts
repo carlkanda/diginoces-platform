@@ -155,6 +155,14 @@ describe("Sprint 8 seating foundation", () => {
       ["VIP-5", "VIP Table 5", 8],
       ["VIP-6", "VIP Table 6", 8],
     ]);
+
+    expect(() =>
+      parseBulkCreateTablesPayload({
+        capacity: 8,
+        count: 1,
+        startNumber: 0,
+      }),
+    ).toThrow("startNumber must be a positive integer");
   });
 
   it("calculates RSVP-aware occupancy and excludes RSVP No from active counts", () => {
@@ -309,6 +317,60 @@ describe("Sprint 8 seating foundation", () => {
     expect(csv).toContain("VIP/Protocol");
   });
 
+  it("uses only active seating guests in table-card CSV export names and VIP flags", () => {
+    const summary = calculateSeatingPlan({
+      eventId,
+      projectId,
+      tables,
+      guests: [
+        guest("active", {
+          assignment: {
+            eventId,
+            guestCountAtAssignment: 1,
+            guestId: "active",
+            id: "active-assignment",
+            seatId: null,
+            seatingNotes: null,
+            status: "active",
+            tableId: "table-1",
+            vipProtocolNotes: null,
+          },
+          displayName: "Active Guest",
+        }),
+        guest("declined-vip", {
+          assignment: {
+            eventId,
+            guestCountAtAssignment: 1,
+            guestId: "declined-vip",
+            id: "declined-assignment",
+            seatId: null,
+            seatingNotes: null,
+            status: "active",
+            tableId: "table-1",
+            vipProtocolNotes: "Declined protocol",
+          },
+          displayName: "Declined VIP",
+          isVipProtocol: true,
+          rsvpStatus: "no",
+        }),
+      ],
+    });
+
+    const csv = buildTableCardCsv(
+      buildTableCardCsvRows({
+        coupleNames: "Ada & Ben",
+        eventDate: "2026-08-01",
+        eventName: "Reception",
+        projectCode: "ADA-BEN-2026",
+        summary,
+      }),
+    );
+
+    expect(csv).toContain("Active Guest");
+    expect(csv).not.toContain("Declined VIP");
+    expect(csv).not.toContain("VIP/Protocol");
+  });
+
   it("enforces side-aware seating permissions in pure helpers", () => {
     const brideAssignments: RoleAssignment[] = [
       { role: "bride", scope: "project", scopeId: projectId },
@@ -351,6 +413,65 @@ describe("Sprint 8 seating foundation", () => {
       units: 1,
       warning: "Guest count was missing or invalid; defaulted to 1.",
     });
+
+    const warningSummary = calculateSeatingPlan({
+      eventId,
+      projectId,
+      tables,
+      guests: [guest("missing-count", { guestCount: null })],
+    });
+    expect(warningSummary.warnings).toEqual([
+      "Guest missing-count: Guest count was missing or invalid; defaulted to 1.",
+    ]);
+  });
+
+  it("neutralizes table-card CSV spreadsheet formulas and preserves literal backslashes", () => {
+    const csv = buildTableCardCsv([
+      {
+        activeGuestCount: 1,
+        capacity: 1,
+        coupleNames: "Ada & Ben",
+        eventDate: "2026-08-01",
+        eventName: "\t=Reception",
+        guestDisplayNames: "Guest \\ Name",
+        projectCode: "ADA-BEN-2026",
+        tableCode: "T1",
+        tableDescription: "Front row",
+        tableName: "Protocol",
+        vipProtocolMarker: "",
+      },
+      {
+        activeGuestCount: 1,
+        capacity: 1,
+        coupleNames: "Ada & Ben",
+        eventDate: "2026-08-01",
+        eventName: "=Reception",
+        guestDisplayNames: "Plain Formula",
+        projectCode: "ADA-BEN-2026",
+        tableCode: "T2",
+        tableDescription: "Second row",
+        tableName: "Family",
+        vipProtocolMarker: "",
+      },
+      {
+        activeGuestCount: 1,
+        capacity: 1,
+        coupleNames: "Ada & Ben",
+        eventDate: "2026-08-01",
+        eventName: "\n=Reception",
+        guestDisplayNames: "Newline Formula",
+        projectCode: "ADA-BEN-2026",
+        tableCode: "T3",
+        tableDescription: "Third row",
+        tableName: "Friends",
+        vipProtocolMarker: "",
+      },
+    ]);
+
+    expect(csv).toContain('"\t\'=Reception"');
+    expect(csv).toContain('"\'=Reception"');
+    expect(csv).toContain('"\n\'=Reception"');
+    expect(csv).toContain("Guest \\ Name");
   });
 
   it("detects invitation regeneration awareness without automatic PDF regeneration", () => {
@@ -425,6 +546,27 @@ describe("Sprint 8 seating foundation", () => {
     expect(migration).toContain("seating.export");
     expect(migration).toContain("('couple', 'seating.read')");
     expect(migration).toContain("on delete set null");
+    expect(migration).toContain("on delete set null (seat_id)");
+    expect(migration).toContain("insert into storage.buckets");
+    expect(migration).toContain("seating_export_files_storage_lookup_idx");
+    expect(migration).toContain("table_cards_csv:");
+    expect(migration).toContain("assign_guest:");
+    expect(migration).toContain(
+      "Seating export objects uploaded by seating exporters",
+    );
+    expect(migration).toContain(
+      "Seating export objects deleted by seating exporters",
+    );
+    expect(migration).toContain("'storageUploadPending', true");
+    expect(migration).toContain("'storageDeletionPending', true");
+    expect(migration).toContain("'storageDeletionSqlState'");
+    expect(migration).toContain(
+      "release_event_table_seats_before_guest_delete",
+    );
+    expect(migration).toContain("- 'seating_notes'");
+    expect(migration).toContain("- 'vip_protocol_notes'");
+    expect(migration).toContain("Unsupported seating audit operation");
+    expect(migration).toContain("assigned_guest_id = p_guest_id");
     expect(migration).toContain("enable row level security");
     expect(migration).not.toContain(
       "create table if not exists public.check_in",

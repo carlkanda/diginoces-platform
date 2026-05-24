@@ -113,6 +113,9 @@ export default async function EventSeatingPage({
   }
 
   const overview = await getEventSeatingOverview(supabase, eventId);
+  const generatedExports = overview.exports.filter(
+    (exportFile) => exportFile.status === "generated",
+  );
   const [canManageTables, canAssign, canExport] = await Promise.all([
     hasProjectPermission(context, overview.project.id, "seating.tables.manage"),
     hasProjectPermission(context, overview.project.id, "seating.assign"),
@@ -188,7 +191,7 @@ export default async function EventSeatingPage({
           </div>
           <div>
             <span>Export versions</span>
-            <strong>{overview.exports.length}</strong>
+            <strong>{generatedExports.length}</strong>
           </div>
         </div>
       </section>
@@ -541,13 +544,13 @@ export default async function EventSeatingPage({
             </button>
           </form>
         ) : null}
-        {overview.exports.length === 0 ? (
+        {generatedExports.length === 0 ? (
           <div className="empty-state">
             No table-card CSV exports have been generated yet.
           </div>
         ) : (
           <div className="record-list">
-            {overview.exports.map((exportFile) => (
+            {generatedExports.map((exportFile) => (
               <div className="record-row" key={exportFile.id}>
                 <span>
                   <strong>{exportFile.filename}</strong>

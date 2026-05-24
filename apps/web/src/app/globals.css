@@ -707,16 +707,19 @@ textarea {
 
 .seating-map-table {
   position: absolute;
+  top: var(--table-y, auto);
+  left: var(--table-x, auto);
   display: grid;
-  width: 150px;
+  width: 160px;
   min-height: 92px;
   place-items: center;
   border: 1px solid rgba(0, 107, 95, 0.28);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   box-shadow: var(--shadow);
   padding: 12px;
   text-align: center;
+  z-index: 1;
 }
 
 .seating-map-table span {
@@ -783,5 +786,31 @@ textarea {
 
   .detail-grid.compact {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .seating-map {
+    display: grid;
+    min-height: 360px;
+    align-content: start;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 12px;
+    background-size: 32px 32px;
+  }
+
+  .seating-map-table {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: auto;
+    max-width: calc(100% - 24px);
+    min-height: 72px;
+    justify-self: stretch;
+    padding: 10px;
+    font-size: 0.92rem;
+  }
+
+  .seating-map-table span {
+    font-size: 0.78rem;
   }
 }

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { serverLogger } from "@/lib/logging";
 import {
   buildBulkTableInputs,
   buildTableCardCsv,
@@ -415,6 +416,7 @@ export async function getEventSeatingOverview(
         .select("*")
         .eq("project_id", projectId)
         .eq("event_id", eventId)
+        .eq("status", "generated")
         .order("created_at", { ascending: false })
         .limit(10),
     ),
@@ -656,6 +658,109 @@ export async function removeGuestFromEventTable(
   return data;
 }
 
+const seatingExportUploadAttempts = 3;
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+async function markSeatingExportFailed(
+  supabase: SupabaseClient,
+  exportFile: SeatingExportFileRow,
+  metadata: Record<string, unknown>,
+) {
+  const { error } = await supabase
+    .from("seating_export_files")
+    .update({
+      metadata,
+      status: "failed",
+    })
+    .eq("id", exportFile.id);
+
+  if (error) {
+    serverLogger.error("Failed to mark seating export as failed.", {
+      error,
+      exportFileId: exportFile.id,
+      storagePath: exportFile.storage_path,
+    });
+  }
+}
+
+async function removeSeatingExportObject(
+  supabase: SupabaseClient,
+  exportFile: SeatingExportFileRow,
+  message: string,
+) {
+  const { error } = await supabase.storage
+    .from(exportFile.storage_bucket)
+    .remove([exportFile.storage_path]);
+
+  if (error) {
+    serverLogger.error(message, {
+      error,
+      exportFileId: exportFile.id,
+      storagePath: exportFile.storage_path,
+    });
+  }
+
+  return error;
+}
+
+async function uploadSeatingExportCsv(
+  supabase: SupabaseClient,
+  exportFile: SeatingExportFileRow,
+  csvBody: Uint8Array,
+) {
+  let lastError: unknown = null;
+  let uploadCreated = false;
+  let storageCleanupError: unknown = null;
+
+  for (let attempt = 1; attempt <= seatingExportUploadAttempts; attempt += 1) {
+    const { data, error } = await supabase.storage
+      .from(exportFile.storage_bucket)
+      .upload(exportFile.storage_path, csvBody, {
+        cacheControl: "3600",
+        contentType: "text/csv;charset=utf-8",
+        upsert: true,
+      });
+
+    uploadCreated = uploadCreated || data !== null;
+
+    if (!error) {
+      return {
+        error: null,
+        storageCleanupError: null,
+      };
+    }
+
+    lastError = error;
+
+    if (attempt < seatingExportUploadAttempts) {
+      await delay(250 * 2 ** (attempt - 1));
+    }
+  }
+
+  if (uploadCreated) {
+    storageCleanupError = await removeSeatingExportObject(
+      supabase,
+      exportFile,
+      "Failed to clean up seating export after upload retry failure.",
+    );
+  }
+
+  return {
+    error:
+      lastError instanceof Error
+        ? lastError
+        : new Error("Seating export upload failed."),
+    storageCleanupError,
+  };
+}
+
 export async function generateTableCardCsvExport(
   supabase: SupabaseClient,
   eventId: string,
@@ -669,7 +774,8 @@ export async function generateTableCardCsvExport(
     summary: overview.summary,
   });
   const csvContent = buildTableCardCsv(rows);
-  const csvByteSize = new TextEncoder().encode(csvContent).byteLength;
+  const csvBody = new TextEncoder().encode(csvContent);
+  const csvByteSize = csvBody.byteLength;
 
   const { data, error } = await supabase.rpc("create_seating_export_file", {
     p_csv_byte_size: csvByteSize,
@@ -682,5 +788,61 @@ export async function generateTableCardCsvExport(
     throw error;
   }
 
-  return requireSeatingExportFileRow(data);
+  const exportFile = requireSeatingExportFileRow(data);
+  const generatedMetadata = Object.fromEntries(
+    Object.entries(exportFile.metadata).filter(
+      ([key]) => key !== "storageUploadError" && key !== "storageUploadPending",
+    ),
+  );
+
+  const { error: uploadError, storageCleanupError } =
+    await uploadSeatingExportCsv(supabase, exportFile, csvBody);
+
+  if (uploadError) {
+    await markSeatingExportFailed(supabase, exportFile, {
+      ...exportFile.metadata,
+      storageCleanupError: storageCleanupError
+        ? errorMessage(storageCleanupError)
+        : null,
+      storageUploadError: uploadError.message,
+    });
+
+    throw uploadError;
+  }
+
+  const { data: finalizedData, error: finalizeError } = await supabase
+    .from("seating_export_files")
+    .update({
+      metadata: generatedMetadata,
+      status: "generated",
+    })
+    .eq("id", exportFile.id)
+    .select("*")
+    .maybeSingle();
+
+  if (finalizeError) {
+    const deleteError = await removeSeatingExportObject(
+      supabase,
+      exportFile,
+      "Failed to delete seating export after finalization failure.",
+    );
+
+    serverLogger.error("Failed to finalize seating export after upload.", {
+      deleteError: deleteError ?? null,
+      error: finalizeError,
+      exportFileId: exportFile.id,
+      storagePath: exportFile.storage_path,
+    });
+
+    await markSeatingExportFailed(supabase, exportFile, {
+      ...exportFile.metadata,
+      finalizeError: errorMessage(finalizeError),
+      storageCleanupError: deleteError ? errorMessage(deleteError) : null,
+      storageUploadPending: false,
+    });
+
+    throw finalizeError;
+  }
+
+  return requireSeatingExportFileRow(finalizedData);
 }

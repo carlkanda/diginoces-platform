@@ -11,7 +11,10 @@ import {
   updateEventTable,
 } from "@/lib/seating/seating-db";
 import { SeatingValidationError } from "@/lib/seating/seating-service";
-import { requireEventPermission } from "@/lib/projects/project-api";
+import {
+  ProjectAccessError,
+  requireEventPermission,
+} from "@/lib/projects/project-api";
 import type { PermissionSlug } from "@/lib/security/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -66,11 +69,11 @@ async function getActionContext(eventId: string, permission: PermissionSlug) {
   const authContext = await getAuthContext();
 
   if (authContext.status === "anonymous") {
-    throw new SeatingValidationError("Authentication is required.");
+    throw new ProjectAccessError("Authentication is required.", 401);
   }
 
   if (authContext.status === "not_configured") {
-    throw new SeatingValidationError("Supabase is not configured.");
+    throw new ProjectAccessError("Supabase is not configured.", 503);
   }
 
   const context = {
@@ -196,11 +199,21 @@ export async function assignGuestToEventTableAction(
 ) {
   try {
     const context = await getActionContext(eventId, "seating.assign");
+    const guestId = formValue(formData, "guestId");
+    const tableId = formValue(formData, "tableId");
+
+    if (guestId === undefined) {
+      throw new SeatingValidationError("guestId is required.");
+    }
+
+    if (tableId === undefined) {
+      throw new SeatingValidationError("tableId is required.");
+    }
 
     await assignGuestToEventTable(context.supabase, eventId, {
-      guestId: formValue(formData, "guestId"),
+      guestId,
       seatingNotes: formValue(formData, "seatingNotes"),
-      tableId: formValue(formData, "tableId"),
+      tableId,
       vipProtocolNotes: formValue(formData, "vipProtocolNotes"),
     });
   } catch (error) {

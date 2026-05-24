@@ -155,7 +155,11 @@ create table if not exists public.event_table_seats (
   constraint event_table_seats_seat_number_positive check (
     seat_number is null or seat_number > 0
   ),
-  constraint event_table_seats_position_object check (jsonb_typeof(position) = 'object')
+  constraint event_table_seats_position_object check (jsonb_typeof(position) = 'object'),
+  constraint event_table_seats_assignment_consistency check (
+    (status = 'assigned' and assigned_guest_id is not null)
+    or (status <> 'assigned' and assigned_guest_id is null)
+  )
 );
 
 create unique index if not exists event_table_seats_table_label_key
@@ -192,7 +196,7 @@ create table if not exists public.guest_table_assignments (
   constraint guest_table_assignments_seat_table_project_event_match
     foreign key (seat_id, table_id, project_id, event_id)
     references public.event_table_seats (id, table_id, project_id, event_id)
-    on delete restrict,
+    on delete set null (seat_id),
   constraint guest_table_assignments_guest_project_match
     foreign key (guest_id, project_id)
     references public.guests (id, project_id)
@@ -256,8 +260,19 @@ drop index if exists public.seating_export_files_event_type_version_key;
 create unique index if not exists seating_export_files_event_type_version_key
   on public.seating_export_files (project_id, event_id, export_type, version);
 
+create index if not exists seating_export_files_event_project_type_version_idx
+  on public.seating_export_files (event_id, project_id, export_type, version desc);
+
 create index if not exists seating_export_files_project_event_idx
   on public.seating_export_files (project_id, event_id, created_at desc);
+
+create index if not exists seating_export_files_storage_lookup_idx
+  on public.seating_export_files (storage_bucket, storage_path);
+
+insert into storage.buckets (id, name, public)
+values ('seating-exports', 'seating-exports', false)
+on conflict (id) do update
+set public = false;
 
 drop trigger if exists set_event_tables_updated_at on public.event_tables;
 create trigger set_event_tables_updated_at
@@ -270,6 +285,32 @@ create trigger set_event_table_seats_updated_at
 before update on public.event_table_seats
 for each row
 execute function app_private.set_updated_at();
+
+create or replace function app_private.release_event_table_seats_before_guest_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  update public.event_table_seats
+  set
+    assigned_guest_id = null,
+    status = 'available',
+    updated_by = coalesce((select auth.uid()), updated_by),
+    updated_at = now()
+  where project_id = old.project_id
+    and assigned_guest_id = old.id;
+
+  return old;
+end;
+$$;
+
+drop trigger if exists release_event_table_seats_before_guest_delete on public.guests;
+create trigger release_event_table_seats_before_guest_delete
+before delete on public.guests
+for each row
+execute function app_private.release_event_table_seats_before_guest_delete();
 
 drop trigger if exists set_guest_table_assignments_updated_at on public.guest_table_assignments;
 create trigger set_guest_table_assignments_updated_at
@@ -385,6 +426,10 @@ as $$
   select case
     when p_snapshot is null then null
     else p_snapshot
+      - 'notes'
+      - 'removal_reason'
+      - 'seating_notes'
+      - 'vip_protocol_notes'
   end;
 $$;
 
@@ -420,9 +465,8 @@ begin
     );
     sanitized_old := app_private.redact_seating_audit_snapshot(to_jsonb(old));
   else
-    changed_object_id := old.id;
-    actor_id := (select auth.uid());
-    sanitized_old := app_private.redact_seating_audit_snapshot(to_jsonb(old));
+    raise exception 'Unsupported seating audit operation: %', tg_op
+      using errcode = '0A000';
   end if;
 
   if tg_op in ('INSERT', 'UPDATE') then
@@ -451,8 +495,6 @@ begin
       action_name := 'guest_table_assignments.assigned';
     elsif tg_op = 'UPDATE' and new.status = 'removed' and old.status = 'active' then
       action_name := 'guest_table_assignments.removed';
-    elsif tg_op = 'UPDATE' and new.table_id is distinct from old.table_id then
-      action_name := 'guest_table_assignments.moved';
     else
       action_name := 'guest_table_assignments.updated';
     end if;
@@ -485,10 +527,6 @@ begin
     coalesce(sanitized_new, '{}'::jsonb),
     'api'
   );
-
-  if tg_op = 'DELETE' then
-    return old;
-  end if;
 
   return new;
 end;
@@ -579,7 +617,7 @@ begin
 
   perform pg_advisory_xact_lock(
     hashtext(p_project_id::text),
-    hashtext(p_event_id::text || ':' || p_guest_id::text)
+    hashtext('assign_guest:' || p_event_id::text || ':' || p_guest_id::text)
   );
 
   select *
@@ -666,7 +704,10 @@ begin
       status = 'available',
       assigned_guest_id = null,
       updated_by = v_actor_user_id
-    where id = v_previous_seat_id;
+    where id = v_previous_seat_id
+      and project_id = p_project_id
+      and event_id = p_event_id
+      and assigned_guest_id = p_guest_id;
   end if;
 
   begin
@@ -705,7 +746,10 @@ begin
       status = 'assigned',
       assigned_guest_id = p_guest_id,
       updated_by = v_actor_user_id
-    where id = p_seat_id;
+    where id = p_seat_id
+      and table_id = p_table_id
+      and project_id = p_project_id
+      and event_id = p_event_id;
   end if;
 
   v_regeneration_count := app_private.mark_guest_invitation_needs_regeneration_for_seating(
@@ -779,7 +823,10 @@ begin
       status = 'available',
       assigned_guest_id = null,
       updated_by = v_actor_user_id
-    where id = v_assignment.seat_id;
+    where id = v_assignment.seat_id
+      and project_id = p_project_id
+      and event_id = p_event_id
+      and assigned_guest_id = p_guest_id;
   end if;
 
   v_regeneration_count := app_private.mark_guest_invitation_needs_regeneration_for_seating(
@@ -820,6 +867,8 @@ declare
   v_safe_event_code text;
   v_safe_project_code text;
   v_version integer;
+  v_archived_export record;
+  v_archived_export_ids uuid[] := array[]::uuid[];
   v_export public.seating_export_files;
 begin
   if v_actor_user_id is null then
@@ -863,7 +912,7 @@ begin
 
   perform pg_advisory_xact_lock(
     hashtext(v_event.project_id::text),
-    hashtext(v_event.event_id::text || ':table_cards_csv')
+    hashtext('table_cards_csv:' || v_event.event_id::text)
   );
 
   select coalesce(max(version), 0) + 1
@@ -886,6 +935,69 @@ begin
     'g'
   );
 
+  with archived_exports as (
+    update public.seating_export_files
+    set
+      status = 'archived',
+      metadata = metadata || jsonb_build_object(
+        'archivedAt', now(),
+        'archivedBy', v_actor_user_id,
+        'deletionRequestedBy', v_actor_user_id,
+        'storageDeletionPending', true
+      ),
+      updated_at = now()
+    where project_id = v_event.project_id
+      and event_id = v_event.event_id
+      and export_type = 'table_cards_csv'
+      and status <> 'archived'
+    returning id
+  )
+  select coalesce(array_agg(id), array[]::uuid[])
+    into v_archived_export_ids
+  from archived_exports;
+
+  if cardinality(v_archived_export_ids) > 0 then
+    for v_archived_export in
+      select
+        storage_bucket,
+        array_agg(id) as ids,
+        array_agg(storage_path) as storage_paths
+      from public.seating_export_files
+      where id = any(v_archived_export_ids)
+      group by storage_bucket
+    loop
+      begin
+        delete from storage.objects
+        where bucket_id = v_archived_export.storage_bucket
+          and name = any(v_archived_export.storage_paths);
+
+        update public.seating_export_files
+        set
+          metadata = (
+            metadata
+            - 'storageDeletionPending'
+            - 'storageDeletionError'
+            - 'storageDeletionSqlState'
+          ) || jsonb_build_object(
+            'storageDeletedAt', now(),
+            'storageDeletedBy', v_actor_user_id
+          ),
+          updated_at = now()
+        where id = any(v_archived_export.ids);
+      exception
+        when others then
+          update public.seating_export_files
+          set
+            metadata = metadata || jsonb_build_object(
+              'storageDeletionError', sqlerrm,
+              'storageDeletionSqlState', sqlstate
+            ),
+            updated_at = now()
+          where id = any(v_archived_export.ids);
+      end;
+    end loop;
+  end if;
+
   insert into public.seating_export_files (
     created_by,
     event_id,
@@ -894,6 +1006,7 @@ begin
     metadata,
     project_id,
     row_count,
+    status,
     storage_path,
     version
   )
@@ -905,10 +1018,12 @@ begin
     jsonb_build_object(
       'requirementIds', to_jsonb(array['SEAT-011', 'FILE-008']::text[]),
       'csvByteSize', p_csv_byte_size,
+      'storageUploadPending', true,
       'tableCount', greatest(coalesce(p_table_count, 0), 0)
     ),
     v_event.project_id,
     p_row_count,
+    'failed',
     format(
       'projects/%s/events/%s/seating/table-cards-v%s-%s.csv',
       v_event.project_id,
@@ -1041,6 +1156,97 @@ using (
 with check (
   app_private.user_can_access_project((select auth.uid()), project_id, 'seating.export')
   or app_private.user_can_access_event((select auth.uid()), event_id, 'seating.export')
+);
+
+drop policy if exists "Seating export objects visible to seating readers" on storage.objects;
+create policy "Seating export objects visible to seating readers"
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'seating-exports'
+  and exists (
+    select 1
+    from public.seating_export_files sef
+    where sef.storage_bucket = bucket_id
+      and sef.storage_path = name
+      and (
+        app_private.user_can_access_project(
+          (select auth.uid()),
+          sef.project_id,
+          'seating.export'
+        )
+        or app_private.user_can_access_event(
+          (select auth.uid()),
+          sef.event_id,
+          'seating.export'
+        )
+        or app_private.user_can_access_project(
+          (select auth.uid()),
+          sef.project_id,
+          'seating.read'
+        )
+        or app_private.user_can_access_event(
+          (select auth.uid()),
+          sef.event_id,
+          'seating.read'
+        )
+      )
+    )
+);
+
+drop policy if exists "Seating export objects uploaded by seating exporters" on storage.objects;
+create policy "Seating export objects uploaded by seating exporters"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'seating-exports'
+  and exists (
+    select 1
+    from public.seating_export_files sef
+    where sef.storage_bucket = bucket_id
+      and sef.storage_path = name
+      and (
+        app_private.user_can_access_project(
+          (select auth.uid()),
+          sef.project_id,
+          'seating.export'
+        )
+        or app_private.user_can_access_event(
+          (select auth.uid()),
+          sef.event_id,
+          'seating.export'
+        )
+      )
+  )
+);
+
+drop policy if exists "Seating export objects deleted by seating exporters" on storage.objects;
+create policy "Seating export objects deleted by seating exporters"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'seating-exports'
+  and exists (
+    select 1
+    from public.seating_export_files sef
+    where sef.storage_bucket = bucket_id
+      and sef.storage_path = name
+      and (
+        app_private.user_can_access_project(
+          (select auth.uid()),
+          sef.project_id,
+          'seating.export'
+        )
+        or app_private.user_can_access_event(
+          (select auth.uid()),
+          sef.event_id,
+          'seating.export'
+        )
+      )
+  )
 );
 
 grant select, insert, update on public.event_tables to authenticated;

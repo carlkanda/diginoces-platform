@@ -123,6 +123,7 @@ export type SeatingPlanSummary = {
   tableSummaries: TableOccupancySummary[];
   totalActiveOccupancy: number;
   unassignedGuests: SeatingGuest[];
+  warnings: string[];
 };
 
 export type TableCardCsvRow = {
@@ -218,6 +219,14 @@ function optionalNonNegativeInteger(value: unknown, fieldName: string) {
   return value;
 }
 
+function optionalPositiveInteger(value: unknown, fieldName: string) {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  return requiredPositiveInteger(value, fieldName);
+}
+
 function optionalNumber(value: unknown, fieldName: string) {
   if (value === undefined || value === null || value === "") {
     return undefined;
@@ -286,7 +295,7 @@ export function parseBulkCreateTablesPayload(
     assignmentMode: optionalAssignmentMode(body.assignmentMode),
     capacity: requiredPositiveInteger(body.capacity, "capacity"),
     count: requiredPositiveInteger(body.count, "count"),
-    startNumber: optionalNonNegativeInteger(body.startNumber, "startNumber"),
+    startNumber: optionalPositiveInteger(body.startNumber, "startNumber"),
     tableCodePrefix:
       optionalText(body.tableCodePrefix) ??
       optionalText(body.tablePrefix) ??
@@ -362,6 +371,11 @@ export function calculateSeatingPlan(input: {
 }): SeatingPlanSummary {
   const guestsByTable = new Map<string, SeatingGuest[]>();
   const unassignedGuests: SeatingGuest[] = [];
+  const warnings = input.guests.flatMap((guest) => {
+    const { warning } = getGuestOccupancyUnits(guest);
+
+    return warning ? [`${guest.displayName}: ${warning}`] : [];
+  });
 
   for (const guest of input.guests) {
     if (guest.assignment?.status === "active") {
@@ -413,6 +427,7 @@ export function calculateSeatingPlan(input: {
     unassignedGuests: unassignedGuests.filter((guest) =>
       isGuestActiveForSeating(guest.rsvpStatus),
     ),
+    warnings,
   };
 }
 
@@ -541,9 +556,18 @@ export function canAssignGuestSide(
 }
 
 function csvEscape(value: string | number) {
-  const text = String(value);
+  let text = String(value);
+  const formulaMatch = /^([\t\r\n]*)([=+\-@])/.exec(text);
+  const needsFormulaNeutralization = formulaMatch !== null;
 
-  if (!/[",\n\r]/.test(text)) {
+  if (formulaMatch) {
+    const leadingControlCharacters = formulaMatch[1] ?? "";
+    text = `${leadingControlCharacters}'${text.slice(
+      leadingControlCharacters.length,
+    )}`;
+  }
+
+  if (!needsFormulaNeutralization && !/[",\n\r]/.test(text)) {
     return text;
   }
 
@@ -557,25 +581,29 @@ export function buildTableCardCsvRows(input: {
   projectCode: string;
   summary: SeatingPlanSummary;
 }): TableCardCsvRow[] {
-  return input.summary.tableSummaries.map((summary) => ({
-    activeGuestCount: summary.activeGuestCount,
-    capacity: summary.capacity,
-    coupleNames: input.coupleNames,
-    eventDate: input.eventDate ?? "",
-    eventName: input.eventName,
-    guestDisplayNames: summary.assignedGuests
-      .map((guest) => guest.displayName)
-      .join("; "),
-    projectCode: input.projectCode,
-    tableCode: summary.table.tableCode,
-    tableDescription: summary.table.description ?? "",
-    tableName: summary.table.tableName,
-    vipProtocolMarker: summary.assignedGuests.some(
-      (guest) => guest.isVipProtocol,
-    )
-      ? "VIP/Protocol"
-      : "",
-  }));
+  return input.summary.tableSummaries.map((summary) => {
+    const activeGuests = summary.assignedGuests.filter((guest) =>
+      isGuestActiveForSeating(guest.rsvpStatus),
+    );
+
+    return {
+      activeGuestCount: summary.activeGuestCount,
+      capacity: summary.capacity,
+      coupleNames: input.coupleNames,
+      eventDate: input.eventDate ?? "",
+      eventName: input.eventName,
+      guestDisplayNames: activeGuests
+        .map((guest) => guest.displayName)
+        .join("; "),
+      projectCode: input.projectCode,
+      tableCode: summary.table.tableCode,
+      tableDescription: summary.table.description ?? "",
+      tableName: summary.table.tableName,
+      vipProtocolMarker: activeGuests.some((guest) => guest.isVipProtocol)
+        ? "VIP/Protocol"
+        : "",
+    };
+  });
 }
 
 export function buildTableCardCsv(rows: TableCardCsvRow[]) {

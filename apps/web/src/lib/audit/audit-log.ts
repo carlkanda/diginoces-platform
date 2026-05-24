@@ -146,7 +146,9 @@ export function getAuditFoundationSummary() {
       "event_tables",
       "event_table_seats",
       "guest_table_assignments",
-      // Export table redaction is tracked by table name; audit actions use the semantic seating_exports.* prefix.
+      "seating_exports",
+      // Redaction matches literal DB table names like seating_export_files;
+      // audit actions use semantic groups like seating_exports.* for queries.
       "seating_export_files",
       "future check-in/payment actions",
     ],
