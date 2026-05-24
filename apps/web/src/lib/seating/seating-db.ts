@@ -285,6 +285,7 @@ async function listSeatingGuestRows(
     return [];
   }
 
+  // Guest rows are scoped to invited event guest IDs and chunked to keep .in() queries bounded.
   return (
     await Promise.all(
       chunkArray(guestIds, 500).map((guestIdChunk) =>

@@ -584,17 +584,20 @@ begin
       using errcode = '22004';
   end if;
 
-  if p_seat_id is not null and not exists (
-    select 1
+  if p_seat_id is not null then
+    perform 1
     from public.event_table_seats s
     where s.id = p_seat_id
       and s.table_id = p_table_id
       and s.project_id = p_project_id
       and s.event_id = p_event_id
       and s.status <> 'blocked'
-  ) then
-    raise exception 'Seat was not found or cannot be assigned.'
-      using errcode = '02000';
+    for update;
+
+    if not found then
+      raise exception 'Seat was not found or cannot be assigned.'
+        using errcode = '02000';
+    end if;
   end if;
 
   if v_table.assignment_mode = 'table_level' and p_seat_id is not null then
@@ -649,29 +652,35 @@ begin
     where id = v_previous_seat_id;
   end if;
 
-  insert into public.guest_table_assignments (
-    project_id,
-    event_id,
-    table_id,
-    seat_id,
-    guest_id,
-    guest_count_at_assignment,
-    seating_notes,
-    vip_protocol_notes,
-    assigned_by
-  )
-  values (
-    p_project_id,
-    p_event_id,
-    p_table_id,
-    p_seat_id,
-    p_guest_id,
-    greatest(coalesce(v_guest_count, 1), 1),
-    nullif(trim(coalesce(p_seating_notes, '')), ''),
-    nullif(trim(coalesce(p_vip_protocol_notes, '')), ''),
-    v_actor_user_id
-  )
-  returning * into v_assignment;
+  begin
+    insert into public.guest_table_assignments (
+      project_id,
+      event_id,
+      table_id,
+      seat_id,
+      guest_id,
+      guest_count_at_assignment,
+      seating_notes,
+      vip_protocol_notes,
+      assigned_by
+    )
+    values (
+      p_project_id,
+      p_event_id,
+      p_table_id,
+      p_seat_id,
+      p_guest_id,
+      greatest(coalesce(v_guest_count, 1), 1),
+      nullif(trim(coalesce(p_seating_notes, '')), ''),
+      nullif(trim(coalesce(p_vip_protocol_notes, '')), ''),
+      v_actor_user_id
+    )
+    returning * into v_assignment;
+  exception
+    when unique_violation then
+      raise exception 'Guest or seat already has an active seating assignment.'
+        using errcode = '23505';
+  end;
 
   if p_seat_id is not null then
     update public.event_table_seats
