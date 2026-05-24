@@ -5,6 +5,7 @@ import {
   listProjectMessageTemplates,
 } from "@/lib/messages/message-db";
 import { handleMessageApiError } from "@/lib/messages/message-api";
+import { parseCreateMessageTemplatePayload } from "@/lib/messages/message-service";
 import {
   getProjectApiContext,
   isProjectApiContext,
@@ -67,10 +68,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
       "message_templates.manage",
     );
 
+    const payload = parseCreateMessageTemplatePayload(await readJson(request));
     const template = await createMessageTemplate(
       apiContext.supabase,
       projectId,
-      await readJson(request),
+      payload,
       apiContext.user.id,
     );
 

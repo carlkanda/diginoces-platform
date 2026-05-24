@@ -13,6 +13,21 @@ import { requireProjectPermission } from "@/lib/projects/project-api";
 import type { PermissionSlug } from "@/lib/security/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+const allowedManualStatuses = new Set<MessageDeliveryStatus>([
+  "failed",
+  "opened_manually",
+  "resent",
+  "sent",
+  "skipped",
+]);
+
+const allowedTemplateStatuses = new Set([
+  "active",
+  "archived",
+  "draft",
+  "inactive",
+]);
+
 function formValue(formData: FormData, key: string) {
   const value = formData.get(key);
 
@@ -36,6 +51,16 @@ function requiredFormValue(formData: FormData, key: string) {
   }
 
   return value;
+}
+
+function templateStatusValue(formData: FormData) {
+  const status = formValue(formData, "status") ?? "active";
+
+  if (!allowedTemplateStatuses.has(status)) {
+    throw new MessageValidationError("Unsupported template status.");
+  }
+
+  return status;
 }
 
 function messageDetailPath(
@@ -93,7 +118,7 @@ export async function createMessageTemplateAction(
         body: requiredFormValue(formData, "body"),
         language: requiredFormValue(formData, "language"),
         messageType: requiredFormValue(formData, "messageType"),
-        status: formValue(formData, "status") ?? "active",
+        status: templateStatusValue(formData),
         title: requiredFormValue(formData, "title"),
       },
       context.user.id,
@@ -166,6 +191,10 @@ export async function markProjectMessageStatusAction(
   formData: FormData,
 ) {
   try {
+    if (!allowedManualStatuses.has(status)) {
+      throw new MessageValidationError("Unsupported message status.");
+    }
+
     const reason = formValue(formData, "reason");
 
     if ((status === "failed" || status === "skipped") && !reason) {
