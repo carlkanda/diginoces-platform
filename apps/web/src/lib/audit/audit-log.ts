@@ -67,7 +67,9 @@ export type AuditAction =
   | "messages.skipped"
   | "messages.resent"
   | "message_reminders.prepared"
+  | "message_reminders.updated"
   | "message_modifications.prepared"
+  | "message_queue_items.updated"
   | "storage.file_registered"
   | "system.foundation_health_checked";
 

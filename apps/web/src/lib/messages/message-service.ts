@@ -294,7 +294,9 @@ export const messageAuditActions = [
   "messages.skipped",
   "messages.resent",
   "message_reminders.prepared",
+  "message_reminders.updated",
   "message_modifications.prepared",
+  "message_queue_items.updated",
 ] as const;
 
 export type MessageAuditAction = (typeof messageAuditActions)[number];

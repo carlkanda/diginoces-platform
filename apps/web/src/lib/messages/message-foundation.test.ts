@@ -518,6 +518,8 @@ describe("Sprint 7 WhatsApp communication workflow foundation", () => {
         "messages.skipped",
         "messages.resent",
         "message_reminders.prepared",
+        "message_reminders.updated",
+        "message_queue_items.updated",
       ]),
     );
   });
