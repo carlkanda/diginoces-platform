@@ -398,6 +398,60 @@ async function getPreparationInput(
   payload: PrepareMessagePayload,
   actorUserId: string,
 ): Promise<MessagePreparationInput> {
+  const projectPromise = maybeSingleRecord(
+    supabase
+      .from("wedding_projects")
+      .select(
+        "id, bride_name, groom_name, preferred_language, guest_page_access_status",
+      )
+      .eq("id", projectId)
+      .maybeSingle(),
+  );
+  const eventPromise = maybeSingleRecord(
+    supabase
+      .from("events")
+      .select("id, name, event_date, starts_at, venue_name, rsvp_deadline_at")
+      .eq("project_id", projectId)
+      .eq("id", payload.eventId)
+      .maybeSingle(),
+  );
+  const guestPromise = maybeSingleRecord(
+    supabase
+      .from("guests")
+      .select(
+        "id, project_id, display_name, preferred_language, whatsapp_number, is_printed_only, is_active",
+      )
+      .eq("project_id", projectId)
+      .eq("id", payload.guestId)
+      .maybeSingle(),
+  );
+  const templatesPromise = listProjectMessageTemplates(supabase, projectId);
+  const invitationPromise = payload.invitationId
+    ? maybeSingleRecord(
+        supabase
+          .from("invitations")
+          .select("id, status")
+          .eq("project_id", projectId)
+          .eq("id", payload.invitationId)
+          .maybeSingle(),
+      )
+    : Promise.resolve(null);
+  const assignmentsPromise = supabase
+    .from("guest_event_assignments")
+    .select("event_id, invited")
+    .eq("project_id", projectId)
+    .eq("guest_id", payload.guestId);
+  const latestFilePromise = payload.invitationId
+    ? supabase
+        .from("invitation_files")
+        .select("id")
+        .eq("project_id", projectId)
+        .eq("invitation_id", payload.invitationId)
+        .eq("is_active", true)
+        .order("version", { ascending: false })
+        .limit(1)
+    : Promise.resolve({ data: [], error: null });
+
   const [
     project,
     event,
@@ -407,59 +461,13 @@ async function getPreparationInput(
     assignmentsResult,
     latestFileResult,
   ] = await Promise.all([
-    maybeSingleRecord(
-      supabase
-        .from("wedding_projects")
-        .select(
-          "id, bride_name, groom_name, preferred_language, guest_page_access_status",
-        )
-        .eq("id", projectId)
-        .maybeSingle(),
-    ),
-    maybeSingleRecord(
-      supabase
-        .from("events")
-        .select("id, name, event_date, starts_at, venue_name, rsvp_deadline_at")
-        .eq("project_id", projectId)
-        .eq("id", payload.eventId)
-        .maybeSingle(),
-    ),
-    maybeSingleRecord(
-      supabase
-        .from("guests")
-        .select(
-          "id, project_id, display_name, preferred_language, whatsapp_number, is_printed_only, is_active",
-        )
-        .eq("project_id", projectId)
-        .eq("id", payload.guestId)
-        .maybeSingle(),
-    ),
-    listProjectMessageTemplates(supabase, projectId),
-    payload.invitationId
-      ? maybeSingleRecord(
-          supabase
-            .from("invitations")
-            .select("id, status")
-            .eq("project_id", projectId)
-            .eq("id", payload.invitationId)
-            .maybeSingle(),
-        )
-      : Promise.resolve(null),
-    supabase
-      .from("guest_event_assignments")
-      .select("event_id, invited")
-      .eq("project_id", projectId)
-      .eq("guest_id", payload.guestId),
-    payload.invitationId
-      ? supabase
-          .from("invitation_files")
-          .select("id")
-          .eq("project_id", projectId)
-          .eq("invitation_id", payload.invitationId)
-          .eq("is_active", true)
-          .order("version", { ascending: false })
-          .limit(1)
-      : Promise.resolve({ data: [], error: null }),
+    projectPromise,
+    eventPromise,
+    guestPromise,
+    templatesPromise,
+    invitationPromise,
+    assignmentsPromise,
+    latestFilePromise,
   ]);
 
   const projectRecord = asRecord(project, "Project");

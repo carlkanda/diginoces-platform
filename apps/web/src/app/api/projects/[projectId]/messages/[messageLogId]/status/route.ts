@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { readJson } from "@/lib/api/read-json";
-import {
-  getMessageLogDetails,
-  markGuidedManualMessageStatus,
-} from "@/lib/messages/message-db";
+import { markGuidedManualMessageStatus } from "@/lib/messages/message-db";
 import { handleMessageApiError } from "@/lib/messages/message-api";
 import { parseManualStatusUpdatePayload } from "@/lib/messages/message-service";
 import {
@@ -31,29 +28,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { messageLogId, projectId } = await context.params;
     await requireProjectPermission(apiContext, projectId, "messages.send");
-
-    const messageLog = await getMessageLogDetails(
-      apiContext.supabase,
-      projectId,
-      messageLogId,
-    );
-
-    if (!messageLog) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "not_found",
-            message: "Message log was not found.",
-          },
-        },
-        {
-          headers: {
-            "Cache-Control": "no-store",
-          },
-          status: 404,
-        },
-      );
-    }
 
     const input = parseManualStatusUpdatePayload(await readJson(request));
     const result = await markGuidedManualMessageStatus(

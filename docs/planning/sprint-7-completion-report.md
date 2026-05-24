@@ -8,6 +8,8 @@ Issue: #21 - Sprint 7 - WhatsApp Communication Workflows
 
 Branch: `codex/sprint-7-whatsapp-communication-workflows`
 
+Governance note: `AGENTS.md` and `README.md` were already updated on `main` to Sprint 7 active metadata before this implementation branch; the branch keeps that metadata unchanged and verifies issue `#21`, plan path, expected branch, PR title, and this completion report path remain current.
+
 ## Requirements Covered
 
 - `MSG-001` - WhatsApp-first communication with guided manual and API-ready modes.
