@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { RoleAssignment } from "@/lib/security/permissions";
 import {
@@ -76,13 +77,8 @@ function guest(
   };
 }
 
-const migrationRoot = resolve(
-  process.cwd(),
-  "..",
-  "..",
-  "supabase",
-  "migrations",
-);
+const here = fileURLToPath(new URL(".", import.meta.url));
+const migrationRoot = resolve(here, "../../../../../supabase/migrations");
 
 function sprint8Migration() {
   const migrationName = readdirSync(migrationRoot).find((name) =>
@@ -394,11 +390,15 @@ describe("Sprint 8 seating foundation", () => {
     );
     expect(migration).toContain("assign_guest_to_event_table");
     expect(migration).toContain("remove_guest_from_event_table");
+    expect(migration).toContain("create_seating_export_file");
+    expect(migration).toContain("pg_advisory_xact_lock");
     expect(migration).toContain("app_private.audit_seating_change");
     expect(migration).toContain("seating.read");
     expect(migration).toContain("seating.tables.manage");
     expect(migration).toContain("seating.assign");
     expect(migration).toContain("seating.export");
+    expect(migration).toContain("('couple', 'seating.read')");
+    expect(migration).toContain("on delete set null");
     expect(migration).toContain("enable row level security");
     expect(migration).not.toContain(
       "create table if not exists public.check_in",

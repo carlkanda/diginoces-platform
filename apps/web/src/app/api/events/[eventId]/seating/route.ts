@@ -165,7 +165,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       const exportFile = await generateTableCardCsvExport(
         apiContext.supabase,
         eventId,
-        apiContext.user.id,
       );
       return NextResponse.json({ exportFile }, { status: 201 });
     }

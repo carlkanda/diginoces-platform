@@ -4,8 +4,6 @@ import {
   buildTableCardCsv,
   buildTableCardCsvRows,
   calculateSeatingPlan,
-  createExportStoragePath,
-  createGeneratedExportFileName,
   parseBulkCreateTablesPayload,
   parseEventTablePayload,
   parseRemoveSeatingAssignmentPayload,
@@ -226,7 +224,6 @@ export async function getEventSeatingOverview(
     guestAssignments,
     titleTypes,
     rsvps,
-    tagAssignments,
     tags,
     invitations,
     exports,
@@ -270,15 +267,6 @@ export async function getEventSeatingOverview(
         .select("guest_id, status")
         .eq("project_id", projectId)
         .eq("event_id", eventId),
-    ),
-    fetchRows<{
-      guest_id: string;
-      tag_id: string;
-    }>(
-      supabase
-        .from("guest_tag_assignments")
-        .select("guest_id, tag_id")
-        .eq("project_id", projectId),
     ),
     fetchRows<{
       id: string;
@@ -332,6 +320,19 @@ export async function getEventSeatingOverview(
             .eq("is_active", true)
             .in("id", guestIds)
             .order("display_name", { ascending: true }),
+        );
+  const tagAssignments =
+    guestIds.length === 0
+      ? []
+      : await fetchRows<{
+          guest_id: string;
+          tag_id: string;
+        }>(
+          supabase
+            .from("guest_tag_assignments")
+            .select("guest_id, tag_id")
+            .eq("project_id", projectId)
+            .in("guest_id", guestIds),
         );
 
   const titleTypeCountById = new Map(
@@ -566,15 +567,8 @@ export async function removeGuestFromEventTable(
 export async function generateTableCardCsvExport(
   supabase: SupabaseClient,
   eventId: string,
-  actorUserId: string,
 ) {
   const overview = await getEventSeatingOverview(supabase, eventId);
-  const version =
-    overview.exports.reduce((max, exportFile) => {
-      return exportFile.export_type === "table_cards_csv"
-        ? Math.max(max, exportFile.version)
-        : max;
-    }, 0) + 1;
   const rows = buildTableCardCsvRows({
     coupleNames: buildCoupleNames(overview.project),
     eventDate: overview.event.event_date,
@@ -583,36 +577,13 @@ export async function generateTableCardCsvExport(
     summary: overview.summary,
   });
   const csvContent = buildTableCardCsv(rows);
-  const filename = createGeneratedExportFileName({
-    eventCode: overview.event.event_code,
-    projectCode: overview.project.project_code,
-    version,
-  });
-  const storagePath = createExportStoragePath({
-    eventId,
-    projectId: overview.project.id,
-    version,
-  });
 
-  const { data, error } = await supabase
-    .from("seating_export_files")
-    .insert({
-      created_by: actorUserId,
-      csv_content: csvContent,
-      event_id: eventId,
-      export_type: "table_cards_csv",
-      filename,
-      metadata: {
-        requirementIds: ["SEAT-011", "FILE-008"],
-        tableCount: overview.tables.length,
-      },
-      project_id: overview.project.id,
-      row_count: rows.length,
-      storage_path: storagePath,
-      version,
-    })
-    .select("*")
-    .single();
+  const { data, error } = await supabase.rpc("create_seating_export_file", {
+    p_csv_content: csvContent,
+    p_event_id: eventId,
+    p_row_count: rows.length,
+    p_table_count: overview.tables.length,
+  });
 
   if (error) {
     throw error;

@@ -247,11 +247,7 @@ export async function generateTableCardCsvExportAction(eventId: string) {
   try {
     const context = await getActionContext(eventId, "seating.export");
 
-    await generateTableCardCsvExport(
-      context.supabase,
-      eventId,
-      context.user.id,
-    );
+    await generateTableCardCsvExport(context.supabase, eventId);
   } catch (error) {
     redirect(
       seatingPath(eventId, {

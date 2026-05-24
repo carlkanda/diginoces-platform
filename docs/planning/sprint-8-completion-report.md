@@ -155,6 +155,7 @@ git diff --check
 npm.cmd run build
 npm.cmd run db:lint
 targeted secret scan with rg
+wsl.exe bash -lc "coderabbit review --agent -t uncommitted -c AGENTS.md"
 ```
 
 Failed but resolved/replaced:
@@ -178,8 +179,10 @@ Passed:
 - `npm audit --omit=dev` - 0 vulnerabilities
 - `npx supabase@latest db push --linked --dry-run` - showed only the Sprint 8 migration pending
 - `npm run db:lint` - no schema errors on the current linked public/app_private schemas
-- `git diff --check` - only expected line-ending warning for `docs/setup/local-development.md`
+- `git diff --check` - only expected CRLF conversion warnings on edited files
 - targeted secret scan - only the `.env.example` placeholder database URL was detected
+- hosted CodeRabbit review follow-up - patched scoped tag reads (`r3294185644`), atomic export version allocation (`r3294185646`), migration test path anchoring (`r3294185649`), TS/DB `couple` seating-read grant parity (`r3294185653`), seat FK delete behavior (`r3294185654`), and null-guarded seat release (`r3294185657`)
+- local WSL CodeRabbit review - patched empty project/event code filename fallback in the DB export RPC, then reran with 0 issues
 
 Not run/applied:
 

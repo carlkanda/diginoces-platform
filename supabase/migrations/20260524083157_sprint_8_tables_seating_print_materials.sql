@@ -150,7 +150,7 @@ create table if not exists public.event_table_seats (
   constraint event_table_seats_guest_project_match
     foreign key (assigned_guest_id, project_id)
     references public.guests (id, project_id)
-    on delete restrict,
+    on delete set null,
   constraint event_table_seats_label_not_blank check (length(trim(seat_label)) > 0),
   constraint event_table_seats_seat_number_positive check (
     seat_number is null or seat_number > 0
@@ -253,8 +253,9 @@ create table if not exists public.seating_export_files (
   constraint seating_export_files_metadata_object check (jsonb_typeof(metadata) = 'object')
 );
 
+drop index if exists public.seating_export_files_event_type_version_key;
 create unique index if not exists seating_export_files_event_type_version_key
-  on public.seating_export_files (event_id, export_type, version);
+  on public.seating_export_files (project_id, event_id, export_type, version);
 
 create index if not exists seating_export_files_project_event_idx
   on public.seating_export_files (project_id, event_id, created_at desc);
@@ -736,12 +737,14 @@ begin
       using errcode = '02000';
   end if;
 
-  update public.event_table_seats
-  set
-    status = 'available',
-    assigned_guest_id = null,
-    updated_by = v_actor_user_id
-  where id = v_assignment.seat_id;
+  if v_assignment.seat_id is not null then
+    update public.event_table_seats
+    set
+      status = 'available',
+      assigned_guest_id = null,
+      updated_by = v_actor_user_id
+    where id = v_assignment.seat_id;
+  end if;
 
   v_regeneration_count := app_private.mark_guest_invitation_needs_regeneration_for_seating(
     p_project_id,
@@ -763,6 +766,126 @@ $$;
 
 revoke all on function public.remove_guest_from_event_table(uuid, uuid, uuid, text) from public;
 grant execute on function public.remove_guest_from_event_table(uuid, uuid, uuid, text) to authenticated;
+
+create or replace function public.create_seating_export_file(
+  p_event_id uuid,
+  p_csv_content text,
+  p_row_count integer,
+  p_table_count integer default 0
+)
+returns public.seating_export_files
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  v_actor_user_id uuid := (select auth.uid());
+  v_event record;
+  v_safe_event_code text;
+  v_safe_project_code text;
+  v_version integer;
+  v_export public.seating_export_files;
+begin
+  if v_actor_user_id is null then
+    raise exception 'Authentication required.'
+      using errcode = '42501';
+  end if;
+
+  if p_row_count < 0 then
+    raise exception 'Export row count cannot be negative.'
+      using errcode = '22023';
+  end if;
+
+  select
+      e.id as event_id,
+      e.event_code,
+      e.project_id,
+      p.project_code
+    into v_event
+  from public.events e
+  join public.wedding_projects p
+    on p.id = e.project_id
+  where e.id = p_event_id;
+
+  if not found then
+    raise exception 'Event was not found.'
+      using errcode = '02000';
+  end if;
+
+  if not (
+    app_private.user_can_access_project(v_actor_user_id, v_event.project_id, 'seating.export')
+    or app_private.user_can_access_event(v_actor_user_id, v_event.event_id, 'seating.export')
+  ) then
+    raise exception 'Seating export permission denied.'
+      using errcode = '42501';
+  end if;
+
+  perform pg_advisory_xact_lock(
+    hashtext(v_event.project_id::text),
+    hashtext(v_event.event_id::text || ':table_cards_csv')
+  );
+
+  select coalesce(max(version), 0) + 1
+    into v_version
+  from public.seating_export_files
+  where project_id = v_event.project_id
+    and event_id = v_event.event_id
+    and export_type = 'table_cards_csv';
+
+  v_safe_project_code := regexp_replace(
+    coalesce(nullif(v_event.project_code, ''), 'project'),
+    '[^a-zA-Z0-9_-]+',
+    '-',
+    'g'
+  );
+  v_safe_event_code := regexp_replace(
+    coalesce(nullif(v_event.event_code, ''), 'event'),
+    '[^a-zA-Z0-9_-]+',
+    '-',
+    'g'
+  );
+
+  insert into public.seating_export_files (
+    created_by,
+    csv_content,
+    event_id,
+    export_type,
+    filename,
+    metadata,
+    project_id,
+    row_count,
+    storage_path,
+    version
+  )
+  values (
+    v_actor_user_id,
+    p_csv_content,
+    v_event.event_id,
+    'table_cards_csv',
+    format('%s-%s-table-cards-v%s.csv', v_safe_project_code, v_safe_event_code, v_version),
+    jsonb_build_object(
+      'requirementIds', to_jsonb(array['SEAT-011', 'FILE-008']::text[]),
+      'tableCount', greatest(coalesce(p_table_count, 0), 0)
+    ),
+    v_event.project_id,
+    p_row_count,
+    format(
+      'projects/%s/events/%s/seating/table-cards-v%s-%s.csv',
+      v_event.project_id,
+      v_event.event_id,
+      v_version,
+      extensions.gen_random_uuid()
+    ),
+    v_version
+  )
+  returning * into v_export;
+
+  return v_export;
+end;
+$$;
+
+revoke all on function public.create_seating_export_file(uuid, text, integer, integer) from public;
+grant execute on function public.create_seating_export_file(uuid, text, integer, integer) to authenticated;
 
 alter table public.event_tables enable row level security;
 alter table public.event_table_seats enable row level security;
@@ -911,6 +1034,7 @@ with grants(role_slug, permission_slug) as (
     ('operations_manager', 'seating.tables.manage'),
     ('operations_manager', 'seating.assign'),
     ('operations_manager', 'seating.export'),
+    ('couple', 'seating.read'),
     ('bride', 'seating.read'),
     ('bride', 'seating.assign'),
     ('groom', 'seating.read'),
