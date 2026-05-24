@@ -267,7 +267,12 @@ export default async function ProjectDetailPage({
           <div className="empty-state">
             No events configured. Create an event to manage seating.
           </div>
-        ) : null}
+        ) : (
+          <div className="empty-state">
+            You do not have access to seating for these events. Contact your
+            admin.
+          </div>
+        )}
       </section>
 
       <section className="section">
