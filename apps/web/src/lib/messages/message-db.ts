@@ -83,6 +83,19 @@ export type MessageInvitationOption = {
   status: string;
 };
 
+type MessageInvitationStatus =
+  | "failed"
+  | "generated"
+  | "needs_regeneration"
+  | "resent"
+  | "sent";
+
+export type MarkGuidedManualMessageStatusResult = {
+  messageLogId: string;
+  projectId: string;
+  status: MessageDeliveryStatus;
+};
+
 export type ProjectMessageOverview = {
   logs: MessageLogRow[];
   queueItems: MessageQueueItemRow[];
@@ -123,6 +136,20 @@ function requireString(record: Record<string, unknown>, fieldName: string) {
   }
 
   return value;
+}
+
+function parseInvitationStatus(value: string): MessageInvitationStatus {
+  if (
+    value === "failed" ||
+    value === "generated" ||
+    value === "needs_regeneration" ||
+    value === "resent" ||
+    value === "sent"
+  ) {
+    return value;
+  }
+
+  throw new MessageValidationError("Invitation status is not send-ready.");
 }
 
 function eventStartsAt(record: Record<string, unknown>) {
@@ -441,12 +468,9 @@ async function getPreparationInput(
           id: requireString(invitationRecord, "id"),
           latestActiveFileId: latestFile?.id ?? null,
           publicGuestPageLink: payload.publicGuestPageLink ?? null,
-          status: requireString(invitationRecord, "status") as
-            | "failed"
-            | "generated"
-            | "needs_regeneration"
-            | "resent"
-            | "sent",
+          status: parseInvitationStatus(
+            requireString(invitationRecord, "status"),
+          ),
         }
       : null,
     messageType: payload.messageType,
@@ -516,7 +540,7 @@ export async function markGuidedManualMessageStatus(
   messageLogId: string,
   status: MessageDeliveryStatus,
   reason?: string | null,
-) {
+): Promise<MarkGuidedManualMessageStatusResult> {
   const { data, error } = await supabase.rpc(
     "mark_guided_manual_message_status",
     {
@@ -530,5 +554,5 @@ export async function markGuidedManualMessageStatus(
     throw error;
   }
 
-  return data;
+  return data as MarkGuidedManualMessageStatusResult;
 }

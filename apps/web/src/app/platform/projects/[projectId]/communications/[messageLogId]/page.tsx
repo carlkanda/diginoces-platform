@@ -182,7 +182,7 @@ export default async function MessageLogDetailPage({
               <a
                 className="button"
                 href={messageLog.manual_whatsapp_url}
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 target="_blank"
               >
                 Open WhatsApp

@@ -517,6 +517,10 @@ function resolveVariable(
   }
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function renderMessageTemplate(
   template: MessageTemplate,
   context: MessageRenderingContext,
@@ -540,7 +544,7 @@ export function renderMessageTemplate(
     }
 
     renderedBody = renderedBody.replaceAll(
-      new RegExp(`{{\\s*${variable.replaceAll(".", "\\.")}\\s*}}`, "g"),
+      new RegExp(`{{\\s*${escapeRegExp(variable)}\\s*}}`, "g"),
       value ?? "",
     );
   }

@@ -320,10 +320,17 @@ begin
     end if;
     changed_object_type := 'message_template';
   elsif tg_table_name = 'message_queue_items' then
-    action_name := case
-      when new.message_type in ('maybe_follow_up', 'event_reminder') then 'message_reminders.prepared'
-      else 'messages.prepared'
-    end;
+    if tg_op = 'INSERT' then
+      action_name := case
+        when new.message_type in ('maybe_follow_up', 'event_reminder') then 'message_reminders.prepared'
+        else 'messages.prepared'
+      end;
+    else
+      action_name := case
+        when new.message_type in ('maybe_follow_up', 'event_reminder') then 'message_reminders.updated'
+        else 'message_queue_items.updated'
+      end;
+    end if;
     changed_object_type := 'message_queue_item';
   elsif tg_table_name = 'message_logs' then
     if tg_op = 'INSERT' then

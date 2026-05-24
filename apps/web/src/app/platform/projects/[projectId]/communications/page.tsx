@@ -61,14 +61,14 @@ export default async function CommunicationsPage({
     throw error;
   }
 
-  const [details, overview, canManageTemplates, canPrepare] = await Promise.all(
-    [
+  const [details, overview, canReadTemplates, canManageTemplates, canPrepare] =
+    await Promise.all([
       getProjectDetails(supabase, projectId),
       getProjectMessageOverview(supabase, projectId),
+      hasProjectPermission(context, projectId, "message_templates.read"),
       hasProjectPermission(context, projectId, "message_templates.manage"),
       hasProjectPermission(context, projectId, "messages.prepare"),
-    ],
-  );
+    ]);
 
   if (!details) {
     notFound();
@@ -93,7 +93,7 @@ export default async function CommunicationsPage({
           >
             Project
           </Link>
-          {canManageTemplates ? (
+          {canReadTemplates || canManageTemplates ? (
             <Link
               className="button secondary"
               href={`/platform/projects/${projectId}/communications/templates`}

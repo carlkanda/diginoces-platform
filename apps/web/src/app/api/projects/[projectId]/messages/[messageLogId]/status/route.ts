@@ -22,18 +22,20 @@ type RouteContext = {
   }>;
 };
 
-type ManualMessageStatus = Extract<
-  MessageDeliveryStatus,
-  "failed" | "opened_manually" | "resent" | "sent" | "skipped"
->;
-
-const allowedManualStatuses = new Set<string>([
+const manualStatuses = [
   "failed",
   "opened_manually",
   "resent",
   "sent",
   "skipped",
-]);
+] as const;
+
+type ManualMessageStatus = Extract<
+  MessageDeliveryStatus,
+  (typeof manualStatuses)[number]
+>;
+
+const allowedManualStatuses = new Set<string>(manualStatuses);
 
 function parseStatusPayload(payload: Record<string, unknown>): {
   reason: string | null;
