@@ -47,13 +47,13 @@ function requiredFormValue(formData: FormData, key: string) {
 
 function templateStatusValue(formData: FormData) {
   const status = formValue(formData, "status") ?? "active";
-  const templateStatus = status as MessageTemplateStatus;
+  const allowedStatuses: ReadonlySet<string> = allowedTemplateStatuses;
 
-  if (!allowedTemplateStatuses.has(templateStatus)) {
+  if (!allowedStatuses.has(status)) {
     throw new MessageValidationError("Unsupported template status.");
   }
 
-  return templateStatus;
+  return status as MessageTemplateStatus;
 }
 
 function messageDetailPath(

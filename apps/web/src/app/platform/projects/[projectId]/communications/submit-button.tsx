@@ -23,7 +23,7 @@ export function SubmitButton({
       disabled={pending}
       type="submit"
     >
-      <span aria-live="polite">
+      <span role="status">
         {pending ? (
           <>
             <span aria-hidden="true">...</span> {pendingLabel}

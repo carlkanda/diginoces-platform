@@ -82,10 +82,29 @@ const basePreparationInput: MessagePreparationInput = {
 };
 
 function repoRootFromCwd() {
+  const configuredRoot = process.env.TEST_REPO_ROOT;
+
+  if (configuredRoot) {
+    const resolvedRoot = resolve(configuredRoot);
+
+    if (!existsSync(resolvedRoot)) {
+      throw new Error(`TEST_REPO_ROOT does not exist: ${resolvedRoot}`);
+    }
+
+    return resolvedRoot;
+  }
+
   let current = resolve(process.cwd());
 
   while (true) {
-    if (existsSync(join(current, ".git"))) {
+    const hasRepoMetadata = existsSync(join(current, ".git"));
+    const hasRepoMarkers =
+      existsSync(join(current, "package.json")) &&
+      existsSync(join(current, "AGENTS.md")) &&
+      existsSync(join(current, "docs")) &&
+      existsSync(join(current, "supabase"));
+
+    if (hasRepoMetadata || hasRepoMarkers) {
       return current;
     }
 
