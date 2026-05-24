@@ -3,6 +3,7 @@ import { getPublicEnvironment } from "@/lib/env/public-env";
 import { getSprint4ImportStatus } from "@/lib/guest-imports/guest-import-service";
 import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
 import { getSprint6InvitationStatus } from "@/lib/invitations/invitation-service";
+import { getSprint7CommunicationStatus } from "@/lib/messages/message-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
 import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
 import { getSprint5RsvpStatus } from "@/lib/rsvp/rsvp-service";
@@ -34,6 +35,22 @@ const projectRouteExamples = [
     path: "/platform/projects/{projectId}/rsvps",
   },
   {
+    description:
+      "Sprint 7 WhatsApp templates, guided manual queue, and communication history.",
+    label: "Communications",
+    path: "/platform/projects/{projectId}/communications",
+  },
+  {
+    description: "Sprint 7 message template foundation.",
+    label: "Message templates",
+    path: "/platform/projects/{projectId}/communications/templates",
+  },
+  {
+    description: "Sprint 7 guided manual WhatsApp preparation queue.",
+    label: "Sending queue",
+    path: "/platform/projects/{projectId}/communications/queue",
+  },
+  {
     description: "Sprint 5 admin/staff preview for one guest page.",
     label: "Guest preview",
     path: "/platform/projects/{projectId}/guests/{guestId}/public-preview",
@@ -55,12 +72,11 @@ const eventRouteExamples = [
 ];
 
 const deferredScope = [
-  "invitation sending workflow",
-  "WhatsApp sending",
   "seating and check-in",
   "contracts, pricing, and full payments",
   "partner project creation",
   "full guest-book workflow",
+  "production WhatsApp API sending",
 ];
 
 export default function HomePage() {
@@ -70,6 +86,7 @@ export default function HomePage() {
   const sprint4Foundation = getSprint4ImportStatus();
   const sprint5Foundation = getSprint5RsvpStatus();
   const sprint6Foundation = getSprint6InvitationStatus();
+  const sprint7Foundation = getSprint7CommunicationStatus();
   const env = getPublicEnvironment();
   const coveredRequirementIds = Array.from(
     new Set([
@@ -79,6 +96,7 @@ export default function HomePage() {
       ...sprint4Foundation.requirementIds,
       ...sprint5Foundation.requirementIds,
       ...sprint6Foundation.requirementIds,
+      ...sprint7Foundation.requirementIds,
     ]),
   ).sort();
 
@@ -133,17 +151,26 @@ export default function HomePage() {
       sprint: sprint6Foundation.sprint,
       stories: sprint6Foundation.stories,
     },
+    {
+      description:
+        "WhatsApp-first message templates, French/English rendering, readiness checks, guided manual sending, API-ready adapter, status logs, reminders, modification notices, communication history, permissions, and audit coverage.",
+      features: sprint7Foundation.features,
+      issue: sprint7Foundation.issue,
+      modules: sprint7Foundation.modules,
+      sprint: sprint7Foundation.sprint,
+      stories: sprint7Foundation.stories,
+    },
   ];
 
   return (
     <>
       <section className="hero">
         <div>
-          <p className="eyebrow">Sprint 1-6 implementation status</p>
+          <p className="eyebrow">Sprint 1-7 implementation status</p>
           <h1>Diginoces platform progress</h1>
           <p>
             The home page surfaces the foundations already delivered across the
-            first six sprints, while keeping future wedding operations out of
+            first seven sprints, while keeping future wedding operations out of
             scope until their documented sprint begins.
           </p>
           <div className="requirement-list" aria-label="Requirements covered">
@@ -176,7 +203,7 @@ export default function HomePage() {
       <section className="section" aria-label="Sprint progress">
         <div className="section-heading">
           <h2>What has been built so far</h2>
-          <span className="meta-list">6 sprint foundations</span>
+          <span className="meta-list">7 sprint foundations</span>
         </div>
         <div className="progress-overview">
           {sprintSummaries.map((sprint) => (

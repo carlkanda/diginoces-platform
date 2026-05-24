@@ -93,11 +93,13 @@ export default async function ProjectDetailPage({
     supabase,
     user: authContext.user,
   };
-  const [canReadGuests, canReadGuestImports, canReadRsvps] = await Promise.all([
-    hasProjectPermission(permissionContext, projectId, "guests.read"),
-    hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
-    hasProjectPermission(permissionContext, projectId, "rsvps.read"),
-  ]);
+  const [canReadGuests, canReadGuestImports, canReadRsvps, canReadMessages] =
+    await Promise.all([
+      hasProjectPermission(permissionContext, projectId, "guests.read"),
+      hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
+      hasProjectPermission(permissionContext, projectId, "rsvps.read"),
+      hasProjectPermission(permissionContext, projectId, "messages.read"),
+    ]);
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",
   );
@@ -139,6 +141,14 @@ export default async function ProjectDetailPage({
             href={`/platform/projects/${projectId}/rsvps`}
           >
             RSVP summary
+          </Link>
+        ) : null}
+        {canReadMessages ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/communications`}
+          >
+            Communications
           </Link>
         ) : null}
       </div>
@@ -201,6 +211,26 @@ export default async function ProjectDetailPage({
             href={`/platform/projects/${projectId}/rsvps`}
           >
             RSVP summary
+          </Link>
+        ) : null}
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>WhatsApp communications</h2>
+          <span className="meta-list">Sprint 7 foundation</span>
+        </div>
+        <p className="page-summary">
+          Manage approved French/English templates, prepare guided manual
+          WhatsApp messages, open the correct WhatsApp link, and record sent,
+          failed, skipped, or resent statuses with audit coverage.
+        </p>
+        {canReadMessages ? (
+          <Link
+            className="button"
+            href={`/platform/projects/${projectId}/communications`}
+          >
+            Open communications
           </Link>
         ) : null}
       </section>

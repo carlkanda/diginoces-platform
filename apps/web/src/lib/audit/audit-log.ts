@@ -55,6 +55,21 @@ export type AuditAction =
   | "invitations.generated"
   | "invitations.regeneration_required"
   | "invitation_files.versioned"
+  | "message_templates.created"
+  | "message_templates.updated"
+  | "message_templates.activated"
+  | "message_templates.deactivated"
+  | "messages.prepared"
+  | "messages.updated"
+  | "messages.opened_manually"
+  | "messages.sent"
+  | "messages.failed"
+  | "messages.skipped"
+  | "messages.resent"
+  | "message_reminders.prepared"
+  | "message_reminders.updated"
+  | "message_modifications.prepared"
+  | "message_queue_items.updated"
   | "storage.file_registered"
   | "system.foundation_health_checked";
 
@@ -112,6 +127,10 @@ export function getAuditFoundationSummary() {
       "invitation_generation_jobs",
       "invitations",
       "invitation_files",
+      "message_templates",
+      // Table/object names are listed here for redaction coverage; their AuditAction values use the messages.* action prefix.
+      "message_logs",
+      "message_queue_items",
       "future check-in/payment actions",
     ],
   };
