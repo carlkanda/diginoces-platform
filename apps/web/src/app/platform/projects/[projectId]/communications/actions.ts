@@ -183,12 +183,15 @@ export async function markProjectMessageStatusAction(
   status: MessageDeliveryStatus,
   formData: FormData,
 ) {
+  let statusForRedirect: MessageDeliveryStatus = status;
+
   try {
     const context = await getActionContext(projectId, "messages.send");
     const input = validateManualStatusUpdate(
       status,
       formValue(formData, "reason"),
     );
+    statusForRedirect = input.status;
 
     await markGuidedManualMessageStatus(
       context.supabase,
@@ -209,7 +212,7 @@ export async function markProjectMessageStatusAction(
 
   redirect(
     messageDetailPath(projectId, messageLogId, {
-      messageStatus: status,
+      messageStatus: statusForRedirect,
     }),
   );
 }

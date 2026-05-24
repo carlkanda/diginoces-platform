@@ -115,15 +115,17 @@ function readRepoFile(pathFromRoot: string) {
 function readSprint7Migration() {
   const repoRoot = repoRootFromCwd();
   const migrationDir = join(repoRoot, "supabase", "migrations");
-  const filename = readdirSync(migrationDir).find((entry) =>
+  const matches = readdirSync(migrationDir).filter((entry) =>
     entry.endsWith("_sprint_7_whatsapp_communication_workflows.sql"),
   );
 
-  if (!filename) {
-    throw new Error("Expected Sprint 7 communication workflow migration file.");
+  if (matches.length !== 1) {
+    throw new Error(
+      `Expected exactly one Sprint 7 communication workflow migration file, found ${matches.length}.`,
+    );
   }
 
-  return readFileSync(join(migrationDir, filename), "utf8");
+  return readFileSync(join(migrationDir, matches[0]), "utf8");
 }
 
 describe("Sprint 7 WhatsApp communication workflow foundation", () => {

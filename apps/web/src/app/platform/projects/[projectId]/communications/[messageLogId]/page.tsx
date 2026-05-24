@@ -116,7 +116,7 @@ export default async function MessageLogDetailPage({
           <p className="page-summary">
             {messageLog.language.toUpperCase()} -{" "}
             {formatStatus(messageLog.status)} - guest{" "}
-            {messageLog.guest_id ?? "not linked"}
+            {messageLog.guest_id ?? "Unlinked"}
           </p>
         </div>
         <div className="button-group">
@@ -199,7 +199,11 @@ export default async function MessageLogDetailPage({
             <form action={markFailed} className="stacked-form">
               <label>
                 Failure reason
-                <input name="reason" placeholder="wrong_number" required />
+                <input
+                  name="reason"
+                  placeholder="Wrong number provided"
+                  required
+                />
               </label>
               <SubmitButton>Mark failed</SubmitButton>
             </form>
@@ -208,7 +212,7 @@ export default async function MessageLogDetailPage({
                 Skip reason
                 <input
                   name="reason"
-                  placeholder="printed_only_manual"
+                  placeholder="Guest prefers printed invitation only"
                   required
                 />
               </label>
