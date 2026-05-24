@@ -49,7 +49,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       },
     );
   } catch (error) {
-    return handleMessageApiError(error);
+    const response = handleMessageApiError(error);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 }
 
@@ -76,8 +78,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
       apiContext.user.id,
     );
 
-    return NextResponse.json({ template }, { status: 201 });
+    return NextResponse.json(
+      { template },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+        status: 201,
+      },
+    );
   } catch (error) {
-    return handleMessageApiError(error);
+    const response = handleMessageApiError(error);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 }

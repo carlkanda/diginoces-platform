@@ -451,6 +451,12 @@ export function validateManualStatusUpdate(
   };
 }
 
+export function parseManualStatusUpdatePayload(payload: unknown) {
+  const body = asRecord(payload);
+
+  return validateManualStatusUpdate(body.status, body.reason);
+}
+
 export function extractMessageVariables(body: string) {
   return Array.from(
     new Set(

@@ -36,8 +36,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
       apiContext.user.id,
     );
 
-    return NextResponse.json({ messageLog }, { status: 201 });
+    return NextResponse.json(
+      { messageLog },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+        status: 201,
+      },
+    );
   } catch (error) {
-    return handleMessageApiError(error);
+    const response = handleMessageApiError(error);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 }

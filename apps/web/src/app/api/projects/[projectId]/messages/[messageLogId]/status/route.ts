@@ -5,7 +5,7 @@ import {
   markGuidedManualMessageStatus,
 } from "@/lib/messages/message-db";
 import { handleMessageApiError } from "@/lib/messages/message-api";
-import { validateManualStatusUpdate } from "@/lib/messages/message-service";
+import { parseManualStatusUpdatePayload } from "@/lib/messages/message-service";
 import {
   getProjectApiContext,
   isProjectApiContext,
@@ -46,12 +46,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
             message: "Message log was not found.",
           },
         },
-        { status: 404 },
+        {
+          headers: {
+            "Cache-Control": "no-store",
+          },
+          status: 404,
+        },
       );
     }
 
-    const payload = await readJson(request);
-    const input = validateManualStatusUpdate(payload.status, payload.reason);
+    const input = parseManualStatusUpdatePayload(await readJson(request));
     const result = await markGuidedManualMessageStatus(
       apiContext.supabase,
       messageLogId,
@@ -59,8 +63,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       input.reason,
     );
 
-    return NextResponse.json({ result });
+    return NextResponse.json(
+      { result },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      },
+    );
   } catch (error) {
-    return handleMessageApiError(error);
+    const response = handleMessageApiError(error);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 }
