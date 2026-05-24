@@ -282,6 +282,8 @@ export const messageAuditActions = [
   "message_templates.activated",
   "message_templates.deactivated",
   "messages.prepared",
+  // Emitted by the database audit trigger for generic message_log updates.
+  "messages.updated",
   "messages.opened_manually",
   "messages.sent",
   "messages.failed",
@@ -330,6 +332,10 @@ function optionalPayloadText(value: unknown) {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+/**
+ * Normalizes language input to the supported MessageLanguage values.
+ * Non-English input, including null/undefined, intentionally falls back to French.
+ */
 function normalizeLanguage(value: string | null | undefined): MessageLanguage {
   return value?.trim().toLowerCase().startsWith("en") ? "en" : "fr";
 }

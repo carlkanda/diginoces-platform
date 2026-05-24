@@ -511,6 +511,7 @@ describe("Sprint 7 WhatsApp communication workflow foundation", () => {
         "message_templates.created",
         "message_templates.updated",
         "messages.prepared",
+        "messages.updated",
         "messages.opened_manually",
         "messages.sent",
         "messages.failed",
