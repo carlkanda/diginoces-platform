@@ -70,6 +70,16 @@ export type AuditAction =
   | "message_reminders.updated"
   | "message_modifications.prepared"
   | "message_queue_items.updated"
+  | "event_tables.created"
+  | "event_tables.updated"
+  | "event_tables.archived"
+  | "event_tables.capacity_changed"
+  | "guest_table_assignments.assigned"
+  | "guest_table_assignments.removed"
+  | "guest_table_assignments.moved"
+  | "guest_table_assignments.updated"
+  | "seating_exports.generated"
+  | "seating_exports.updated"
   | "storage.file_registered"
   | "system.foundation_health_checked";
 
@@ -131,6 +141,9 @@ export function getAuditFoundationSummary() {
       // Table/object names are listed here for redaction coverage; their AuditAction values use the messages.* action prefix.
       "message_logs",
       "message_queue_items",
+      "event_tables",
+      "guest_table_assignments",
+      "seating_export_files",
       "future check-in/payment actions",
     ],
   };

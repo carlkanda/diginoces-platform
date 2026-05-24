@@ -96,6 +96,14 @@ export default async function EventDetailPage({
     details.project.id,
     "invitation_templates.read",
   );
+  const canReadSeating = await hasProjectPermission(
+    {
+      supabase,
+      user: authContext.user,
+    },
+    details.project.id,
+    "seating.read",
+  );
 
   return (
     <>
@@ -122,6 +130,14 @@ export default async function EventDetailPage({
             Invitations
           </Link>
         ) : null}
+        {canReadSeating ? (
+          <Link
+            className="button secondary"
+            href={`/platform/events/${eventId}/seating`}
+          >
+            Seating
+          </Link>
+        ) : null}
       </div>
 
       <section className="section">
@@ -144,6 +160,22 @@ export default async function EventDetailPage({
             <strong>{details.event.venue_name ?? "Unassigned"}</strong>
           </div>
         </div>
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>Tables and seating</h2>
+          <span className="meta-list">Sprint 8 foundation</span>
+        </div>
+        <p className="page-summary">
+          Create event-specific tables, assign invited guests, monitor
+          RSVP-aware capacity, and generate Canva table-card CSV exports.
+        </p>
+        {canReadSeating ? (
+          <Link className="button" href={`/platform/events/${eventId}/seating`}>
+            Open seating
+          </Link>
+        ) : null}
       </section>
 
       <section className="section">

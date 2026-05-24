@@ -692,6 +692,38 @@ textarea {
   text-align: center;
 }
 
+.seating-map {
+  position: relative;
+  min-height: 520px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background:
+    linear-gradient(var(--panel-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--panel-strong) 1px, transparent 1px),
+    var(--panel);
+  background-size: 40px 40px;
+}
+
+.seating-map-table {
+  position: absolute;
+  display: grid;
+  width: 150px;
+  min-height: 92px;
+  place-items: center;
+  border: 1px solid rgba(0, 107, 95, 0.28);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  padding: 12px;
+  text-align: center;
+}
+
+.seating-map-table span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .detail-grid.compact div {
   min-height: 74px;
 }
