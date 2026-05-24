@@ -390,7 +390,7 @@ export function calculateSeatingPlan(input: {
       assignedGuestCount,
       assignedGuests,
       capacity: table.capacity,
-      isFull: remainingCapacity === 0,
+      isFull: remainingCapacity <= 0,
       isOverCapacity: overCapacityBy > 0,
       overCapacityBy,
       remainingCapacity,
