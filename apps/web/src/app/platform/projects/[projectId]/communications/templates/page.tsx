@@ -5,7 +5,10 @@ import {
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import { listProjectMessageTemplates } from "@/lib/messages/message-db";
-import { formatStatus } from "@/lib/messages/message-format";
+import {
+  formatStatus,
+  sanitizeFeedbackMessage,
+} from "@/lib/messages/message-format";
 import {
   hasProjectPermission,
   ProjectAccessError,
@@ -15,7 +18,6 @@ import { getProjectDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createMessageTemplateAction } from "../actions";
 import { SubmitButton } from "../submit-button";
-import { sanitizeFeedbackMessage } from "@/lib/messages/message-format";
 
 export const dynamic = "force-dynamic";
 
