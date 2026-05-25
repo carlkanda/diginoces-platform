@@ -15,41 +15,42 @@ No feature may be implemented unless it is linked to:
 
 No requirement may be marked complete unless it is implemented, tested, reviewed, documented, and linked back to the requirement/backlog/sprint issue/PR.
 
-## Active sprint
+## Current sprint assignment
+
+```text
+No active sprint is currently assigned.
+```
+
+Last completed sprint:
 
 ```text
 Sprint 8 — Tables, Seating & Print Materials
 ```
 
-GitHub issue:
+Last completed GitHub issue:
 
 ```text
 #23 — Sprint 8 — Tables, Seating & Print Materials
 https://github.com/carlkanda/diginoces-platform/issues/23
 ```
 
-Authoritative sprint plan:
+Last completed PR:
 
 ```text
-docs/planning/sprint-8-plan.md
+#24 — Sprint 8 — Tables, Seating & Print Materials
 ```
 
-Expected branch:
-
-```text
-codex/sprint-8-tables-seating-print-materials
-```
-
-Expected PR title:
-
-```text
-Sprint 8 — Tables, Seating & Print Materials
-```
-
-Expected completion report:
+Last completed report:
 
 ```text
 docs/planning/sprint-8-completion-report.md
+```
+
+Next planned sprint:
+
+```text
+Sprint 9 — Check-in & Wedding-Day Operations
+Plan: docs/planning/sprint-9-plan.md
 ```
 
 ## Active sprint sync rule
@@ -78,55 +79,42 @@ Always read:
 - relevant product documents in `docs/product/`
 - relevant technical design documents in `docs/technical-design/`
 
-For Sprint 8, specifically read:
+No implementation sprint is active right now. Do not start Sprint 9 or any other new feature work until a GitHub issue and sprint assignment are provided.
 
+For the next planned Sprint 9 assignment, read:
+
+- `docs/planning/sprint-9-plan.md`
 - `docs/planning/sprint-8-plan.md`
-- `docs/planning/sprint-7-plan.md`
-- `docs/product/09-tables-seating-print-materials.md`
+- `docs/product/08-check-in-wedding-day-operations.md`
 - `docs/product/04-guest-management-guest-lists.md`
 - `docs/product/05-rsvp-public-guest-page.md`
 - `docs/product/06-invitation-template-pdf-generation.md`
-- `docs/product/08-check-in-wedding-day-operations.md`
+- `docs/product/09-tables-seating-print-materials.md`
+- `docs/product/10-contracts-pricing-payment-controls.md`
 - `docs/product/14-files-storage-retention-security.md`
 - `docs/technical-design/database-schema-core-entities.md`
 - `docs/technical-design/api-backend-service-design.md`
+- `docs/technical-design/background-jobs-pdf-qr-whatsapp-offline-checkin.md`
 - `docs/technical-design/security-permissions-access-control.md`
 
-## Sprint 8 scope
+## Scope guard
 
-Implement only the Tables, Seating & Print Materials foundation:
+Until a new sprint is explicitly assigned, do not implement new product scope. Maintenance tasks may only update documentation, tooling, reviews, checks, or already-merged behavior when directly requested.
 
-- event-specific table model;
-- table capacity and occupancy foundation;
-- table-level guest assignment foundation;
-- seat-level/mixed mode structural foundation if safe;
-- unassigned guest tracking;
-- RSVP-aware seating behavior;
-- VIP/protocol seating foundation;
-- list/table seating UI foundation;
-- visual seating-map placeholder or foundation;
-- table-card Canva CSV export foundation;
-- printed invitation tracking foundation if not already covered;
-- invitation regeneration awareness for table data changes;
-- permission checks for table/seating operations;
-- audit logging for table/seating/export actions;
-- tests;
-- documentation updates;
-- `docs/planning/sprint-8-completion-report.md`.
+When Sprint 9 is assigned, implement only the Check-in & Wedding-Day Operations foundation described in `docs/planning/sprint-9-plan.md`.
 
-## Sprint 8 out of scope
+## Next planned sprint out of scope
 
-Do not implement:
+For Sprint 9, do not implement:
 
-- check-in;
 - WhatsApp sending;
 - contracts;
 - pricing;
 - payments;
 - partner project creation;
-- full print partner workflow;
-- direct Canva API integration;
-- automatic PDF regeneration unless already safe and explicitly limited.
+- full WhatsApp automation;
+- post-event guest-book workflows;
+- full dashboards beyond the approved Sprint 9 foundation.
 
 Check-in and wedding-day operations begin in Sprint 9.
 
@@ -137,7 +125,7 @@ For every implementation task:
 1. Identify requirement IDs.
 2. Identify backlog items.
 3. Identify source documents.
-4. Implement only active sprint scope.
+4. Implement only the assigned sprint scope.
 5. Add or update tests.
 6. Run checks.
 7. Update the sprint completion report.

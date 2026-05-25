@@ -13,17 +13,18 @@ Completed:
 - Sprint 5 — RSVP & Public Guest Page
 - Sprint 6 — Invitation Template & PDF Generation
 - Sprint 7 — WhatsApp Communication Workflows
+- Sprint 8 — Tables, Seating & Print Materials
 
-Active sprint:
+Current sprint assignment:
 
 ```text
-Sprint 8 — Tables, Seating & Print Materials
-Issue: #23
-Issue URL: https://github.com/carlkanda/diginoces-platform/issues/23
-Sprint plan: docs/planning/sprint-8-plan.md
-Expected branch: codex/sprint-8-tables-seating-print-materials
-Expected PR title: Sprint 8 — Tables, Seating & Print Materials
-Expected report: docs/planning/sprint-8-completion-report.md
+No active sprint is currently assigned.
+Last completed sprint: Sprint 8 — Tables, Seating & Print Materials
+Last completed issue: #23
+Last completed PR: #24
+Last completed report: docs/planning/sprint-8-completion-report.md
+Next planned sprint: Sprint 9 — Check-in & Wedding-Day Operations
+Next sprint plan: docs/planning/sprint-9-plan.md
 ```
 
 ## Agent instructions
@@ -36,7 +37,8 @@ Work must be assigned one sprint issue at a time. Do not ask an agent to build t
 
 ```text
 AGENTS.md
-docs/planning/sprint-8-plan.md
+docs/planning/mvp-build-execution-plan.md
+docs/planning/sprint-9-plan.md
 docs/backlog/master-requirements-register.csv
 docs/backlog/initial-product-backlog-features.csv
 docs/backlog/initial-product-backlog-user-stories.csv
@@ -55,7 +57,7 @@ docs/backlog/initial-product-backlog-test-cases.csv
 | 5 | RSVP & Public Guest Page | Completed |
 | 6 | Invitation Template & PDF Generation | Completed |
 | 7 | WhatsApp Communication Workflows | Completed |
-| 8 | Tables, Seating & Print Materials | Active |
+| 8 | Tables, Seating & Print Materials | Completed |
 | 9 | Check-in & Wedding-Day Operations | Planned |
 | 10 | Contracts, Pricing & Payment Controls | Planned |
 | 11 | Dashboards, Reports & Audit Logs | Planned |
