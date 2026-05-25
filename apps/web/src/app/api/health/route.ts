@@ -7,6 +7,7 @@ import { getSprint7CommunicationStatus } from "@/lib/messages/message-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
 import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
 import { getSprint5RsvpStatus } from "@/lib/rsvp/rsvp-service";
+import { getSprint8SeatingStatus } from "@/lib/seating/seating-service";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export function GET() {
   const sprint5Foundation = getSprint5RsvpStatus();
   const sprint6Foundation = getSprint6InvitationStatus();
   const sprint7Foundation = getSprint7CommunicationStatus();
+  const sprint8Foundation = getSprint8SeatingStatus();
   const env = getPublicEnvironment();
 
   return NextResponse.json(
@@ -65,6 +67,12 @@ export function GET() {
           issue: sprint7Foundation.issue,
           moduleCount: sprint7Foundation.modules.length,
           sprint: sprint7Foundation.sprint,
+        },
+        {
+          featureCount: sprint8Foundation.features.length,
+          issue: sprint8Foundation.issue,
+          moduleCount: sprint8Foundation.modules.length,
+          sprint: sprint8Foundation.sprint,
         },
       ],
       supabaseConfigured: env.supabaseConfigured,

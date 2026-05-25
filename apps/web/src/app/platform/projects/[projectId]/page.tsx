@@ -93,13 +93,19 @@ export default async function ProjectDetailPage({
     supabase,
     user: authContext.user,
   };
-  const [canReadGuests, canReadGuestImports, canReadRsvps, canReadMessages] =
-    await Promise.all([
-      hasProjectPermission(permissionContext, projectId, "guests.read"),
-      hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
-      hasProjectPermission(permissionContext, projectId, "rsvps.read"),
-      hasProjectPermission(permissionContext, projectId, "messages.read"),
-    ]);
+  const [
+    canReadGuests,
+    canReadGuestImports,
+    canReadRsvps,
+    canReadMessages,
+    canReadSeating,
+  ] = await Promise.all([
+    hasProjectPermission(permissionContext, projectId, "guests.read"),
+    hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
+    hasProjectPermission(permissionContext, projectId, "rsvps.read"),
+    hasProjectPermission(permissionContext, projectId, "messages.read"),
+    hasProjectPermission(permissionContext, projectId, "seating.read"),
+  ]);
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",
   );
@@ -233,6 +239,40 @@ export default async function ProjectDetailPage({
             Open communications
           </Link>
         ) : null}
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>Tables and seating</h2>
+          <span className="meta-list">Sprint 8 foundation</span>
+        </div>
+        <p className="page-summary">
+          Manage event-specific tables, capacity warnings, RSVP-aware
+          assignments, VIP/protocol seating notes, and Canva table-card CSV
+          exports from each event.
+        </p>
+        {canReadSeating && details.events.length > 0 ? (
+          <div className="button-group">
+            {details.events.map((event) => (
+              <Link
+                className="button secondary"
+                href={`/platform/events/${event.id}/seating`}
+                key={event.id}
+              >
+                {event.name} seating
+              </Link>
+            ))}
+          </div>
+        ) : details.events.length === 0 ? (
+          <div className="empty-state">
+            No events configured. Create an event to manage seating.
+          </div>
+        ) : (
+          <div className="empty-state">
+            You do not have access to seating for these events. Contact your
+            admin.
+          </div>
+        )}
       </section>
 
       <section className="section">

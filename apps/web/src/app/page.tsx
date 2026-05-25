@@ -7,6 +7,7 @@ import { getSprint7CommunicationStatus } from "@/lib/messages/message-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
 import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
 import { getSprint5RsvpStatus } from "@/lib/rsvp/rsvp-service";
+import { getSprint8SeatingStatus } from "@/lib/seating/seating-service";
 
 const projectRouteExamples = [
   {
@@ -69,10 +70,21 @@ const eventRouteExamples = [
     label: "Register template",
     path: "/platform/events/{eventId}/invitations/new",
   },
+  {
+    description:
+      "Sprint 8 event tables, RSVP-aware occupancy, assignments, unassigned guests, and table-card CSV exports.",
+    label: "Tables and seating",
+    path: "/platform/events/{eventId}/seating",
+  },
+  {
+    description: "Sprint 8 visual seating-map placeholder foundation.",
+    label: "Seating map",
+    path: "/platform/events/{eventId}/seating/map",
+  },
 ];
 
 const deferredScope = [
-  "seating and check-in",
+  "check-in",
   "contracts, pricing, and full payments",
   "partner project creation",
   "full guest-book workflow",
@@ -87,6 +99,7 @@ export default function HomePage() {
   const sprint5Foundation = getSprint5RsvpStatus();
   const sprint6Foundation = getSprint6InvitationStatus();
   const sprint7Foundation = getSprint7CommunicationStatus();
+  const sprint8Foundation = getSprint8SeatingStatus();
   const env = getPublicEnvironment();
   const coveredRequirementIds = Array.from(
     new Set([
@@ -97,6 +110,7 @@ export default function HomePage() {
       ...sprint5Foundation.requirementIds,
       ...sprint6Foundation.requirementIds,
       ...sprint7Foundation.requirementIds,
+      ...sprint8Foundation.requirementIds,
     ]),
   ).sort();
 
@@ -160,17 +174,26 @@ export default function HomePage() {
       sprint: sprint7Foundation.sprint,
       stories: sprint7Foundation.stories,
     },
+    {
+      description:
+        "Event-specific tables, table/seat structure, RSVP-aware occupancy, unassigned guest tracking, VIP/protocol notes, visual map placeholder, table-card CSV exports, print tracking, regeneration awareness, permissions, and audit coverage.",
+      features: sprint8Foundation.features,
+      issue: sprint8Foundation.issue,
+      modules: sprint8Foundation.modules,
+      sprint: sprint8Foundation.sprint,
+      stories: sprint8Foundation.stories,
+    },
   ];
 
   return (
     <>
       <section className="hero">
         <div>
-          <p className="eyebrow">Sprint 1-7 implementation status</p>
+          <p className="eyebrow">Sprint 1-8 implementation status</p>
           <h1>Diginoces platform progress</h1>
           <p>
             The home page surfaces the foundations already delivered across the
-            first seven sprints, while keeping future wedding operations out of
+            first eight sprints, while keeping future wedding operations out of
             scope until their documented sprint begins.
           </p>
           <div className="requirement-list" aria-label="Requirements covered">
@@ -203,7 +226,7 @@ export default function HomePage() {
       <section className="section" aria-label="Sprint progress">
         <div className="section-heading">
           <h2>What has been built so far</h2>
-          <span className="meta-list">7 sprint foundations</span>
+          <span className="meta-list">8 sprint foundations</span>
         </div>
         <div className="progress-overview">
           {sprintSummaries.map((sprint) => (
