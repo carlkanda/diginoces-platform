@@ -8,7 +8,18 @@
   --accent: #006b5f;
   --accent-strong: #004b43;
   --warning: #965a00;
+  /* Sprint 9 CHK-010: alert and highlight tokens share emphasis colors now and can diverge later. */
+  --emphasis-border: rgba(150, 90, 0, 0.3);
+  --emphasis-bg: #fff8ec;
+  --alert-border: var(--emphasis-border);
+  --alert-bg: var(--emphasis-bg);
+  --alert-text: #5f3b00;
+  --highlight-border: var(--emphasis-border);
+  --highlight-bg: var(--emphasis-bg);
   --success: #13734d;
+  --success-border: rgba(19, 115, 77, 0.3);
+  --success-bg: #edf8f3;
+  --success-text: var(--success);
   --shadow: 0 16px 40px rgba(16, 34, 43, 0.08);
 }
 
@@ -154,9 +165,10 @@ textarea {
   box-shadow: var(--shadow);
 }
 
+/* Sprint 9 CHK-010: VIP/protocol highlight on the check-in screen. */
 .highlighted-panel {
-  border-color: rgba(150, 90, 0, 0.36);
-  background: #fffaf1;
+  border-color: var(--highlight-border);
+  background: var(--highlight-bg);
 }
 
 .panel-body {
@@ -301,7 +313,7 @@ textarea {
 }
 
 .scope-note {
-  background: #fffaf1;
+  background: var(--highlight-bg);
 }
 
 .scope-note strong {
@@ -477,18 +489,21 @@ textarea {
 }
 
 .alert {
-  border: 1px solid rgba(150, 90, 0, 0.3);
+  border: 1px solid var(--alert-border);
   border-radius: 8px;
-  background: #fff8ec;
-  color: #5f3b00;
+  background: var(--alert-bg);
+  color: var(--alert-text);
   padding: 14px;
   font-size: 0.92rem;
 }
 
 .success {
-  border-color: rgba(19, 115, 77, 0.3);
-  background: #edf8f3;
-  color: var(--success);
+  border: 1px solid var(--success-border);
+  border-radius: 8px;
+  background: var(--success-bg);
+  color: var(--success-text);
+  padding: 14px;
+  font-size: 0.92rem;
 }
 
 .section {
@@ -686,8 +701,8 @@ textarea {
 }
 
 .warning-tag {
-  border-color: rgba(150, 90, 0, 0.3);
-  background: #fff8ec;
+  border-color: var(--highlight-border);
+  background: var(--highlight-bg);
   color: var(--warning);
 }
 

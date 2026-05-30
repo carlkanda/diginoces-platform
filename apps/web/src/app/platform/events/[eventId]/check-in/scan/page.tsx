@@ -4,11 +4,12 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { getCheckInOverview } from "@/lib/check-in/check-in-db";
 import {
-  getCheckInOverview,
-  resolveCheckInToken,
-} from "@/lib/check-in/check-in-db";
-import { buildCheckInReadinessIssues } from "@/lib/check-in/check-in-service";
+  buildCheckInReadinessIssues,
+  resolveAllowedCheckInMethods,
+} from "@/lib/check-in/check-in-service";
+import { searchParamText } from "@/lib/navigation/search-params";
 import {
   ProjectAccessError,
   requireEventPermission,
@@ -24,15 +25,6 @@ type ScanPageProps = {
   }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
-
-function searchParamText(
-  searchParams: Record<string, string | string[] | undefined>,
-  key: string,
-) {
-  const value = searchParams[key];
-
-  return typeof value === "string" ? value : undefined;
-}
 
 export default async function CheckInScanPage({
   params,
@@ -77,19 +69,27 @@ export default async function CheckInScanPage({
     throw error;
   }
 
-  const token = searchParamText(resolvedSearchParams, "token");
+  const guestId = searchParamText(resolvedSearchParams, "guestId");
+  const tokenId = searchParamText(resolvedSearchParams, "tokenId");
+  const invitationId = searchParamText(resolvedSearchParams, "invitationId");
+  const scanStatus = searchParamText(resolvedSearchParams, "scanStatus");
   const scanError = searchParamText(resolvedSearchParams, "scanError");
-  const [resolved, overview] = await Promise.all([
-    token ? resolveCheckInToken(supabase, eventId, token) : null,
-    getCheckInOverview(supabase, eventId),
-  ]);
-  const guest =
-    resolved?.status === "ok" && typeof resolved.guestId === "string"
-      ? (overview.guests.find((item) => item.guestId === resolved.guestId) ??
-        null)
-      : null;
-  const resolvedStatus =
-    typeof resolved?.status === "string" ? resolved.status : "not scanned";
+  const overview = await getCheckInOverview(supabase, eventId);
+  const allowedMethods = resolveAllowedCheckInMethods(
+    overview.settings?.allowed_methods,
+  );
+  const isQrAllowed = allowedMethods.has("qr_scan");
+  const guest = guestId
+    ? (overview.guests.find((item) => item.guestId === guestId) ?? null)
+    : null;
+  const resolvedStatus = guest
+    ? (scanStatus ?? "resolved")
+    : guestId
+      ? "not found"
+      : "not scanned";
+  const remainingCount = guest
+    ? Math.max(guest.expectedCount - guest.arrivedCount, 0)
+    : 0;
 
   return (
     <>
@@ -120,26 +120,38 @@ export default async function CheckInScanPage({
 
       {scanError ? <div className="alert section">{scanError}</div> : null}
 
-      <section className="section">
-        <div className="section-heading">
-          <h2>Scanned token</h2>
-          <span className="meta-list">{resolvedStatus}</span>
-        </div>
-        <form
-          action={resolveTokenForScanAction.bind(null, eventId)}
-          className="form-panel form-grid"
-        >
-          <label>
-            Token
-            <input defaultValue={token ?? ""} name="token" required />
-          </label>
-          <button className="button secondary" type="submit">
-            Resolve
-          </button>
-        </form>
-      </section>
+      {isQrAllowed ? (
+        <section className="section">
+          <div className="section-heading">
+            <h2>Scanned token</h2>
+            <span className="meta-list">{resolvedStatus}</span>
+          </div>
+          <form
+            action={resolveTokenForScanAction.bind(null, eventId)}
+            className="form-panel form-grid"
+          >
+            <label>
+              Token
+              <input name="token" required />
+            </label>
+            <button className="button secondary" type="submit">
+              Resolve
+            </button>
+          </form>
+        </section>
+      ) : (
+        <section className="section">
+          <div className="section-heading">
+            <h2>QR scanning unavailable</h2>
+            <span className="meta-list">Disabled in event settings</span>
+          </div>
+          <div className="empty-state">
+            QR scanning is disabled for this event.
+          </div>
+        </section>
+      )}
 
-      {guest ? (
+      {isQrAllowed && guest ? (
         <section className="section">
           <div className="section-heading">
             <h2>{guest.displayName}</h2>
@@ -176,12 +188,19 @@ export default async function CheckInScanPage({
             action={checkInByTokenAction.bind(null, eventId)}
             className="form-panel form-grid"
           >
-            <input name="token" type="hidden" value={token ?? ""} />
+            <input name="guestId" type="hidden" value={guest.guestId} />
+            <input
+              name="invitationId"
+              type="hidden"
+              value={invitationId ?? ""}
+            />
+            <input name="tokenId" type="hidden" value={tokenId ?? ""} />
             <label>
               Arrival count
               <input
-                defaultValue="1"
-                max={guest.expectedCount}
+                defaultValue={1}
+                disabled={remainingCount <= 0}
+                max={remainingCount > 0 ? remainingCount : 1}
                 min="1"
                 name="arrivalCount"
                 type="number"
@@ -198,12 +217,21 @@ export default async function CheckInScanPage({
                 ))}
               </select>
             </label>
-            <button className="button" type="submit">
+            <button
+              className="button"
+              disabled={remainingCount <= 0 || !tokenId}
+              type="submit"
+            >
               Confirm check-in
             </button>
+            {!tokenId ? (
+              <div className="alert">
+                Token ID missing. Please re-scan the QR code.
+              </div>
+            ) : null}
           </form>
         </section>
-      ) : token ? (
+      ) : guestId && isQrAllowed ? (
         <section className="section">
           <div className="empty-state">
             Token could not be resolved for this event.

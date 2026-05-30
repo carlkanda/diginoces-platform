@@ -14,7 +14,7 @@ The implementation is limited to the approved Sprint 9 scope: event check-in set
 - `CHK-004` - mobile/tablet-oriented staff check-in page foundation.
 - `CHK-005` - Couple arrival count supports partial arrivals.
 - `CHK-006` - second Couple arrival updates count only; welcome/table message remains first-arrival placeholder.
-- `CHK-007` - household/family check-in remains guest/member based through event guest assignments.
+- `CHK-007` - household/family check-in implemented using guest/member-based event assignments.
 - `CHK-008` - unexpected guest request workflow.
 - `CHK-009` - in-app and manual supervisor approval recording foundation.
 - `CHK-010` - VIP/protocol highlight on check-in UI.

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildOfflinePreloadDataset,
   calculateCheckInDashboardMetrics,
+  CheckInValidationError,
   detectOfflineSyncConflicts,
   hashCheckInToken,
   parseCheckInDevicePayload,
@@ -363,7 +364,8 @@ export async function getCheckInOverview(
         .from("rsvp_records")
         .select("guest_id, status")
         .eq("project_id", projectId)
-        .eq("event_id", eventId),
+        .eq("event_id", eventId)
+        .order("updated_at", { ascending: true }),
     ),
     fetchRows<InvitationRow>(
       supabase
@@ -498,7 +500,7 @@ export async function getCheckInOverview(
         guestId: guest.id,
         guestSide: guest.guest_side,
         invitationId: invitation?.id ?? null,
-        invitationPublicId: invitation?.id.slice(0, 8).toUpperCase() ?? null,
+        invitationPublicId: invitation?.public_guest_token_id ?? null,
         isPrintedOnly: guest.is_printed_only,
         isVipProtocol,
         phoneNumber: guest.whatsapp_number,
@@ -696,29 +698,24 @@ export async function createUnexpectedGuestRequest(
   supabase: SupabaseClient,
   eventId: string,
   payload: unknown,
-  actorUserId: string,
 ) {
-  const event = await getCheckInEventContext(supabase, eventId);
   const input = parseUnexpectedGuestRequestPayload(payload);
-  const { data, error } = await supabase
-    .from("unexpected_guest_requests")
-    .insert({
-      device_id: input.deviceId ?? null,
-      event_id: eventId,
-      guest_side: input.guestSide,
-      project_id: event.project_id,
-      reason: input.reason,
-      requested_by: actorUserId,
-      requested_name: input.requestedName,
-    })
-    .select("*")
-    .single();
+  const { data, error } = await supabase.rpc(
+    "create_unexpected_guest_request",
+    {
+      p_device_id: input.deviceId ?? null,
+      p_event_id: eventId,
+      p_guest_side: input.guestSide,
+      p_reason: input.reason ?? null,
+      p_requested_name: input.requestedName,
+    },
+  );
 
   if (error) {
     throw error;
   }
 
-  return data as UnexpectedGuestRequestRow;
+  return data as Record<string, unknown>;
 }
 
 export async function reviewUnexpectedGuestRequest(
@@ -751,6 +748,13 @@ export async function createPreloadSnapshot(
   actorUserId: string,
 ) {
   const overview = await getCheckInOverview(supabase, eventId);
+
+  if (!overview.settings?.offline_preload_enabled) {
+    throw new CheckInValidationError(
+      "Offline preload is disabled for this event.",
+    );
+  }
+
   const generatedAt = new Date().toISOString();
   const dataset = buildOfflinePreloadDataset({
     eventId,
@@ -793,7 +797,24 @@ export async function submitOfflineSyncBatch(
   },
   actorUserId: string,
 ) {
+  const mismatchedRecord = payload.offlineRecords.find(
+    (record) => record.eventId !== eventId,
+  );
+
+  if (mismatchedRecord) {
+    throw new CheckInValidationError(
+      "Offline check-in records must match the sync batch event.",
+    );
+  }
+
   const overview = await getCheckInOverview(supabase, eventId);
+
+  if (!overview.settings?.offline_preload_enabled) {
+    throw new CheckInValidationError(
+      "Offline sync is disabled for this event.",
+    );
+  }
+
   const existingArrivalsByGuestId = new Map(
     overview.guests.map((guest) => [guest.guestId, guest.arrivedCount]),
   );
@@ -805,73 +826,40 @@ export async function submitOfflineSyncBatch(
     offlineRecords: payload.offlineRecords,
     totalExpectedByGuestId,
   });
-  const conflictIds = new Set(
-    conflicts.map((conflict) => conflict.offlineRecordId),
-  );
   const status = conflicts.length > 0 ? "partial_conflict" : "processed";
-  const { data: batch, error: batchError } = await supabase
-    .from("check_in_sync_batches")
-    .insert({
-      conflict_count: conflicts.length,
-      device_id: payload.deviceId ?? null,
-      event_id: eventId,
-      metadata: {
+  const { data: batch, error: batchError } = await supabase.rpc(
+    "submit_offline_check_in_sync_batch",
+    {
+      p_conflicts: conflicts.map((conflict) => ({
+        conflictType: conflict.conflictType,
+        guestId: conflict.guestId,
+        offlineRecordId: conflict.offlineRecordId,
+        reason: conflict.reason,
+      })),
+      p_device_id: payload.deviceId ?? null,
+      p_event_id: eventId,
+      p_metadata: {
         offlineRecordIds: payload.offlineRecords.map(
           (record) => record.offlineRecordId,
         ),
+        submittedBy: actorUserId,
       },
-      project_id: overview.project.id,
-      record_count: payload.offlineRecords.length,
-      status,
-      submitted_by: actorUserId,
-    })
-    .select("*")
-    .single();
+      p_offline_records: payload.offlineRecords,
+      p_status: status,
+    },
+  );
 
   if (batchError) {
     throw batchError;
   }
 
-  if (conflicts.length > 0) {
-    const { error: conflictError } = await supabase
-      .from("check_in_sync_conflicts")
-      .insert(
-        conflicts.map((conflict) => ({
-          conflict_payload: {
-            offlineRecordId: conflict.offlineRecordId,
-            reason: conflict.reason,
-          },
-          conflict_type: conflict.conflictType,
-          event_id: eventId,
-          guest_id: conflict.guestId,
-          project_id: overview.project.id,
-          sync_batch_id: batch.id,
-        })),
-      );
-
-    if (conflictError) {
-      throw conflictError;
-    }
-  }
-
-  const appliedRecords = [];
-
-  for (const record of payload.offlineRecords) {
-    if (conflictIds.has(record.offlineRecordId)) {
-      continue;
-    }
-
-    const result = await performGuestCheckIn(supabase, eventId, {
-      arrivalCount: record.arrivalCount,
-      checkedInAt: record.arrivedAt,
-      deviceId: payload.deviceId,
-      guestId: record.guestId,
-      method: "offline_sync",
-      sourceOfflineRecordId: record.offlineRecordId,
-      syncStatus: "online_synced",
-    });
-    appliedRecords.push(result);
-  }
+  const appliedRecords =
+    batch &&
+    typeof batch === "object" &&
+    "appliedRecords" in batch &&
+    Array.isArray(batch.appliedRecords)
+      ? batch.appliedRecords
+      : [];
 
   return {
     appliedRecords,

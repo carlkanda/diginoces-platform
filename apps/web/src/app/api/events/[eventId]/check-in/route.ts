@@ -17,6 +17,7 @@ import {
 import {
   CheckInValidationError,
   parseCheckInSearchPayload,
+  type OfflineCheckInPayload,
 } from "@/lib/check-in/check-in-service";
 import {
   getProjectApiContext,
@@ -91,6 +92,60 @@ function asPayloadObject(payload: unknown) {
   return payload as Record<string, unknown>;
 }
 
+function requiredPayloadText(
+  payload: Record<string, unknown>,
+  key: string,
+  prefix: string,
+) {
+  const value = payload[key];
+
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new CheckInValidationError(`${prefix}.${key} is required.`);
+  }
+
+  return value.trim();
+}
+
+function parseOfflineRecord(
+  record: unknown,
+  index: number,
+): OfflineCheckInPayload {
+  if (!record || typeof record !== "object" || Array.isArray(record)) {
+    throw new CheckInValidationError(
+      `offlineRecords[${index}] must be an object.`,
+    );
+  }
+
+  const payload = record as Record<string, unknown>;
+  const prefix = `offlineRecords[${index}]`;
+  const arrivedAt = requiredPayloadText(payload, "arrivedAt", prefix);
+  const arrivalCount = payload.arrivalCount;
+
+  if (Number.isNaN(Date.parse(arrivedAt))) {
+    throw new CheckInValidationError(
+      `${prefix}.arrivedAt must be an ISO date.`,
+    );
+  }
+
+  if (
+    typeof arrivalCount !== "number" ||
+    !Number.isInteger(arrivalCount) ||
+    arrivalCount < 1
+  ) {
+    throw new CheckInValidationError(
+      `${prefix}.arrivalCount must be a positive integer.`,
+    );
+  }
+
+  return {
+    arrivedAt,
+    arrivalCount,
+    eventId: requiredPayloadText(payload, "eventId", prefix),
+    guestId: requiredPayloadText(payload, "guestId", prefix),
+    offlineRecordId: requiredPayloadText(payload, "offlineRecordId", prefix),
+  };
+}
+
 async function requireCheckInAction(
   context: Awaited<ReturnType<typeof getProjectApiContext>>,
   eventId: string,
@@ -139,6 +194,13 @@ async function requireCheckInAction(
     case "submit_offline_sync_batch":
       await requireEventPermission(context, eventId, "check_in.offline_sync");
       return;
+    default: {
+      const exhaustiveAction: never = action;
+      throw new ProjectAccessError(
+        `Unsupported check-in action: ${String(exhaustiveAction)}`,
+        403,
+      );
+    }
   }
 }
 
@@ -207,6 +269,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const { eventId } = await context.params;
     const payload = asPayloadObject(await readJson(request));
     const action = parseAction(payload.action);
+
+    if (
+      action === "check_in" &&
+      (payload.method === "offline_sync" ||
+        payload.method === "unexpected_guest_approval")
+    ) {
+      throw new ProjectAccessError(
+        "Use the dedicated check-in workflow for this method.",
+        403,
+      );
+    }
 
     await requireCheckInAction(apiContext, eventId, action);
 
@@ -286,7 +359,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
           apiContext.supabase,
           eventId,
           payload,
-          apiContext.user.id,
         );
         return NextResponse.json(
           { request: requestRecord },
@@ -322,17 +394,25 @@ export async function POST(request: NextRequest, context: RouteContext) {
           throw new CheckInValidationError("offlineRecords must be an array.");
         }
 
+        const offlineRecords = payload.offlineRecords.map(parseOfflineRecord);
+
         const result = await submitOfflineSyncBatch(
           apiContext.supabase,
           eventId,
           {
             deviceId:
               typeof payload.deviceId === "string" ? payload.deviceId : null,
-            offlineRecords: payload.offlineRecords as never,
+            offlineRecords,
           },
           apiContext.user.id,
         );
         return NextResponse.json({ result }, { headers: noStoreHeaders });
+      }
+      default: {
+        const exhaustiveAction: never = action;
+        throw new CheckInValidationError(
+          `Unhandled check-in action: ${String(exhaustiveAction)}`,
+        );
       }
     }
   } catch (error) {

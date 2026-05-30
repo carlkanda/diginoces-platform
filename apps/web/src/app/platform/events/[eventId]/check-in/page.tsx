@@ -7,7 +7,12 @@ import {
 import { getCheckInOverview } from "@/lib/check-in/check-in-db";
 import {
   buildCheckInReadinessIssues,
+  checkInMethodLabels,
+  defaultCheckInMethods,
+  manualCheckInMethods,
+  resolveAllowedCheckInMethods,
   searchCheckInGuests,
+  type CheckInMethod,
   type CheckInGuest,
 } from "@/lib/check-in/check-in-service";
 import {
@@ -15,6 +20,7 @@ import {
   ProjectAccessError,
   requireEventPermission,
 } from "@/lib/projects/project-api";
+import { searchParamText } from "@/lib/navigation/search-params";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   createCheckInTokenAction,
@@ -36,15 +42,6 @@ type CheckInPageProps = {
   }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
-
-function searchParamText(
-  searchParams: Record<string, string | string[] | undefined>,
-  key: string,
-) {
-  const value = searchParams[key];
-
-  return typeof value === "string" ? value : undefined;
-}
 
 function statusMessage(status: string | undefined) {
   switch (status) {
@@ -69,16 +66,65 @@ function statusMessage(status: string | undefined) {
   }
 }
 
-function formatDateTime(value: string | null) {
+function formatDateTime(value: string | null, timeZone = "UTC") {
   if (!value) {
     return "Not set";
   }
 
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "UTC",
-  }).format(new Date(value));
+  try {
+    return new Intl.DateTimeFormat("en", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone,
+    }).format(new Date(value));
+  } catch {
+    return new Intl.DateTimeFormat("en", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "UTC",
+    }).format(new Date(value));
+  }
+}
+
+function formatToLocalDatetime(
+  value: string | null | undefined,
+  timeZone = "UTC",
+) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      day: "2-digit",
+      hour: "2-digit",
+      hour12: false,
+      hourCycle: "h23",
+      minute: "2-digit",
+      month: "2-digit",
+      timeZone,
+      year: "numeric",
+    }).formatToParts(date);
+    const part = (type: Intl.DateTimeFormatPartTypes) =>
+      parts.find((item) => item.type === type)?.value ?? "";
+
+    return `${part("year")}-${part("month")}-${part("day")}T${part(
+      "hour",
+    )}:${part("minute")}`;
+  } catch {
+    const pad = (input: number) => input.toString().padStart(2, "0");
+
+    return [
+      `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`,
+      `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`,
+    ].join("T");
+  }
 }
 
 function guestSubtitle(guest: CheckInGuest) {
@@ -138,6 +184,7 @@ export default async function EventCheckInPage({
     canManageDevices,
     canManageTokens,
     canPerform,
+    canCreateUnexpected,
     canReviewUnexpected,
     canSyncOffline,
     canViewDashboard,
@@ -146,13 +193,50 @@ export default async function EventCheckInPage({
     hasEventPermission(context, eventId, "check_in.devices.manage"),
     hasEventPermission(context, eventId, "check_in.tokens.manage"),
     hasEventPermission(context, eventId, "check_in.perform"),
+    hasEventPermission(context, eventId, "check_in.unexpected_guests.create"),
     hasEventPermission(context, eventId, "check_in.unexpected_guests.review"),
     hasEventPermission(context, eventId, "check_in.offline_sync"),
     hasEventPermission(context, eventId, "check_in.dashboard"),
   ]);
+  const allowedMethods = resolveAllowedCheckInMethods(
+    overview.settings?.allowed_methods,
+  );
+  const isCheckInMethodAllowed = (method: CheckInMethod) =>
+    allowedMethods.has(method);
+  const qrScanAllowed = isCheckInMethodAllowed("qr_scan");
+  const manualCheckInMethodOptions = manualCheckInMethods.map((method) => ({
+    label: checkInMethodLabels[method],
+    value: method,
+  }));
+  const allowedManualCheckInMethods = manualCheckInMethodOptions.filter(
+    (method) => isCheckInMethodAllowed(method.value),
+  );
+  const canResolveQr = canPerform && qrScanAllowed;
+  const canPerformManual = canPerform && allowedManualCheckInMethods.length > 0;
+  const unexpectedGuestMode =
+    overview.settings?.unexpected_guest_mode ?? "supervisor_approval_required";
+  const canUseUnexpectedGuestWorkflow = unexpectedGuestMode !== "disabled";
+  const canSubmitUnexpected =
+    canCreateUnexpected && canUseUnexpectedGuestWorkflow;
+  const canProcessUnexpected =
+    canReviewUnexpected &&
+    unexpectedGuestMode === "supervisor_approval_required";
   const query = searchParamText(resolvedSearchParams, "q") ?? "";
   const side = searchParamText(resolvedSearchParams, "side") ?? "all";
-  const tableId = searchParamText(resolvedSearchParams, "tableId");
+  const selectedTableValue = searchParamText(resolvedSearchParams, "tableId");
+  const tableId =
+    selectedTableValue === "unassigned" ? null : selectedTableValue;
+  const tableOptions = [
+    ...new Map(
+      overview.guests.map((guest) => [
+        guest.tableId ?? "unassigned",
+        {
+          label: guest.tableName ?? "Unassigned",
+          value: guest.tableId ?? "unassigned",
+        },
+      ]),
+    ).values(),
+  ].sort((left, right) => left.label.localeCompare(right.label));
   const searchResults = searchCheckInGuests(overview.guests, {
     query,
     side:
@@ -214,7 +298,10 @@ export default async function EventCheckInPage({
           <div className="section-heading">
             <h2>Arrival dashboard</h2>
             <span className="meta-list">
-              {formatDateTime(overview.event.starts_at)}
+              {formatDateTime(
+                overview.event.starts_at,
+                overview.settings?.timezone ?? "UTC",
+              )}
             </span>
           </div>
           <div className="detail-grid">
@@ -259,18 +346,25 @@ export default async function EventCheckInPage({
           <h2>QR scan</h2>
           <span className="meta-list">Event-specific check-in token</span>
         </div>
-        <form
-          action={resolveTokenForScanAction.bind(null, eventId)}
-          className="form-panel form-grid"
-        >
-          <label>
-            Token
-            <input name="token" placeholder="Paste scanned token" required />
-          </label>
-          <button className="button" type="submit">
-            Resolve token
-          </button>
-        </form>
+        {canResolveQr ? (
+          <form
+            action={resolveTokenForScanAction.bind(null, eventId)}
+            className="form-panel form-grid"
+          >
+            <label>
+              Token
+              <input name="token" placeholder="Paste scanned token" required />
+            </label>
+            <button className="button" type="submit">
+              Resolve token
+            </button>
+          </form>
+        ) : null}
+        {canPerform && !qrScanAllowed ? (
+          <div className="empty-state">
+            QR scanning is disabled for this event.
+          </div>
+        ) : null}
       </section>
 
       <section className="section">
@@ -300,11 +394,11 @@ export default async function EventCheckInPage({
           </label>
           <label>
             Table
-            <select defaultValue={tableId ?? ""} name="tableId">
+            <select defaultValue={selectedTableValue ?? ""} name="tableId">
               <option value="">All tables</option>
-              {overview.metrics.byTable.map((table) => (
-                <option key={table.tableId} value={table.tableId}>
-                  {table.tableName}
+              {tableOptions.map((table) => (
+                <option key={table.value} value={table.value}>
+                  {table.label}
                 </option>
               ))}
             </select>
@@ -314,6 +408,12 @@ export default async function EventCheckInPage({
           </button>
         </form>
 
+        {canPerform && allowedManualCheckInMethods.length === 0 ? (
+          <div className="empty-state">
+            Manual check-in methods are disabled for this event.
+          </div>
+        ) : null}
+
         <div className="record-list">
           {searchResults.length === 0 ? (
             <div className="empty-state">
@@ -322,6 +422,10 @@ export default async function EventCheckInPage({
           ) : (
             searchResults.map((guest) => {
               const readinessIssues = buildCheckInReadinessIssues(guest);
+              const remainingCount = Math.max(
+                guest.expectedCount - guest.arrivedCount,
+                0,
+              );
 
               return (
                 <div
@@ -351,7 +455,7 @@ export default async function EventCheckInPage({
                         ))}
                       </div>
                     ) : null}
-                    {canPerform ? (
+                    {canPerformManual && remainingCount > 0 ? (
                       <form
                         action={performManualCheckInAction.bind(
                           null,
@@ -368,25 +472,18 @@ export default async function EventCheckInPage({
                         <label>
                           Method
                           <select name="method">
-                            <option value="manual_name_search">
-                              Name search
-                            </option>
-                            <option value="manual_invitation_id">
-                              Invitation ID
-                            </option>
-                            <option value="manual_phone_search">
-                              Phone search
-                            </option>
-                            <option value="manual_table_search">
-                              Table search
-                            </option>
+                            {allowedManualCheckInMethods.map((method) => (
+                              <option key={method.value} value={method.value}>
+                                {method.label}
+                              </option>
+                            ))}
                           </select>
                         </label>
                         <label>
                           Arrival count
                           <input
-                            defaultValue="1"
-                            max={guest.expectedCount}
+                            defaultValue={Math.min(1, remainingCount)}
+                            max={remainingCount}
                             min="1"
                             name="arrivalCount"
                             type="number"
@@ -415,6 +512,12 @@ export default async function EventCheckInPage({
                           Check in
                         </button>
                       </form>
+                    ) : null}
+                    {canPerform && remainingCount <= 0 ? (
+                      <div className="empty-state">
+                        This guest has already reached the expected arrival
+                        count.
+                      </div>
                     ) : null}
                   </div>
                 </div>
@@ -447,7 +550,10 @@ export default async function EventCheckInPage({
             <label>
               Starts at
               <input
-                defaultValue={overview.settings?.starts_at ?? ""}
+                defaultValue={formatToLocalDatetime(
+                  overview.settings?.starts_at,
+                  overview.settings?.timezone ?? "UTC",
+                )}
                 name="startsAt"
                 type="datetime-local"
               />
@@ -455,7 +561,10 @@ export default async function EventCheckInPage({
             <label>
               Ends at
               <input
-                defaultValue={overview.settings?.ends_at ?? ""}
+                defaultValue={formatToLocalDatetime(
+                  overview.settings?.ends_at,
+                  overview.settings?.timezone ?? "UTC",
+                )}
                 name="endsAt"
                 type="datetime-local"
               />
@@ -503,23 +612,17 @@ export default async function EventCheckInPage({
               />
               Supervisor approval
             </label>
-            {[
-              "qr_scan",
-              "manual_name_search",
-              "manual_invitation_id",
-              "manual_phone_search",
-              "manual_table_search",
-            ].map((method) => (
+            {defaultCheckInMethods.map((method) => (
               <label className="checkbox-label" key={method}>
                 <input
                   defaultChecked={
-                    overview.settings?.allowed_methods.includes(method) ?? true
+                    overview.settings?.allowed_methods?.includes(method) ?? true
                   }
                   name="allowedMethods"
                   type="checkbox"
                   value={method}
                 />
-                {method}
+                {checkInMethodLabels[method]}
               </label>
             ))}
             <button className="button" type="submit">
@@ -536,42 +639,55 @@ export default async function EventCheckInPage({
             {overview.unexpectedRequests.length} requests
           </span>
         </div>
-        <form
-          action={createUnexpectedGuestRequestAction.bind(null, eventId)}
-          className="form-panel form-grid"
-        >
-          <label>
-            Name
-            <input name="requestedName" required />
-          </label>
-          <label>
-            Side
-            <select name="guestSide">
-              <option value="">Unknown</option>
-              <option value="bride">Bride</option>
-              <option value="groom">Groom</option>
-              <option value="both">Both</option>
-            </select>
-          </label>
-          <label>
-            Device/station
-            <select name="deviceId">
-              <option value="">Unassigned device</option>
-              {overview.devices.map((device) => (
-                <option key={device.id} value={device.id}>
-                  {device.station_name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Reason
-            <input name="reason" />
-          </label>
-          <button className="button secondary" type="submit">
-            Create request
-          </button>
-        </form>
+        {canSubmitUnexpected ? (
+          <form
+            action={createUnexpectedGuestRequestAction.bind(null, eventId)}
+            className="form-panel form-grid"
+          >
+            <label>
+              Name
+              <input name="requestedName" required />
+            </label>
+            <label>
+              Side
+              <select name="guestSide">
+                <option value="">Unknown</option>
+                <option value="bride">Bride</option>
+                <option value="groom">Groom</option>
+                <option value="both">Both</option>
+              </select>
+            </label>
+            <label>
+              Device/station
+              <select name="deviceId">
+                <option value="">Unassigned device</option>
+                {overview.devices.map((device) => (
+                  <option key={device.id} value={device.id}>
+                    {device.station_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Reason
+              <input name="reason" />
+            </label>
+            <button className="button secondary" type="submit">
+              Create request
+            </button>
+          </form>
+        ) : null}
+        {canCreateUnexpected && !canUseUnexpectedGuestWorkflow ? (
+          <div className="empty-state">
+            Unexpected guest requests are disabled for this event.
+          </div>
+        ) : null}
+        {canReviewUnexpected &&
+        unexpectedGuestMode === "manual_recording_only" ? (
+          <div className="empty-state">
+            Unexpected guests are set to manual recording for this event.
+          </div>
+        ) : null}
         <div className="record-list">
           {overview.unexpectedRequests.map((request) => (
             <div className="task-row" key={request.id}>
@@ -582,7 +698,7 @@ export default async function EventCheckInPage({
                   {request.reason ? ` - ${request.reason}` : ""}
                 </small>
               </span>
-              {canReviewUnexpected && request.status === "pending" ? (
+              {canProcessUnexpected && request.status === "pending" ? (
                 <div className="button-group">
                   <form
                     action={reviewUnexpectedGuestRequestAction.bind(

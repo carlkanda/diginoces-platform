@@ -52,9 +52,11 @@ const here = fileURLToPath(new URL(".", import.meta.url));
 
 function findMigrationRoot(startDirectory: string) {
   let currentDirectory = startDirectory;
+  const attemptedCandidates: string[] = [];
 
   while (currentDirectory !== dirname(currentDirectory)) {
     const candidate = join(currentDirectory, "supabase", "migrations");
+    attemptedCandidates.push(candidate);
 
     if (existsSync(candidate)) {
       return candidate;
@@ -63,22 +65,33 @@ function findMigrationRoot(startDirectory: string) {
     currentDirectory = dirname(currentDirectory);
   }
 
-  throw new Error("Supabase migrations directory was not found.");
+  throw new Error(
+    `Supabase migrations directory was not found from ${startDirectory}. Tried: ${attemptedCandidates.join(", ")}`,
+  );
 }
 
 function sprint9Migration() {
   const migrationRoot = findMigrationRoot(here);
-  const matches = readdirSync(migrationRoot).filter(
-    (name) =>
-      name.includes("sprint_9_check_in_wedding_day_operations") &&
-      name.endsWith(".sql"),
+  const matches = readdirSync(migrationRoot).filter((name) =>
+    /^\d{14}_sprint_9_check_in_wedding_day_operations\.sql$/.test(name),
   );
 
-  if (matches.length !== 1) {
-    throw new Error("Sprint 9 migration was not found exactly once.");
+  if (matches.length === 0) {
+    throw new Error(`Sprint 9 migration was not found in ${migrationRoot}.`);
+  }
+
+  if (matches.length > 1) {
+    throw new Error(
+      `Sprint 9 migration was found more than once in ${migrationRoot}: ${matches.join(", ")}`,
+    );
   }
 
   return readFileSync(join(migrationRoot, matches[0]!), "utf8");
+}
+
+// normalizeSql is test-only keyword matching; its simple "--" stripping is not a production SQL parser.
+function normalizeSql(sql: string) {
+  return sql.replace(/--.*$/gm, " ").replace(/\s+/g, " ").trim().toLowerCase();
 }
 
 describe("Sprint 9 check-in foundation", () => {
@@ -128,6 +141,10 @@ describe("Sprint 9 check-in foundation", () => {
       deviceLabel: "Tablet 1",
       stationName: "Entrance A",
     });
+
+    expect(() =>
+      parseCheckInDevicePayload({ deviceLabel: "Tablet 1" }),
+    ).toThrow("stationName");
   });
 
   it("enforces event-scoped staff permissions", () => {
@@ -239,6 +256,21 @@ describe("Sprint 9 check-in foundation", () => {
       isDuplicateScan: true,
       requestedArrivalCount: 0,
       welcomeMessageSuppressedReason: "duplicate_scan",
+    });
+
+    expect(
+      calculateArrivalState({
+        currentArrivedCount: 2,
+        requestedArrivalCount: 1,
+        supervisorOverride: true,
+        totalExpectedCount: 2,
+      }),
+    ).toMatchObject({
+      attendanceAfter: 3,
+      isDuplicateScan: false,
+      requestedArrivalCount: 1,
+      welcomeMessageAction: "none",
+      welcomeMessageSuppressedReason: null,
     });
 
     expect(() =>
@@ -368,7 +400,7 @@ describe("Sprint 9 check-in foundation", () => {
 
   it("documents Sprint 9 status, audit hooks, permissions, and out-of-scope boundaries", () => {
     const status = getSprint9CheckInStatus();
-    const migration = sprint9Migration();
+    const migration = normalizeSql(sprint9Migration());
 
     expect(status.requirementIds).toEqual(
       expect.arrayContaining(["CHK-001", "CHK-014", "TECH-007", "TECH-010"]),
@@ -391,6 +423,27 @@ describe("Sprint 9 check-in foundation", () => {
     expect(migration).toContain(
       "create table if not exists public.check_in_sync_conflicts",
     );
+    expect(migration).toContain("submit_offline_check_in_sync_batch");
+    expect(migration).toContain(
+      "grant select on public.check_in_tokens to authenticated",
+    );
+    expect(migration).toContain(
+      "grant select on public.check_in_sync_conflicts to authenticated",
+    );
+    expect(migration).toContain(
+      "grant select, insert, update, delete on public.check_in_sync_conflicts to service_role",
+    );
+    expect(migration).toContain(
+      "unexpected guest requests are disabled for this event",
+    );
+    expect(migration).toContain(
+      "check-in is not open for this event or method",
+    );
+    expect(migration).toContain(
+      "check_in_records_event_source_offline_record_key",
+    );
+    expect(migration).toContain("permission_denied");
+    expect(migration).toContain("feature_disabled");
     expect(migration).toContain("'check_in.perform'");
     expect(migration).toContain("check_in_supervisor");
     expect(migration).toContain("audit_check_in_change");

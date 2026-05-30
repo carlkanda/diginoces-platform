@@ -131,7 +131,9 @@ begin
     'duplicate_check_in',
     'arrival_count_conflict',
     'stale_guest_data',
-    'unexpected_guest_decision_conflict'
+    'unexpected_guest_decision_conflict',
+    'permission_denied',
+    'feature_disabled'
   );
 exception
   when duplicate_object then null;
@@ -330,6 +332,10 @@ create index if not exists check_in_records_project_event_checked_idx
 create index if not exists check_in_records_guest_event_idx
   on public.check_in_records (guest_id, event_id, checked_in_at desc);
 
+create unique index if not exists check_in_records_event_source_offline_record_key
+  on public.check_in_records (event_id, source_offline_record_id)
+  where source_offline_record_id is not null;
+
 create index if not exists check_in_records_staff_device_idx
   on public.check_in_records (project_id, event_id, staff_user_id, device_id);
 
@@ -504,6 +510,76 @@ as $$
 $$;
 
 revoke all on function app_private.user_can_access_check_in_event(uuid, uuid, uuid, text) from public;
+
+create or replace function app_private.user_can_access_check_in_event_any(
+  p_user_id uuid,
+  p_project_id uuid,
+  p_event_id uuid,
+  p_permissions text[]
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select p_user_id is not null
+    and exists (
+      select 1
+      from unnest(p_permissions) as permission_slug
+      where app_private.user_can_access_check_in_event(
+        p_user_id,
+        p_project_id,
+        p_event_id,
+        permission_slug
+      )
+    );
+$$;
+
+revoke all on function app_private.user_can_access_check_in_event_any(uuid, uuid, uuid, text[]) from public;
+
+create or replace function app_private.check_in_settings_permit_method(
+  p_project_id uuid,
+  p_event_id uuid,
+  p_method public.check_in_method default null
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select coalesce((
+    select
+      cis.enabled
+      and cis.status = 'active'
+      and (cis.starts_at is null or now() >= cis.starts_at)
+      and (cis.ends_at is null or now() <= cis.ends_at)
+      and (
+        p_method is null
+        or p_method not in (
+          'qr_scan',
+          'manual_name_search',
+          'manual_invitation_id',
+          'manual_phone_search',
+          'manual_table_search'
+        )
+        or coalesce(
+          cis.allowed_methods,
+          '["qr_scan", "manual_name_search", "manual_invitation_id", "manual_phone_search", "manual_table_search"]'::jsonb
+        ) ? p_method::text
+      )
+    from public.check_in_settings cis
+    where cis.project_id = p_project_id
+      and cis.event_id = p_event_id
+  ), false);
+$$;
+
+revoke all on function app_private.check_in_settings_permit_method(
+  uuid,
+  uuid,
+  public.check_in_method
+) from public;
 
 create or replace function app_private.redact_check_in_audit_snapshot(
   p_table_name text,
@@ -749,7 +825,8 @@ begin
     p_event_id,
     'check_in.tokens.manage'
   ) then
-    raise exception 'Check-in token permission denied.';
+    raise exception 'Check-in token permission denied.'
+      using errcode = '42501';
   end if;
 
   select gea.id
@@ -775,6 +852,8 @@ begin
   ) then
     raise exception 'Invitation does not match this event guest.';
   end if;
+
+  perform pg_advisory_xact_lock(hashtext(p_event_id::text), hashtext(p_guest_id::text));
 
   select cit.id
   into v_existing_token_id
@@ -874,6 +953,14 @@ begin
     return jsonb_build_object('status', 'permission_denied');
   end if;
 
+  if not app_private.check_in_settings_permit_method(
+    v_event_project_id,
+    p_event_id,
+    'qr_scan'
+  ) then
+    return jsonb_build_object('status', 'check_in_unavailable');
+  end if;
+
   select *
   into v_token
   from public.check_in_tokens cit
@@ -966,7 +1053,17 @@ begin
     p_event_id,
     'check_in.perform'
   ) then
-    raise exception 'Check-in permission denied.';
+    raise exception 'Check-in permission denied.'
+      using errcode = '42501';
+  end if;
+
+  if not app_private.check_in_settings_permit_method(
+    v_event_project_id,
+    p_event_id,
+    p_method
+  ) then
+    raise exception 'Check-in is not open for this event or method.'
+      using errcode = 'P0403';
   end if;
 
   select *
@@ -1052,20 +1149,43 @@ begin
 
   v_total_expected_count := greatest(coalesce(v_guest.total_expected_count, 1), 1);
 
-  if v_current_arrival_count >= v_total_expected_count then
+  if v_current_arrival_count >= v_total_expected_count
+    and not p_supervisor_override then
+    -- Duplicate scans intentionally force p_arrival_count to zero so
+    -- attendance_after stays at v_current_arrival_count and the non-negative
+    -- arrival count constraint remains satisfied.
     v_is_duplicate := true;
     p_arrival_count := 0;
   end if;
 
   v_after_count := v_current_arrival_count + p_arrival_count;
 
-  if v_after_count > v_total_expected_count and not p_supervisor_override then
-    raise exception 'Arrival count exceeds expected count.';
+  if v_after_count > v_total_expected_count then
+    if not p_supervisor_override then
+      raise exception 'Arrival count exceeds expected count.';
+    end if;
+
+    if not app_private.user_can_access_check_in_event(
+      v_actor_user_id,
+      v_event_project_id,
+      p_event_id,
+      'check_in.unexpected_guests.review'
+    ) then
+      raise exception 'Supervisor override permission denied.'
+        using errcode = '42501';
+    end if;
   end if;
 
   if p_arrival_count > 0 and v_current_arrival_count = 0 then
     v_welcome_action := 'prepare';
-  elsif p_arrival_count > 0 and v_current_arrival_count > 0 then
+  elsif p_arrival_count > 0
+    and v_current_arrival_count > 0
+    and not (p_supervisor_override and v_after_count > v_total_expected_count) then
+    -- First arrivals prepare a welcome message, normal repeat arrivals suppress
+    -- it as not_first_arrival, and duplicate scans at capacity suppress it as
+    -- duplicate_scan. Supervisor-approved over-capacity arrivals are deliberate
+    -- manual exceptions, so this branch leaves v_welcome_action as none instead
+    -- of treating the arrival as an automatic duplicate suppression case.
     v_welcome_action := 'suppress_duplicate';
     v_welcome_suppressed_reason := 'not_first_arrival';
   elsif v_is_duplicate then
@@ -1178,6 +1298,457 @@ grant execute on function public.perform_guest_check_in(
   text
 ) to authenticated;
 
+create or replace function public.submit_offline_check_in_sync_batch(
+  p_event_id uuid,
+  p_device_id uuid default null,
+  p_offline_records jsonb default '[]'::jsonb,
+  p_conflicts jsonb default '[]'::jsonb,
+  p_status public.check_in_sync_batch_status default 'processed',
+  p_metadata jsonb default '{}'::jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_actor_user_id uuid := (select auth.uid());
+  v_project_id uuid;
+  v_batch_id uuid;
+  v_applied_records jsonb := '[]'::jsonb;
+  v_failed_records jsonb := '[]'::jsonb;
+  v_failure_count integer := 0;
+  v_failure_conflict_type public.check_in_conflict_type;
+  v_final_status public.check_in_sync_batch_status := p_status;
+  v_conflict jsonb;
+  v_conflict_guest_id uuid;
+  v_conflict_record_ids text[] := array[]::text[];
+  v_conflict_type public.check_in_conflict_type;
+  v_record jsonb;
+  v_record_arrival_count integer;
+  v_record_arrived_at timestamptz;
+  v_record_guest_id uuid;
+  v_record_result jsonb;
+  v_offline_record_id text;
+begin
+  if v_actor_user_id is null then
+    raise exception 'Authentication required.';
+  end if;
+
+  if jsonb_typeof(coalesce(p_offline_records, '[]'::jsonb)) <> 'array' then
+    raise exception 'Offline records must be a JSON array.';
+  end if;
+
+  if jsonb_typeof(coalesce(p_conflicts, '[]'::jsonb)) <> 'array' then
+    raise exception 'Offline sync conflicts must be a JSON array.';
+  end if;
+
+  if jsonb_typeof(coalesce(p_metadata, '{}'::jsonb)) <> 'object' then
+    raise exception 'Offline sync metadata must be a JSON object.';
+  end if;
+
+  select e.project_id
+  into v_project_id
+  from public.events e
+  where e.id = p_event_id;
+
+  if v_project_id is null then
+    raise exception 'Event was not found.';
+  end if;
+
+  if not app_private.user_can_access_check_in_event(
+    v_actor_user_id,
+    v_project_id,
+    p_event_id,
+    'check_in.offline_sync'
+  ) then
+    raise exception 'Offline sync permission denied.'
+      using errcode = '42501';
+  end if;
+
+  if p_device_id is not null and not exists (
+    select 1
+    from public.check_in_devices d
+    where d.id = p_device_id
+      and d.project_id = v_project_id
+      and d.event_id = p_event_id
+      and d.status = 'active'
+  ) then
+    raise exception 'Check-in device does not match this event.';
+  end if;
+
+  insert into public.check_in_sync_batches (
+    project_id,
+    event_id,
+    device_id,
+    submitted_by,
+    record_count,
+    conflict_count,
+    status,
+    metadata
+  )
+  values (
+    v_project_id,
+    p_event_id,
+    p_device_id,
+    v_actor_user_id,
+    jsonb_array_length(coalesce(p_offline_records, '[]'::jsonb)),
+    jsonb_array_length(coalesce(p_conflicts, '[]'::jsonb)),
+    p_status,
+    coalesce(p_metadata, '{}'::jsonb)
+  )
+  returning id into v_batch_id;
+
+  for v_conflict in
+    select value
+    from jsonb_array_elements(coalesce(p_conflicts, '[]'::jsonb)) as conflict(value)
+  loop
+    v_offline_record_id := nullif(v_conflict->>'offlineRecordId', '');
+
+    if v_offline_record_id is not null then
+      v_conflict_record_ids := array_append(v_conflict_record_ids, v_offline_record_id);
+    end if;
+
+    if nullif(v_conflict->>'conflictType', '') is null then
+      raise exception 'Offline sync conflict type is required.';
+    end if;
+
+    if not exists (
+      select 1
+      from unnest(enum_range(null::public.check_in_conflict_type)) as conflict_type(value)
+      where conflict_type.value::text = v_conflict->>'conflictType'
+    ) then
+      raise exception 'Offline sync conflict type is not supported.';
+    end if;
+
+    v_conflict_type := (v_conflict->>'conflictType')::public.check_in_conflict_type;
+
+    if nullif(v_conflict->>'guestId', '') is null then
+      v_conflict_guest_id := null;
+    else
+      begin
+        v_conflict_guest_id := (v_conflict->>'guestId')::uuid;
+      exception
+        when invalid_text_representation then
+          raise exception 'Offline sync conflict guest ID must be a valid UUID.';
+      end;
+    end if;
+
+    insert into public.check_in_sync_conflicts (
+      project_id,
+      event_id,
+      sync_batch_id,
+      guest_id,
+      conflict_type,
+      conflict_payload
+    )
+    values (
+      v_project_id,
+      p_event_id,
+      v_batch_id,
+      v_conflict_guest_id,
+      v_conflict_type,
+      jsonb_build_object(
+        'offlineRecordId', v_offline_record_id,
+        'reason', nullif(v_conflict->>'reason', '')
+      )
+    );
+  end loop;
+
+  for v_record in
+    select value
+    from jsonb_array_elements(coalesce(p_offline_records, '[]'::jsonb)) as record(value)
+  loop
+    v_offline_record_id := nullif(v_record->>'offlineRecordId', '');
+
+    if v_offline_record_id is not null
+      and v_offline_record_id = any(v_conflict_record_ids) then
+      continue;
+    end if;
+
+    begin
+      v_record_arrival_count := null;
+      v_record_arrived_at := null;
+      v_record_guest_id := null;
+
+      if v_offline_record_id is null then
+        raise exception 'Offline record ID is required.';
+      end if;
+
+      if nullif(v_record->>'eventId', '') is not null
+        and (v_record->>'eventId') <> p_event_id::text then
+        raise exception 'Offline check-in records must match the sync batch event.';
+      end if;
+
+      if exists (
+        select 1
+        from public.check_in_records cr
+        where cr.event_id = p_event_id
+          and cr.source_offline_record_id = v_offline_record_id
+      ) then
+        continue;
+      end if;
+
+      if nullif(v_record->>'guestId', '') is null then
+        raise exception 'Offline record guest ID is required.';
+      end if;
+
+      begin
+        v_record_guest_id := (v_record->>'guestId')::uuid;
+      exception
+        when invalid_text_representation then
+          raise exception 'Offline record guest ID must be a valid UUID.';
+      end;
+
+      if nullif(v_record->>'arrivalCount', '') is null then
+        raise exception 'Offline record arrival count is required.';
+      end if;
+
+      begin
+        v_record_arrival_count := (v_record->>'arrivalCount')::integer;
+      exception
+        when invalid_text_representation then
+          raise exception 'Offline record arrival count must be an integer.';
+      end;
+
+      if v_record_arrival_count < 1 then
+        raise exception 'Offline record arrival count must be positive.';
+      end if;
+
+      if nullif(v_record->>'arrivedAt', '') is null then
+        raise exception 'Offline record arrival timestamp is required.';
+      end if;
+
+      begin
+        v_record_arrived_at := (v_record->>'arrivedAt')::timestamptz;
+      exception
+        when datetime_field_overflow or invalid_datetime_format then
+          raise exception 'Offline record arrival timestamp must be valid.';
+      end;
+
+      v_record_result := public.perform_guest_check_in(
+        p_event_id => p_event_id,
+        p_guest_id => v_record_guest_id,
+        p_method => 'offline_sync',
+        p_arrival_count => v_record_arrival_count,
+        p_device_id => p_device_id,
+        p_token_id => null,
+        p_invitation_id => null,
+        p_sync_status => 'online_synced',
+        p_checked_in_at => v_record_arrived_at,
+        p_notes => null,
+        p_supervisor_override => false,
+        p_source_offline_record_id => v_offline_record_id
+      );
+
+      v_applied_records := v_applied_records || jsonb_build_array(v_record_result);
+    exception
+      when others then
+        v_failure_conflict_type := case
+          when sqlstate in ('28000', '42501') then 'permission_denied'::public.check_in_conflict_type
+          when sqlstate in ('0A000', '42883', 'P0403') then 'feature_disabled'::public.check_in_conflict_type
+          else 'stale_guest_data'::public.check_in_conflict_type
+        end;
+        v_failure_count := v_failure_count + 1;
+        v_failed_records := v_failed_records || jsonb_build_array(
+          jsonb_build_object(
+            'offlineRecordId', v_offline_record_id,
+            'guestId', nullif(v_record->>'guestId', ''),
+            'eventId', p_event_id,
+            'sqlState', sqlstate,
+            'errorMessage', sqlerrm
+          )
+        );
+
+        insert into public.check_in_sync_conflicts (
+          project_id,
+          event_id,
+          sync_batch_id,
+          guest_id,
+          conflict_type,
+          conflict_payload
+        )
+        values (
+          v_project_id,
+          p_event_id,
+          v_batch_id,
+          case
+            when exists (
+              select 1
+              from public.guests g
+              where g.id = v_record_guest_id
+                and g.project_id = v_project_id
+            ) then v_record_guest_id
+            else null
+          end,
+          v_failure_conflict_type,
+          jsonb_build_object(
+            'offlineRecordId', v_offline_record_id,
+            'reason', sqlerrm,
+            'sqlState', sqlstate,
+            'errorMessage', sqlerrm
+          )
+        );
+
+        continue;
+    end;
+  end loop;
+
+  if v_failure_count > 0 then
+    v_final_status := case
+      when jsonb_array_length(v_applied_records) = 0 then 'failed'::public.check_in_sync_batch_status
+      else 'partial_conflict'::public.check_in_sync_batch_status
+    end;
+
+    update public.check_in_sync_batches
+    set
+      status = v_final_status,
+      conflict_count = conflict_count + v_failure_count,
+      metadata = metadata || jsonb_build_object('failedRecords', v_failed_records)
+    where id = v_batch_id;
+  end if;
+
+  return jsonb_build_object(
+    'status', v_final_status,
+    'batchId', v_batch_id,
+    'projectId', v_project_id,
+    'eventId', p_event_id,
+    'recordCount', jsonb_array_length(coalesce(p_offline_records, '[]'::jsonb)),
+    'conflictCount', jsonb_array_length(coalesce(p_conflicts, '[]'::jsonb)) + v_failure_count,
+    'failedRecords', v_failed_records,
+    'appliedRecords', v_applied_records
+  );
+end;
+$$;
+
+revoke all on function public.submit_offline_check_in_sync_batch(
+  uuid,
+  uuid,
+  jsonb,
+  jsonb,
+  public.check_in_sync_batch_status,
+  jsonb
+) from public;
+grant execute on function public.submit_offline_check_in_sync_batch(
+  uuid,
+  uuid,
+  jsonb,
+  jsonb,
+  public.check_in_sync_batch_status,
+  jsonb
+) to authenticated;
+
+create or replace function public.create_unexpected_guest_request(
+  p_event_id uuid,
+  p_requested_name text,
+  p_guest_side public.guest_side default null,
+  p_reason text default null,
+  p_device_id uuid default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_actor_user_id uuid := (select auth.uid());
+  v_unexpected_guest_mode public.check_in_unexpected_guest_mode;
+  v_project_id uuid;
+  v_request_id uuid;
+begin
+  if v_actor_user_id is null then
+    raise exception 'Authentication required.';
+  end if;
+
+  if nullif(trim(coalesce(p_requested_name, '')), '') is null then
+    raise exception 'Requested guest name is required.';
+  end if;
+
+  select e.project_id
+  into v_project_id
+  from public.events e
+  where e.id = p_event_id;
+
+  if v_project_id is null then
+    raise exception 'Event was not found.';
+  end if;
+
+  select coalesce(cis.unexpected_guest_mode, 'supervisor_approval_required')
+  into v_unexpected_guest_mode
+  from public.check_in_settings cis
+  where cis.project_id = v_project_id
+    and cis.event_id = p_event_id;
+
+  if coalesce(v_unexpected_guest_mode, 'supervisor_approval_required') = 'disabled' then
+    raise exception 'Unexpected guest requests are disabled for this event.'
+      using errcode = 'P0403';
+  end if;
+
+  if not app_private.user_can_access_check_in_event(
+    v_actor_user_id,
+    v_project_id,
+    p_event_id,
+    'check_in.unexpected_guests.create'
+  ) then
+    raise exception 'Unexpected guest request permission denied.'
+      using errcode = '42501';
+  end if;
+
+  if p_device_id is not null and not exists (
+    select 1
+    from public.check_in_devices d
+    where d.id = p_device_id
+      and d.project_id = v_project_id
+      and d.event_id = p_event_id
+      and d.status = 'active'
+  ) then
+    raise exception 'Check-in device does not match this event.';
+  end if;
+
+  insert into public.unexpected_guest_requests (
+    project_id,
+    event_id,
+    requested_name,
+    guest_side,
+    reason,
+    requested_by,
+    device_id
+  )
+  values (
+    v_project_id,
+    p_event_id,
+    trim(p_requested_name),
+    p_guest_side,
+    nullif(trim(coalesce(p_reason, '')), ''),
+    v_actor_user_id,
+    p_device_id
+  )
+  returning id into v_request_id;
+
+  return jsonb_build_object(
+    'status', 'pending',
+    'requestId', v_request_id,
+    'projectId', v_project_id,
+    'eventId', p_event_id
+  );
+end;
+$$;
+
+revoke all on function public.create_unexpected_guest_request(
+  uuid,
+  text,
+  public.guest_side,
+  text,
+  uuid
+) from public;
+grant execute on function public.create_unexpected_guest_request(
+  uuid,
+  text,
+  public.guest_side,
+  text,
+  uuid
+) to authenticated;
+
 create or replace function public.review_unexpected_guest_request(
   p_request_id uuid,
   p_next_status public.unexpected_guest_request_status,
@@ -1192,6 +1763,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_actor_user_id uuid := (select auth.uid());
+  v_unexpected_guest_mode public.check_in_unexpected_guest_mode;
   v_request public.unexpected_guest_requests%rowtype;
 begin
   if v_actor_user_id is null then
@@ -1216,13 +1788,30 @@ begin
     raise exception 'Unexpected guest request was already reviewed.';
   end if;
 
+  select coalesce(cis.unexpected_guest_mode, 'supervisor_approval_required')
+  into v_unexpected_guest_mode
+  from public.check_in_settings cis
+  where cis.project_id = v_request.project_id
+    and cis.event_id = v_request.event_id;
+
+  if coalesce(v_unexpected_guest_mode, 'supervisor_approval_required') = 'disabled' then
+    raise exception 'Unexpected guest requests are disabled for this event.'
+      using errcode = 'P0403';
+  end if;
+
+  if coalesce(v_unexpected_guest_mode, 'supervisor_approval_required') <> 'supervisor_approval_required' then
+    raise exception 'In-app unexpected guest review is disabled for this event.'
+      using errcode = 'P0403';
+  end if;
+
   if not app_private.user_can_access_check_in_event(
     v_actor_user_id,
     v_request.project_id,
     v_request.event_id,
     'check_in.unexpected_guests.review'
   ) then
-    raise exception 'Unexpected guest review permission denied.';
+    raise exception 'Unexpected guest review permission denied.'
+      using errcode = '42501';
   end if;
 
   if p_next_status in ('approved', 'manual_approved')
@@ -1287,17 +1876,22 @@ using (
     select 1
     from public.events e
     where e.project_id = wedding_projects.id
-      and (
-        app_private.user_can_access_event((select auth.uid()), e.id, 'check_in.read')
-        or app_private.user_can_access_event((select auth.uid()), e.id, 'check_in.settings.manage')
-        or app_private.user_can_access_event((select auth.uid()), e.id, 'check_in.tokens.manage')
-        or app_private.user_can_access_event((select auth.uid()), e.id, 'check_in.search')
-        or app_private.user_can_access_event((select auth.uid()), e.id, 'check_in.perform')
-        or app_private.user_can_access_event((select auth.uid()), e.id, 'check_in.unexpected_guests.create')
-        or app_private.user_can_access_event((select auth.uid()), e.id, 'check_in.unexpected_guests.review')
-        or app_private.user_can_access_event((select auth.uid()), e.id, 'check_in.devices.manage')
-        or app_private.user_can_access_event((select auth.uid()), e.id, 'check_in.offline_sync')
-        or app_private.user_can_access_event((select auth.uid()), e.id, 'check_in.dashboard')
+      and app_private.user_can_access_check_in_event_any(
+        (select auth.uid()),
+        e.project_id,
+        e.id,
+        array[
+          'check_in.read',
+          'check_in.settings.manage',
+          'check_in.tokens.manage',
+          'check_in.search',
+          'check_in.perform',
+          'check_in.unexpected_guests.create',
+          'check_in.unexpected_guests.review',
+          'check_in.devices.manage',
+          'check_in.offline_sync',
+          'check_in.dashboard'
+        ]
       )
   )
 );
@@ -1308,16 +1902,23 @@ on public.events
 for select
 to authenticated
 using (
-  app_private.user_can_access_event((select auth.uid()), id, 'check_in.read')
-  or app_private.user_can_access_event((select auth.uid()), id, 'check_in.settings.manage')
-  or app_private.user_can_access_event((select auth.uid()), id, 'check_in.tokens.manage')
-  or app_private.user_can_access_event((select auth.uid()), id, 'check_in.search')
-  or app_private.user_can_access_event((select auth.uid()), id, 'check_in.perform')
-  or app_private.user_can_access_event((select auth.uid()), id, 'check_in.unexpected_guests.create')
-  or app_private.user_can_access_event((select auth.uid()), id, 'check_in.unexpected_guests.review')
-  or app_private.user_can_access_event((select auth.uid()), id, 'check_in.devices.manage')
-  or app_private.user_can_access_event((select auth.uid()), id, 'check_in.offline_sync')
-  or app_private.user_can_access_event((select auth.uid()), id, 'check_in.dashboard')
+  app_private.user_can_access_check_in_event_any(
+    (select auth.uid()),
+    project_id,
+    id,
+    array[
+      'check_in.read',
+      'check_in.settings.manage',
+      'check_in.tokens.manage',
+      'check_in.search',
+      'check_in.perform',
+      'check_in.unexpected_guests.create',
+      'check_in.unexpected_guests.review',
+      'check_in.devices.manage',
+      'check_in.offline_sync',
+      'check_in.dashboard'
+    ]
+  )
 );
 
 drop policy if exists "Check-in settings visible to check-in readers" on public.check_in_settings;
@@ -1365,12 +1966,6 @@ to authenticated
 using (app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.tokens.manage'));
 
 drop policy if exists "Check-in tokens managed by token managers" on public.check_in_tokens;
-create policy "Check-in tokens managed by token managers"
-on public.check_in_tokens
-for all
-to authenticated
-using (app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.tokens.manage'))
-with check (app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.tokens.manage'));
 
 drop policy if exists "Check-in records visible to check-in readers" on public.check_in_records;
 create policy "Check-in records visible to check-in readers"
@@ -1384,17 +1979,6 @@ using (
 );
 
 drop policy if exists "Check-in records inserted by check-in staff" on public.check_in_records;
-create policy "Check-in records inserted by check-in staff"
-on public.check_in_records
-for insert
-to authenticated
-with check (
-  staff_user_id = (select auth.uid())
-  and (
-    app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.perform')
-    or app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.offline_sync')
-  )
-);
 
 drop policy if exists "Unexpected guest requests visible to check-in users" on public.unexpected_guest_requests;
 create policy "Unexpected guest requests visible to check-in users"
@@ -1408,22 +1992,8 @@ using (
 );
 
 drop policy if exists "Unexpected guest requests created by check-in staff" on public.unexpected_guest_requests;
-create policy "Unexpected guest requests created by check-in staff"
-on public.unexpected_guest_requests
-for insert
-to authenticated
-with check (
-  requested_by = (select auth.uid())
-  and app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.unexpected_guests.create')
-);
 
 drop policy if exists "Unexpected guest requests reviewed by supervisors" on public.unexpected_guest_requests;
-create policy "Unexpected guest requests reviewed by supervisors"
-on public.unexpected_guest_requests
-for update
-to authenticated
-using (app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.unexpected_guests.review'))
-with check (app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.unexpected_guests.review'));
 
 drop policy if exists "Check-in preload snapshots visible to offline check-in users" on public.check_in_preload_snapshots;
 create policy "Check-in preload snapshots visible to offline check-in users"
@@ -1456,15 +2026,6 @@ using (
 );
 
 drop policy if exists "Check-in sync batches managed by offline check-in users" on public.check_in_sync_batches;
-create policy "Check-in sync batches managed by offline check-in users"
-on public.check_in_sync_batches
-for all
-to authenticated
-using (app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.offline_sync'))
-with check (
-  submitted_by = (select auth.uid())
-  and app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.offline_sync')
-);
 
 drop policy if exists "Check-in sync conflicts visible to offline check-in users" on public.check_in_sync_conflicts;
 create policy "Check-in sync conflicts visible to offline check-in users"
@@ -1477,12 +2038,6 @@ using (
 );
 
 drop policy if exists "Check-in sync conflicts managed by offline check-in users" on public.check_in_sync_conflicts;
-create policy "Check-in sync conflicts managed by offline check-in users"
-on public.check_in_sync_conflicts
-for all
-to authenticated
-using (app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.offline_sync'))
-with check (app_private.user_can_access_check_in_event((select auth.uid()), project_id, event_id, 'check_in.offline_sync'));
 
 drop policy if exists "Check-in staff can read assigned event guest rows" on public.guests;
 create policy "Check-in staff can read assigned event guest rows"
@@ -1648,12 +2203,14 @@ using (
 
 grant select, insert, update on public.check_in_settings to authenticated;
 grant select, insert, update on public.check_in_devices to authenticated;
-grant select, insert, update on public.check_in_tokens to authenticated;
-grant select, insert on public.check_in_records to authenticated;
-grant select, insert, update on public.unexpected_guest_requests to authenticated;
+grant select on public.check_in_tokens to authenticated;
+grant select on public.check_in_records to authenticated;
+grant select on public.unexpected_guest_requests to authenticated;
+revoke insert, update, delete on public.check_in_records from authenticated;
+revoke insert, update, delete on public.unexpected_guest_requests from authenticated;
 grant select, insert on public.check_in_preload_snapshots to authenticated;
-grant select, insert, update on public.check_in_sync_batches to authenticated;
-grant select, insert, update on public.check_in_sync_conflicts to authenticated;
+grant select on public.check_in_sync_batches to authenticated;
+grant select on public.check_in_sync_conflicts to authenticated;
 
 grant select, insert, update on public.check_in_settings to service_role;
 grant select, insert, update on public.check_in_devices to service_role;
@@ -1662,7 +2219,7 @@ grant select, insert on public.check_in_records to service_role;
 grant select, insert, update on public.unexpected_guest_requests to service_role;
 grant select, insert on public.check_in_preload_snapshots to service_role;
 grant select, insert, update on public.check_in_sync_batches to service_role;
-grant select, insert, update on public.check_in_sync_conflicts to service_role;
+grant select, insert, update, delete on public.check_in_sync_conflicts to service_role;
 
 insert into public.permissions (slug, description, requirement_ids)
 values
@@ -1720,6 +2277,9 @@ with grants(role_slug, permission_slug) as (
     ('event_staff', 'check_in.perform'),
     ('event_staff', 'check_in.unexpected_guests.create'),
     ('event_staff', 'check_in.offline_sync'),
+    ('check_in_supervisor', 'platform.foundation.access'),
+    ('check_in_supervisor', 'events.read'),
+    ('check_in_supervisor', 'seating.read'),
     ('check_in_supervisor', 'check_in.read'),
     ('check_in_supervisor', 'check_in.search'),
     ('check_in_supervisor', 'check_in.perform'),

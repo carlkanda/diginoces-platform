@@ -16,15 +16,7 @@ export function handleCheckInApiError(error: unknown) {
     return jsonError(error.status, "permission_denied", error.message);
   }
 
-  if (error instanceof Error) {
-    serverLogger.error("Check-in API error.", {
-      error,
-      handler: "handleCheckInApiError",
-    });
-    return jsonError(500, "server_error", "Unexpected server error.");
-  }
-
-  serverLogger.error("Unexpected check-in API error.", {
+  serverLogger.error("Check-in API error.", {
     error,
     handler: "handleCheckInApiError",
   });

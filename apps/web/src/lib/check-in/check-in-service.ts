@@ -56,6 +56,8 @@ export type UnexpectedGuestApprovalMode = "in_app" | "manual_external";
 export type CheckInConflictType =
   | "arrival_count_conflict"
   | "duplicate_check_in"
+  | "feature_disabled"
+  | "permission_denied"
   | "stale_guest_data"
   | "unexpected_guest_decision_conflict";
 export type CheckInConflictStatus = "ignored" | "open" | "resolved";
@@ -86,7 +88,7 @@ export type CheckInSearchFilters = {
   query?: string;
   rsvpStatus?: RsvpCheckInStatus | "all";
   side?: GuestSide | "all";
-  tableId?: string;
+  tableId?: string | null;
   vipOnly?: boolean;
 };
 
@@ -207,6 +209,36 @@ export const defaultCheckInMethods = [
   "manual_table_search",
 ] as const satisfies readonly CheckInMethod[];
 
+export const manualCheckInMethods = [
+  "manual_name_search",
+  "manual_invitation_id",
+  "manual_phone_search",
+  "manual_table_search",
+] as const satisfies readonly CheckInMethod[];
+
+export const checkInMethodLabels = {
+  manual_invitation_id: "Invitation ID",
+  manual_name_search: "Name search",
+  manual_phone_search: "Phone search",
+  manual_table_search: "Table search",
+  offline_sync: "Offline sync",
+  qr_scan: "QR scan",
+  unexpected_guest_approval: "Unexpected guest approval",
+} as const satisfies Record<CheckInMethod, string>;
+
+// Null means settings are not configured yet and falls back to defaults.
+// An explicit empty array is an admin choice to disable every method.
+export function resolveAllowedCheckInMethods(
+  allowedMethods?: readonly string[] | null,
+): Set<CheckInMethod> {
+  return new Set(
+    (allowedMethods ?? defaultCheckInMethods).filter(
+      (method): method is CheckInMethod =>
+        checkInMethods.includes(method as CheckInMethod),
+    ),
+  );
+}
+
 export const checkInSyncStatuses = [
   "online_synced",
   "offline_pending",
@@ -220,15 +252,24 @@ export const checkInAuditActions = [
   "check_in_tokens.created",
   "check_in_tokens.regenerated",
   "check_in_tokens.revoked",
+  // Emitted by app_private.audit_check_in_change() for non-revocation token updates.
+  "check_in_tokens.updated",
+  "check_in_devices.updated",
   "check_in.guest_checked_in",
   "check_in.partial_arrival_updated",
   "check_in.duplicate_scan_detected",
   "check_in.offline_synced",
+  "check_in.preload_snapshot.created",
+  "check_in.sync_batch.created",
+  "check_in.sync_batch.updated",
   "unexpected_guest_requests.created",
   "unexpected_guest_requests.approved",
   "unexpected_guest_requests.rejected",
+  // Emitted by app_private.audit_check_in_change() for non-terminal request updates.
+  "unexpected_guest_requests.updated",
   "check_in_devices.assigned",
   "check_in.sync_conflict.detected",
+  "check_in.sync_conflict.updated",
 ] as const;
 
 const checkInActionPermissions: Record<CheckInAction, PermissionSlug> = {
@@ -483,11 +524,13 @@ export function parseCheckInSearchPayload(
     throw new CheckInValidationError("rsvpStatus is not supported.");
   }
 
+  const tableId = optionalText(body.tableId);
+
   return {
     query: optionalText(body.query) ?? undefined,
     rsvpStatus: rsvpStatus as RsvpCheckInStatus | "all",
     side: side as GuestSide | "all",
-    tableId: optionalText(body.tableId) ?? undefined,
+    tableId: tableId === "unassigned" ? null : (tableId ?? undefined),
     vipOnly: optionalBoolean(body.vipOnly, "vipOnly"),
   };
 }
@@ -644,7 +687,7 @@ export function searchCheckInGuests(
       return false;
     }
 
-    if (filters.tableId && guest.tableId !== filters.tableId) {
+    if (filters.tableId !== undefined && guest.tableId !== filters.tableId) {
       return false;
     }
 
@@ -685,7 +728,7 @@ export function calculateArrivalState(input: ArrivalStateInput): ArrivalState {
     throw new CheckInValidationError("Arrival count must be at least 1.");
   }
 
-  if (attendanceBefore >= totalExpectedCount) {
+  if (attendanceBefore >= totalExpectedCount && !input.supervisorOverride) {
     return {
       attendanceAfter: attendanceBefore,
       attendanceBefore,
@@ -713,10 +756,15 @@ export function calculateArrivalState(input: ArrivalStateInput): ArrivalState {
     isDuplicateScan: false,
     requestedArrivalCount: input.requestedArrivalCount,
     totalExpectedCount,
-    welcomeMessageAction:
-      attendanceBefore === 0 ? "prepare" : "suppress_duplicate",
+    welcomeMessageAction: input.supervisorOverride
+      ? "none"
+      : attendanceBefore === 0
+        ? "prepare"
+        : "suppress_duplicate",
     welcomeMessageSuppressedReason:
-      attendanceBefore === 0 ? null : "not_first_arrival",
+      input.supervisorOverride || attendanceBefore === 0
+        ? null
+        : "not_first_arrival",
   };
 }
 

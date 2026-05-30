@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
 import {
@@ -45,8 +46,8 @@ function numberValue(formData: FormData, key: string) {
 
   const parsed = Number(value);
 
-  if (!Number.isFinite(parsed)) {
-    throw new CheckInValidationError(`${key} must be a number.`);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new CheckInValidationError(`${key} must be a positive integer.`);
   }
 
   return parsed;
@@ -239,8 +240,50 @@ export async function resolveTokenForScanAction(
   eventId: string,
   formData: FormData,
 ) {
-  const token = requiredFormValue(formData, "token");
-  redirect(scanPath(eventId, { token }));
+  let scanParams: Record<string, string> | null = null;
+
+  try {
+    const context = await getActionContext(eventId, "check_in.perform");
+    const token = requiredFormValue(formData, "token");
+    const resolved = await resolveCheckInToken(
+      context.supabase,
+      eventId,
+      token,
+    );
+
+    if (resolved.status !== "ok" || typeof resolved.guestId !== "string") {
+      throw new CheckInValidationError("Check-in token could not be resolved.");
+    }
+
+    scanParams = {
+      guestId: resolved.guestId,
+      scanStatus: "resolved",
+    };
+
+    if (typeof resolved.invitationId === "string") {
+      scanParams.invitationId = resolved.invitationId;
+    }
+
+    if (typeof resolved.tokenId === "string") {
+      scanParams.tokenId = resolved.tokenId;
+    }
+  } catch (error) {
+    redirect(
+      scanPath(eventId, {
+        scanError: checkInError(error, "Unable to resolve check-in token."),
+      }),
+    );
+  }
+
+  if (!scanParams) {
+    redirect(
+      scanPath(eventId, {
+        scanError: "Check-in token could not be resolved.",
+      }),
+    );
+  }
+
+  redirect(scanPath(eventId, scanParams));
 }
 
 export async function checkInByTokenAction(
@@ -249,28 +292,16 @@ export async function checkInByTokenAction(
 ) {
   try {
     const context = await getActionContext(eventId, "check_in.perform");
-    const tokenValue = requiredFormValue(formData, "token");
-    const resolved = await resolveCheckInToken(
-      context.supabase,
-      eventId,
-      tokenValue,
-    );
-
-    if (resolved.status !== "ok" || typeof resolved.guestId !== "string") {
-      throw new CheckInValidationError("Check-in token could not be resolved.");
-    }
+    const guestId = requiredFormValue(formData, "guestId");
+    const tokenId = requiredFormValue(formData, "tokenId");
 
     await performGuestCheckIn(context.supabase, eventId, {
       arrivalCount: numberValue(formData, "arrivalCount") ?? 1,
       deviceId: formValue(formData, "deviceId"),
-      guestId: resolved.guestId,
-      invitationId:
-        typeof resolved.invitationId === "string"
-          ? resolved.invitationId
-          : undefined,
+      guestId,
+      invitationId: formValue(formData, "invitationId"),
       method: "qr_scan",
-      tokenId:
-        typeof resolved.tokenId === "string" ? resolved.tokenId : undefined,
+      tokenId,
     });
   } catch (error) {
     redirect(
@@ -293,17 +324,12 @@ export async function createUnexpectedGuestRequestAction(
       "check_in.unexpected_guests.create",
     );
 
-    await createUnexpectedGuestRequest(
-      context.supabase,
-      eventId,
-      {
-        deviceId: formValue(formData, "deviceId"),
-        guestSide: formValue(formData, "guestSide"),
-        reason: formValue(formData, "reason"),
-        requestedName: formValue(formData, "requestedName"),
-      },
-      context.user.id,
-    );
+    await createUnexpectedGuestRequest(context.supabase, eventId, {
+      deviceId: formValue(formData, "deviceId"),
+      guestSide: formValue(formData, "guestSide"),
+      reason: formValue(formData, "reason"),
+      requestedName: formValue(formData, "requestedName"),
+    });
   } catch (error) {
     redirect(
       checkInPath(eventId, {
@@ -401,7 +427,8 @@ export async function submitOfflineSyncBatchAction(
             eventId,
             guestId,
             offlineRecordId:
-              formValue(formData, "offlineRecordId") ?? `offline-${Date.now()}`,
+              formValue(formData, "offlineRecordId") ??
+              `offline-${randomUUID()}`,
           },
         ],
       },

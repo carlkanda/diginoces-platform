@@ -20,6 +20,8 @@ Current sprint assignment:
 ```text
 Sprint 9 — Check-in & Wedding-Day Operations
 Active issue: #25
+Active issue URL: https://github.com/carlkanda/diginoces-platform/issues/25
+Active sprint plan: docs/planning/sprint-9-plan.md
 Active branch: codex/sprint-9-check-in-wedding-day-operations
 Active PR title: Sprint 9 — Check-in & Wedding-Day Operations
 Active completion report: docs/planning/sprint-9-completion-report.md
