@@ -18,44 +18,40 @@ No requirement may be marked complete unless it is implemented, tested, reviewed
 ## Current sprint assignment
 
 ```text
-Sprint 9 — Check-in & Wedding-Day Operations
-Active issue: #25
-Active issue URL: https://github.com/carlkanda/diginoces-platform/issues/25
-Active sprint plan: docs/planning/sprint-9-plan.md
-Active branch: codex/sprint-9-check-in-wedding-day-operations
-Active PR title: Sprint 9 — Check-in & Wedding-Day Operations
-Active completion report: docs/planning/sprint-9-completion-report.md
+No active sprint is currently assigned.
 ```
 
 Last completed sprint:
 
 ```text
-Sprint 8 — Tables, Seating & Print Materials
+Sprint 9 — Check-in & Wedding-Day Operations
 ```
 
 Last completed GitHub issue:
 
 ```text
-#23 — Sprint 8 — Tables, Seating & Print Materials
-https://github.com/carlkanda/diginoces-platform/issues/23
+#25 — Sprint 9 — Check-in & Wedding-Day Operations
+https://github.com/carlkanda/diginoces-platform/issues/25
 ```
 
 Last completed PR:
 
 ```text
-#24 — Sprint 8 — Tables, Seating & Print Materials
+#36 — Sprint 9 — Check-in & Wedding-Day Operations
 ```
 
 Last completed report:
 
 ```text
-docs/planning/sprint-8-completion-report.md
+docs/planning/sprint-9-completion-report.md
 ```
 
 Next planned sprint:
 
 ```text
 Sprint 10 — Contracts, Pricing & Payment Controls
+Issue: #26
+Issue URL: https://github.com/carlkanda/diginoces-platform/issues/26
 Plan: docs/planning/sprint-10-plan.md
 ```
 
@@ -85,42 +81,43 @@ Always read:
 - relevant product documents in `docs/product/`
 - relevant technical design documents in `docs/technical-design/`
 
-Sprint 9 is active. Implement only the approved Check-in & Wedding-Day Operations foundation for issue #25.
+No implementation sprint is active right now. Do not start Sprint 10 or any other new feature work until a GitHub issue and sprint assignment are provided.
 
-For the active Sprint 9 assignment, read:
+For the next planned Sprint 10 assignment, read:
 
+- `docs/planning/sprint-10-plan.md`
 - `docs/planning/sprint-9-plan.md`
-- `docs/planning/sprint-8-plan.md`
-- `docs/product/08-check-in-wedding-day-operations.md`
-- `docs/product/04-guest-management-guest-lists.md`
+- `docs/product/10-contracts-pricing-payment-controls.md`
+- `docs/product/01-product-vision-business-model.md`
+- `docs/product/02-user-roles-permissions-access-control.md`
+- `docs/product/03-wedding-project-structure.md`
 - `docs/product/05-rsvp-public-guest-page.md`
 - `docs/product/06-invitation-template-pdf-generation.md`
-- `docs/product/09-tables-seating-print-materials.md`
-- `docs/product/10-contracts-pricing-payment-controls.md`
-- `docs/product/14-files-storage-retention-security.md`
+- `docs/product/07-whatsapp-communication-message-workflows.md`
+- `docs/product/13-dashboards-reports-audit-logs.md`
 - `docs/technical-design/database-schema-core-entities.md`
 - `docs/technical-design/api-backend-service-design.md`
-- `docs/technical-design/background-jobs-pdf-qr-whatsapp-offline-checkin.md`
 - `docs/technical-design/security-permissions-access-control.md`
 
 ## Scope guard
 
-Implement only the Check-in & Wedding-Day Operations foundation described in `docs/planning/sprint-9-plan.md` and GitHub issue #25.
+Until a new sprint is explicitly assigned, do not implement new product scope. Maintenance tasks may only update documentation, tooling, reviews, checks, or already-merged behavior when directly requested.
 
 ## Next planned sprint out of scope
 
-For Sprint 9, do not implement:
+For Sprint 10, do not implement:
 
-- WhatsApp sending;
-- contracts;
-- pricing;
-- payments;
+- online payment processing;
+- tax/VAT handling;
+- multi-currency;
+- partner commission management;
+- full reports/dashboard module;
+- post-event workflows;
+- e-signature provider integration;
+- contract negotiation workflow;
 - partner project creation;
-- full WhatsApp automation;
-- post-event guest-book workflows;
-- full dashboards beyond the approved Sprint 9 foundation.
 
-Check-in and wedding-day operations begin in Sprint 9.
+Contracts, pricing, and payment controls begin in Sprint 10 only after the sprint is explicitly assigned.
 
 ## Workflow
 
