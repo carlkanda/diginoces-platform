@@ -9,6 +9,7 @@ import {
   ProjectAccessError,
   requireEventPermission,
 } from "@/lib/projects/project-api";
+import { searchParamText } from "@/lib/navigation/search-params";
 import { getEventSeatingOverview } from "@/lib/seating/seating-db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -40,15 +41,6 @@ function formatDate(value: string | null) {
     dateStyle: "medium",
     timeZone: "UTC",
   }).format(new Date(dateValue));
-}
-
-function searchParamText(
-  searchParams: Record<string, string | string[] | undefined>,
-  key: string,
-) {
-  const value = searchParams[key];
-
-  return typeof value === "string" ? value : undefined;
 }
 
 function statusMessage(status: string | undefined) {

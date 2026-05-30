@@ -18,7 +18,13 @@ No requirement may be marked complete unless it is implemented, tested, reviewed
 ## Current sprint assignment
 
 ```text
-No active sprint is currently assigned.
+Sprint 9 — Check-in & Wedding-Day Operations
+Active issue: #25
+Active issue URL: https://github.com/carlkanda/diginoces-platform/issues/25
+Active sprint plan: docs/planning/sprint-9-plan.md
+Active branch: codex/sprint-9-check-in-wedding-day-operations
+Active PR title: Sprint 9 — Check-in & Wedding-Day Operations
+Active completion report: docs/planning/sprint-9-completion-report.md
 ```
 
 Last completed sprint:
@@ -49,8 +55,8 @@ docs/planning/sprint-8-completion-report.md
 Next planned sprint:
 
 ```text
-Sprint 9 — Check-in & Wedding-Day Operations
-Plan: docs/planning/sprint-9-plan.md
+Sprint 10 — Contracts, Pricing & Payment Controls
+Plan: docs/planning/sprint-10-plan.md
 ```
 
 ## Active sprint sync rule
@@ -79,9 +85,9 @@ Always read:
 - relevant product documents in `docs/product/`
 - relevant technical design documents in `docs/technical-design/`
 
-No implementation sprint is active right now. Do not start Sprint 9 or any other new feature work until a GitHub issue and sprint assignment are provided.
+Sprint 9 is active. Implement only the approved Check-in & Wedding-Day Operations foundation for issue #25.
 
-For the next planned Sprint 9 assignment, read:
+For the active Sprint 9 assignment, read:
 
 - `docs/planning/sprint-9-plan.md`
 - `docs/planning/sprint-8-plan.md`
@@ -99,9 +105,7 @@ For the next planned Sprint 9 assignment, read:
 
 ## Scope guard
 
-Until a new sprint is explicitly assigned, do not implement new product scope. Maintenance tasks may only update documentation, tooling, reviews, checks, or already-merged behavior when directly requested.
-
-When Sprint 9 is assigned, implement only the Check-in & Wedding-Day Operations foundation described in `docs/planning/sprint-9-plan.md`.
+Implement only the Check-in & Wedding-Day Operations foundation described in `docs/planning/sprint-9-plan.md` and GitHub issue #25.
 
 ## Next planned sprint out of scope
 
