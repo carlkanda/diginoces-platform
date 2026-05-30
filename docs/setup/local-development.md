@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, the Sprint 7 guided WhatsApp communication workflow for issue `#21`, the Sprint 8 tables/seating/print-materials foundation for issue `#23`, and the Sprint 9 check-in/wedding-day operations foundation for issue `#25`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, contracts, pricing, payments, partner project creation, automatic duplicate merging, full Canva API integration, full print partner workflow, full reports/dashboard module, or post-event guest-book workflows.
+This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, the Sprint 7 guided WhatsApp communication workflow for issue `#21`, the Sprint 8 tables/seating/print-materials foundation for issue `#23`, the Sprint 9 check-in/wedding-day operations foundation for issue `#25`, and the Sprint 10 contracts/pricing/payment-controls foundation for issue `#26`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, partner project creation, automatic duplicate merging, full Canva API integration, full print partner workflow, online payment processing, tax/VAT handling, multi-currency pricing, e-signature integration, full reports/dashboard module, or post-event guest-book workflows.
 
 ## Prerequisites
 
@@ -250,4 +250,19 @@ npx supabase@latest migration new descriptive_name
 - The Sprint 9 migration enables RLS on check-in settings, devices, tokens, records, unexpected guest requests, preload snapshots, sync batches, and sync conflicts. It also adds event-scoped read policies for the guest, RSVP, invitation, and seating context needed by assigned check-in staff.
 - Sprint 9 check-in actions are staff-only and audited through database triggers. Token hashes are redacted from audit snapshots, and public guest-page tokens are not accepted as check-in authority.
 - Sprint 9 offline sync is a foundation only. It records preload/sync metadata and conflicts, but production PWA installation, IndexedDB persistence, and real-time dashboard subscriptions are later hardening/product work.
+- The Sprint 10 migration enables RLS on service packages, add-ons, event package selections, pricing calculations, contracts, contract approvals, addendums, payments, payment exceptions, commercial gestures, and payment gate events.
+- Sprint 10 routes:
+
+```text
+http://127.0.0.1:3000/platform/projects/{projectId}/commercial
+http://127.0.0.1:3000/api/projects/{projectId}/commercial
+http://127.0.0.1:3000/api/projects/{projectId}/commercial/packages
+http://127.0.0.1:3000/api/projects/{projectId}/commercial/contracts
+http://127.0.0.1:3000/api/projects/{projectId}/commercial/payments
+```
+
+- Sprint 10 keeps payments manual/off-platform. Recording or confirming a payment updates the linked payment gate through a permission-gated Supabase RPC; no card, mobile-money, tax/VAT, or online payment provider integration is included.
+- Contract approval opens the guest-list gate for bride/groom users. Internal commercial operators can still prepare guest work while the gate is locked.
+- Full confirmed payment or an active audited payment exception unlocks `wedding_projects.guest_page_access_status`, which is reused by the existing public guest page and WhatsApp invitation readiness checks.
+- Revenue/payment detail visibility is restricted to Diginoces/admin and explicitly authorized internal roles. Bride/groom users get contract/payment-summary access only; partners do not receive pricing, payment, exception, or revenue permissions.
 - A historical PR `#17` WSL CodeRabbit full-diff review failed with `TRPCClientError` even when `coderabbit doctor` passed; a later PR `#18` full-diff review completed successfully. If the `TRPCClientError` recurs, use scoped directory reviews such as `coderabbit review --agent --base main --dir apps/web/src/lib/auth -c AGENTS.md`, then rely on the hosted CodeRabbit PR review as the full-diff backstop.

@@ -99,12 +99,14 @@ export default async function ProjectDetailPage({
     canReadRsvps,
     canReadMessages,
     canReadSeating,
+    canReadCommercial,
   ] = await Promise.all([
     hasProjectPermission(permissionContext, projectId, "guests.read"),
     hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
     hasProjectPermission(permissionContext, projectId, "rsvps.read"),
     hasProjectPermission(permissionContext, projectId, "messages.read"),
     hasProjectPermission(permissionContext, projectId, "seating.read"),
+    hasProjectPermission(permissionContext, projectId, "contracts.read"),
   ]);
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",
@@ -155,6 +157,14 @@ export default async function ProjectDetailPage({
             href={`/platform/projects/${projectId}/communications`}
           >
             Communications
+          </Link>
+        ) : null}
+        {canReadCommercial ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/commercial`}
+          >
+            Contracts & payments
           </Link>
         ) : null}
       </div>
@@ -273,6 +283,26 @@ export default async function ProjectDetailPage({
             admin.
           </div>
         )}
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>Commercial controls</h2>
+          <span className="meta-list">Sprint 10 foundation</span>
+        </div>
+        <p className="page-summary">
+          Configure service packages, select event packages, calculate pricing,
+          generate the project contract, approve it in-app, record manual
+          payments, and monitor guest-facing payment gates.
+        </p>
+        {canReadCommercial ? (
+          <Link
+            className="button"
+            href={`/platform/projects/${projectId}/commercial`}
+          >
+            Open contracts and payments
+          </Link>
+        ) : null}
       </section>
 
       <section className="section">

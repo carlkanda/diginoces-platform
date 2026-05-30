@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSprint10CommercialStatus } from "@/lib/contracts/contract-service";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 import { getSprint4ImportStatus } from "@/lib/guest-imports/guest-import-service";
 import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
@@ -53,6 +54,12 @@ const projectRouteExamples = [
     path: "/platform/projects/{projectId}/communications/queue",
   },
   {
+    description:
+      "Sprint 10 packages, pricing, project contract approval, payments, addendums, exceptions, and gate status.",
+    label: "Contracts & payments",
+    path: "/platform/projects/{projectId}/commercial",
+  },
+  {
     description: "Sprint 5 admin/staff preview for one guest page.",
     label: "Guest preview",
     path: "/platform/projects/{projectId}/guests/{guestId}/public-preview",
@@ -96,10 +103,11 @@ const eventRouteExamples = [
 ];
 
 const deferredScope = [
-  "contracts, pricing, and full payments",
   "partner project creation",
   "full guest-book workflow",
   "production WhatsApp API sending",
+  "online payment processing",
+  "full reports/dashboard module",
 ];
 
 export default function HomePage() {
@@ -112,6 +120,7 @@ export default function HomePage() {
   const sprint7Foundation = getSprint7CommunicationStatus();
   const sprint8Foundation = getSprint8SeatingStatus();
   const sprint9Foundation = getSprint9CheckInStatus();
+  const sprint10Foundation = getSprint10CommercialStatus();
   const env = getPublicEnvironment();
   const coveredRequirementIds = Array.from(
     new Set([
@@ -124,6 +133,7 @@ export default function HomePage() {
       ...sprint7Foundation.requirementIds,
       ...sprint8Foundation.requirementIds,
       ...sprint9Foundation.requirementIds,
+      ...sprint10Foundation.requirementIds,
     ]),
   ).sort();
 
@@ -205,17 +215,26 @@ export default function HomePage() {
       sprint: sprint9Foundation.sprint,
       stories: sprint9Foundation.stories,
     },
+    {
+      description:
+        "Service packages and add-ons, event package selection, planned-guest-count pricing, one project contract, in-app approval, addendums, manual payments, payment gates, exceptions, revenue restrictions, permissions, and audit coverage.",
+      features: sprint10Foundation.features,
+      issue: sprint10Foundation.issue,
+      modules: sprint10Foundation.modules,
+      sprint: sprint10Foundation.sprint,
+      stories: sprint10Foundation.stories,
+    },
   ];
 
   return (
     <>
       <section className="hero">
         <div>
-          <p className="eyebrow">Sprint 1-9 implementation status</p>
+          <p className="eyebrow">Sprint 1-10 implementation status</p>
           <h1>Diginoces platform progress</h1>
           <p>
             The home page surfaces the foundations already delivered across the
-            first nine sprints, while keeping future wedding operations out of
+            first ten sprints, while keeping future wedding operations out of
             scope until their documented sprint begins.
           </p>
           <div className="requirement-list" aria-label="Requirements covered">
@@ -248,7 +267,7 @@ export default function HomePage() {
       <section className="section" aria-label="Sprint progress">
         <div className="section-heading">
           <h2>What has been built so far</h2>
-          <span className="meta-list">9 sprint foundations</span>
+          <span className="meta-list">10 sprint foundations</span>
         </div>
         <div className="progress-overview">
           {sprintSummaries.map((sprint) => (

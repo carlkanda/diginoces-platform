@@ -18,7 +18,13 @@ No requirement may be marked complete unless it is implemented, tested, reviewed
 ## Current sprint assignment
 
 ```text
-No active sprint is currently assigned.
+Sprint 10 — Contracts, Pricing & Payment Controls
+Issue: #26
+Issue URL: https://github.com/carlkanda/diginoces-platform/issues/26
+Plan: docs/planning/sprint-10-plan.md
+Branch: codex/sprint-10-contracts-pricing-payments
+PR title: Sprint 10 — Contracts, Pricing & Payment Controls
+Completion report: docs/planning/sprint-10-completion-report.md
 ```
 
 Last completed sprint:
@@ -49,10 +55,7 @@ docs/planning/sprint-9-completion-report.md
 Next planned sprint:
 
 ```text
-Sprint 10 — Contracts, Pricing & Payment Controls
-Issue: #26
-Issue URL: https://github.com/carlkanda/diginoces-platform/issues/26
-Plan: docs/planning/sprint-10-plan.md
+Sprint 11 — Dashboards, Reports & Audit Logs
 ```
 
 ## Active sprint sync rule
@@ -81,9 +84,9 @@ Always read:
 - relevant product documents in `docs/product/`
 - relevant technical design documents in `docs/technical-design/`
 
-No implementation sprint is active right now. Do not start Sprint 10 or any other new feature work until a GitHub issue and sprint assignment are provided.
+Sprint 10 is active. Implement only the scope described in issue #26 and `docs/planning/sprint-10-plan.md`.
 
-For the next planned Sprint 10 assignment, read:
+For the active Sprint 10 assignment, read:
 
 - `docs/planning/sprint-10-plan.md`
 - `docs/planning/sprint-9-plan.md`
@@ -101,9 +104,9 @@ For the next planned Sprint 10 assignment, read:
 
 ## Scope guard
 
-Until a new sprint is explicitly assigned, do not implement new product scope. Maintenance tasks may only update documentation, tooling, reviews, checks, or already-merged behavior when directly requested.
+Implement only Sprint 10: Contracts, Pricing & Payment Controls. Do not add Sprint 11 dashboards/reports or any later-sprint product scope.
 
-## Next planned sprint out of scope
+## Active sprint out of scope
 
 For Sprint 10, do not implement:
 
