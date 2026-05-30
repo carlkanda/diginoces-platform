@@ -9,6 +9,7 @@ import {
   getEventTypeLabel,
 } from "@/lib/projects/project-foundation";
 import {
+  hasEventPermission,
   hasProjectPermission,
   ProjectAccessError,
   requireEventPermission,
@@ -104,6 +105,14 @@ export default async function EventDetailPage({
     details.project.id,
     "seating.read",
   );
+  const canReadCheckIn = await hasEventPermission(
+    {
+      supabase,
+      user: authContext.user,
+    },
+    eventId,
+    "check_in.read",
+  );
 
   return (
     <>
@@ -136,6 +145,14 @@ export default async function EventDetailPage({
             href={`/platform/events/${eventId}/seating`}
           >
             Seating
+          </Link>
+        ) : null}
+        {canReadCheckIn ? (
+          <Link
+            className="button secondary"
+            href={`/platform/events/${eventId}/check-in`}
+          >
+            Check-in
           </Link>
         ) : null}
       </div>
@@ -174,6 +191,26 @@ export default async function EventDetailPage({
         {canReadSeating ? (
           <Link className="button" href={`/platform/events/${eventId}/seating`}>
             Open seating
+          </Link>
+        ) : null}
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>Wedding-day check-in</h2>
+          <span className="meta-list">Sprint 9 foundation</span>
+        </div>
+        <p className="page-summary">
+          Open the staff-only check-in screen for QR scans, manual search,
+          partial arrivals, unexpected guest requests, devices, offline sync,
+          and arrival dashboard metrics.
+        </p>
+        {canReadCheckIn ? (
+          <Link
+            className="button"
+            href={`/platform/events/${eventId}/check-in`}
+          >
+            Open check-in
           </Link>
         ) : null}
       </section>

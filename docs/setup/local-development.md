@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, the Sprint 7 guided WhatsApp communication workflow for issue `#21`, and the Sprint 8 tables/seating/print-materials foundation for issue `#23`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, check-in, contracts, pricing, payments, partner project creation, automatic duplicate merging, full Canva API integration, full print partner workflow, or full dashboards.
+This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, the Sprint 7 guided WhatsApp communication workflow for issue `#21`, the Sprint 8 tables/seating/print-materials foundation for issue `#23`, and the Sprint 9 check-in/wedding-day operations foundation for issue `#25`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, contracts, pricing, payments, partner project creation, automatic duplicate merging, full Canva API integration, full print partner workflow, full reports/dashboard module, or post-event guest-book workflows.
 
 ## Prerequisites
 
@@ -142,7 +142,7 @@ http://127.0.0.1:3000/api/invitation-templates/{templateId}/approve
 http://127.0.0.1:3000/api/invitation-templates/{templateId}/generate
 ```
 
-Sprint 6 registers Canva-exported PDF template metadata, stores dynamic field coordinates, supports technical preview generation through a tested PDF worker abstraction, gates preview approval and batch generation with backend permissions, and records invitation/job/file-version metadata in Supabase. The public guest page QR/link field uses Sprint 5 `guest_public_page` tokens; future check-in tokens remain separate and inactive until the check-in sprint.
+Sprint 6 registers Canva-exported PDF template metadata, stores dynamic field coordinates, supports technical preview generation through a tested PDF worker abstraction, gates preview approval and batch generation with backend permissions, and records invitation/job/file-version metadata in Supabase. The public guest page QR/link field uses Sprint 5 `guest_public_page` tokens; Sprint 9 check-in tokens are stored in a separate event-specific `check_in_tokens` model.
 
 Sprint 7 WhatsApp communication workflow foundation routes:
 
@@ -166,7 +166,17 @@ http://127.0.0.1:3000/platform/events/{eventId}/seating/map
 http://127.0.0.1:3000/api/events/{eventId}/seating
 ```
 
-Sprint 8 stores event-specific tables, optional seat/mixed-mode structure, active table assignments, seating export records, generated table-card CSV files, and printed invitation status foundation in Supabase. Generated CSV bodies are uploaded to the private `seating-exports` Supabase Storage bucket; `seating_export_files` stores metadata, validation/byte-size details, and storage paths only. The seating page calculates RSVP-aware occupancy: `no` RSVP responses remain in assignment history but are excluded from active capacity counts, while `yes`, `maybe`, and pending/review states remain included. Authorized users can create individual or bulk tables, assign invited guests, remove assignments, view unassigned active guests, and generate table-card CSV exports for Canva Bulk Create. Table assignment changes mark generated/sent invitations as `needs_regeneration` only when the event invitation template uses table fields. The visual seating map is a placeholder/foundation, not advanced drag-and-drop. Check-in, automatic PDF regeneration, print partner workflows, and direct Canva API integration remain out of scope.
+Sprint 8 stores event-specific tables, optional seat/mixed-mode structure, active table assignments, seating export records, generated table-card CSV files, and printed invitation status foundation in Supabase. Generated CSV bodies are uploaded to the private `seating-exports` Supabase Storage bucket; `seating_export_files` stores metadata, validation/byte-size details, and storage paths only. The seating page calculates RSVP-aware occupancy: `no` RSVP responses remain in assignment history but are excluded from active capacity counts, while `yes`, `maybe`, and pending/review states remain included. Authorized users can create individual or bulk tables, assign invited guests, remove assignments, view unassigned active guests, and generate table-card CSV exports for Canva Bulk Create. Table assignment changes mark generated/sent invitations as `needs_regeneration` only when the event invitation template uses table fields. The visual seating map is a placeholder/foundation, not advanced drag-and-drop. Automatic PDF regeneration, print partner workflows, and direct Canva API integration remain out of scope.
+
+Sprint 9 check-in and wedding-day operations foundation routes:
+
+```text
+http://127.0.0.1:3000/platform/events/{eventId}/check-in
+http://127.0.0.1:3000/platform/events/{eventId}/check-in/scan
+http://127.0.0.1:3000/api/events/{eventId}/check-in
+```
+
+Sprint 9 stores event-specific check-in settings, assigned devices/stations, separate hashed check-in tokens, check-in records, unexpected guest requests, offline preload snapshots, offline sync batches, and sync conflicts in Supabase. Check-in requires an authenticated staff session with event-scoped or project/global check-in permissions. Raw check-in token values are returned only at creation time; later resolution hashes the submitted token and verifies the event binding before showing the staff confirmation screen. Manual search supports guest name, invitation id, phone/WhatsApp, side, and table filters, including printed-only guests. Couple arrivals support partial counts and keep the welcome/table message as a first-arrival placeholder only. Offline support is a foundation: the app records preload metadata, sync batches, and conflict representation, but it does not yet provide a production PWA/IndexedDB shell.
 
 ## Supabase
 
@@ -237,4 +247,7 @@ npx supabase@latest migration new descriptive_name
 - Sprint 7 uses guided manual WhatsApp links and status tracking only. Real WhatsApp API credentials, unofficial WhatsApp Web automation, automatic sending, seating, check-in, contracts, pricing, payments, and partner features are intentionally out of scope.
 - The Sprint 8 migration enables RLS on event tables, table seats, guest table assignments, and seating export files. Seating assignment RPCs enforce backend permissions, event membership, project/event/table/guest compatibility, and bride/groom side boundaries before writing.
 - Sprint 8 seating exports upload generated CSV content to the private `seating-exports` Supabase Storage bucket and keep CSV bodies out of `seating_export_files`; direct Canva API integration and print partner workflow are intentionally out of scope.
+- The Sprint 9 migration enables RLS on check-in settings, devices, tokens, records, unexpected guest requests, preload snapshots, sync batches, and sync conflicts. It also adds event-scoped read policies for the guest, RSVP, invitation, and seating context needed by assigned check-in staff.
+- Sprint 9 check-in actions are staff-only and audited through database triggers. Token hashes are redacted from audit snapshots, and public guest-page tokens are not accepted as check-in authority.
+- Sprint 9 offline sync is a foundation only. It records preload/sync metadata and conflicts, but production PWA installation, IndexedDB persistence, and real-time dashboard subscriptions are later hardening/product work.
 - A historical PR `#17` WSL CodeRabbit full-diff review failed with `TRPCClientError` even when `coderabbit doctor` passed; a later PR `#18` full-diff review completed successfully. If the `TRPCClientError` recurs, use scoped directory reviews such as `coderabbit review --agent --base main --dir apps/web/src/lib/auth -c AGENTS.md`, then rely on the hosted CodeRabbit PR review as the full-diff backstop.

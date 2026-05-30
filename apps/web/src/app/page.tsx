@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 import { getSprint4ImportStatus } from "@/lib/guest-imports/guest-import-service";
 import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
+import { getSprint9CheckInStatus } from "@/lib/check-in/check-in-service";
 import { getSprint6InvitationStatus } from "@/lib/invitations/invitation-service";
 import { getSprint7CommunicationStatus } from "@/lib/messages/message-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
@@ -81,10 +82,20 @@ const eventRouteExamples = [
     label: "Seating map",
     path: "/platform/events/{eventId}/seating/map",
   },
+  {
+    description:
+      "Sprint 9 staff-only QR/manual check-in, unexpected guests, offline sync, and dashboard foundation.",
+    label: "Wedding-day check-in",
+    path: "/platform/events/{eventId}/check-in",
+  },
+  {
+    description: "Sprint 9 event-specific check-in QR confirmation flow.",
+    label: "QR check-in scan",
+    path: "/platform/events/{eventId}/check-in/scan",
+  },
 ];
 
 const deferredScope = [
-  "check-in",
   "contracts, pricing, and full payments",
   "partner project creation",
   "full guest-book workflow",
@@ -100,6 +111,7 @@ export default function HomePage() {
   const sprint6Foundation = getSprint6InvitationStatus();
   const sprint7Foundation = getSprint7CommunicationStatus();
   const sprint8Foundation = getSprint8SeatingStatus();
+  const sprint9Foundation = getSprint9CheckInStatus();
   const env = getPublicEnvironment();
   const coveredRequirementIds = Array.from(
     new Set([
@@ -111,6 +123,7 @@ export default function HomePage() {
       ...sprint6Foundation.requirementIds,
       ...sprint7Foundation.requirementIds,
       ...sprint8Foundation.requirementIds,
+      ...sprint9Foundation.requirementIds,
     ]),
   ).sort();
 
@@ -183,17 +196,26 @@ export default function HomePage() {
       sprint: sprint8Foundation.sprint,
       stories: sprint8Foundation.stories,
     },
+    {
+      description:
+        "Event-specific check-in settings, staff-only QR/manual search, secure separate check-in tokens, partial Couple arrivals, unexpected guest approvals, devices, offline preload/sync, VIP highlights, dashboard metrics, and audit coverage.",
+      features: sprint9Foundation.features,
+      issue: sprint9Foundation.issue,
+      modules: sprint9Foundation.modules,
+      sprint: sprint9Foundation.sprint,
+      stories: sprint9Foundation.stories,
+    },
   ];
 
   return (
     <>
       <section className="hero">
         <div>
-          <p className="eyebrow">Sprint 1-8 implementation status</p>
+          <p className="eyebrow">Sprint 1-9 implementation status</p>
           <h1>Diginoces platform progress</h1>
           <p>
             The home page surfaces the foundations already delivered across the
-            first eight sprints, while keeping future wedding operations out of
+            first nine sprints, while keeping future wedding operations out of
             scope until their documented sprint begins.
           </p>
           <div className="requirement-list" aria-label="Requirements covered">
@@ -226,7 +248,7 @@ export default function HomePage() {
       <section className="section" aria-label="Sprint progress">
         <div className="section-heading">
           <h2>What has been built so far</h2>
-          <span className="meta-list">8 sprint foundations</span>
+          <span className="meta-list">9 sprint foundations</span>
         </div>
         <div className="progress-overview">
           {sprintSummaries.map((sprint) => (

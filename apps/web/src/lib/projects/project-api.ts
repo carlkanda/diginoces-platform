@@ -119,6 +119,16 @@ export async function requireEventPermission(
   eventId: string,
   permission: PermissionSlug,
 ) {
+  if (!(await hasEventPermission(context, eventId, permission))) {
+    throw new ProjectAccessError("Event access denied.", 403);
+  }
+}
+
+export async function hasEventPermission(
+  context: ProjectApiContext,
+  eventId: string,
+  permission: PermissionSlug,
+) {
   const { data, error } = await context.supabase.rpc(
     "current_user_can_access_event",
     {
@@ -131,9 +141,7 @@ export async function requireEventPermission(
     throw error;
   }
 
-  if (!data) {
-    throw new ProjectAccessError("Event access denied.", 403);
-  }
+  return Boolean(data);
 }
 
 export function handleProjectApiError(error: unknown) {

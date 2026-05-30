@@ -154,6 +154,11 @@ textarea {
   box-shadow: var(--shadow);
 }
 
+.highlighted-panel {
+  border-color: rgba(150, 90, 0, 0.36);
+  background: #fffaf1;
+}
+
 .panel-body {
   padding: 24px;
 }

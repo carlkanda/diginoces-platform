@@ -18,13 +18,17 @@ Completed:
 Current sprint assignment:
 
 ```text
-No active sprint is currently assigned.
+Sprint 9 — Check-in & Wedding-Day Operations
+Active issue: #25
+Active branch: codex/sprint-9-check-in-wedding-day-operations
+Active PR title: Sprint 9 — Check-in & Wedding-Day Operations
+Active completion report: docs/planning/sprint-9-completion-report.md
 Last completed sprint: Sprint 8 — Tables, Seating & Print Materials
 Last completed issue: #23
 Last completed PR: #24
 Last completed report: docs/planning/sprint-8-completion-report.md
-Next planned sprint: Sprint 9 — Check-in & Wedding-Day Operations
-Next sprint plan: docs/planning/sprint-9-plan.md
+Next planned sprint: Sprint 10 — Contracts, Pricing & Payment Controls
+Next sprint plan: docs/planning/sprint-10-plan.md
 ```
 
 ## Agent instructions
@@ -58,7 +62,7 @@ docs/backlog/initial-product-backlog-test-cases.csv
 | 6 | Invitation Template & PDF Generation | Completed |
 | 7 | WhatsApp Communication Workflows | Completed |
 | 8 | Tables, Seating & Print Materials | Completed |
-| 9 | Check-in & Wedding-Day Operations | Planned |
+| 9 | Check-in & Wedding-Day Operations | In progress |
 | 10 | Contracts, Pricing & Payment Controls | Planned |
 | 11 | Dashboards, Reports & Audit Logs | Planned |
 | 12 | Guest Wishes, Guest Book & Post-Event Feedback | Planned |
