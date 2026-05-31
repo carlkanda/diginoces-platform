@@ -4,7 +4,10 @@ import { getGuestPageLabels } from "@/lib/rsvp/rsvp-service";
 import { PublicGuestPageView } from "@/lib/rsvp/public-guest-page-view";
 import { resolvePublicGuestPage } from "@/lib/rsvp/rsvp-db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { submitPublicRsvpAction } from "./actions";
+import {
+  submitPublicGuestMessageAction,
+  submitPublicRsvpAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +16,7 @@ type PublicGuestPageProps = {
     guestToken: string;
   }>;
   searchParams: Promise<{
+    message?: string;
     rsvp?: string;
   }>;
 };
@@ -22,7 +26,7 @@ export default async function PublicGuestPage({
   searchParams,
 }: PublicGuestPageProps) {
   const { guestToken } = await params;
-  const { rsvp } = await searchParams;
+  const { message, rsvp } = await searchParams;
   const env = getPublicEnvironment();
 
   if (!env.supabaseConfigured) {
@@ -64,6 +68,8 @@ export default async function PublicGuestPage({
       formActionFactory={(eventId) =>
         submitPublicRsvpAction.bind(null, guestToken, eventId)
       }
+      messageFormAction={submitPublicGuestMessageAction.bind(null, guestToken)}
+      messageResult={message}
       payload={payload}
       result={rsvp}
     />

@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, the Sprint 7 guided WhatsApp communication workflow for issue `#21`, the Sprint 8 tables/seating/print-materials foundation for issue `#23`, the Sprint 9 check-in/wedding-day operations foundation for issue `#25`, and the Sprint 10 contracts/pricing/payment-controls foundation for issue `#26`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, partner project creation, automatic duplicate merging, full Canva API integration, full print partner workflow, online payment processing, tax/VAT handling, multi-currency pricing, e-signature integration, full reports/dashboard module, or post-event guest-book workflows.
+This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, the Sprint 7 guided WhatsApp communication workflow for issue `#21`, the Sprint 8 tables/seating/print-materials foundation for issue `#23`, the Sprint 9 check-in/wedding-day operations foundation for issue `#25`, the Sprint 10 contracts/pricing/payment-controls foundation for issue `#26`, the Sprint 11 dashboard/report/audit-log foundation for issue `#27`, and the Sprint 12 guest wishes/guest-book/post-event-feedback foundation for issue `#28`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, partner project creation, automatic duplicate merging, direct Canva API integration, full print partner workflow, online payment processing, tax/VAT handling, multi-currency pricing, e-signature integration, full marketing testimonial publishing, advanced AI assistance, or guest audio/video/photo/file submissions.
 
 ## Prerequisites
 
@@ -283,4 +283,18 @@ http://127.0.0.1:3000/api/audit-logs
 ```
 
 - Sprint 11 enables role-aware dashboard, report catalog, CSV export metadata, and audit-log viewer/export foundations. Report exports are generated as CSV responses/metadata records; source files are not persisted to object storage until a storage provider and retention policy are configured for production. Audit-log exports redact old/new value payloads and require internal audit permissions.
+- Sprint 12 routes:
+
+```text
+http://127.0.0.1:3000/g/{guestPublicToken}
+http://127.0.0.1:3000/platform/projects/{projectId}/guest-book
+http://127.0.0.1:3000/platform/projects/{projectId}/guest-book/couple-review
+http://127.0.0.1:3000/platform/projects/{projectId}/feedback
+http://127.0.0.1:3000/api/projects/{projectId}/guest-book
+http://127.0.0.1:3000/api/projects/{projectId}/feedback
+```
+
+- Sprint 12 adds text-only guest wish submission to the existing public guest page. Each guest can have one message; edits update the same record before the configured project/event message deadline. Emoji text is supported. Audio, video, photo, and file uploads remain out of scope.
+- Sprint 12 moderation, couple review, guest-book export, feedback, and testimonial review are server-side permission-gated and audited. Canva CSV export is generated for approved/couple-reviewed messages and registered as project file metadata with storage upload still pending until a production storage provider is configured.
+- Testimonials are private by default. Couple permission plus Diginoces/admin review is required before any future public use; Sprint 12 does not publish testimonials to a marketing website.
 - A historical PR `#17` WSL CodeRabbit full-diff review failed with `TRPCClientError` even when `coderabbit doctor` passed; a later PR `#18` full-diff review completed successfully. If the `TRPCClientError` recurs, use scoped directory reviews such as `coderabbit review --agent --base main --dir apps/web/src/lib/auth -c AGENTS.md`, then rely on the hosted CodeRabbit PR review as the full-diff backstop.

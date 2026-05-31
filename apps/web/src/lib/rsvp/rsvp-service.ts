@@ -91,6 +91,27 @@ export type GuestPageLabels = {
   lockedBody: string;
   lockedTitle: string;
   maybe: string;
+  messageErrorDeadlinePassed: string;
+  messageErrorGeneric: string;
+  messageErrorInvalid: string;
+  messageSavedAlert: string;
+  messageDeadlineLabel: string;
+  messageDeadlinePassedAlert: string;
+  messageHelp: string;
+  messageSaveButton: string;
+  messageSectionTitle: string;
+  messageStatusAdminApproved: string;
+  messageStatusAdminEdited: string;
+  messageStatusArchived: string;
+  messageStatusCoupleApproved: string;
+  messageStatusCoupleCorrectionRequested: string;
+  messageStatusExcluded: string;
+  messageStatusExported: string;
+  messageStatusFlagged: string;
+  messageStatusNotSubmitted: string;
+  messageStatusPendingReview: string;
+  messageSubmissionUnavailable: string;
+  messageTextareaLabel: string;
   no: string;
   pending: string;
   rsvpTitle: string;
@@ -119,6 +140,32 @@ const labels: Record<GuestPageLanguage, GuestPageLabels> = {
       "This personal guest page is not open yet. Please check your invitation link again later.",
     lockedTitle: "Guest page not yet open",
     maybe: "Maybe",
+    messageErrorDeadlinePassed: "The message deadline has passed.",
+    messageErrorGeneric:
+      "Unable to save your message. Please try again or contact Diginoces.",
+    messageErrorInvalid:
+      "Please check your message and try again. Maximum 1200 characters.",
+    messageSavedAlert: "Your message was saved.",
+    messageDeadlineLabel: "Message deadline:",
+    messageDeadlinePassedAlert:
+      "The message deadline has passed. Please contact Diginoces if a correction is needed.",
+    messageHelp:
+      "Send one written message with emoji support. Audio, video, photo, and file uploads are not supported in this version.",
+    messageSaveButton: "Save message",
+    messageSectionTitle: "Your message for the couple",
+    messageStatusAdminApproved: "Approved by Diginoces",
+    messageStatusAdminEdited: "Edited and approved",
+    messageStatusArchived: "Archived",
+    messageStatusCoupleApproved: "Approved by the couple",
+    messageStatusCoupleCorrectionRequested: "Correction requested",
+    messageStatusExcluded: "Excluded",
+    messageStatusExported: "Exported",
+    messageStatusFlagged: "Needs review",
+    messageStatusNotSubmitted: "Not submitted",
+    messageStatusPendingReview: "Pending review",
+    messageSubmissionUnavailable:
+      "Message submission is unavailable in this view.",
+    messageTextareaLabel: "Message",
     no: "No",
     pending: "Pending",
     rsvpTitle: "Your RSVP",
@@ -132,6 +179,32 @@ const labels: Record<GuestPageLanguage, GuestPageLabels> = {
       "Cette page personnelle n'est pas encore ouverte. Veuillez réessayer avec votre lien d'invitation plus tard.",
     lockedTitle: "Page invité pas encore ouverte",
     maybe: "Peut-être",
+    messageErrorDeadlinePassed: "La date limite du message est dépassée.",
+    messageErrorGeneric:
+      "Impossible d'enregistrer votre message. Veuillez réessayer ou contacter Diginoces.",
+    messageErrorInvalid:
+      "Veuillez vérifier votre message et réessayer. Maximum 1200 caractères.",
+    messageSavedAlert: "Votre message a été enregistré.",
+    messageDeadlineLabel: "Date limite du message :",
+    messageDeadlinePassedAlert:
+      "La date limite du message est dépassée. Veuillez contacter Diginoces si une correction est nécessaire.",
+    messageHelp:
+      "Envoyez un message écrit avec emojis. Les envois audio, vidéo, photo et fichier ne sont pas disponibles dans cette version.",
+    messageSaveButton: "Enregistrer le message",
+    messageSectionTitle: "Votre message pour le couple",
+    messageStatusAdminApproved: "Approuvé par Diginoces",
+    messageStatusAdminEdited: "Corrigé et approuvé",
+    messageStatusArchived: "Archivé",
+    messageStatusCoupleApproved: "Approuvé par le couple",
+    messageStatusCoupleCorrectionRequested: "Correction demandée",
+    messageStatusExcluded: "Exclu",
+    messageStatusExported: "Exporté",
+    messageStatusFlagged: "À vérifier",
+    messageStatusNotSubmitted: "Non soumis",
+    messageStatusPendingReview: "En attente de vérification",
+    messageSubmissionUnavailable:
+      "La soumission de message n'est pas disponible dans cette vue.",
+    messageTextareaLabel: "Message",
     no: "Non",
     pending: "En attente",
     rsvpTitle: "Votre RSVP",

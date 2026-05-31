@@ -47,6 +47,15 @@ export type PublicGuestPagePayload =
     }
   | {
       events: PublicGuestPageEvent[];
+      guestMessage: {
+        approvedText: string | null;
+        currentText: string | null;
+        deadlineAt: string | null;
+        lastGuestEditedAt: string | null;
+        messageId: string | null;
+        status: string;
+        submittedAt: string | null;
+      };
       guest: {
         displayName: string;
         id: string;
@@ -161,6 +170,24 @@ function isPublicGuestPageEvent(value: unknown): value is PublicGuestPageEvent {
   );
 }
 
+function isPublicGuestMessage(
+  value: unknown,
+): value is Extract<PublicGuestPagePayload, { status: "ok" }>["guestMessage"] {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    isNullableString(value.approvedText) &&
+    isNullableString(value.currentText) &&
+    isNullableString(value.deadlineAt) &&
+    isNullableString(value.lastGuestEditedAt) &&
+    isNullableString(value.messageId) &&
+    typeof value.status === "string" &&
+    isNullableString(value.submittedAt)
+  );
+}
+
 function isPublicGuestPagePayload(
   data: unknown,
 ): data is PublicGuestPagePayload {
@@ -191,6 +218,7 @@ function isPublicGuestPagePayload(
   return (
     Array.isArray(data.events) &&
     data.events.every(isPublicGuestPageEvent) &&
+    isPublicGuestMessage(data.guestMessage) &&
     typeof guest.displayName === "string" &&
     typeof guest.id === "string" &&
     typeof guest.isPrintedOnly === "boolean" &&

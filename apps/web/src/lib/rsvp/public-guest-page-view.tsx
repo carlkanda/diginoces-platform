@@ -5,12 +5,15 @@ import {
   type PublicGuestEvent,
   type RsvpResponseStatus,
 } from "@/lib/rsvp/rsvp-service";
+import { canEditGuestMessage as canEditGuestMessageForStatus } from "@/lib/guest-wishes/guest-wish-service";
 import type { PublicGuestPagePayload } from "@/lib/rsvp/rsvp-db";
 
 type PublicGuestPageViewProps = {
   formActionFactory?: (
     eventId: string,
   ) => (formData: FormData) => Promise<void> | void;
+  messageFormAction?: (formData: FormData) => Promise<void> | void;
+  messageResult?: string;
   payload: Extract<PublicGuestPagePayload, { status: "ok" }>;
   result?: string;
 };
@@ -101,8 +104,54 @@ function rsvpResponseOptions(labels: ReturnType<typeof getGuestPageLabels>) {
   ] satisfies { label: string; status: RsvpResponseStatus }[];
 }
 
+function guestMessageStatusLabel(
+  status: string,
+  labels: ReturnType<typeof getGuestPageLabels>,
+) {
+  const statusLabels: Record<string, string> = {
+    admin_approved: labels.messageStatusAdminApproved,
+    admin_edited: labels.messageStatusAdminEdited,
+    archived: labels.messageStatusArchived,
+    couple_approved: labels.messageStatusCoupleApproved,
+    couple_correction_requested: labels.messageStatusCoupleCorrectionRequested,
+    excluded: labels.messageStatusExcluded,
+    exported: labels.messageStatusExported,
+    flagged: labels.messageStatusFlagged,
+    not_submitted: labels.messageStatusNotSubmitted,
+    pending_review: labels.messageStatusPendingReview,
+  };
+
+  return statusLabels[status] ?? labels.messageStatusPendingReview;
+}
+
+function messageResultLabel(
+  result: string,
+  labels: ReturnType<typeof getGuestPageLabels>,
+) {
+  if (result === "deadline_passed") {
+    return labels.messageErrorDeadlinePassed;
+  }
+
+  if (result === "message_locked") {
+    return labels.messageSubmissionUnavailable;
+  }
+
+  if (
+    result === "invalid" ||
+    result === "invalid_language" ||
+    result === "invalid_message_text" ||
+    result === "not_invited"
+  ) {
+    return labels.messageErrorInvalid;
+  }
+
+  return labels.messageErrorGeneric;
+}
+
 export function PublicGuestPageView({
   formActionFactory,
+  messageFormAction,
+  messageResult,
   payload,
   result,
 }: PublicGuestPageViewProps) {
@@ -112,7 +161,24 @@ export function PublicGuestPageView({
   const isPreview = payload.mode === "preview";
   const invitedEvents = payload.events.map(toPublicGuestEvent);
   const responseOptions = rsvpResponseOptions(labels);
-  const now = new Date().toISOString();
+  const now = new Date();
+  const guestMessageDeadline = payload.guestMessage.deadlineAt;
+  const guestMessageEditState = canEditGuestMessageForStatus({
+    deadlineAt: guestMessageDeadline,
+    now: now.toISOString(),
+    status: payload.guestMessage.status,
+  });
+  const guestMessageClosed =
+    !guestMessageEditState.allowed &&
+    guestMessageEditState.reason === "deadline_passed";
+  const guestMessageLocked =
+    !guestMessageEditState.allowed &&
+    guestMessageEditState.reason === "message_locked";
+  const canEditGuestMessage =
+    !isPreview &&
+    guestMessageEditState.allowed &&
+    !payload.guest.isPrintedOnly &&
+    payload.project.guestPageAccessStatus !== "locked";
 
   return (
     <div className="public-page">
@@ -124,6 +190,14 @@ export function PublicGuestPageView({
 
       {result === "saved" ? (
         <div className="alert success">RSVP saved.</div>
+      ) : null}
+
+      {messageResult === "saved" ? (
+        <div className="alert success">{labels.messageSavedAlert}</div>
+      ) : null}
+
+      {messageResult && messageResult !== "saved" ? (
+        <div className="alert">{messageResultLabel(messageResult, labels)}</div>
       ) : null}
 
       <section className="public-hero">
@@ -217,7 +291,7 @@ export function PublicGuestPageView({
                         eventId: event.eventId,
                         invitedEvents,
                         isPrintedOnly: payload.guest.isPrintedOnly,
-                        now,
+                        now: now.toISOString(),
                         paymentGate,
                         previousStatus: currentStatus,
                         requestedStatus: option.status,
@@ -252,6 +326,61 @@ export function PublicGuestPageView({
             images, WhatsApp sending, seating, and check-in remain out of scope.
           </p>
         </div>
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>{labels.messageSectionTitle}</h2>
+          <span className="tag">
+            {guestMessageStatusLabel(payload.guestMessage.status, labels)}
+          </span>
+        </div>
+        <p className="page-summary">{labels.messageHelp}</p>
+        {guestMessageDeadline ? (
+          <p className="meta-list">
+            {labels.messageDeadlineLabel}{" "}
+            {new Intl.DateTimeFormat(language ?? DEFAULT_GUEST_PAGE_LANGUAGE, {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }).format(new Date(guestMessageDeadline))}
+          </p>
+        ) : null}
+        {guestMessageClosed ? (
+          <div className="alert">{labels.messageDeadlinePassedAlert}</div>
+        ) : null}
+        {guestMessageLocked ? (
+          <div className="alert">{labels.messageSubmissionUnavailable}</div>
+        ) : null}
+        {messageFormAction ? (
+          <form action={messageFormAction} className="stacked-form">
+            <input
+              name="preferredLanguage"
+              type="hidden"
+              value={language ?? DEFAULT_GUEST_PAGE_LANGUAGE}
+            />
+            <label>
+              {labels.messageTextareaLabel}
+              <textarea
+                defaultValue={payload.guestMessage.currentText ?? ""}
+                disabled={!canEditGuestMessage}
+                maxLength={1200}
+                name="messageText"
+                rows={5}
+              />
+            </label>
+            <button
+              className="button"
+              disabled={!canEditGuestMessage}
+              type="submit"
+            >
+              {labels.messageSaveButton}
+            </button>
+          </form>
+        ) : (
+          <div className="empty-state">
+            {labels.messageSubmissionUnavailable}
+          </div>
+        )}
       </section>
     </div>
   );
