@@ -18,44 +18,44 @@ No requirement may be marked complete unless it is implemented, tested, reviewed
 ## Current sprint assignment
 
 ```text
-Sprint 10 — Contracts, Pricing & Payment Controls
-Issue: #26
-Issue URL: https://github.com/carlkanda/diginoces-platform/issues/26
-Plan: docs/planning/sprint-10-plan.md
-Branch: codex/sprint-10-contracts-pricing-payments
-PR title: Sprint 10 — Contracts, Pricing & Payment Controls
-Completion report: docs/planning/sprint-10-completion-report.md
+Sprint 11 — Dashboards, Reports & Audit Logs
+Issue: #27
+Issue URL: https://github.com/carlkanda/diginoces-platform/issues/27
+Plan: docs/planning/sprint-11-plan.md
+Branch: codex/sprint-11-dashboards-reports-audit-logs
+PR title: Sprint 11 — Dashboards, Reports & Audit Logs
+Completion report: docs/planning/sprint-11-completion-report.md
 ```
 
 Last completed sprint:
 
 ```text
-Sprint 9 — Check-in & Wedding-Day Operations
+Sprint 10 — Contracts, Pricing & Payment Controls
 ```
 
 Last completed GitHub issue:
 
 ```text
-#25 — Sprint 9 — Check-in & Wedding-Day Operations
-https://github.com/carlkanda/diginoces-platform/issues/25
+#26 — Sprint 10 — Contracts, Pricing & Payment Controls
+https://github.com/carlkanda/diginoces-platform/issues/26
 ```
 
 Last completed PR:
 
 ```text
-#36 — Sprint 9 — Check-in & Wedding-Day Operations
+#37 — Sprint 10 — Contracts, Pricing & Payment Controls
 ```
 
 Last completed report:
 
 ```text
-docs/planning/sprint-9-completion-report.md
+docs/planning/sprint-10-completion-report.md
 ```
 
 Next planned sprint:
 
 ```text
-Sprint 11 — Dashboards, Reports & Audit Logs
+Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback
 ```
 
 ## Active sprint sync rule
@@ -84,43 +84,45 @@ Always read:
 - relevant product documents in `docs/product/`
 - relevant technical design documents in `docs/technical-design/`
 
-Sprint 10 is active. Implement only the scope described in issue #26 and `docs/planning/sprint-10-plan.md`.
+Sprint 11 is active. Implement only the scope described in issue #27 and `docs/planning/sprint-11-plan.md`.
 
-For the active Sprint 10 assignment, read:
+For the active Sprint 11 assignment, read:
 
+- `docs/planning/sprint-11-plan.md`
 - `docs/planning/sprint-10-plan.md`
-- `docs/planning/sprint-9-plan.md`
-- `docs/product/10-contracts-pricing-payment-controls.md`
-- `docs/product/01-product-vision-business-model.md`
+- `docs/product/13-dashboards-reports-audit-logs.md`
 - `docs/product/02-user-roles-permissions-access-control.md`
 - `docs/product/03-wedding-project-structure.md`
+- `docs/product/04-guest-management-guest-lists.md`
 - `docs/product/05-rsvp-public-guest-page.md`
 - `docs/product/06-invitation-template-pdf-generation.md`
 - `docs/product/07-whatsapp-communication-message-workflows.md`
-- `docs/product/13-dashboards-reports-audit-logs.md`
+- `docs/product/08-check-in-wedding-day-operations.md`
+- `docs/product/09-tables-seating-print-materials.md`
+- `docs/product/10-contracts-pricing-payment-controls.md`
+- `docs/product/12-partner-external-provider-model.md`
+- `docs/product/14-files-storage-retention-security.md`
 - `docs/technical-design/database-schema-core-entities.md`
 - `docs/technical-design/api-backend-service-design.md`
 - `docs/technical-design/security-permissions-access-control.md`
 
 ## Scope guard
 
-Implement only Sprint 10: Contracts, Pricing & Payment Controls. Do not add Sprint 11 dashboards/reports or any later-sprint product scope.
+Implement only Sprint 11: Dashboards, Reports & Audit Logs. Do not add Sprint 12 guest wishes, guest-book, post-event feedback, or any later-sprint product scope.
 
 ## Active sprint out of scope
 
-For Sprint 10, do not implement:
+For Sprint 11, do not implement:
 
-- online payment processing;
-- tax/VAT handling;
-- multi-currency;
+- post-event feedback;
+- guest wishes/guest-book workflow;
+- partner SaaS scaling;
 - partner commission management;
-- full reports/dashboard module;
-- post-event workflows;
-- e-signature provider integration;
-- contract negotiation workflow;
-- partner project creation;
+- advanced BI analytics;
+- accounting integration;
+- tax/VAT reporting;
 
-Contracts, pricing, and payment controls begin in Sprint 10 only after the sprint is explicitly assigned.
+Dashboards, reports, and audit logs begin in Sprint 11 only after the sprint is explicitly assigned.
 
 ## Workflow
 
