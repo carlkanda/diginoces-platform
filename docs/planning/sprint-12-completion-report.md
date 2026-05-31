@@ -6,11 +6,12 @@ Sprint 12 implements the guest written-message, guest-book review/export, and po
 
 The implementation remains limited to Sprint 12. It does not add audio/video/photo guest submissions, guest file uploads, direct Canva API integration, automatic public testimonial publishing, partner SaaS scaling, partner commission management, advanced AI assistance, or public marketing website testimonial publishing.
 
-Draft PR status: pending creation after final commit and branch push.
+Draft PR: `#39` - https://github.com/carlkanda/diginoces-platform/pull/39.
 
 ## Traceability
 
 - GitHub issue: `#28` - Sprint 12 - Guest Wishes, Guest Book & Post-Event Feedback.
+- Pull request: `#39` - Sprint 12 - Guest Wishes, Guest Book & Post-Event Feedback.
 - Branch: `codex/sprint-12-guest-wishes-feedback`.
 - Sprint plan: `docs/planning/sprint-12-plan.md`.
 - Previous sprint dependency: Sprint 11, issue `#27`, PR `#38`.
@@ -157,12 +158,15 @@ Draft PR status: pending creation after final commit and branch push.
 - `npx supabase@latest db push --linked --dry-run` - passed after the final concrete CodeRabbit fixes; would push only `20260531145755_sprint_12_guest_wishes_feedback.sql`.
 - `git diff --check` - passed after the final concrete CodeRabbit fixes; only repository LF/CRLF warnings were printed.
 - Targeted secret scan with `rg` - passed after the final concrete CodeRabbit fixes. Matches were expected placeholder/documentation warnings and SQL grants to the Postgres `service_role` role, not real secrets.
+- `git commit -m "Implement Sprint 12 guest wishes and feedback"` - passed; created commit `6601659`.
+- `git push -u origin codex/sprint-12-guest-wishes-feedback` - passed; pushed the Sprint 12 branch.
+- `gh pr create --draft --base main --head codex/sprint-12-guest-wishes-feedback --title "Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback"` - passed; opened draft PR `#39`.
 
 ## Checks Passed Or Failed
 
 - Passed: targeted Sprint 12 tests, full format check, lint, typecheck, test suite, production build, dependency install, dependency audit, Supabase linked db lint, and Supabase linked migration dry-run.
 - Failed and resolved: initial RED test before implementation, initial format check before formatting, one transient typecheck after the safe projection change, and one `db:lint` invocation from the wrong `apps/web` working directory.
-- Pending before branch handoff: branch push and draft PR creation.
+- Pending before merge: hosted PR review/CI, reviewer approval, and applying the Sprint 12 migration to the linked dev project after merge.
 
 ## Security Checks Performed
 
@@ -189,7 +193,7 @@ Draft PR status: pending creation after final commit and branch push.
 ## Open Issues Or Blockers
 
 - No known implementation blocker remains.
-- Branch push and draft PR creation are pending until this report update is committed.
+- Draft PR `#39` is open for review.
 - Supabase linked migration has not been applied to the dev project yet; only dry-run is expected before merge.
 - Final guest-book PDF upload and actual object storage persistence are deferred to storage/release hardening.
 - CSV upload/storage verification counts are deferred with the storage persistence follow-up because Sprint 12 intentionally keeps generated CSV output in the API response and records metadata only.
