@@ -2,16 +2,18 @@
 
 ## Sprint Status
 
-Implemented and ready for draft PR review.
+Implemented, reviewed, merged into `main`, and applied to the linked dev Supabase project.
 
-Sprint 10 is not marked merged or production-complete in this report. The implementation, tests, checks, documentation, and PR traceability are documented here for review.
+Sprint 10 is complete for the approved sprint scope. The implementation, tests, checks, documentation, review feedback, PR traceability, and post-merge database verification are documented here.
 
 ## Traceability
 
 - GitHub issue: `#26` - Sprint 10 - Contracts, Pricing & Payment Controls
 - Branch: `codex/sprint-10-contracts-pricing-payments`
+- Pull request: `#37` - Sprint 10 - Contracts, Pricing & Payment Controls
 - PR title: `Sprint 10 - Contracts, Pricing & Payment Controls`
 - Sprint plan: `docs/planning/sprint-10-plan.md`
+- Merge commit on `main`: `0296d540ff9f5e6a112393731a575e282d27d93e`
 
 ## Requirement IDs Covered
 
@@ -109,7 +111,7 @@ The migration adds:
 - updated-at triggers, audit triggers, indexes, grants, RLS policies, permission rows, and role-permission grants;
 - private/public RPCs for contract approval, payment balance, and payment gate refresh.
 
-The migration is not applied to the linked dev database in this PR. `supabase db push --linked --dry-run` reports it as the single pending migration.
+The migration was applied to the linked dev database after PR merge. A post-merge `supabase db push --linked --dry-run` verification reported the remote database is up to date, and `npm run db:lint` reported no schema errors.
 
 ## Package And Pricing Behavior Implemented
 
@@ -245,6 +247,11 @@ Coverage includes:
 - `wsl.exe ... coderabbit review --agent -t uncommitted -c AGENTS.md` - local CodeRabbit review loop completed with 0 issues after follow-up fixes.
 - `git diff --check` - passed; only Git line-ending warning for the Sprint 10 migration file.
 - Targeted secret scan with `rg` - no real secrets found. Matches were expected documentation warnings and SQL grants to the Postgres `service_role` role.
+- `gh pr merge 37 --squash --delete-branch` - PR #37 merged into `main`.
+- `npx.cmd supabase@latest db push --linked --yes` - applied the Sprint 10 migration to the linked dev Supabase project after merge.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after merge; remote database is up to date.
+- `npm.cmd run db:lint` - passed after merge; no schema errors found on linked schemas.
+- `git pull --ff-only` - local `main` confirmed up to date after merge.
 
 ## Checks Passed Or Failed
 
@@ -259,6 +266,8 @@ Passed:
 - production audit;
 - Supabase linked schema lint;
 - Supabase linked migration dry-run;
+- Supabase linked dev migration push;
+- Supabase linked post-merge dry-run;
 - whitespace check;
 - targeted secret scan.
 
@@ -281,7 +290,7 @@ Failed:
 
 ## Assumptions Made
 
-- Sprint 10 applies the migration after PR review/merge, not directly during the feature PR.
+- Sprint 10 applied the migration to the linked dev project after PR review and merge, not during the feature PR.
 - The CSV backlog is authoritative for actual feature IDs, so Sprint 10 maps to `FEAT-PAY-001` through `FEAT-PAY-004`.
 - USD-only all-inclusive pricing is sufficient for version 1.
 - Source-of-truth payment processing remains outside the app; the platform records and confirms manual/off-platform payments.
@@ -289,8 +298,8 @@ Failed:
 
 ## Open Issues Or Blockers
 
-- The Sprint 10 migration is pending and should be applied to the linked dev project after PR review/merge.
-- Generated Supabase TypeScript database types were not regenerated because the new migration is not yet applied to the linked database. Sprint 10 code uses explicit local row types and untyped Supabase calls for the new tables until the migration is applied.
+- No Sprint 10 merge or linked-dev-database blockers remain.
+- No generated Supabase TypeScript database-types file is currently tracked in the repository. Sprint 10 code continues to use explicit local row types and narrowly scoped untyped Supabase calls for the new commercial tables/RPCs. If the project adopts tracked generated database types later, regenerate them from the linked schema now that the Sprint 10 migration is applied.
 - Addendum approval/rejection UI is foundation-only; full approval lifecycle can be expanded later if needed.
 - Package update/deactivation UI is foundation-only; creation and selection are implemented.
 
