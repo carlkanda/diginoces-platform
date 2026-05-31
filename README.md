@@ -19,15 +19,18 @@ Completed:
 Current sprint assignment:
 
 ```text
-No active sprint is currently assigned.
+Sprint 10 — Contracts, Pricing & Payment Controls
+Current issue: #26
+Current issue URL: https://github.com/carlkanda/diginoces-platform/issues/26
+Current branch: codex/sprint-10-contracts-pricing-payments
+Current PR title: Sprint 10 — Contracts, Pricing & Payment Controls
+Current sprint plan: docs/planning/sprint-10-plan.md
+Current completion report: docs/planning/sprint-10-completion-report.md
 Last completed sprint: Sprint 9 — Check-in & Wedding-Day Operations
 Last completed issue: #25
 Last completed PR: #36
 Last completed report: docs/planning/sprint-9-completion-report.md
-Next planned sprint: Sprint 10 — Contracts, Pricing & Payment Controls
-Next sprint issue: #26
-Next sprint issue URL: https://github.com/carlkanda/diginoces-platform/issues/26
-Next sprint plan: docs/planning/sprint-10-plan.md
+Next planned sprint: Sprint 11 — Dashboards, Reports & Audit Logs
 ```
 
 ## Agent instructions
@@ -62,7 +65,7 @@ docs/backlog/initial-product-backlog-test-cases.csv
 | 7 | WhatsApp Communication Workflows | Completed |
 | 8 | Tables, Seating & Print Materials | Completed |
 | 9 | Check-in & Wedding-Day Operations | Completed |
-| 10 | Contracts, Pricing & Payment Controls | Planned |
+| 10 | Contracts, Pricing & Payment Controls | In progress |
 | 11 | Dashboards, Reports & Audit Logs | Planned |
 | 12 | Guest Wishes, Guest Book & Post-Event Feedback | Planned |
 | 13 | Partner / External Provider Model | Planned |

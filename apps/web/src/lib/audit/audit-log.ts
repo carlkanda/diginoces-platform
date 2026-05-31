@@ -83,6 +83,29 @@ export type AuditAction =
   | "seating_exports.generated"
   | "seating_exports.updated"
   | "storage.file_registered"
+  | "service_packages.created"
+  | "service_packages.updated"
+  | "service_package_addons.created"
+  | "service_package_addons.updated"
+  | "project_event_package_selections.selected"
+  | "project_event_package_selections.updated"
+  | "pricing_calculations.generated"
+  | "contracts.generated"
+  | "contracts.updated"
+  | "contracts.approved"
+  | "contract_approvals.created"
+  | "contract_addendums.generated"
+  | "contract_addendums.updated"
+  | "contract_addendums.approved"
+  | "payments.recorded"
+  | "payments.updated"
+  | "payments.confirmed"
+  | "payment_exceptions.created"
+  | "payment_exceptions.updated"
+  | "payment_exceptions.revoked"
+  | "commercial_gestures.applied"
+  | "commercial_gestures.updated"
+  | "payment_gate_events.created"
   | "system.foundation_health_checked";
 
 export type AuditLogEvent = {
@@ -150,7 +173,17 @@ export function getAuditFoundationSummary() {
       // Redaction matches literal DB table names like seating_export_files;
       // audit actions use semantic groups like seating_exports.* for queries.
       "seating_export_files",
-      "future check-in/payment actions",
+      "service_packages",
+      "service_package_addons",
+      "project_event_package_selections",
+      "pricing_calculations",
+      "contracts",
+      "contract_approvals",
+      "contract_addendums",
+      "payments",
+      "payment_exceptions",
+      "commercial_gestures",
+      "payment_gate_events",
     ],
   };
 }

@@ -465,6 +465,48 @@ textarea {
   padding: 16px;
 }
 
+.form-card {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+.inline-form,
+.checkbox-grid {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.checkbox-grid label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.checkbox-grid input,
+.stacked-form input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  accent-color: var(--accent);
+}
+
+.inline-form input,
+.inline-form select {
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px 10px;
+}
+
 .check-field {
   display: flex;
   align-items: center;
@@ -513,6 +555,21 @@ textarea {
 .section h2 {
   margin: 0 0 16px;
   font-size: 1.35rem;
+}
+
+.contract-preview {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.contract-preview pre {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+  white-space: pre-wrap;
 }
 
 .table-like {

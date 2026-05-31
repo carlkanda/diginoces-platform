@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { requireGuestListContractGateOpen } from "@/lib/contracts/contract-gates";
 import { requireAnyGuestCreatePermission } from "@/lib/guests/guest-api";
 import { listGuestTags, listGuestTitleTypes } from "@/lib/guests/guest-service";
 import { ProjectAccessError } from "@/lib/projects/project-api";
@@ -45,14 +46,14 @@ export default async function NewGuestPage({ params }: NewGuestPageProps) {
 
   const supabase = await createSupabaseServerClient();
 
+  const permissionContext = {
+    supabase,
+    user: authContext.user,
+  };
+
   try {
-    await requireAnyGuestCreatePermission(
-      {
-        supabase,
-        user: authContext.user,
-      },
-      projectId,
-    );
+    await requireAnyGuestCreatePermission(permissionContext, projectId);
+    await requireGuestListContractGateOpen(permissionContext, projectId);
   } catch (error) {
     if (error instanceof ProjectAccessError) {
       notFound();

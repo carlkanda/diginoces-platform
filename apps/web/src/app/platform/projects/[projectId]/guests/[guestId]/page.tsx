@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { requireGuestListContractGateOpen } from "@/lib/contracts/contract-gates";
 import { requireGuestSidePermission } from "@/lib/guests/guest-api";
 import {
   getGuestDetails,
@@ -57,15 +58,18 @@ export default async function EditGuestPage({ params }: EditGuestPageProps) {
     notFound();
   }
 
+  const permissionContext = {
+    supabase,
+    user: authContext.user,
+  };
+
   try {
     await requireGuestSidePermission(
-      {
-        supabase,
-        user: authContext.user,
-      },
+      permissionContext,
       projectId,
       details.guest.guest_side,
     );
+    await requireGuestListContractGateOpen(permissionContext, projectId);
   } catch (error) {
     if (error instanceof ProjectAccessError) {
       notFound();

@@ -5,6 +5,8 @@ import {
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import { requireAnyGuestCreatePermission } from "@/lib/guests/guest-api";
+import { guestListGateAllowsAccess } from "@/lib/contracts/contract-gates";
+import { hasAnyCommercialReadPermission } from "@/lib/contracts/contract-api";
 import {
   getProjectDetails,
   listProjectEvents,
@@ -89,14 +91,70 @@ export default async function ProjectGuestsPage({
     }
   }
 
-  const [canReadGuestImports, canReadRsvps] = await Promise.all([
+  const [
+    canReadGuestImports,
+    canReadRsvps,
+    canReadCommercial,
+    canGenerateContracts,
+  ] = await Promise.all([
     hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
     hasProjectPermission(permissionContext, projectId, "rsvps.read"),
+    hasAnyCommercialReadPermission(permissionContext, projectId),
+    hasProjectPermission(permissionContext, projectId, "contracts.generate"),
   ]);
   const projectDetails = await getProjectDetails(supabase, projectId);
 
   if (!projectDetails) {
     notFound();
+  }
+
+  const guestListAccessStatus = (
+    projectDetails.project as typeof projectDetails.project & {
+      guest_list_access_status?: string;
+    }
+  ).guest_list_access_status;
+
+  if (
+    !guestListGateAllowsAccess(guestListAccessStatus) &&
+    !canGenerateContracts
+  ) {
+    return (
+      <>
+        <div className="page-heading">
+          <div>
+            <p className="eyebrow">{projectDetails.project.project_code}</p>
+            <h1 className="page-title">Guest list locked</h1>
+            <p className="page-summary">
+              Guest-list access opens after the project contract is approved
+              in-app.
+            </p>
+          </div>
+          <div className="button-group">
+            <Link
+              className="button secondary"
+              href={`/platform/projects/${projectId}`}
+            >
+              Project
+            </Link>
+            {canReadCommercial ? (
+              <Link
+                className="button"
+                href={`/platform/projects/${projectId}/commercial`}
+              >
+                View contract
+              </Link>
+            ) : null}
+          </div>
+        </div>
+        <section className="section">
+          <div className="alert">
+            The contract gate is still locked. Bride/groom guest work remains
+            unavailable until an authorized couple member approves the latest
+            generated contract.
+          </div>
+        </section>
+      </>
+    );
   }
 
   let side: GuestSide | "all";

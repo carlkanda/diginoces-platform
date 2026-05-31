@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
+import { requireGuestListContractGateOpen } from "@/lib/contracts/contract-gates";
 import {
   requireGuestCreatePermission,
   requireGuestDeactivationPermission,
@@ -67,6 +68,7 @@ export async function createGuestAction(projectId: string, formData: FormData) {
   });
 
   await requireGuestCreatePermission(context, projectId, input.guestSide);
+  await requireGuestListContractGateOpen(context, projectId);
   const guest = await createGuest(
     context.supabase,
     projectId,
@@ -94,6 +96,7 @@ export async function updateGuestAction(
     projectId,
     details.guest.guest_side,
   );
+  await requireGuestListContractGateOpen(context, projectId);
 
   const input = parseUpdateGuestPayload({
     displayName: formValue(formData, "displayName"),
