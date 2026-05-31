@@ -14,6 +14,10 @@ import {
   ProjectAccessError,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
+import {
+  getGuestBookPagePermissions,
+  getPostEventFeedbackPagePermissions,
+} from "@/lib/guest-wishes/guest-wish-api";
 import { hasAnyCommercialReadPermission } from "@/lib/contracts/contract-api";
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -104,8 +108,8 @@ export default async function ProjectDetailPage({
     canReadProjectDashboard,
     canReadCoupleDashboard,
     canReadReports,
-    canReadGuestBook,
-    canReadPostEventFeedback,
+    guestBookPermissions,
+    feedbackPermissions,
   ] = await Promise.all([
     hasProjectPermission(permissionContext, projectId, "guests.read"),
     hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
@@ -124,13 +128,12 @@ export default async function ProjectDetailPage({
       "dashboards.couple.read",
     ),
     hasProjectPermission(permissionContext, projectId, "reports.catalog.read"),
-    hasProjectPermission(permissionContext, projectId, "guest_messages.read"),
-    hasProjectPermission(
-      permissionContext,
-      projectId,
-      "post_event_feedback.read",
-    ),
+    getGuestBookPagePermissions(permissionContext, projectId),
+    getPostEventFeedbackPagePermissions(permissionContext, projectId),
   ]);
+  const canReadGuestBook = Object.values(guestBookPermissions).some(Boolean);
+  const canReadPostEventFeedback =
+    Object.values(feedbackPermissions).some(Boolean);
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",
   );

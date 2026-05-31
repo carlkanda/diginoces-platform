@@ -13,6 +13,12 @@ export type GuestMessageStatus =
   | "flagged"
   | "pending_review";
 
+const guestEditableMessageStatuses = new Set<string>([
+  "couple_correction_requested",
+  "not_submitted",
+  "pending_review",
+]);
+
 export type GuestMessage = {
   approvedText: string | null;
   coupleComment: string | null;
@@ -237,7 +243,12 @@ export function parsePublicGuestMessagePayload(value: unknown) {
 export function canEditGuestMessage(input: {
   deadlineAt?: string | null;
   now: string;
+  status?: string | null;
 }) {
+  if (input.status && !guestEditableMessageStatuses.has(input.status)) {
+    return { allowed: false, reason: "message_locked" } as const;
+  }
+
   if (!input.deadlineAt) {
     return { allowed: true } as const;
   }
@@ -290,6 +301,17 @@ export function upsertGuestMessage(
         status: "created" as const,
       },
     };
+  }
+
+  const editStatus = canEditGuestMessage({
+    now: input.now,
+    status: existing.status,
+  });
+
+  if (!editStatus.allowed) {
+    throw new GuestWishValidationError(
+      "Guest message can no longer be edited.",
+    );
   }
 
   const updated = {
@@ -383,6 +405,13 @@ export function coupleReviewGuestMessage(
     exclude: "excluded",
     request_correction: "couple_correction_requested",
   } satisfies Record<CoupleGuestMessageReviewAction, GuestMessageStatus>;
+
+  if (!Object.prototype.hasOwnProperty.call(statusByAction, input.action)) {
+    throw new GuestWishValidationError(
+      "Guest message action is not supported.",
+    );
+  }
+
   const nextMessage: GuestMessage = {
     ...message,
     coupleComment: normalizeOptionalText(input.comment),

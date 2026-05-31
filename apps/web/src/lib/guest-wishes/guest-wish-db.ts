@@ -70,6 +70,7 @@ export type PublicGuestMessageResponse =
         | "invalid"
         | "invalid_message_text"
         | "manual_printed_only"
+        | "message_locked"
         | "not_invited"
         | "payment_gate_locked";
     }
@@ -297,10 +298,9 @@ export async function listPostEventFeedback(
   projectId: string,
 ) {
   const rows = await listRows<BaseRow>(
-    table(supabase, "post_event_feedback")
-      .select("*")
-      .eq("project_id", projectId)
-      .order("submitted_at", { ascending: false }),
+    supabase.rpc("list_post_event_feedback", {
+      p_project_id: projectId,
+    }) as PromiseLike<{ data: BaseRow[] | null; error: unknown }>,
   );
 
   return rows.map(
@@ -347,6 +347,7 @@ function isPublicGuestMessageResponse(
     "invalid",
     "invalid_message_text",
     "manual_printed_only",
+    "message_locked",
     "not_invited",
     "payment_gate_locked",
   ].includes(String(row.status));

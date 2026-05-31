@@ -601,6 +601,8 @@ declare
   v_normalized_text text := trim(coalesce(p_message_text, ''));
   v_language text := lower(coalesce(p_language, 'fr'));
   v_existing public.guest_messages%rowtype;
+  v_event_id uuid;
+  v_has_existing boolean := false;
   v_result_status text := 'created';
 begin
   if length(v_normalized_text) < 1 or length(v_normalized_text) > 1200 then
@@ -663,19 +665,29 @@ begin
     return jsonb_build_object('status', 'not_invited');
   end if;
 
-  v_deadline_at := app_private.guest_message_deadline(v_guest.project_id, p_event_id);
-
-  if v_deadline_at is not null and now() > v_deadline_at then
-    return jsonb_build_object('status', 'deadline_passed');
-  end if;
-
   select *
   into v_existing
   from public.guest_messages
   where guest_id = v_guest.id
   for update;
 
-  if found then
+  v_has_existing := found;
+  v_event_id := case
+    when v_has_existing then coalesce(p_event_id, v_existing.event_id)
+    else p_event_id
+  end;
+
+  if v_has_existing and v_existing.status not in ('pending_review', 'couple_correction_requested') then
+    return jsonb_build_object('status', 'message_locked');
+  end if;
+
+  v_deadline_at := app_private.guest_message_deadline(v_guest.project_id, v_event_id);
+
+  if v_deadline_at is not null and now() > v_deadline_at then
+    return jsonb_build_object('status', 'deadline_passed');
+  end if;
+
+  if v_has_existing then
     v_result_status := 'updated';
 
     update public.guest_messages
@@ -685,7 +697,7 @@ begin
       submitted_language = v_language,
       status = 'pending_review',
       last_guest_edited_at = now(),
-      event_id = coalesce(p_event_id, event_id),
+      event_id = v_event_id,
       public_token_id = v_token.id,
       reviewed_by = null,
       reviewed_at = null,
@@ -710,7 +722,7 @@ begin
     values (
       v_guest.project_id,
       v_guest.id,
-      p_event_id,
+      v_event_id,
       v_token.id,
       v_normalized_text,
       v_normalized_text,
@@ -746,6 +758,7 @@ declare
   v_previous_status public.guest_message_status;
   v_next_status public.guest_message_status;
   v_approved_text text;
+  v_actor_type public.guest_message_review_actor_type := 'staff';
 begin
   if v_actor_user_id is null then
     raise exception 'Authentication is required.'
@@ -767,6 +780,21 @@ begin
     raise exception 'Guest message moderation permission denied.'
       using errcode = '42501';
   end if;
+
+  select case
+    when exists (
+      select 1
+      from public.role_assignments ra
+      join public.roles r on r.id = ra.role_id
+      where ra.user_id = v_actor_user_id
+        and r.slug = 'diginoces_admin'
+        and ra.scope = r.scope
+        and (ra.expires_at is null or ra.expires_at > now())
+    )
+    then 'admin'::public.guest_message_review_actor_type
+    else 'staff'::public.guest_message_review_actor_type
+  end
+  into v_actor_type;
 
   v_previous_status := v_message.status;
   v_next_status := case p_action
@@ -820,7 +848,7 @@ begin
     v_message.project_id,
     v_message.id,
     p_action::public.guest_message_review_action,
-    'admin',
+    v_actor_type,
     v_actor_user_id,
     v_previous_status,
     v_next_status,
@@ -1248,6 +1276,49 @@ begin
 end;
 $$;
 
+create or replace function public.list_post_event_feedback(
+  p_project_id uuid
+)
+returns table (
+  id uuid,
+  feedback_text text,
+  improvement_suggestions text,
+  invitation_communication_rating integer,
+  overall_rating integer,
+  public_display_name text,
+  review_status public.post_event_feedback_review_status,
+  service_quality_rating integer,
+  submitted_at timestamptz,
+  testimonial_permission_granted boolean,
+  testimonial_text text
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select
+    f.id,
+    f.feedback_text,
+    f.improvement_suggestions,
+    f.invitation_communication_rating,
+    f.overall_rating,
+    f.public_display_name,
+    f.review_status,
+    f.service_quality_rating,
+    f.submitted_at,
+    f.testimonial_permission_granted,
+    f.testimonial_text
+  from public.post_event_feedback f
+  where f.project_id = p_project_id
+    and (select auth.uid()) is not null
+    and (
+      app_private.user_can_access_project((select auth.uid()), p_project_id, 'post_event_feedback.review')
+      or app_private.user_can_access_project((select auth.uid()), p_project_id, 'post_event_feedback.read')
+    )
+  order by f.submitted_at desc, f.id;
+$$;
+
 revoke all on function public.submit_public_guest_message(text, text, text, uuid) from public;
 revoke all on function public.list_couple_guest_messages(uuid) from public;
 revoke all on function public.review_guest_message(uuid, text, text, text) from public;
@@ -1255,6 +1326,7 @@ revoke all on function public.couple_review_guest_message(uuid, text, text) from
 revoke all on function public.create_guest_book_export(uuid) from public;
 revoke all on function public.submit_post_event_feedback(uuid, integer, integer, integer, text, text, text, boolean, text) from public;
 revoke all on function public.review_post_event_feedback(uuid, public.post_event_feedback_review_status, text) from public;
+revoke all on function public.list_post_event_feedback(uuid) from public;
 
 grant execute on function public.submit_public_guest_message(text, text, text, uuid) to anon, authenticated;
 grant execute on function public.list_couple_guest_messages(uuid) to authenticated, service_role;
@@ -1263,6 +1335,7 @@ grant execute on function public.couple_review_guest_message(uuid, text, text) t
 grant execute on function public.create_guest_book_export(uuid) to authenticated, service_role;
 grant execute on function public.submit_post_event_feedback(uuid, integer, integer, integer, text, text, text, boolean, text) to authenticated, service_role;
 grant execute on function public.review_post_event_feedback(uuid, public.post_event_feedback_review_status, text) to authenticated, service_role;
+grant execute on function public.list_post_event_feedback(uuid) to authenticated, service_role;
 
 alter table public.guest_messages enable row level security;
 alter table public.guest_message_reviews enable row level security;
@@ -1321,8 +1394,7 @@ on public.post_event_feedback
 for select
 to authenticated
 using (
-  app_private.user_can_access_project((select auth.uid()), project_id, 'post_event_feedback.read')
-  or app_private.user_can_access_project((select auth.uid()), project_id, 'post_event_feedback.review')
+  app_private.user_can_access_project((select auth.uid()), project_id, 'post_event_feedback.review')
 );
 
 drop policy if exists "Post-event feedback submitted by scoped couples" on public.post_event_feedback;
@@ -1353,8 +1425,7 @@ on public.testimonial_permissions
 for select
 to authenticated
 using (
-  app_private.user_can_access_project((select auth.uid()), project_id, 'post_event_feedback.read')
-  or app_private.user_can_access_project((select auth.uid()), project_id, 'post_event_feedback.review')
+  app_private.user_can_access_project((select auth.uid()), project_id, 'post_event_feedback.review')
 );
 
 drop policy if exists "Testimonial permissions reviewed by feedback reviewers" on public.testimonial_permissions;
@@ -1407,10 +1478,9 @@ with sprint_12_grants(role_slug, permission_slug) as (
     ('operations_manager', 'guest_messages.couple_review'),
     ('operations_manager', 'guest_book_exports.read'),
     ('operations_manager', 'guest_book_exports.create'),
+    ('operations_manager', 'post_event_feedback.submit'),
     ('operations_manager', 'post_event_feedback.read'),
     ('operations_manager', 'post_event_feedback.review'),
-    ('file_manager', 'guest_book_exports.read'),
-    ('file_manager', 'guest_book_exports.create'),
     ('couple', 'guest_messages.read'),
     ('couple', 'guest_messages.couple_review'),
     ('couple', 'guest_book_exports.read'),

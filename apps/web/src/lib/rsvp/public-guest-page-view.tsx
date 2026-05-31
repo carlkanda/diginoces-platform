@@ -5,6 +5,7 @@ import {
   type PublicGuestEvent,
   type RsvpResponseStatus,
 } from "@/lib/rsvp/rsvp-service";
+import { canEditGuestMessage as canEditGuestMessageForStatus } from "@/lib/guest-wishes/guest-wish-service";
 import type { PublicGuestPagePayload } from "@/lib/rsvp/rsvp-db";
 
 type PublicGuestPageViewProps = {
@@ -131,6 +132,10 @@ function messageResultLabel(
     return labels.messageErrorDeadlinePassed;
   }
 
+  if (result === "message_locked") {
+    return labels.messageSubmissionUnavailable;
+  }
+
   if (
     result === "invalid" ||
     result === "invalid_language" ||
@@ -158,12 +163,20 @@ export function PublicGuestPageView({
   const responseOptions = rsvpResponseOptions(labels);
   const now = new Date();
   const guestMessageDeadline = payload.guestMessage.deadlineAt;
-  const guestMessageClosed = guestMessageDeadline
-    ? now > new Date(guestMessageDeadline)
-    : false;
+  const guestMessageEditState = canEditGuestMessageForStatus({
+    deadlineAt: guestMessageDeadline,
+    now: now.toISOString(),
+    status: payload.guestMessage.status,
+  });
+  const guestMessageClosed =
+    !guestMessageEditState.allowed &&
+    guestMessageEditState.reason === "deadline_passed";
+  const guestMessageLocked =
+    !guestMessageEditState.allowed &&
+    guestMessageEditState.reason === "message_locked";
   const canEditGuestMessage =
     !isPreview &&
-    !guestMessageClosed &&
+    guestMessageEditState.allowed &&
     !payload.guest.isPrintedOnly &&
     payload.project.guestPageAccessStatus !== "locked";
 
@@ -334,6 +347,9 @@ export function PublicGuestPageView({
         ) : null}
         {guestMessageClosed ? (
           <div className="alert">{labels.messageDeadlinePassedAlert}</div>
+        ) : null}
+        {guestMessageLocked ? (
+          <div className="alert">{labels.messageSubmissionUnavailable}</div>
         ) : null}
         {messageFormAction ? (
           <form action={messageFormAction} className="stacked-form">

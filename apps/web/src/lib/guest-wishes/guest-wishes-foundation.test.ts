@@ -166,6 +166,25 @@ describe("Sprint 12 guest wishes, guest-book export, and feedback foundation", (
       allowed: false,
       reason: "deadline_passed",
     });
+
+    expect(
+      canEditGuestMessage({
+        deadlineAt: "2026-08-02T00:00:00.000Z",
+        now: "2026-08-01T10:00:00.000Z",
+        status: "couple_correction_requested",
+      }),
+    ).toEqual({ allowed: true });
+
+    expect(
+      canEditGuestMessage({
+        deadlineAt: "2026-08-02T00:00:00.000Z",
+        now: "2026-08-01T10:00:00.000Z",
+        status: "couple_approved",
+      }),
+    ).toEqual({
+      allowed: false,
+      reason: "message_locked",
+    });
   });
 
   it("preserves original text when admin edits approved guest-book text", () => {
@@ -234,6 +253,13 @@ describe("Sprint 12 guest wishes, guest-book export, and feedback foundation", (
     expect(reviewed.message.status).toBe("couple_approved");
     expect(reviewed.message.coupleComment).toBe("Ready for the book");
     expect(reviewed.reviewEvent.action).toBe("approve");
+    expect(() =>
+      coupleReviewGuestMessage(guestMessage(guestId), {
+        action: "publish" as never,
+        now: "2026-08-03T10:00:00.000Z",
+        reviewerUserId: "bride-user",
+      }),
+    ).toThrow("not supported");
   });
 
   it("exports only couple-approved messages to Canva CSV with formula neutralization", () => {
@@ -253,7 +279,7 @@ describe("Sprint 12 guest wishes, guest-book export, and feedback foundation", (
         status: "couple_approved",
       }),
       guestMessage("pending", {
-        approvedText: "A beautiful message",
+        approvedText: "ADMIN_APPROVED_SHOULD_BE_EXCLUDED",
         status: "admin_approved",
       }),
       guestMessage("excluded", {
@@ -271,7 +297,7 @@ describe("Sprint 12 guest wishes, guest-book export, and feedback foundation", (
     expect(csv).toContain("guest_display_name,message_text,project_code");
     expect(csv).toContain("Ada Guest,A beautiful message,ADA-BEN-2026");
     expect(csv).toContain("'=Formula Guest,'=CMD");
-    expect(csv).not.toContain("Pending");
+    expect(csv).not.toContain("ADMIN_APPROVED_SHOULD_BE_EXCLUDED");
     expect(csv).not.toContain("Excluded");
   });
 
@@ -376,6 +402,7 @@ describe("Sprint 12 guest wishes, guest-book export, and feedback foundation", (
     expect(migration).toContain("submit_public_guest_message");
     expect(migration).toContain("review_guest_message");
     expect(migration).toContain("couple_review_guest_message");
+    expect(migration).toContain("list_post_event_feedback");
     expect(migration).toContain("submit_post_event_feedback");
     expect(migration).toContain("review_post_event_feedback");
     expect(migration).toContain(
@@ -395,11 +422,24 @@ describe("Sprint 12 guest wishes, guest-book export, and feedback foundation", (
     expect(migration).toContain("guest_book_exports.generated");
     expect(migration).toContain("post_event_feedback.submitted");
     expect(migration).toContain("enable row level security");
+    expect(migration).toContain("message_locked");
+    expect(migration).toContain(
+      "('operations_manager', 'post_event_feedback.submit')",
+    );
+    expect(migration).not.toContain(
+      "('file_manager', 'guest_book_exports.read')",
+    );
+    expect(migration).not.toContain(
+      "('file_manager', 'guest_book_exports.create')",
+    );
     expect(migration).not.toMatch(
       /or\s+app_private\.user_can_access_project\(\(select\s+auth\.uid\(\)\),\s+project_id,\s+'guest_messages\.couple_review'\)/i,
     );
     expect(migration).not.toMatch(
       /post_event_feedback\.submit'\)\s+or\s+app_private\.user_can_access_project\(\(select\s+auth\.uid\(\)\),\s+project_id,\s+'post_event_feedback\.review'\)/i,
+    );
+    expect(migration).not.toMatch(
+      /post_event_feedback\.read'\)\s+or\s+app_private\.user_can_access_project\(\(select\s+auth\.uid\(\)\),\s+project_id,\s+'post_event_feedback\.review'\)/i,
     );
     expect(migration).not.toContain("audio_upload");
     expect(migration).not.toContain("video_upload");
