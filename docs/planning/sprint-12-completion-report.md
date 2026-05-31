@@ -2,11 +2,11 @@
 
 ## Summary
 
-Sprint 12 implements the guest written-message, guest-book review/export, and post-event feedback foundation for issue `#28` on branch `codex/sprint-12-guest-wishes-feedback`.
+Sprint 12 implemented, reviewed, merged, and applied the guest written-message, guest-book review/export, and post-event feedback foundation for issue `#28` on branch `codex/sprint-12-guest-wishes-feedback`.
 
 The implementation remains limited to Sprint 12. It does not add audio/video/photo guest submissions, guest file uploads, direct Canva API integration, automatic public testimonial publishing, partner SaaS scaling, partner commission management, advanced AI assistance, or public marketing website testimonial publishing.
 
-Draft PR: `#39` - https://github.com/carlkanda/diginoces-platform/pull/39.
+PR `#39` was merged into `main`, issue `#28` is closed, and the Sprint 12 Supabase migrations were applied to the linked dev project. A post-merge dry-run now reports the linked remote database is up to date.
 
 ## Traceability
 
@@ -14,6 +14,8 @@ Draft PR: `#39` - https://github.com/carlkanda/diginoces-platform/pull/39.
 - Pull request: `#39` - Sprint 12 - Guest Wishes, Guest Book & Post-Event Feedback.
 - Branch: `codex/sprint-12-guest-wishes-feedback`.
 - Sprint plan: `docs/planning/sprint-12-plan.md`.
+- Merge commit on `main`: `239103ac3dffe7549bef8000376c882ec0b1bd13`.
+- Post-merge Sprint 12 db-lint migration: `20260531221402_sprint_12_review_actor_type_lint_fix.sql`.
 - Previous sprint dependency: Sprint 11, issue `#27`, PR `#38`.
 - Primary sprint epic in CSV backlog: `EPIC-WISH`.
 - Related epics: `EPIC-REP`, `EPIC-FILE`.
@@ -47,6 +49,7 @@ Draft PR: `#39` - https://github.com/carlkanda/diginoces-platform/pull/39.
 
 - Added Supabase migration:
   - `supabase/migrations/20260531145755_sprint_12_guest_wishes_feedback.sql`
+  - `supabase/migrations/20260531221402_sprint_12_review_actor_type_lint_fix.sql`
 - Added guest-wishes services and tests:
   - `apps/web/src/lib/guest-wishes/guest-wish-action-helpers.ts`
   - `apps/web/src/lib/guest-wishes/guest-wish-api.ts`
@@ -161,12 +164,26 @@ Draft PR: `#39` - https://github.com/carlkanda/diginoces-platform/pull/39.
 - `git commit -m "Implement Sprint 12 guest wishes and feedback"` - passed; created commit `6601659`.
 - `git push -u origin codex/sprint-12-guest-wishes-feedback` - passed; pushed the Sprint 12 branch.
 - `gh pr create --draft --base main --head codex/sprint-12-guest-wishes-feedback --title "Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback"` - passed; opened draft PR `#39`.
+- Hosted CodeRabbit review on PR `#39` - changes requested and addressed.
+- Local CodeRabbit review loop from WSL after hosted review - passed with 0 issues.
+- GitHub CI `Verify` on PR `#39` - passed.
+- Hosted CodeRabbit rerun on PR `#39` - passed; PR review decision became approved.
+- `gh pr merge 39 --squash --delete-branch` - merged PR `#39` into `main` at `239103ac3dffe7549bef8000376c882ec0b1bd13`.
+- `npx supabase@latest db push --linked --yes` - applied `20260531145755_sprint_12_guest_wishes_feedback.sql` to the linked dev Supabase project.
+- `npx supabase@latest db push --linked --dry-run` - passed after applying the Sprint 12 migration; remote database was up to date.
+- `npm run db:lint` - returned a warning for enum local variable initialization in `public.review_guest_message`.
+- `npx supabase@latest migration new sprint_12_review_actor_type_lint_fix` - passed; created `20260531221402_sprint_12_review_actor_type_lint_fix.sql`.
+- `npx supabase@latest db push --linked --dry-run` - passed for the lint-fix migration.
+- `npx supabase@latest db push --linked --yes` - applied `20260531221402_sprint_12_review_actor_type_lint_fix.sql` to the linked dev Supabase project.
+- `npx supabase@latest db push --linked --dry-run` - passed after the lint-fix migration; remote database is up to date.
+- `npm run db:lint` - passed after the lint-fix migration; no schema errors found.
+- `gh issue close 28 --comment "Sprint 12 merged in PR #39. The linked dev Supabase migrations were applied and verified with db:lint and dry-run."` - confirmed issue `#28` was already closed.
 
 ## Checks Passed Or Failed
 
-- Passed: targeted Sprint 12 tests, full format check, lint, typecheck, test suite, production build, dependency install, dependency audit, Supabase linked db lint, and Supabase linked migration dry-run.
-- Failed and resolved: initial RED test before implementation, initial format check before formatting, one transient typecheck after the safe projection change, and one `db:lint` invocation from the wrong `apps/web` working directory.
-- Pending before merge: hosted PR review/CI, reviewer approval, and applying the Sprint 12 migration to the linked dev project after merge.
+- Passed: targeted Sprint 12 tests, full format check, lint, typecheck, test suite, production build, dependency install, dependency audit, hosted CodeRabbit, local CodeRabbit loop, GitHub CI Verify, Supabase linked db lint, Supabase linked migration dry-runs, and Supabase linked migration pushes.
+- Failed and resolved: initial RED test before implementation, initial format check before formatting, one transient typecheck after the safe projection change, one `db:lint` invocation from the wrong `apps/web` working directory, and one post-merge linked `db:lint` warning resolved by `20260531221402_sprint_12_review_actor_type_lint_fix.sql`.
+- Pending before merge: none remain. PR `#39` is merged, issue `#28` is closed, and the linked dev database is up to date.
 
 ## Security Checks Performed
 
@@ -180,6 +197,7 @@ Draft PR: `#39` - https://github.com/carlkanda/diginoces-platform/pull/39.
 - Direct `guest_messages` select access is restricted to moderators so couple-facing reads must use the sanitized RPC.
 - Guest-book export API responses stream CSV with download headers instead of embedding raw CSV in JSON.
 - Guest re-submission clears prior admin/couple review metadata and returns the message to pending review.
+- Post-merge lint-fix migration `20260531221402_sprint_12_review_actor_type_lint_fix.sql` keeps guest-message review actor-type audit metadata unchanged while removing the Supabase db-lint enum assignment warning.
 - Final targeted secret scan found no real secrets. Matches were limited to expected docs/placeholders and SQL grants to the Postgres `service_role` role.
 
 ## Assumptions
@@ -192,14 +210,14 @@ Draft PR: `#39` - https://github.com/carlkanda/diginoces-platform/pull/39.
 
 ## Open Issues Or Blockers
 
-- No known implementation blocker remains.
-- Draft PR `#39` is open for review.
-- Supabase linked migration has not been applied to the dev project yet; only dry-run is expected before merge.
+- No known Sprint 12 implementation, review, CI, or linked-dev-database blocker remains.
+- PR `#39` is merged into `main`.
+- The Sprint 12 Supabase migrations have been applied to the linked dev project and verified by dry-run plus db lint.
 - Final guest-book PDF upload and actual object storage persistence are deferred to storage/release hardening.
 - CSV upload/storage verification counts are deferred with the storage persistence follow-up because Sprint 12 intentionally keeps generated CSV output in the API response and records metadata only.
 
 ## Recommended Sprint 13 Scope
 
-- Start Sprint 13 partner/external provider model only after Sprint 12 is reviewed and merged.
+- Sprint 13 partner/external provider model is ready to start from `main`.
 - Keep Sprint 13 separate from advanced AI moderation, public marketing testimonial publishing, direct Canva integration, and full analytics/BI unless explicitly assigned.
-- Consider a follow-up hardening pass to regenerate Supabase database types and verify guest-book export metadata against linked dev data after the Sprint 12 migration is applied.
+- Consider a follow-up hardening pass to regenerate Supabase database types and verify guest-book export metadata against linked dev data after Sprint 13 planning starts.

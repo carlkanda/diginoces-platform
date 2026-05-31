@@ -17,22 +17,23 @@ Completed:
 - Sprint 9 — Check-in & Wedding-Day Operations
 - Sprint 10 — Contracts, Pricing & Payment Controls
 - Sprint 11 — Dashboards, Reports & Audit Logs
+- Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback
 
 Current sprint assignment:
 
 ```text
-Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback
-Current issue: #28
-Current issue URL: https://github.com/carlkanda/diginoces-platform/issues/28
-Current branch: codex/sprint-12-guest-wishes-feedback
-Current PR title: Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback
-Current sprint plan: docs/planning/sprint-12-plan.md
-Current completion report: docs/planning/sprint-12-completion-report.md
-Last completed sprint: Sprint 11 — Dashboards, Reports & Audit Logs
-Last completed issue: #27
-Last completed PR: #38
-Last completed report: docs/planning/sprint-11-completion-report.md
-Next planned sprint: Sprint 13 — Partner / External Provider Model
+Sprint 13 — Partner / External Provider Model
+Current issue: #29
+Current issue URL: https://github.com/carlkanda/diginoces-platform/issues/29
+Current branch: codex/sprint-13-partner-provider-model
+Current PR title: Sprint 13 — Partner / External Provider Model
+Current sprint plan: docs/planning/sprint-13-plan.md
+Current completion report: docs/planning/sprint-13-completion-report.md
+Last completed sprint: Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback
+Last completed issue: #28
+Last completed PR: #39
+Last completed report: docs/planning/sprint-12-completion-report.md
+Next planned sprint: Sprint 14 — Files, Storage, Retention & Archive
 ```
 
 ## Agent instructions
@@ -46,7 +47,7 @@ Work must be assigned one sprint issue at a time. Do not ask an agent to build t
 ```text
 AGENTS.md
 docs/planning/mvp-build-execution-plan.md
-docs/planning/sprint-12-plan.md
+docs/planning/sprint-13-plan.md
 docs/backlog/master-requirements-register.csv
 docs/backlog/initial-product-backlog-features.csv
 docs/backlog/initial-product-backlog-user-stories.csv
@@ -69,8 +70,8 @@ docs/backlog/initial-product-backlog-test-cases.csv
 | 9 | Check-in & Wedding-Day Operations | Completed |
 | 10 | Contracts, Pricing & Payment Controls | Completed |
 | 11 | Dashboards, Reports & Audit Logs | Completed |
-| 12 | Guest Wishes, Guest Book & Post-Event Feedback | In progress |
-| 13 | Partner / External Provider Model | Planned |
+| 12 | Guest Wishes, Guest Book & Post-Event Feedback | Completed |
+| 13 | Partner / External Provider Model | In progress |
 | 14 | Files, Storage, Retention & Archive | Planned |
 | 15 | Release Hardening, QA & MVP Launch | Planned |
 | 16 | AI Assistance | Post-MVP planned |
