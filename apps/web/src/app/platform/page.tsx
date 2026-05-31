@@ -58,9 +58,17 @@ export default async function PlatformPage() {
       <section className="section">
         <div className="section-heading">
           <h2>{sprint2Foundation.sprint}</h2>
-          <Link className="button secondary" href="/platform/projects">
-            Projects
-          </Link>
+          <div className="button-group">
+            <Link className="button secondary" href="/platform/dashboard">
+              Dashboard
+            </Link>
+            <Link className="button secondary" href="/platform/reports">
+              Reports
+            </Link>
+            <Link className="button secondary" href="/platform/projects">
+              Projects
+            </Link>
+          </div>
         </div>
         <div className="table-like">
           {sprint2Foundation.modules.map((module) => (

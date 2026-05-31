@@ -106,6 +106,9 @@ export type AuditAction =
   | "commercial_gestures.applied"
   | "commercial_gestures.updated"
   | "payment_gate_events.created"
+  | "reports.exported"
+  | "reports.updated"
+  | "audit_logs.exported"
   | "system.foundation_health_checked";
 
 export type AuditLogEvent = {
@@ -184,6 +187,10 @@ export function getAuditFoundationSummary() {
       "payment_exceptions",
       "commercial_gestures",
       "payment_gate_events",
+      "report_exports",
+      "audit_log_exports",
+      "reports",
+      "audit_logs",
     ],
   };
 }

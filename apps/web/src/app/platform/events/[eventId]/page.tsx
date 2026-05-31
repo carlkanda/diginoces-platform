@@ -113,6 +113,14 @@ export default async function EventDetailPage({
     eventId,
     "check_in.read",
   );
+  const canReadEventDashboard = await hasEventPermission(
+    {
+      supabase,
+      user: authContext.user,
+    },
+    eventId,
+    "dashboards.event.read",
+  );
 
   return (
     <>
@@ -131,6 +139,14 @@ export default async function EventDetailPage({
         >
           Project
         </Link>
+        {canReadEventDashboard ? (
+          <Link
+            className="button"
+            href={`/platform/events/${eventId}/dashboard`}
+          >
+            Dashboard
+          </Link>
+        ) : null}
         {canReadInvitations ? (
           <Link
             className="button"
