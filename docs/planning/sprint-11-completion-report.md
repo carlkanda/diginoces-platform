@@ -2,9 +2,20 @@
 
 ## Summary
 
-Sprint 11 implements the dashboards, report catalog/export, and audit-log viewer foundations for issue #27 on branch `codex/sprint-11-dashboards-reports-audit-logs`.
+Sprint 11 implemented, reviewed, merged, and applied the dashboards, report catalog/export, and audit-log viewer foundations for issue #27 on branch `codex/sprint-11-dashboards-reports-audit-logs`.
+
+PR #38 was merged into `main`, issue #27 was closed, and the Sprint 11 Supabase migration was applied to the linked dev project. A post-merge dry-run now reports the linked remote database is up to date.
 
 The implementation remains limited to Sprint 11. It does not add guest-book workflows, post-event feedback, partner SaaS scaling, partner commission management, advanced BI analytics, accounting integration, tax/VAT reporting, online payment processing, or future Sprint 12+ scope.
+
+## Traceability
+
+- GitHub issue: `#27` - Sprint 11 - Dashboards, Reports & Audit Logs.
+- Pull request: `#38` - Sprint 11 - Dashboards, Reports & Audit Logs.
+- Branch: `codex/sprint-11-dashboards-reports-audit-logs`.
+- Sprint plan: `docs/planning/sprint-11-plan.md`.
+- Merge commit on `main`: `9437322de89d50b376cc3b4e15221b383fddfc6b`.
+- Post-merge Sprint 12 metadata commit on `main`: `f37c765`.
 
 ## Requirements Covered
 
@@ -107,31 +118,43 @@ The implementation remains limited to Sprint 11. It does not add guest-book work
 - `npm run build` - passed.
 - `npm audit --omit=dev` - passed, 0 vulnerabilities.
 - `npm run db:lint` - passed, no schema errors in linked `public` and `app_private` schemas.
-- `npx supabase@latest db push --linked --dry-run` - passed, would push `20260531091009_sprint_11_dashboards_reports_audit_logs.sql`.
+- `npx supabase@latest db push --linked --dry-run` - passed before merge; would push `20260531091009_sprint_11_dashboards_reports_audit_logs.sql`.
 - `coderabbit review --agent -t uncommitted -c AGENTS.md` from WSL - passed with 0 issues after review fixes.
+- Hosted CodeRabbit review on PR #38 - changes requested and addressed.
+- Hosted CodeRabbit rerun on PR #38 - passed after review-fix commit.
+- GitHub CI `Verify` on PR #38 - passed.
 - `git diff --check` - passed, only repository LF/CRLF warnings were printed.
 - Targeted secret scan with `rg` - passed with no real secret patterns found. A broader scan only matched placeholder `.env.example` values and SQL `grant ... to service_role` statements, not keys.
+- `gh pr merge 38 --squash --delete-branch` - merged PR #38 into `main`.
+- `git switch main` and `git pull --ff-only` - local `main` updated after merge.
+- `npx supabase@latest db push --linked --yes` - applied `20260531091009_sprint_11_dashboards_reports_audit_logs.sql` to the linked dev Supabase project.
+- `npx supabase@latest db push --linked --dry-run` - passed after migration application; remote database is up to date.
+- `npm run db:lint` - passed after migration application; no schema errors in linked `public` and `app_private` schemas.
+- `npm run format:check` - passed after post-merge metadata update.
+- `npm run test` - passed after post-merge metadata update, 12 test files and 120 tests.
+- `npm run build` - passed after post-merge metadata update.
+- `gh issue close 27` - closed Sprint 11 issue #27 after merge and linked-dev migration application.
 
 ## Checks Passed Or Failed
 
-- Passed: install, format check, lint, typecheck, tests, build, dependency audit, Supabase linked db lint, Supabase linked dry-run, whitespace check, targeted secret scan.
+- Passed: install, format check, lint, typecheck, tests, build, dependency audit, Supabase linked db lint, Supabase linked migration dry-run, Supabase linked migration push, post-merge linked dry-run, whitespace check, targeted secret scan, hosted CodeRabbit, and GitHub CI Verify.
 - Failed: none.
 
 ## Assumptions
 
 - Sprint 11 may store report export metadata without object-storage persistence because storage retention/provider setup remains a production readiness concern.
 - CSV is the implemented Sprint 11 export format. PDF/Excel remain represented as planned/future placeholders through the report format enum and report catalog constraints.
-- The linked Supabase project is a development project. The Sprint 11 migration was dry-run only and should be pushed after PR merge, following the established workflow.
-- The generated Supabase TypeScript types were not regenerated in this PR because the linked dev database has not yet applied the Sprint 11 migration. New Sprint 11 tables are accessed through internal typed service shapes and untyped Supabase query helpers until the migration is applied.
+- The linked Supabase project is a development project. The Sprint 11 migration was applied there after PR merge, following the established workflow.
+- The generated Supabase TypeScript types were not regenerated in this PR. New Sprint 11 tables are accessed through internal typed service shapes and untyped Supabase query helpers until the project adopts a generated-type refresh workflow.
 
 ## Open Issues Or Blockers
 
-- Pending after merge: apply `20260531091009_sprint_11_dashboards_reports_audit_logs.sql` to the linked dev database.
-- Pending after migration application: regenerate Supabase TypeScript types from the linked project if the project workflow requires that DB types be generated to include Sprint 11 objects.
+- No Sprint 11 merge, review, CI, or linked-dev-database blockers remain.
+- Regenerate Supabase TypeScript types from the linked project if the project workflow requires generated DB types to include Sprint 11 objects.
 - Object-storage persistence for report files remains deferred; Sprint 11 records export metadata and generated CSV responses only.
 
 ## Recommended Sprint 12 Scope
 
 - Start Sprint 12 guest wishes/guest-book and post-event feedback only if assigned by the active sprint plan and issue.
 - Keep Sprint 12 separate from advanced BI, partner commissions, accounting, tax/VAT, and full partner SaaS scaling unless explicitly assigned.
-- After the Sprint 11 migration is merged/applied, consider a short follow-up to regenerate Supabase database types and verify report export metadata against real dev data.
+- Consider a short follow-up to regenerate Supabase database types and verify report export metadata against real dev data if generated types become part of the tracked workflow.
