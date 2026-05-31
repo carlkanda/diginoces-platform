@@ -14,6 +14,7 @@ import {
   ProjectAccessError,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
+import { hasAnyCommercialReadPermission } from "@/lib/contracts/contract-api";
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -106,7 +107,7 @@ export default async function ProjectDetailPage({
     hasProjectPermission(permissionContext, projectId, "rsvps.read"),
     hasProjectPermission(permissionContext, projectId, "messages.read"),
     hasProjectPermission(permissionContext, projectId, "seating.read"),
-    hasProjectPermission(permissionContext, projectId, "contracts.read"),
+    hasAnyCommercialReadPermission(permissionContext, projectId),
   ]);
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",

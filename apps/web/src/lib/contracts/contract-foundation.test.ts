@@ -84,6 +84,13 @@ const partnerAssignments: RoleAssignment[] = [
   },
 ];
 
+const operationsManagerAssignments: RoleAssignment[] = [
+  {
+    role: "operations_manager",
+    scope: "global",
+  },
+];
+
 function repoRootFromCwd() {
   const configuredRoot = process.env.TEST_REPO_ROOT;
 
@@ -190,7 +197,15 @@ describe("Sprint 10 commercial foundation", () => {
         "packages.manage",
       ),
     ).toBe(false);
+    expect(
+      canPerformCommercialAction(
+        operationsManagerAssignments,
+        projectId,
+        "packages.manage",
+      ),
+    ).toBe(true);
     expect(canViewRevenue(adminAssignments, projectId)).toBe(true);
+    expect(canViewRevenue(operationsManagerAssignments, projectId)).toBe(true);
     expect(canViewRevenue(partnerAssignments, projectId)).toBe(false);
     expect(
       canPerformCommercialAction(
@@ -300,16 +315,22 @@ describe("Sprint 10 commercial foundation", () => {
       approvedContractAmountCents: 200_000,
       payments: [{ paidAmountCents: 50_000, status: "confirmed" }],
     });
+    const zeroDollar = calculatePaymentBalance({
+      approvedContractAmountCents: 0,
+      payments: [],
+    });
 
     expect(unpaid.balanceDueCents).toBe(150_000);
     expect(evaluatePaymentGate(unpaid).status).toBe("locked");
     expect(evaluatePaymentGate(paid).status).toBe("payment_confirmed");
     expect(evaluatePaymentGate(exception).status).toBe("exception_override");
+    expect(evaluatePaymentGate(zeroDollar).status).toBe("payment_confirmed");
   });
 
   it("lists Sprint 10 requirements, audit actions, and migration evidence", () => {
     const status = getSprint10CommercialStatus();
     const migration = readSprint10Migration();
+    const normalizedMigration = migration.replace(/\s+/g, " ");
 
     expect(status.requirementIds).toEqual(
       expect.arrayContaining(["PAY-001", "PAY-014", "PAY-015", "TECH-004"]),
@@ -330,5 +351,12 @@ describe("Sprint 10 commercial foundation", () => {
     expect(migration).toContain("create table if not exists public.payments");
     expect(migration).toContain("payment_exceptions.manage");
     expect(migration).toContain("guest_page_access_status = v_next");
+    expect(migration).toContain("current_user_has_any_commercial_read");
+    expect(normalizedMigration).toContain(
+      'create policy "Payments recorded by payment recorders"',
+    );
+    expect(normalizedMigration).toContain("status <> 'confirmed'");
+    expect(normalizedMigration).toContain("p_snapshot - 'rendered_contract'");
+    expect(normalizedMigration).toContain("auth.jwt() ->> 'aal'");
   });
 });

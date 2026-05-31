@@ -176,6 +176,24 @@ Audit triggers and TypeScript action names were added for:
 
 Audit snapshots are redacted for commercial amount-heavy fields before entering the audit log.
 
+## Review Hardening Applied
+
+Hosted CodeRabbit review fixes were applied before merge readiness:
+
+- invalid service catalog `kind` API payloads now fail closed instead of defaulting to package creation;
+- payment confirmation now requires `payments.confirm` and records payments as `recorded` before a confirmation update;
+- payment RLS blocks `payments.record` callers from inserting pre-confirmed rows;
+- commercial overview API/UI reads are scoped to the caller's commercial capabilities;
+- package managers can read/manage package UI consistently;
+- selected add-on IDs are validated before persistence and recalculation;
+- approved latest contracts are demoted from `is_latest` without changing approved status when a new version is generated;
+- guest-list UI and server gate use a shared `guestListGateAllowsAccess` helper;
+- commercial query-string notices render only whitelisted fixed messages;
+- zero-dollar approved contracts are treated as fully paid for gate evaluation;
+- add-ons explicitly support only `flat` and `per_guest` pricing modes;
+- operations manager commercial permissions now include package, exception, and gesture management and the role is marked MFA-required;
+- commercial audit snapshots redact contract text, approval text, pricing/package snapshots, and payment-gate balance snapshots.
+
 ## Tests Added
 
 Added `apps/web/src/lib/contracts/contract-foundation.test.ts`.
@@ -190,7 +208,9 @@ Coverage includes:
 - guest-count increase addendum path;
 - no automatic price reduction on guest-count decrease;
 - manual payment balance and gate decisions;
+- zero-dollar contract payment-gate behavior;
 - payment exception gate override;
+- operations manager commercial permission coverage;
 - migration and audit-action evidence.
 
 ## Commands Run
@@ -211,7 +231,19 @@ Coverage includes:
 - `npx.cmd supabase@latest db push --help` - run before dry-run command.
 - `npm.cmd run db:lint` - passed, no schema errors found on linked schemas.
 - `npx.cmd supabase@latest db push --linked --dry-run` - passed; would push `20260530225545_sprint_10_contracts_pricing_payments.sql`.
-- `git diff --check` - passed; only Git line-ending warning for `AGENTS.md`.
+- Hosted CodeRabbit review for the Sprint 10 PR - changes requested and addressed in the review-fix commit.
+- `npm.cmd run test -- --run src/lib/contracts/contract-foundation.test.ts src/lib/platform/smoke.test.ts` - passed, 2 files and 14 tests after review fixes.
+- `npm.cmd run format` - passed after review fixes.
+- `npm.cmd run lint` - passed after review fixes.
+- `npm.cmd run typecheck` - passed after review fixes.
+- `npm.cmd run test` - passed after review fixes, 11 files and 112 tests.
+- `npm.cmd run build` - passed after review fixes.
+- `npm.cmd run format:check` - passed after review fixes.
+- `npm.cmd audit --omit=dev` - passed after review fixes, 0 vulnerabilities.
+- `npm.cmd run db:lint` - passed after review fixes, no schema errors found on linked schemas.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after review fixes; would push `20260530225545_sprint_10_contracts_pricing_payments.sql`.
+- `wsl.exe ... coderabbit review --agent -t uncommitted -c AGENTS.md` - local CodeRabbit review loop completed with 0 issues after follow-up fixes.
+- `git diff --check` - passed; only Git line-ending warning for the Sprint 10 migration file.
 - Targeted secret scan with `rg` - no real secrets found. Matches were expected documentation warnings and SQL grants to the Postgres `service_role` role.
 
 ## Checks Passed Or Failed
@@ -241,6 +273,10 @@ Failed:
 - Confirmed commercial operations are permission-gated in server actions/API helpers and backed by RLS/RPC checks.
 - Confirmed package read API now explicitly requires service package read/manage permission instead of relying only on hidden UI or RLS filtering.
 - Confirmed guest-list contract gate fails closed unless project status is `contract_approved`.
+- Confirmed confirmed-payment creation requires `payments.confirm` and the database insert policy blocks pre-confirmed rows for `payments.record`.
+- Verified commercial overview responses are filtered by read capability before loading payment, exception, gesture, package, and contract detail data.
+- Ensured commercial audit snapshots redact contract, approval, package/pricing, payment, exception, and payment-gate balance details before insertion into `audit_logs`.
+- Documented that operations manager is marked MFA-required in TypeScript role metadata and the database role row, with database permission checks respecting the Supabase JWT `aal` claim for MFA-required role assignments.
 - Checked Supabase changelog during implementation. The current Data API table-exposure behavior reinforces the explicit grant plus RLS approach used in the migration.
 
 ## Assumptions Made

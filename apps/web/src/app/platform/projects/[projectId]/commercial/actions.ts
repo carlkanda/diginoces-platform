@@ -103,8 +103,8 @@ async function runCommercialAction(
       commercialPath(projectId, {
         commercialError:
           error instanceof CommercialValidationError
-            ? error.message
-            : "Commercial action failed.",
+            ? "invalid_commercial_request"
+            : "commercial_action_failed",
       }),
     );
   }
@@ -235,7 +235,16 @@ export async function recordPaymentAction(
   formData: FormData,
 ) {
   await runCommercialAction(projectId, async () => {
+    const confirmNow = formCheckbox(formData, "confirmNow");
     const context = await getActionContext(projectId, "payments.record");
+
+    if (confirmNow) {
+      await requireCommercialProjectPermission(
+        context,
+        projectId,
+        "payments.confirm",
+      );
+    }
 
     await recordProjectPayment(
       context.supabase,
@@ -247,7 +256,7 @@ export async function recordPaymentAction(
         paymentDate: formValue(formData, "paymentDate"),
         paymentMethod: requiredFormValue(formData, "paymentMethod"),
         referenceNote: formValue(formData, "referenceNote"),
-        status: formCheckbox(formData, "confirmNow") ? "confirmed" : "recorded",
+        status: confirmNow ? "confirmed" : "recorded",
       },
       context.user.id,
     );

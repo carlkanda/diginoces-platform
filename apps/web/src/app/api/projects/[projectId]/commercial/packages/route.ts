@@ -11,6 +11,7 @@ import {
   listServicePackageAddons,
   listServicePackages,
 } from "@/lib/contracts/contract-db";
+import { CommercialValidationError } from "@/lib/contracts/contract-service";
 import {
   getProjectApiContext,
   handleProjectApiError,
@@ -60,9 +61,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return Response.json(
-      await createServicePackage(context.supabase, payload, context.user.id),
-      { status: 201 },
+    if (kind === "package") {
+      return Response.json(
+        await createServicePackage(context.supabase, payload, context.user.id),
+        { status: 201 },
+      );
+    }
+
+    const receivedKind =
+      typeof kind === "string" ? kind.slice(0, 32) : typeof kind;
+
+    throw new CommercialValidationError(
+      `Service catalog kind must be package or addon. Received: ${receivedKind}.`,
     );
   } catch (error) {
     try {

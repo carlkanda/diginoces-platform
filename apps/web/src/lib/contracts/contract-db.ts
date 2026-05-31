@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { serverLogger } from "@/lib/logging";
 import {
   calculateEventPackageAmount,
   calculateProjectPricing,
@@ -11,6 +12,7 @@ import {
   type ContractAddendumStatus,
   type ContractStatus,
   type EventPackagePricingInput,
+  type AddonPricingMode,
   type PaymentGateStatus,
   type PaymentStatus,
   type ProjectPricingCalculation,
@@ -44,7 +46,7 @@ export type ServicePackageAddonRow = {
   id: string;
   name: string;
   price_cents: number;
-  pricing_mode: ServicePricingMode;
+  pricing_mode: AddonPricingMode;
   status: ServiceCatalogStatus;
   updated_at: string;
   updated_by: string | null;
@@ -223,6 +225,50 @@ export type ProjectCommercialOverview = {
   selections: EventPackageSelectionRow[];
 };
 
+export type CommercialOverviewAccess = {
+  canManageExceptions?: boolean;
+  canManageGestures?: boolean;
+  canManagePackages?: boolean;
+  canReadContracts?: boolean;
+  canReadPackages?: boolean;
+  canReadPayments?: boolean;
+  canReadPaymentSummary?: boolean;
+  canReadPricing?: boolean;
+  canReadRevenue?: boolean;
+};
+
+const fullCommercialOverviewAccess: Required<CommercialOverviewAccess> = {
+  canManageExceptions: true,
+  canManageGestures: true,
+  canManagePackages: true,
+  canReadContracts: true,
+  canReadPackages: true,
+  canReadPayments: true,
+  canReadPaymentSummary: true,
+  canReadPricing: true,
+  canReadRevenue: true,
+};
+
+const noCommercialOverviewAccess: Required<CommercialOverviewAccess> = {
+  canManageExceptions: false,
+  canManageGestures: false,
+  canManagePackages: false,
+  canReadContracts: false,
+  canReadPackages: false,
+  canReadPayments: false,
+  canReadPaymentSummary: false,
+  canReadPricing: false,
+  canReadRevenue: false,
+};
+
+function normalizeOverviewAccess(
+  access?: CommercialOverviewAccess,
+): Required<CommercialOverviewAccess> {
+  return access
+    ? { ...noCommercialOverviewAccess, ...access }
+    : fullCommercialOverviewAccess;
+}
+
 function toServicePackage(row: ServicePackageRow): ServicePackage {
   return {
     basePriceCents: row.base_price_cents,
@@ -316,6 +362,16 @@ function parsePricingMode(value: unknown): ServicePricingMode {
   }
 
   throw new CommercialValidationError("Unsupported pricing mode.");
+}
+
+function parseAddonPricingMode(value: unknown): AddonPricingMode {
+  if (value === "flat" || value === "per_guest") {
+    return value;
+  }
+
+  throw new CommercialValidationError(
+    "Add-on pricing mode must be flat or per guest.",
+  );
 }
 
 function normalizeCode(value: string, fieldName: string) {
@@ -432,6 +488,43 @@ async function getPricingContext(supabase: SupabaseClient, projectId: string) {
   return { addons, events, gestures, packages, project, selections };
 }
 
+async function getProjectOverviewContext(
+  supabase: SupabaseClient,
+  projectId: string,
+  includeSelections = true,
+) {
+  const [project, events, selections] = await Promise.all([
+    singleRecord<CommercialProjectRow>(
+      supabase
+        .from("wedding_projects")
+        .select(
+          "id, project_code, bride_name, groom_name, preferred_language, guest_list_access_status, guest_page_access_status, latest_contract_id",
+        )
+        .eq("id", projectId)
+        .maybeSingle(),
+      "Project",
+    ),
+    listRows<CommercialEventRow>(
+      supabase
+        .from("events")
+        .select("id, project_id, name, event_date")
+        .eq("project_id", projectId)
+        .order("event_date", { ascending: true }),
+    ),
+    includeSelections
+      ? listRows<EventPackageSelectionRow>(
+          supabase
+            .from("project_event_package_selections")
+            .select("*")
+            .eq("project_id", projectId)
+            .eq("status", "selected"),
+        )
+      : Promise.resolve([]),
+  ]);
+
+  return { events, project, selections };
+}
+
 function buildPricingFromRows(
   input: Awaited<ReturnType<typeof getPricingContext>>,
 ) {
@@ -454,10 +547,17 @@ function buildPricingFromRows(
       }
 
       return {
-        addons: selection.selected_addon_ids
-          .map((addonId) => addonsById.get(addonId))
-          .filter((addon): addon is ServicePackageAddonRow => Boolean(addon))
-          .map(toAddon),
+        addons: selection.selected_addon_ids.map((addonId) => {
+          const addon = addonsById.get(addonId);
+
+          if (!addon) {
+            throw new CommercialValidationError(
+              "Event package selection references missing add-on data.",
+            );
+          }
+
+          return toAddon(addon);
+        }),
         eventId: event.id,
         eventName: event.name,
         plannedGuestCount: selection.planned_guest_count,
@@ -470,6 +570,36 @@ function buildPricingFromRows(
     eventSelections,
     gestures: input.gestures.map(toCommercialGesture),
   });
+}
+
+async function getCurrentPricingCalculation(
+  supabase: SupabaseClient,
+  projectId: string,
+) {
+  const rows = await listRows<PricingCalculationRow>(
+    supabase
+      .from("pricing_calculations")
+      .select("*")
+      .eq("project_id", projectId)
+      .in("status", ["current", "snapshotted"])
+      .order("calculated_at", { ascending: false })
+      .limit(1),
+  );
+  const row = rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    currency: row.currency,
+    discountAmountCents: row.discount_amount_cents,
+    eventBreakdown:
+      row.event_breakdown as ProjectPricingCalculation["eventBreakdown"],
+    plannedGuestCountSnapshot: row.planned_guest_count_snapshot,
+    subtotalAmountCents: row.subtotal_amount_cents,
+    totalAmountCents: row.total_amount_cents,
+  };
 }
 
 export async function listServicePackages(supabase: SupabaseClient) {
@@ -544,7 +674,7 @@ export async function createServicePackageAddon(
       description: optionalString(payload.description),
       name: requiredString(payload.name, "add-on name"),
       price_cents: positiveInteger(payload.priceCents, "add-on price"),
-      pricing_mode: parsePricingMode(payload.pricingMode),
+      pricing_mode: parseAddonPricingMode(payload.pricingMode),
       status: "active",
       updated_by: actorUserId,
     })
@@ -598,10 +728,18 @@ export async function saveEventPackageSelection(
           supabase
             .from("service_package_addons")
             .select("*")
-            .in("id", addonIds),
+            .in("id", addonIds)
+            .eq("status", "active"),
         )
       : Promise.resolve([]),
   ]);
+
+  if (addons.length !== addonIds.length) {
+    throw new CommercialValidationError(
+      "One or more selected add-ons were not found.",
+    );
+  }
+
   const calculation = calculateEventPackageAmount({
     addons: addons.map(toAddon),
     eventId: event.id,
@@ -723,10 +861,9 @@ export async function generateProjectCommercialContract(
 
   const supersedeResult = await supabase
     .from("contracts")
-    .update({ is_latest: false, status: "superseded" })
+    .update({ is_latest: false })
     .eq("project_id", projectId)
-    .eq("is_latest", true)
-    .neq("status", "approved");
+    .eq("is_latest", true);
 
   if (supersedeResult.error) {
     throw supersedeResult.error;
@@ -829,15 +966,12 @@ export async function recordProjectPayment(
   payload: Record<string, unknown>,
   actorUserId: string,
 ) {
-  const status =
-    payload.status === "confirmed" || payload.status === "recorded"
-      ? payload.status
-      : "recorded";
+  const shouldConfirm = payload.status === "confirmed";
   const { data, error } = await supabase
     .from("payments")
     .insert({
-      confirmed_at: status === "confirmed" ? new Date().toISOString() : null,
-      confirmed_by: status === "confirmed" ? actorUserId : null,
+      confirmed_at: null,
+      confirmed_by: null,
       contract_id: optionalString(payload.contractId),
       currency: "USD",
       expected_amount_cents: nonNegativeInteger(
@@ -855,7 +989,7 @@ export async function recordProjectPayment(
       project_id: projectId,
       reference_note: optionalString(payload.referenceNote),
       recorded_by: actorUserId,
-      status,
+      status: "recorded",
     })
     .select("*")
     .single();
@@ -864,8 +998,13 @@ export async function recordProjectPayment(
     throw error;
   }
 
-  if (status === "confirmed") {
-    await refreshProjectPaymentGate(supabase, projectId);
+  if (shouldConfirm) {
+    return confirmProjectPayment(
+      supabase,
+      projectId,
+      (data as PaymentRow).id,
+      actorUserId,
+    );
   }
 
   return data as PaymentRow;
@@ -1029,72 +1168,160 @@ export async function createContractAddendum(
 export async function getProjectCommercialOverview(
   supabase: SupabaseClient,
   projectId: string,
+  access?: CommercialOverviewAccess,
 ): Promise<ProjectCommercialOverview> {
-  const context = await getPricingContext(supabase, projectId);
-  const [contracts, addendums, payments, exceptions, gateEvents] =
-    await Promise.all([
-      listRows<ContractRow>(
-        supabase
-          .from("contracts")
-          .select("*")
-          .eq("project_id", projectId)
-          .order("version", { ascending: false }),
-      ),
-      listRows<ContractAddendumRow>(
-        supabase
-          .from("contract_addendums")
-          .select("*")
-          .eq("project_id", projectId)
-          .order("generated_at", { ascending: false }),
-      ),
-      listRows<PaymentRow>(
-        supabase
-          .from("payments")
-          .select("*")
-          .eq("project_id", projectId)
-          .order("payment_date", { ascending: false }),
-      ),
-      listRows<PaymentExceptionRow>(
-        supabase
-          .from("payment_exceptions")
-          .select("*")
-          .eq("project_id", projectId)
-          .order("created_at", { ascending: false }),
-      ),
-      listRows<PaymentGateEventRow>(
-        supabase
-          .from("payment_gate_events")
-          .select("*")
-          .eq("project_id", projectId)
-          .order("created_at", { ascending: false })
-          .limit(12),
-      ),
-    ]);
+  const overviewAccess = normalizeOverviewAccess(access);
+  const canReadSelections =
+    overviewAccess.canReadContracts || overviewAccess.canReadPricing;
+  const context = await getProjectOverviewContext(
+    supabase,
+    projectId,
+    canReadSelections,
+  );
+  const canReadPackages =
+    overviewAccess.canReadPackages || overviewAccess.canManagePackages;
+  const canReadExceptions = overviewAccess.canManageExceptions;
+  const canReadGestures =
+    overviewAccess.canManageGestures || overviewAccess.canReadRevenue;
+  const canReadPaymentDetails = overviewAccess.canReadPayments;
+  const canReadPaymentSummary =
+    overviewAccess.canReadPaymentSummary ||
+    overviewAccess.canReadPayments ||
+    overviewAccess.canReadContracts;
+  const [
+    packages,
+    addons,
+    gestures,
+    contracts,
+    addendums,
+    payments,
+    exceptions,
+    gateEvents,
+    storedPricing,
+  ] = await Promise.all([
+    canReadPackages
+      ? listRows<ServicePackageRow>(
+          supabase
+            .from("service_packages")
+            .select("*")
+            .order("package_code", { ascending: true }),
+        )
+      : Promise.resolve([]),
+    canReadPackages
+      ? listRows<ServicePackageAddonRow>(
+          supabase
+            .from("service_package_addons")
+            .select("*")
+            .order("addon_code", { ascending: true }),
+        )
+      : Promise.resolve([]),
+    canReadGestures
+      ? listRows<CommercialGestureRow>(
+          supabase
+            .from("commercial_gestures")
+            .select("*")
+            .eq("project_id", projectId)
+            .eq("status", "active"),
+        )
+      : Promise.resolve([]),
+    overviewAccess.canReadContracts
+      ? listRows<ContractRow>(
+          supabase
+            .from("contracts")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("version", { ascending: false }),
+        )
+      : Promise.resolve([]),
+    overviewAccess.canReadContracts
+      ? listRows<ContractAddendumRow>(
+          supabase
+            .from("contract_addendums")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("generated_at", { ascending: false }),
+        )
+      : Promise.resolve([]),
+    canReadPaymentDetails
+      ? listRows<PaymentRow>(
+          supabase
+            .from("payments")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("payment_date", { ascending: false }),
+        )
+      : Promise.resolve([]),
+    canReadExceptions
+      ? listRows<PaymentExceptionRow>(
+          supabase
+            .from("payment_exceptions")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("created_at", { ascending: false }),
+        )
+      : Promise.resolve([]),
+    canReadPaymentDetails
+      ? listRows<PaymentGateEventRow>(
+          supabase
+            .from("payment_gate_events")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("created_at", { ascending: false })
+            .limit(12),
+        )
+      : Promise.resolve([]),
+    canReadSelections
+      ? getCurrentPricingCalculation(supabase, projectId)
+      : Promise.resolve(null),
+  ]);
   let balance: PaymentBalanceSnapshot | null = null;
-  let pricing: ProjectPricingCalculation | null = null;
+  let pricing: ProjectPricingCalculation | null = storedPricing;
 
-  try {
-    balance = await getProjectPaymentBalance(supabase, projectId);
-  } catch {
-    balance = null;
+  if (canReadPaymentSummary) {
+    try {
+      balance = await getProjectPaymentBalance(supabase, projectId);
+    } catch (error) {
+      serverLogger.error("Failed to load project commercial payment balance.", {
+        alertKey: "commercial_overview_payment_balance_fallback",
+        error,
+        fallback: "balance_null",
+        operation: "getProjectPaymentBalance",
+        projectId,
+      });
+      balance = null;
+    }
   }
 
-  try {
-    pricing = buildPricingFromRows(context);
-  } catch {
-    pricing = null;
+  if (canReadPackages && canReadSelections) {
+    try {
+      pricing = buildPricingFromRows({
+        ...context,
+        addons,
+        gestures,
+        packages,
+      });
+    } catch (error) {
+      serverLogger.error("Failed to build project commercial pricing.", {
+        alertKey: "commercial_overview_pricing_fallback",
+        error,
+        fallback: "stored_pricing",
+        operation: "buildPricingFromRows",
+        projectId,
+      });
+      pricing = storedPricing;
+    }
   }
 
   return {
     addendums,
-    addons: context.addons,
+    addons,
     balance,
     contracts,
     events: context.events,
     exceptions,
     gateEvents,
-    gestures: context.gestures,
-    packages: context.packages,
+    gestures,
+    packages,
     payments,
     pricing,
     project: context.project,

@@ -5,6 +5,8 @@ import {
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import { requireAnyGuestCreatePermission } from "@/lib/guests/guest-api";
+import { guestListGateAllowsAccess } from "@/lib/contracts/contract-gates";
+import { hasAnyCommercialReadPermission } from "@/lib/contracts/contract-api";
 import {
   getProjectDetails,
   listProjectEvents,
@@ -97,7 +99,7 @@ export default async function ProjectGuestsPage({
   ] = await Promise.all([
     hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
     hasProjectPermission(permissionContext, projectId, "rsvps.read"),
-    hasProjectPermission(permissionContext, projectId, "contracts.read"),
+    hasAnyCommercialReadPermission(permissionContext, projectId),
     hasProjectPermission(permissionContext, projectId, "contracts.generate"),
   ]);
   const projectDetails = await getProjectDetails(supabase, projectId);
@@ -112,7 +114,10 @@ export default async function ProjectGuestsPage({
     }
   ).guest_list_access_status;
 
-  if (guestListAccessStatus === "locked" && !canGenerateContracts) {
+  if (
+    !guestListGateAllowsAccess(guestListAccessStatus) &&
+    !canGenerateContracts
+  ) {
     return (
       <>
         <div className="page-heading">

@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   jsonError,
   ProjectAccessError,
@@ -71,18 +72,31 @@ export async function requireCommercialProjectPermission(
   await requireProjectPermission(context, projectId, permission);
 }
 
+export async function hasAnyCommercialReadPermission(
+  context: ProjectApiContext,
+  projectId: string,
+) {
+  const { data, error } = await (context.supabase as SupabaseClient).rpc(
+    "current_user_has_any_commercial_read",
+    {
+      p_project_id: projectId,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data);
+}
+
 export async function requireAnyCommercialReadPermission(
   context: ProjectApiContext,
   projectId: string,
 ) {
-  const canRead = await Promise.all([
-    hasCommercialProjectPermission(context, projectId, "contracts.read"),
-    hasCommercialProjectPermission(context, projectId, "pricing.read"),
-    hasCommercialProjectPermission(context, projectId, "payments.summary.read"),
-    hasCommercialProjectPermission(context, projectId, "payments.read"),
-  ]);
+  const canRead = await hasAnyCommercialReadPermission(context, projectId);
 
-  if (!canRead.some(Boolean)) {
+  if (!canRead) {
     throw new ProjectAccessError("Commercial access denied.", 403);
   }
 }
@@ -93,7 +107,7 @@ export async function getCommercialActionCapabilities(
 ) {
   const [
     canManagePackages,
-    canReadPackages,
+    canReadPackagesGlobal,
     canReadPricing,
     canManagePricing,
     canCalculatePricing,
@@ -150,7 +164,7 @@ export async function getCommercialActionCapabilities(
     canManagePackages,
     canManagePricing,
     canReadContracts,
-    canReadPackages,
+    canReadPackages: canReadPackagesGlobal || canManagePackages,
     canReadPayments,
     canReadPaymentSummary,
     canReadPricing,

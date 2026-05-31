@@ -136,6 +136,17 @@ exception
   when duplicate_object then null;
 end $$;
 
+do $$
+begin
+  create type public.guest_page_access_status as enum (
+    'locked',
+    'payment_confirmed',
+    'exception_override'
+  );
+exception
+  when duplicate_object then null;
+end $$;
+
 alter table public.wedding_projects
   add column if not exists guest_list_access_status public.guest_list_access_status not null default 'locked',
   add column if not exists guest_list_access_unlocked_at timestamptz,
@@ -183,6 +194,7 @@ create table if not exists public.service_package_addons (
   updated_at timestamptz not null default now(),
   constraint service_package_addons_code_format check (addon_code ~ '^[A-Z0-9][A-Z0-9_-]{1,31}$'),
   constraint service_package_addons_name_not_blank check (length(trim(name)) > 0),
+  constraint service_package_addons_pricing_mode_supported check (pricing_mode in ('flat', 'per_guest')),
   constraint service_package_addons_price_non_negative check (price_cents >= 0)
 );
 
@@ -545,6 +557,12 @@ as $$
     when p_snapshot is null then null
     when p_table_name in ('payments', 'payment_exceptions') then
       p_snapshot - 'reference_note' - 'proof_file_id' - 'notes' - 'conditions'
+    when p_table_name = 'contracts' then
+      p_snapshot - 'rendered_contract' - 'approval_confirmation_text' - 'pricing_snapshot' - 'package_snapshot' - 'structured_data'
+    when p_table_name = 'contract_approvals' then
+      p_snapshot - 'confirmation_text' - 'metadata'
+    when p_table_name = 'payment_gate_events' then
+      p_snapshot - 'balance_snapshot'
     else p_snapshot
   end;
 $$;
@@ -799,7 +817,7 @@ begin
     'expectedAmountCents', v_expected_amount,
     'confirmedPaidAmountCents', v_paid_amount,
     'balanceDueCents', greatest(v_expected_amount - v_paid_amount, 0),
-    'isFullyPaid', v_expected_amount > 0 and v_paid_amount >= v_expected_amount,
+    'isFullyPaid', v_contract.id is not null and v_contract.status = 'approved' and v_paid_amount >= v_expected_amount,
     'hasActiveException', v_active_exception.id is not null,
     'activeExceptionId', v_active_exception.id
   );
@@ -1188,7 +1206,12 @@ create policy "Payments recorded by payment recorders"
 on public.payments
 for insert
 to authenticated
-with check (app_private.user_can_access_project((select auth.uid()), project_id, 'payments.record'));
+with check (
+  app_private.user_can_access_project((select auth.uid()), project_id, 'payments.record')
+  and status <> 'confirmed'
+  and confirmed_by is null
+  and confirmed_at is null
+);
 
 drop policy if exists "Payments confirmed by payment confirmers" on public.payments;
 create policy "Payments confirmed by payment confirmers"
@@ -1269,6 +1292,66 @@ grant select, insert, update on public.payment_exceptions to service_role;
 grant select, insert, update on public.commercial_gestures to service_role;
 grant select, insert on public.payment_gate_events to service_role;
 
+create or replace function app_private.user_has_permission(
+  p_user_id uuid,
+  p_permission text,
+  p_scope public.role_scope_type default 'global',
+  p_scope_id uuid default null
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select exists (
+    select 1
+    from public.role_assignments ra
+    join public.roles r on r.id = ra.role_id
+    join public.role_permissions rp on rp.role_id = ra.role_id
+    where ra.user_id = p_user_id
+      and rp.permission_slug = p_permission
+      and (ra.expires_at is null or ra.expires_at > now())
+      and (
+        not r.requires_mfa
+        or coalesce((select auth.jwt() ->> 'aal'), 'aal1') = 'aal2'
+      )
+      -- p_scope_id = null intentionally means "any instance of p_scope";
+      -- global checks match ra.scope = 'global', while scoped checks can
+      -- require a concrete ra.scope_id when p_scope_id is provided.
+      and (
+        ra.scope = 'global'
+        or (
+          ra.scope = p_scope
+          and (p_scope_id is null or ra.scope_id = p_scope_id)
+        )
+      )
+  );
+$$;
+
+revoke all on function app_private.user_has_permission(uuid, text, public.role_scope_type, uuid) from public;
+
+create or replace function public.current_user_has_any_commercial_read(
+  p_project_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select
+    app_private.user_has_permission((select auth.uid()), 'service_packages.read', 'global', null)
+    or app_private.user_has_permission((select auth.uid()), 'service_packages.manage', 'global', null)
+    or app_private.user_can_access_project((select auth.uid()), p_project_id, 'contracts.read')
+    or app_private.user_can_access_project((select auth.uid()), p_project_id, 'pricing.read')
+    or app_private.user_can_access_project((select auth.uid()), p_project_id, 'payments.summary.read')
+    or app_private.user_can_access_project((select auth.uid()), p_project_id, 'payments.read');
+$$;
+
+revoke all on function public.current_user_has_any_commercial_read(uuid) from public;
+grant execute on function public.current_user_has_any_commercial_read(uuid) to authenticated;
+
 insert into public.permissions (slug, description, requirement_ids)
 values
   ('service_packages.read', 'Read active service package and add-on catalog entries.', array['PAY-006', 'PAY-007']),
@@ -1311,6 +1394,7 @@ with sprint_10_grants(role_slug, permission_slug) as (
     ('diginoces_admin', 'commercial_gestures.manage'),
     ('diginoces_admin', 'revenue.read'),
     ('operations_manager', 'service_packages.read'),
+    ('operations_manager', 'service_packages.manage'),
     ('operations_manager', 'pricing.read'),
     ('operations_manager', 'pricing.calculate'),
     ('operations_manager', 'pricing.manage'),
@@ -1321,6 +1405,8 @@ with sprint_10_grants(role_slug, permission_slug) as (
     ('operations_manager', 'payments.read'),
     ('operations_manager', 'payments.record'),
     ('operations_manager', 'payments.confirm'),
+    ('operations_manager', 'payment_exceptions.manage'),
+    ('operations_manager', 'commercial_gestures.manage'),
     ('operations_manager', 'revenue.read'),
     ('couple', 'contracts.read'),
     ('couple', 'contracts.approve'),
@@ -1338,3 +1424,7 @@ from sprint_10_grants g
 join public.roles r on r.slug = g.role_slug
 join public.permissions p on p.slug = g.permission_slug
 on conflict (role_id, permission_slug) do nothing;
+
+update public.roles
+set requires_mfa = true
+where slug = 'operations_manager';

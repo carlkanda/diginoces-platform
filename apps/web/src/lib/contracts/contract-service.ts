@@ -13,6 +13,10 @@ export class CommercialValidationError extends Error {
 }
 
 export type ServicePricingMode = "base_plus_per_guest" | "flat" | "per_guest";
+export type AddonPricingMode = Exclude<
+  ServicePricingMode,
+  "base_plus_per_guest"
+>;
 export type ServiceCatalogStatus = "active" | "archived" | "draft" | "inactive";
 export type ContractStatus =
   | "approved"
@@ -54,7 +58,7 @@ export type ServicePackageAddon = {
   id: string;
   name: string;
   priceCents: number;
-  pricingMode: ServicePricingMode;
+  pricingMode: AddonPricingMode;
   status: ServiceCatalogStatus;
 };
 
@@ -73,7 +77,7 @@ export type EventPricingBreakdown = {
     id: string;
     name: string;
     priceCents: number;
-    pricingMode: ServicePricingMode;
+    pricingMode: AddonPricingMode;
   }>;
   eventId: string;
   eventName: string;
@@ -553,9 +557,7 @@ export function calculatePaymentBalance(input: {
     contractAmountCents: input.approvedContractAmountCents,
     expectedAmountCents,
     hasActiveException: Boolean(activeException),
-    isFullyPaid:
-      expectedAmountCents > 0 &&
-      confirmedPaidAmountCents >= expectedAmountCents,
+    isFullyPaid: confirmedPaidAmountCents >= expectedAmountCents,
   };
 }
 

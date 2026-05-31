@@ -3,7 +3,10 @@ import {
   handleProjectApiError,
   isProjectApiContext,
 } from "@/lib/projects/project-api";
-import { requireAnyCommercialReadPermission } from "@/lib/contracts/contract-api";
+import {
+  getCommercialActionCapabilities,
+  requireAnyCommercialReadPermission,
+} from "@/lib/contracts/contract-api";
 import { getProjectCommercialOverview } from "@/lib/contracts/contract-db";
 
 type CommercialRouteProps = {
@@ -23,9 +26,17 @@ export async function GET(_request: Request, { params }: CommercialRouteProps) {
     const { projectId } = await params;
 
     await requireAnyCommercialReadPermission(context, projectId);
+    const capabilities = await getCommercialActionCapabilities(
+      context,
+      projectId,
+    );
 
     return Response.json(
-      await getProjectCommercialOverview(context.supabase, projectId),
+      await getProjectCommercialOverview(
+        context.supabase,
+        projectId,
+        capabilities,
+      ),
     );
   } catch (error) {
     return handleProjectApiError(error);

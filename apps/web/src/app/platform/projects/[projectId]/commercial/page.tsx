@@ -53,6 +53,33 @@ function statusLabel(value: string) {
   return value.replaceAll("_", " ");
 }
 
+function commercialStatusMessage(code: string) {
+  const messages: Record<string, string> = {
+    addendum_created: "Addendum created.",
+    addon_created: "Add-on created.",
+    commercial_gesture_applied: "Commercial gesture applied.",
+    contract_approved: "Contract approved.",
+    contract_generated: "Contract generated.",
+    event_package_selected: "Event package selection saved.",
+    package_created: "Package created.",
+    payment_confirmed: "Payment confirmed.",
+    payment_exception_created: "Payment exception created.",
+    payment_recorded: "Payment recorded.",
+    pricing_calculated: "Pricing snapshot stored.",
+  };
+
+  return messages[code] ?? "Commercial action completed.";
+}
+
+function commercialErrorMessage(code: string) {
+  const messages: Record<string, string> = {
+    commercial_action_failed: "Commercial action failed.",
+    invalid_commercial_request: "Commercial action could not be saved.",
+  };
+
+  return messages[code] ?? "Commercial action failed.";
+}
+
 export default async function ProjectCommercialPage({
   params,
   searchParams,
@@ -97,10 +124,15 @@ export default async function ProjectCommercialPage({
     throw error;
   }
 
-  const [overview, capabilities] = await Promise.all([
-    getProjectCommercialOverview(supabase, projectId),
-    getCommercialActionCapabilities(context, projectId),
-  ]);
+  const capabilities = await getCommercialActionCapabilities(
+    context,
+    projectId,
+  );
+  const overview = await getProjectCommercialOverview(
+    supabase,
+    projectId,
+    capabilities,
+  );
   const latestContract = overview.contracts[0] ?? null;
   const activeSelectionByEventId = new Map(
     overview.selections.map((selection) => [selection.event_id, selection]),
@@ -127,12 +159,16 @@ export default async function ProjectCommercialPage({
 
       {notices.commercialError ? (
         <section className="section">
-          <div className="alert">{notices.commercialError}</div>
+          <div className="alert">
+            {commercialErrorMessage(notices.commercialError)}
+          </div>
         </section>
       ) : null}
       {notices.commercialStatus ? (
         <section className="section">
-          <div className="success">{statusLabel(notices.commercialStatus)}</div>
+          <div className="success">
+            {commercialStatusMessage(notices.commercialStatus)}
+          </div>
         </section>
       ) : null}
 
@@ -476,7 +512,7 @@ export default async function ProjectCommercialPage({
           <h2>Payments</h2>
           <span className="meta-list">PAY-013 / PAY-014</span>
         </div>
-        {capabilities.canRecordPayments ? (
+        {capabilities.canRecordPayments && latestContract ? (
           <form
             action={recordPaymentAction.bind(null, projectId)}
             className="stacked-form"
@@ -513,10 +549,12 @@ export default async function ProjectCommercialPage({
               Reference note
               <input name="referenceNote" />
             </label>
-            <label>
-              <input name="confirmNow" type="checkbox" />
-              Confirm immediately
-            </label>
+            {capabilities.canConfirmPayments ? (
+              <label>
+                <input name="confirmNow" type="checkbox" />
+                Confirm immediately
+              </label>
+            ) : null}
             <button className="button" type="submit">
               Record payment
             </button>

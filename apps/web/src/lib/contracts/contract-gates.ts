@@ -4,6 +4,10 @@ import {
 } from "@/lib/projects/project-api";
 import type { ProjectApiContext } from "@/lib/projects/project-api";
 
+export function guestListGateAllowsAccess(status: string | null | undefined) {
+  return status === "contract_approved";
+}
+
 export async function requireGuestListContractGateOpen(
   context: ProjectApiContext,
   projectId: string,
@@ -25,7 +29,7 @@ export async function requireGuestListContractGateOpen(
   const status = (data as { guest_list_access_status?: string } | null)
     ?.guest_list_access_status;
 
-  if (status !== "contract_approved") {
+  if (!guestListGateAllowsAccess(status)) {
     throw new ProjectAccessError(
       "Guest list is locked pending contract approval.",
       403,

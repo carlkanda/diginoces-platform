@@ -5,6 +5,7 @@ import {
   requireCommercialProjectPermission,
 } from "@/lib/contracts/contract-api";
 import { recordProjectPayment } from "@/lib/contracts/contract-db";
+import { CommercialValidationError } from "@/lib/contracts/contract-service";
 import {
   getProjectApiContext,
   handleProjectApiError,
@@ -29,6 +30,8 @@ export async function POST(
 
   try {
     const { projectId } = await params;
+    const payload = await readJson(request);
+    const status = payload.status;
 
     await requireCommercialProjectPermission(
       context,
@@ -36,11 +39,33 @@ export async function POST(
       "payments.record",
     );
 
+    if (
+      status !== undefined &&
+      status !== null &&
+      status !== "recorded" &&
+      status !== "confirmed"
+    ) {
+      throw new CommercialValidationError(
+        "Payment status must be recorded or confirmed.",
+      );
+    }
+
+    if (status === "confirmed") {
+      await requireCommercialProjectPermission(
+        context,
+        projectId,
+        "payments.confirm",
+      );
+    }
+
     return Response.json(
       await recordProjectPayment(
         context.supabase,
         projectId,
-        await readJson(request),
+        {
+          ...payload,
+          status: status === "confirmed" ? "confirmed" : "recorded",
+        },
         context.user.id,
       ),
       { status: 201 },
