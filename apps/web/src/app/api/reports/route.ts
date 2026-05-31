@@ -13,6 +13,7 @@ import {
   requireAuditExportPermission,
   requireEventReportExportPermission,
   requireProjectReportExportPermission,
+  requireReportExportPermission,
 } from "@/lib/reports/report-api";
 import { generateReportCsv, listReportExports } from "@/lib/reports/report-db";
 import {
@@ -118,8 +119,10 @@ export async function POST(request: NextRequest) {
       }
 
       await requireProjectReportExportPermission(context, projectId);
-    } else {
+    } else if (reportKey === "audit_log_export") {
       await requireAuditExportPermission(context);
+    } else {
+      await requireReportExportPermission(context);
     }
 
     if (definition?.internalOnly && reportKey !== "audit_log_export") {

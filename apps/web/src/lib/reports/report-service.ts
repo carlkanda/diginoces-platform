@@ -194,12 +194,19 @@ function formatCsvValue(value: unknown) {
     return "";
   }
 
-  const text =
+  const rawText =
     value instanceof Date
       ? value.toISOString()
       : typeof value === "object"
         ? JSON.stringify(value)
         : String(value);
+  const isStandaloneNumber = /^-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(
+    rawText,
+  );
+  const text =
+    !isStandaloneNumber && /^[=+\-@\t\r\n]/.test(rawText)
+      ? `'${rawText}`
+      : rawText;
 
   if (/[",\r\n]/.test(text)) {
     return `"${text.replaceAll('"', '""')}"`;
@@ -338,6 +345,33 @@ export function parseReportScope(value: unknown): ReportScope {
   throw new ReportValidationError("scope is not supported.");
 }
 
+function normalizeAuditDateFilter(key: "from" | "to", value: string) {
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+  if (dateOnly) {
+    const year = Number(dateOnly[1]);
+    const month = Number(dateOnly[2]);
+    const day = Number(dateOnly[3]);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+      parsed.getUTCFullYear() !== year ||
+      parsed.getUTCMonth() !== month - 1 ||
+      parsed.getUTCDate() !== day
+    ) {
+      throw new ReportValidationError(`${key} filter must be a valid date.`);
+    }
+
+    return key === "from" ? `${value}T00:00:00.000Z` : `${value}T23:59:59.999Z`;
+  }
+
+  if (Number.isNaN(Date.parse(value))) {
+    throw new ReportValidationError(`${key} filter must be a valid date.`);
+  }
+
+  return value;
+}
+
 export function normalizeAuditLogFilters(value: unknown): AuditLogFilters {
   if (value === undefined || value === null) {
     return {};
@@ -368,8 +402,21 @@ export function normalizeAuditLogFilters(value: unknown): AuditLogFilters {
       throw new ReportValidationError(`${key} filter must be a string.`);
     }
 
-    const normalized = field.trim();
+    let normalized = field.trim();
+
+    if ((key === "from" || key === "to") && normalized.length > 0) {
+      normalized = normalizeAuditDateFilter(key, normalized);
+    }
+
     filters[key] = normalized.length > 0 ? normalized : null;
+  }
+
+  if (
+    filters.from &&
+    filters.to &&
+    Date.parse(filters.from) > Date.parse(filters.to)
+  ) {
+    throw new ReportValidationError("from filter must not be after to filter.");
   }
 
   return filters;

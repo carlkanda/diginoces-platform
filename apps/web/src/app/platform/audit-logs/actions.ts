@@ -46,18 +46,19 @@ export async function exportAuditLogsAction(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
   const context = { supabase, user: authContext.user };
+  const filters = {
+    action: formText(formData, "action"),
+    actorUserId: formText(formData, "actorUserId"),
+    from: formText(formData, "from"),
+    objectType: formText(formData, "objectType"),
+    search: formText(formData, "search"),
+    to: formText(formData, "to"),
+  };
+  let generatedId: string | undefined;
 
   try {
     await requireAuditExportPermission(context);
     const permissions = await getReportingPermissionSet(context);
-    const filters = {
-      action: formText(formData, "action"),
-      actorUserId: formText(formData, "actorUserId"),
-      from: formText(formData, "from"),
-      objectType: formText(formData, "objectType"),
-      search: formText(formData, "search"),
-      to: formText(formData, "to"),
-    };
     const result = await generateReportCsv(supabase, {
       actorUserId: context.user.id,
       filters,
@@ -65,19 +66,10 @@ export async function exportAuditLogsAction(formData: FormData) {
       reportKey: "audit_log_export",
       scope: "global",
     });
-
-    redirect(
-      auditLogsPath({
-        action: filters.action,
-        actorUserId: filters.actorUserId,
-        auditStatus: "exported",
-        objectType: filters.objectType,
-        search: filters.search,
-        to: filters.to,
-        from: filters.from,
-        generated: String(result.exportRecord.id),
-      }),
-    );
+    generatedId =
+      result.exportRecord.id == null
+        ? undefined
+        : String(result.exportRecord.id);
   } catch {
     redirect(
       auditLogsPath({
@@ -85,4 +77,17 @@ export async function exportAuditLogsAction(formData: FormData) {
       }),
     );
   }
+
+  redirect(
+    auditLogsPath({
+      action: filters.action,
+      actorUserId: filters.actorUserId,
+      auditStatus: "exported",
+      from: filters.from,
+      objectType: filters.objectType,
+      search: filters.search,
+      to: filters.to,
+      generated: generatedId,
+    }),
+  );
 }

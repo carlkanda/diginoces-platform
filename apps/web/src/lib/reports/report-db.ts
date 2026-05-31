@@ -137,6 +137,18 @@ async function maybeRow<T extends BaseRow>(
   return data;
 }
 
+async function countRows(
+  query: PromiseLike<{ count: number | null; error: unknown }>,
+) {
+  const { count, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return count ?? 0;
+}
+
 function statusCounts(rows: BaseRow[], field = "status") {
   return rows.reduce<Record<string, number>>((counts, row) => {
     const key =
@@ -202,19 +214,35 @@ function table(supabase: AnySupabase, name: string) {
   return supabase.from(name);
 }
 
+function quotePostgrestOrValue(value: string) {
+  return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
+}
+
+function auditLogSearchPattern(search: string) {
+  const escapedPattern = `%${search
+    .replaceAll("%", "\\%")
+    .replaceAll("_", "\\_")}%`;
+
+  return quotePostgrestOrValue(escapedPattern);
+}
+
 export async function getGlobalDashboardOverview(
   supabase: AnySupabase,
   visibility: DashboardVisibility,
 ): Promise<GlobalDashboardOverview> {
+  const today = new Date().toISOString().slice(0, 10);
   const [
     projects,
-    events,
+    projectCount,
+    activeProjectCount,
+    upcomingEventCount,
+    draftEventCount,
     contracts,
     payments,
     imports,
     messages,
     unexpected,
-    exports,
+    reportExportCount,
     auditRows,
   ] = await Promise.all([
     listRows<BaseRow>(
@@ -223,11 +251,26 @@ export async function getGlobalDashboardOverview(
         .order("created_at", { ascending: false })
         .limit(8),
     ),
-    listRows<BaseRow>(
+    countRows(
+      table(supabase, "wedding_projects").select("id", {
+        count: "exact",
+        head: true,
+      }),
+    ),
+    countRows(
+      table(supabase, "wedding_projects")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["active", "ready_for_invitations", "event_operations"]),
+    ),
+    countRows(
       table(supabase, "events")
-        .select("id, status, event_date")
-        .order("event_date", { ascending: true, nullsFirst: false })
-        .limit(50),
+        .select("id", { count: "exact", head: true })
+        .gte("event_date", today),
+    ),
+    countRows(
+      table(supabase, "events")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "draft"),
     ),
     visibility.canReadInternalReports
       ? listRows<BaseRow>(
@@ -252,15 +295,16 @@ export async function getGlobalDashboardOverview(
         .select("id, status")
         .limit(200),
     ),
-    listRows<BaseRow>(
-      table(supabase, "report_exports").select("id, status").limit(200),
+    countRows(
+      table(supabase, "report_exports").select("id", {
+        count: "exact",
+        head: true,
+      }),
     ),
     visibility.canReadAuditLogs
       ? listAuditLogs(supabase, {}, 8)
       : Promise.resolve([]),
   ]);
-  const projectCounts = statusCounts(projects);
-  const eventCounts = statusCounts(events);
   const contractCounts = statusCounts(contracts);
   const importCounts = statusCounts(imports);
   const messageCounts = statusCounts(messages);
@@ -271,25 +315,17 @@ export async function getGlobalDashboardOverview(
     metrics: [
       {
         label: "Projects",
-        value: projects.length,
+        value: projectCount,
         visibility: "internal",
       },
       {
         label: "Upcoming events",
-        value: events.filter(
-          (event) =>
-            typeof event.event_date === "string" &&
-            event.event_date >= new Date().toISOString().slice(0, 10),
-        ).length,
+        value: upcomingEventCount,
         visibility: "internal",
       },
       {
         label: "Active projects",
-        value:
-          projectCounts.active ??
-          projectCounts.ready_for_invitations ??
-          projectCounts.event_operations ??
-          0,
+        value: activeProjectCount,
         visibility: "internal",
       },
       {
@@ -331,12 +367,12 @@ export async function getGlobalDashboardOverview(
       },
       {
         label: "Report exports",
-        value: exports.length,
+        value: reportExportCount,
         visibility: "internal",
       },
       {
         label: "Draft events",
-        value: eventCounts.draft ?? 0,
+        value: draftEventCount,
         visibility: "internal",
       },
     ],
@@ -757,6 +793,7 @@ export async function listAuditLogs(
   filters: AuditLogFilters = {},
   limit = 100,
 ) {
+  const search = filters.search?.trim();
   let query = table(supabase, "audit_logs")
     .select(
       "id, actor_user_id, action, object_type, object_id, old_value, new_value, source, reason, created_at",
@@ -782,6 +819,26 @@ export async function listAuditLogs(
 
   if (filters.to) {
     query = query.lte("created_at", filters.to);
+  }
+
+  if (search) {
+    const pattern = auditLogSearchPattern(search);
+    const textFilters = [
+      `action.ilike.${pattern}`,
+      `object_type.ilike.${pattern}`,
+      `source.ilike.${pattern}`,
+      `reason.ilike.${pattern}`,
+    ];
+
+    if (
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        search,
+      )
+    ) {
+      textFilters.push(`actor_user_id.eq.${search}`, `object_id.eq.${search}`);
+    }
+
+    query = query.or(textFilters.join(","));
   }
 
   const rows = await listRows<BaseRow>(query);
@@ -838,6 +895,49 @@ async function getReportDefinitionId(
   );
 
   return typeof row?.id === "string" ? row.id : null;
+}
+
+async function createReportExportRecord(
+  supabase: AnySupabase,
+  input: {
+    actorUserId: string;
+    eventId?: string | null;
+    filename: string;
+    filters: AuditLogFilters;
+    isAuditExport: boolean;
+    projectId?: string | null;
+    reportDefinitionId: string | null;
+    reportKey: ReportKey;
+    rowCount: number;
+    scope: ReportScope;
+  },
+) {
+  const { data, error } = await supabase.rpc("create_report_export", {
+    p_audit_redacted_fields: ["old_value", "new_value"],
+    p_event_id: input.eventId ?? null,
+    p_filename: input.filename,
+    p_filters: input.filters,
+    p_format: "csv",
+    p_is_audit_export: input.isAuditExport,
+    p_metadata: {
+      fileRegistration: "metadata_only",
+      storage: "not_persisted_sprint_11",
+    },
+    p_mime_type: "text/csv",
+    p_project_id: input.projectId ?? null,
+    p_report_definition_id: input.reportDefinitionId,
+    p_report_key: input.reportKey,
+    p_requested_by: input.actorUserId,
+    p_row_count: input.rowCount,
+    p_scope: input.scope,
+    p_status: "generated",
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data as BaseRow;
 }
 
 function assertExportScope(
@@ -1146,45 +1246,18 @@ export async function generateReportCsv(
       : buildCsv([{ empty: "No rows" }], [{ key: "empty", label: "Empty" }]);
   const filename = filenameFor(reportKey);
   const reportDefinitionId = await getReportDefinitionId(supabase, reportKey);
-  const { data, error } = await table(supabase, "report_exports")
-    .insert({
-      event_id: input.eventId ?? null,
-      filename,
-      filters,
-      format: "csv",
-      metadata: {
-        fileRegistration: "metadata_only",
-        storage: "not_persisted_sprint_11",
-      },
-      mime_type: "text/csv",
-      project_id: input.projectId ?? null,
-      report_definition_id: reportDefinitionId,
-      report_key: reportKey,
-      requested_by: input.actorUserId,
-      row_count: rows.length,
-      scope,
-      status: "generated",
-    })
-    .select("*")
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  if (reportKey === "audit_log_export") {
-    const auditInsert = await table(supabase, "audit_log_exports").insert({
-      filters,
-      redacted_fields: ["old_value", "new_value"],
-      report_export_id: (data as BaseRow).id,
-      requested_by: input.actorUserId,
-      row_count: rows.length,
-    });
-
-    if (auditInsert.error) {
-      throw auditInsert.error;
-    }
-  }
+  const data = await createReportExportRecord(supabase, {
+    actorUserId: input.actorUserId,
+    eventId: input.eventId,
+    filename,
+    filters,
+    isAuditExport: reportKey === "audit_log_export",
+    projectId: input.projectId,
+    reportDefinitionId,
+    reportKey,
+    rowCount: rows.length,
+    scope,
+  });
 
   return {
     csv,

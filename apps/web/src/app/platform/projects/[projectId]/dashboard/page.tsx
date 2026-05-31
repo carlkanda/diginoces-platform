@@ -6,6 +6,7 @@ import {
 } from "@/lib/auth/auth-service";
 import { ProjectAccessError } from "@/lib/projects/project-api";
 import {
+  getEventDashboardAccessMap,
   getReportingPermissionSet,
   requireProjectDashboardPermission,
 } from "@/lib/reports/report-api";
@@ -82,15 +83,22 @@ export default async function ProjectDashboardPage({ params }: PageProps) {
   }
 
   const permissions = await getReportingPermissionSet(context, { projectId });
+  const visibility = getDashboardVisibility(permissions);
   const overview = await getProjectDashboardOverview(
     supabase,
     projectId,
-    getDashboardVisibility(permissions),
+    visibility,
   );
 
   if (!overview) {
     notFound();
   }
+
+  const eventDashboardAccess = await getEventDashboardAccessMap(
+    context,
+    projectId,
+    overview.events.map((event) => event.id),
+  );
 
   return (
     <>
@@ -109,12 +117,14 @@ export default async function ProjectDashboardPage({ params }: PageProps) {
         >
           Project
         </Link>
-        <Link
-          className="button secondary"
-          href={`/platform/projects/${projectId}/couple-dashboard`}
-        >
-          Couple view
-        </Link>
+        {visibility.canReadCoupleDashboard ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/couple-dashboard`}
+          >
+            Couple view
+          </Link>
+        ) : null}
         <Link
           className="button secondary"
           href={`/platform/reports?projectId=${projectId}`}
@@ -159,17 +169,21 @@ export default async function ProjectDashboardPage({ params }: PageProps) {
         ) : (
           <div className="record-list">
             {overview.events.map((event) => (
-              <Link
-                className="record-row"
-                href={`/platform/events/${event.id}/dashboard`}
-                key={event.id}
-              >
+              <div className="record-row" key={event.id}>
                 <span>
                   <strong>{event.name}</strong>
                   <small>{event.event_code}</small>
                 </span>
                 <span className="tag">{event.status}</span>
-              </Link>
+                {eventDashboardAccess.get(event.id) ? (
+                  <Link
+                    className="button secondary"
+                    href={`/platform/events/${event.id}/dashboard`}
+                  >
+                    Dashboard
+                  </Link>
+                ) : null}
+              </div>
             ))}
           </div>
         )}

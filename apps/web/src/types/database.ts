@@ -1321,6 +1321,13 @@ export type Database = {
         Args: { p_event_id: string; p_permission?: string };
         Returns: boolean;
       };
+      current_user_can_access_events: {
+        Args: { p_event_ids: string[]; p_permission?: string };
+        Returns: {
+          can_access: boolean;
+          event_id: string;
+        }[];
+      };
       current_user_can_access_project: {
         Args: { p_permission?: string; p_project_id: string };
         Returns: boolean;

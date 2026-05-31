@@ -137,6 +137,22 @@ export default async function AuditLogsPage({
             />
           </label>
           <label>
+            From
+            <input
+              name="from"
+              type="date"
+              defaultValue={params.from?.slice(0, 10) ?? ""}
+            />
+          </label>
+          <label>
+            To
+            <input
+              name="to"
+              type="date"
+              defaultValue={params.to?.slice(0, 10) ?? ""}
+            />
+          </label>
+          <label>
             Search
             <input
               name="search"
@@ -168,7 +184,9 @@ export default async function AuditLogsPage({
               type="hidden"
               value={params.actorUserId ?? ""}
             />
+            <input name="from" type="hidden" value={params.from ?? ""} />
             <input name="search" type="hidden" value={params.search ?? ""} />
+            <input name="to" type="hidden" value={params.to ?? ""} />
             <button className="button secondary" type="submit">
               Export filtered CSV
             </button>

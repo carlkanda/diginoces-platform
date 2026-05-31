@@ -65,7 +65,10 @@ create table if not exists public.report_definitions (
   updated_at timestamptz not null default now(),
   constraint report_definitions_key_format check (report_key ~ '^[a-z][a-z0-9_]*$'),
   constraint report_definitions_name_not_blank check (length(trim(name)) > 0),
-  constraint report_definitions_status_valid check (status in ('available', 'placeholder', 'post_mvp'))
+  constraint report_definitions_status_valid check (status in ('available', 'placeholder', 'post_mvp')),
+  constraint report_definitions_internal_permissions check (
+    internal_only = false or cardinality(required_permissions) > 0
+  )
 );
 
 create table if not exists public.report_exports (
@@ -249,8 +252,212 @@ begin
 end;
 $$;
 
+create or replace function app_private.user_can_use_report_definition(
+  p_user_id uuid,
+  p_report_definition_id uuid,
+  p_report_key text,
+  p_scope public.report_scope_type,
+  p_project_id uuid default null,
+  p_event_id uuid default null
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select exists (
+    select 1
+    from public.report_definitions rd
+    where (p_report_definition_id is null or rd.id = p_report_definition_id)
+      and rd.report_key = p_report_key
+      and rd.scope = p_scope
+      and (
+        rd.internal_only = false
+        or (
+          cardinality(rd.required_permissions) > 0
+          and not exists (
+            select 1
+            from unnest(rd.required_permissions) as required_permission(permission_slug)
+            where not (
+              case rd.scope
+                when 'event' then (
+                  p_event_id is not null
+                  and app_private.user_can_access_event(
+                    p_user_id,
+                    p_event_id,
+                    required_permission.permission_slug
+                  )
+                )
+                when 'project' then (
+                  p_project_id is not null
+                  and app_private.user_can_access_project(
+                    p_user_id,
+                    p_project_id,
+                    required_permission.permission_slug
+                  )
+                )
+                else app_private.user_has_permission(
+                  p_user_id,
+                  required_permission.permission_slug,
+                  'global',
+                  null
+                )
+              end
+            )
+          )
+        )
+      )
+  );
+$$;
+
+create or replace function public.create_report_export(
+  p_report_definition_id uuid,
+  p_report_key text,
+  p_scope public.report_scope_type,
+  p_project_id uuid,
+  p_event_id uuid,
+  p_format public.report_export_format,
+  p_status public.report_export_status,
+  p_requested_by uuid,
+  p_filename text,
+  p_mime_type text,
+  p_row_count integer,
+  p_filters jsonb,
+  p_metadata jsonb,
+  p_is_audit_export boolean,
+  p_audit_redacted_fields text[]
+)
+returns public.report_exports
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  export_row public.report_exports;
+begin
+  insert into public.report_exports (
+    event_id,
+    filename,
+    filters,
+    format,
+    metadata,
+    mime_type,
+    project_id,
+    report_definition_id,
+    report_key,
+    requested_by,
+    row_count,
+    scope,
+    status
+  )
+  values (
+    p_event_id,
+    p_filename,
+    coalesce(p_filters, '{}'::jsonb),
+    p_format,
+    coalesce(p_metadata, '{}'::jsonb),
+    p_mime_type,
+    p_project_id,
+    p_report_definition_id,
+    p_report_key,
+    p_requested_by,
+    p_row_count,
+    p_scope,
+    p_status
+  )
+  returning * into export_row;
+
+  if p_is_audit_export then
+    insert into public.audit_log_exports (
+      filters,
+      redacted_fields,
+      report_export_id,
+      requested_by,
+      row_count
+    )
+    values (
+      coalesce(p_filters, '{}'::jsonb),
+      coalesce(p_audit_redacted_fields, array['old_value', 'new_value']),
+      export_row.id,
+      p_requested_by,
+      p_row_count
+    );
+  end if;
+
+  return export_row;
+end;
+$$;
+
+create or replace function public.current_user_can_access_events(
+  p_event_ids uuid[],
+  p_permission text default 'events.read'
+)
+returns table(event_id uuid, can_access boolean)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select requested.event_id,
+    app_private.user_can_access_event((select auth.uid()), requested.event_id, p_permission) as can_access
+  from unnest(coalesce(p_event_ids, '{}'::uuid[])) as requested(event_id);
+$$;
+
 revoke all on function app_private.audit_report_export() from public;
 revoke all on function app_private.audit_audit_log_export() from public;
+revoke all on function app_private.user_can_use_report_definition(
+  uuid,
+  uuid,
+  text,
+  public.report_scope_type,
+  uuid,
+  uuid
+) from public;
+grant execute on function app_private.user_can_use_report_definition(
+  uuid,
+  uuid,
+  text,
+  public.report_scope_type,
+  uuid,
+  uuid
+) to authenticated, service_role;
+revoke all on function public.create_report_export(
+  uuid,
+  text,
+  public.report_scope_type,
+  uuid,
+  uuid,
+  public.report_export_format,
+  public.report_export_status,
+  uuid,
+  text,
+  text,
+  integer,
+  jsonb,
+  jsonb,
+  boolean,
+  text[]
+) from public;
+grant execute on function public.create_report_export(
+  uuid,
+  text,
+  public.report_scope_type,
+  uuid,
+  uuid,
+  public.report_export_format,
+  public.report_export_status,
+  uuid,
+  text,
+  text,
+  integer,
+  jsonb,
+  jsonb,
+  boolean,
+  text[]
+) to authenticated, service_role;
+revoke all on function public.current_user_can_access_events(uuid[], text) from public;
+grant execute on function public.current_user_can_access_events(uuid[], text) to authenticated, service_role;
 
 drop trigger if exists audit_report_exports_insert on public.report_exports;
 create trigger audit_report_exports_insert
@@ -280,7 +487,7 @@ create policy "Report definitions readable by authenticated users"
 on public.report_definitions
 for select
 to authenticated
-using (true);
+using (internal_only = false);
 
 drop policy if exists "Report exports readable by scoped report readers" on public.report_exports;
 create policy "Report exports readable by scoped report readers"
@@ -288,20 +495,37 @@ on public.report_exports
 for select
 to authenticated
 using (
-  (
-    scope = 'global'
-    and (
-      app_private.user_has_permission((select auth.uid()), 'reports.internal.read', 'global', null)
-      or app_private.user_has_permission((select auth.uid()), 'audit.export', 'global', null)
+  app_private.user_can_use_report_definition(
+    (select auth.uid()),
+    report_definition_id,
+    report_key,
+    scope,
+    project_id,
+    event_id
+  )
+  and (
+    (
+      scope = 'global'
+      and project_id is null
+      and event_id is null
+      and (
+        app_private.user_has_permission((select auth.uid()), 'reports.export', 'global', null)
+        or app_private.user_has_permission((select auth.uid()), 'reports.internal.read', 'global', null)
+        or app_private.user_has_permission((select auth.uid()), 'audit.export', 'global', null)
+      )
     )
-  )
-  or (
-    project_id is not null
-    and app_private.user_can_access_project((select auth.uid()), project_id, 'reports.export')
-  )
-  or (
-    event_id is not null
-    and app_private.user_can_access_event((select auth.uid()), event_id, 'reports.export')
+    or (
+      scope = 'project'
+      and project_id is not null
+      and event_id is null
+      and app_private.user_can_access_project((select auth.uid()), project_id, 'reports.export')
+    )
+    or (
+      scope = 'event'
+      and project_id is not null
+      and event_id is not null
+      and app_private.user_can_access_event((select auth.uid()), event_id, 'reports.export')
+    )
   )
 );
 
@@ -312,20 +536,35 @@ for insert
 to authenticated
 with check (
   requested_by = (select auth.uid())
+  and app_private.user_can_use_report_definition(
+    (select auth.uid()),
+    report_definition_id,
+    report_key,
+    scope,
+    project_id,
+    event_id
+  )
   and (
     (
       scope = 'global'
+      and project_id is null
+      and event_id is null
       and (
-        app_private.user_has_permission((select auth.uid()), 'reports.internal.read', 'global', null)
+        app_private.user_has_permission((select auth.uid()), 'reports.export', 'global', null)
+        or app_private.user_has_permission((select auth.uid()), 'reports.internal.read', 'global', null)
         or app_private.user_has_permission((select auth.uid()), 'audit.export', 'global', null)
       )
     )
     or (
-      project_id is not null
+      scope = 'project'
+      and project_id is not null
+      and event_id is null
       and app_private.user_can_access_project((select auth.uid()), project_id, 'reports.export')
     )
     or (
-      event_id is not null
+      scope = 'event'
+      and project_id is not null
+      and event_id is not null
       and app_private.user_can_access_event((select auth.uid()), event_id, 'reports.export')
     )
   )

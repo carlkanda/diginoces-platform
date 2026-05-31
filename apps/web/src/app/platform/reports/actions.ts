@@ -8,6 +8,7 @@ import {
   requireAuditExportPermission,
   requireEventReportExportPermission,
   requireProjectReportExportPermission,
+  requireReportExportPermission,
 } from "@/lib/reports/report-api";
 import { generateReportCsv } from "@/lib/reports/report-db";
 import { parseReportKey, parseReportScope } from "@/lib/reports/report-service";
@@ -60,8 +61,6 @@ async function getEventProjectId(
 
 export async function exportReportAction(formData: FormData) {
   const authContext = await getAuthContext();
-  const reportKey = parseReportKey(formText(formData, "reportKey"));
-  const scope = parseReportScope(formText(formData, "scope"));
   const eventId = formText(formData, "eventId");
   let projectId = formText(formData, "projectId");
 
@@ -75,8 +74,12 @@ export async function exportReportAction(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
   const context = { supabase, user: authContext.user };
+  let generatedId: string | undefined;
 
   try {
+    const reportKey = parseReportKey(formText(formData, "reportKey"));
+    const scope = parseReportScope(formText(formData, "scope"));
+
     if (scope === "event") {
       if (!eventId) {
         throw new ProjectAccessError("Event report scope is required.", 400);
@@ -90,8 +93,10 @@ export async function exportReportAction(formData: FormData) {
       }
 
       await requireProjectReportExportPermission(context, projectId);
-    } else {
+    } else if (reportKey === "audit_log_export") {
       await requireAuditExportPermission(context);
+    } else {
+      await requireReportExportPermission(context);
     }
 
     const permissions = await getReportingPermissionSet(context, {
@@ -107,15 +112,10 @@ export async function exportReportAction(formData: FormData) {
       reportKey,
       scope,
     });
-
-    redirect(
-      reportsPath({
-        eventId,
-        generated: String(result.exportRecord.id),
-        projectId,
-        reportStatus: "generated",
-      }),
-    );
+    generatedId =
+      result.exportRecord.id == null
+        ? undefined
+        : String(result.exportRecord.id);
   } catch (error) {
     const reportError =
       error instanceof ProjectAccessError
@@ -130,4 +130,13 @@ export async function exportReportAction(formData: FormData) {
       }),
     );
   }
+
+  redirect(
+    reportsPath({
+      eventId,
+      generated: generatedId,
+      projectId,
+      reportStatus: "generated",
+    }),
+  );
 }

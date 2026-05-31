@@ -6,6 +6,8 @@ import {
   filterAuditLogRows,
   getDashboardVisibility,
   getReportCatalogForPermissions,
+  normalizeAuditLogFilters,
+  ReportValidationError,
   sanitizeAuditLogRowForExport,
   sprint11ReportDefinitions,
 } from "@/lib/reports/report-service";
@@ -147,7 +149,7 @@ describe("Sprint 11 reporting and dashboard foundation", () => {
     );
   });
 
-  it("builds escaped CSV output with stable headers", () => {
+  it("builds escaped CSV output with stable headers and formula neutralization", () => {
     const csv = buildCsv(
       [
         {
@@ -160,6 +162,21 @@ describe("Sprint 11 reporting and dashboard foundation", () => {
           notes: null,
           side: "groom",
         },
+        {
+          displayName: "=SUM(1,1)",
+          notes: "@hidden",
+          side: "-formula",
+        },
+        {
+          displayName: "\n=CMD",
+          notes: "",
+          side: "both",
+        },
+        {
+          displayName: "Negative number",
+          notes: null,
+          side: -100,
+        },
       ],
       [
         { key: "displayName", label: "Display name" },
@@ -169,8 +186,62 @@ describe("Sprint 11 reporting and dashboard foundation", () => {
     );
 
     expect(csv).toBe(
-      'Display name,Side,Notes\r\nAda Lovelace,bride,"Line one\nLine two"\r\n"Grace ""Amazing"" Hopper",groom,',
+      'Display name,Side,Notes\r\nAda Lovelace,bride,"Line one\nLine two"\r\n"Grace ""Amazing"" Hopper",groom,\r\n"\'=SUM(1,1)",\'-formula,\'@hidden\r\n"\'\n=CMD",both,\r\nNegative number,-100,',
     );
+  });
+
+  it("rejects invalid audit-log date filters instead of widening exports", () => {
+    expect(() =>
+      normalizeAuditLogFilters({
+        from: "not-a-date",
+      }),
+    ).toThrow(ReportValidationError);
+
+    expect(() =>
+      normalizeAuditLogFilters({
+        from: "2026-02-31",
+      }),
+    ).toThrow(ReportValidationError);
+
+    expect(() =>
+      normalizeAuditLogFilters({
+        from: "2027-02-29",
+      }),
+    ).toThrow(ReportValidationError);
+
+    expect(() =>
+      normalizeAuditLogFilters({
+        from: "2026-05-01T00:00:00.000Z",
+        to: "not-a-date",
+      }),
+    ).toThrow(ReportValidationError);
+
+    expect(() =>
+      normalizeAuditLogFilters({
+        from: "2026-05-31T00:00:00.000Z",
+        to: "2026-05-01T00:00:00.000Z",
+      }),
+    ).toThrow(ReportValidationError);
+
+    expect(
+      normalizeAuditLogFilters({
+        from: "2026-05-01T00:00:00.000Z",
+        to: "2026-05-31",
+      }),
+    ).toEqual({
+      from: "2026-05-01T00:00:00.000Z",
+      to: "2026-05-31T23:59:59.999Z",
+    });
+
+    expect(
+      normalizeAuditLogFilters({
+        from: "2026-05-01",
+        to: "2026-05-31",
+      }),
+    ).toEqual({
+      from: "2026-05-01T00:00:00.000Z",
+      to: "2026-05-31T23:59:59.999Z",
+    });
   });
 
   it("filters and sanitizes audit-log exports without old/new value payloads", () => {
@@ -242,6 +313,25 @@ describe("Sprint 11 reporting and dashboard foundation", () => {
     );
     expect(migration).toContain(
       "create table if not exists public.audit_log_exports",
+    );
+    expect(migration).toContain(
+      "create or replace function app_private.user_can_use_report_definition",
+    );
+    expect(migration).toContain(
+      "create or replace function public.create_report_export",
+    );
+    expect(migration).toContain(
+      "create or replace function public.current_user_can_access_events",
+    );
+    expect(migration).toContain(
+      "constraint report_definitions_internal_permissions",
+    );
+    expect(migration).toContain("using (internal_only = false)");
+    const scopeConstraint = migration.match(
+      /constraint report_exports_scope_requires_ids check \(([\s\S]*?)\n  \),/,
+    );
+    expect(scopeConstraint?.[1]).toContain(
+      "or (scope = 'event' and project_id is not null and event_id is not null)",
     );
     expect(migration).toContain("dashboards.global.read");
     expect(migration).toContain("reports.exported");

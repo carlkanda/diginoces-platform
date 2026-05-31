@@ -34,6 +34,7 @@ The implementation remains limited to Sprint 11. It does not add guest-book work
   - `apps/web/src/lib/reports/report-db.ts`
   - `apps/web/src/lib/reports/report-service.ts`
   - `apps/web/src/lib/reports/reporting-foundation.test.ts`
+  - `apps/web/src/types/database.ts`
 - Updated RBAC/audit foundations:
   - `apps/web/src/lib/security/permissions.ts`
   - `apps/web/src/lib/audit/audit-log.ts`
@@ -65,10 +66,13 @@ The implementation remains limited to Sprint 11. It does not add guest-book work
 
 - Added `report_scope_type`, `report_export_format`, `report_export_status`, and `dashboard_scope_type` enums.
 - Added `report_definitions`, `report_exports`, `audit_log_exports`, and `dashboard_widget_preferences`.
-- Added RLS and grants for new report/audit/dashboard tables.
-- Added internal audit-log select policy gated by `audit.read`.
-- Added audit triggers for report exports and audit-log exports.
-- Added permission slugs:
+- RLS and grants added for new report/audit/dashboard tables.
+- Internal audit-log select policy now gates access by `audit.read`.
+- Audit triggers created for report exports and audit-log exports.
+- Report definition RLS hides internal-only definitions from direct authenticated reads, while report export RLS validates scope, definition requirements, and project/event access.
+- Report export metadata is created through `create_report_export` so audit-log export metadata and its paired audit export row are inserted atomically.
+- Batch event-dashboard permission checks use `current_user_can_access_events` to avoid per-event RPC loops.
+- New permission slugs include:
   - `dashboards.global.read`
   - `dashboards.project.read`
   - `dashboards.event.read`
@@ -85,10 +89,10 @@ The implementation remains limited to Sprint 11. It does not add guest-book work
 
 - `apps/web/src/lib/reports/reporting-foundation.test.ts`
   - Verifies Sprint 11 role grants and restricted couple/partner permissions.
-  - Verifies dashboard visibility derivation.
+  - Covers dashboard visibility derivation.
   - Verifies report catalog filtering.
-  - Verifies CSV escaping.
-  - Verifies audit-log filtering and redacted export shape.
+  - Asserts CSV escaping and spreadsheet formula neutralization.
+  - Confirms audit-log filtering, invalid date rejection, and redacted export shape.
   - Verifies migration foundations and route files exist.
 
 ## Commands Run
@@ -98,13 +102,14 @@ The implementation remains limited to Sprint 11. It does not add guest-book work
 - `npm run format:check` - passed.
 - `npm run lint` - passed.
 - `npm run typecheck` - passed.
-- `npm run test -- --run src/lib/reports/reporting-foundation.test.ts` - passed, 7 tests.
-- `npm run test` - passed, 12 test files and 119 tests.
+- `npm run test -- --run src/lib/reports/reporting-foundation.test.ts` - passed, 8 tests.
+- `npm run test` - passed, 12 test files and 120 tests.
 - `npm run build` - passed.
 - `npm audit --omit=dev` - passed, 0 vulnerabilities.
 - `npm run db:lint` - passed, no schema errors in linked `public` and `app_private` schemas.
 - `npx supabase@latest db push --linked --dry-run` - passed, would push `20260531091009_sprint_11_dashboards_reports_audit_logs.sql`.
-- `git diff --check` - passed, only LF/CRLF warning for `docs/setup/local-development.md`.
+- `coderabbit review --agent -t uncommitted -c AGENTS.md` from WSL - passed with 0 issues after review fixes.
+- `git diff --check` - passed, only repository LF/CRLF warnings were printed.
 - Targeted secret scan with `rg` - passed with no real secret patterns found. A broader scan only matched placeholder `.env.example` values and SQL `grant ... to service_role` statements, not keys.
 
 ## Checks Passed Or Failed
@@ -122,7 +127,7 @@ The implementation remains limited to Sprint 11. It does not add guest-book work
 ## Open Issues Or Blockers
 
 - Pending after merge: apply `20260531091009_sprint_11_dashboards_reports_audit_logs.sql` to the linked dev database.
-- Pending after migration application: regenerate Supabase TypeScript types from the linked project if the project workflow requires generated DB types to include Sprint 11 objects.
+- Pending after migration application: regenerate Supabase TypeScript types from the linked project if the project workflow requires that DB types be generated to include Sprint 11 objects.
 - Object-storage persistence for report files remains deferred; Sprint 11 records export metadata and generated CSV responses only.
 
 ## Recommended Sprint 12 Scope
