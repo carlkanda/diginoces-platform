@@ -17,6 +17,16 @@ export const permissionSlugs = [
   "projects.manage_status",
   "project_members.read",
   "project_members.manage",
+  "partners.read",
+  "partners.manage",
+  "partner_users.manage",
+  "partner_projects.create",
+  "partner_projects.submit",
+  "partner_projects.review",
+  "partner_projects.assign",
+  "project_comments.read",
+  "project_comments.create",
+  "project_comments.internal.read",
   "events.read",
   "events.create",
   "events.update",
@@ -119,7 +129,8 @@ export type RoleSlug =
   | "groom"
   | "event_staff"
   | "check_in_supervisor"
-  | "partner_admin";
+  | "partner_admin"
+  | "partner_project_operator";
 
 export type RoleDefinition = {
   description: string;
@@ -406,6 +417,16 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "projects.read",
       "projects.create",
       "projects.update",
+      "partners.read",
+      "partners.manage",
+      "partner_users.manage",
+      "partner_projects.create",
+      "partner_projects.submit",
+      "partner_projects.review",
+      "partner_projects.assign",
+      "project_comments.read",
+      "project_comments.create",
+      "project_comments.internal.read",
       "events.read",
       "events.create",
       "events.update",
@@ -557,6 +578,13 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "PAY-011",
       "PAY-013",
       "PAY-014",
+      "PART-001",
+      "PART-002",
+      "PART-003",
+      "PART-004",
+      "PART-005",
+      "PART-006",
+      "PART-007",
       "REP-001",
       "REP-002",
       "REP-005",
@@ -573,12 +601,52 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
     slug: "operations_manager",
   },
   partner_admin: {
-    description: "Future restricted partner administrator role.",
-    grants: ["platform.foundation.access", "dashboards.partner.read"],
-    requirementIds: ["ROLE-002", "ROLE-004", "ROLE-007", "REP-004"],
+    description:
+      "Restricted partner administrator role for own partner profile and project submissions.",
+    grants: [
+      "platform.foundation.access",
+      "partners.read",
+      "partner_projects.create",
+      "partner_projects.submit",
+      "dashboards.partner.read",
+    ],
+    requirementIds: [
+      "PART-001",
+      "PART-002",
+      "PART-003",
+      "PART-004",
+      "PART-005",
+      "ROLE-004",
+      "ROLE-007",
+      "REP-004",
+    ],
     requiresMfa: true,
     scope: "custom",
     slug: "partner_admin",
+  },
+  partner_project_operator: {
+    description:
+      "Project-scoped partner operator for assigned project progress and comments.",
+    grants: [
+      "platform.foundation.access",
+      "projects.read",
+      "events.read",
+      "workflow_tasks.read",
+      "dashboards.partner.read",
+      "project_comments.read",
+      "project_comments.create",
+    ],
+    requirementIds: [
+      "PART-003",
+      "PART-005",
+      "PART-006",
+      "ROLE-004",
+      "REP-004",
+      "TECH-004",
+    ],
+    requiresMfa: true,
+    scope: "project",
+    slug: "partner_project_operator",
   },
   role_manager: {
     description: "Can manage roles and permissions.",

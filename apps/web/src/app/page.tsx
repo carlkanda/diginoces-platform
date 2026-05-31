@@ -2,12 +2,15 @@ import Link from "next/link";
 import { getSprint10CommercialStatus } from "@/lib/contracts/contract-service";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 import { getSprint4ImportStatus } from "@/lib/guest-imports/guest-import-service";
+import { getSprint12GuestWishesStatus } from "@/lib/guest-wishes/guest-wish-service";
 import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
 import { getSprint9CheckInStatus } from "@/lib/check-in/check-in-service";
 import { getSprint6InvitationStatus } from "@/lib/invitations/invitation-service";
 import { getSprint7CommunicationStatus } from "@/lib/messages/message-service";
+import { getSprint13PartnerStatus } from "@/lib/partners/partner-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
 import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
+import { getSprint11ReportingStatus } from "@/lib/reports/report-service";
 import { getSprint5RsvpStatus } from "@/lib/rsvp/rsvp-service";
 import { getSprint8SeatingStatus } from "@/lib/seating/seating-service";
 
@@ -60,6 +63,18 @@ const projectRouteExamples = [
     path: "/platform/projects/{projectId}/commercial",
   },
   {
+    description:
+      "Sprint 12 guest wishes, couple review, guest-book export, and post-event feedback foundation.",
+    label: "Guest book & feedback",
+    path: "/platform/projects/{projectId}/guest-book",
+  },
+  {
+    description:
+      "Sprint 13 partner-visible project comment thread with internal-note separation.",
+    label: "Project comments",
+    path: "/platform/projects/{projectId}/comments",
+  },
+  {
     description: "Sprint 5 admin/staff preview for one guest page.",
     label: "Guest preview",
     path: "/platform/projects/{projectId}/guests/{guestId}/public-preview",
@@ -103,12 +118,28 @@ const eventRouteExamples = [
 ];
 
 const deferredScope = [
-  "partner project creation",
-  "full guest-book workflow",
   "production WhatsApp API sending",
   "online payment processing",
-  "full reports/dashboard module",
+  "partner commission management",
+  "partner billing",
+  "white-label SaaS",
+  "files, storage, retention, and archive hardening",
 ];
+
+type HomeSprintModule = {
+  description?: string;
+  name: string;
+  requirementIds?: string[];
+};
+
+type HomeSprintSummary = {
+  description: string;
+  features?: string[];
+  issue: number;
+  modules: HomeSprintModule[];
+  sprint: string;
+  stories?: string[];
+};
 
 export default function HomePage() {
   const foundation = getPlatformFoundationStatus();
@@ -121,6 +152,9 @@ export default function HomePage() {
   const sprint8Foundation = getSprint8SeatingStatus();
   const sprint9Foundation = getSprint9CheckInStatus();
   const sprint10Foundation = getSprint10CommercialStatus();
+  const sprint11Foundation = getSprint11ReportingStatus();
+  const sprint12Foundation = getSprint12GuestWishesStatus();
+  const sprint13Foundation = getSprint13PartnerStatus();
   const env = getPublicEnvironment();
   const coveredRequirementIds = Array.from(
     new Set([
@@ -134,10 +168,13 @@ export default function HomePage() {
       ...sprint8Foundation.requirementIds,
       ...sprint9Foundation.requirementIds,
       ...sprint10Foundation.requirementIds,
+      ...sprint11Foundation.requirementIds,
+      ...sprint12Foundation.requirementIds,
+      ...sprint13Foundation.requirementIds,
     ]),
   ).sort();
 
-  const sprintSummaries = [
+  const sprintSummaries: HomeSprintSummary[] = [
     {
       description:
         "Secure Next.js app shell with Supabase auth, permissions, audit logging, and fail-closed storage foundations.",
@@ -224,18 +261,42 @@ export default function HomePage() {
       sprint: sprint10Foundation.sprint,
       stories: sprint10Foundation.stories,
     },
+    {
+      description:
+        "Role-aware global, project, event, couple, and restricted partner dashboards, report catalog/CSV export, audit-log viewer/export, and internal visibility controls.",
+      features: sprint11Foundation.features,
+      issue: sprint11Foundation.issue,
+      modules: sprint11Foundation.modules,
+      sprint: sprint11Foundation.sprint,
+    },
+    {
+      description:
+        "Text-only guest wishes on public guest pages, moderation, couple review, Canva guest-book CSV export metadata, private post-event feedback, and testimonial review controls.",
+      features: sprint12Foundation.features,
+      issue: sprint12Foundation.issue,
+      modules: sprint12Foundation.modules,
+      sprint: sprint12Foundation.sprint,
+    },
+    {
+      description:
+        "Partner profiles, partner user linkage, lifecycle controls, partner-created project drafts, Diginoces review, source tracking, restricted partner dashboard, project comments, commercial restrictions, permissions, and audit coverage.",
+      features: sprint13Foundation.features,
+      issue: sprint13Foundation.issue,
+      modules: sprint13Foundation.modules,
+      sprint: sprint13Foundation.sprint,
+    },
   ];
 
   return (
     <>
       <section className="hero">
         <div>
-          <p className="eyebrow">Sprint 1-10 implementation status</p>
+          <p className="eyebrow">Sprint 1-13 implementation status</p>
           <h1>Diginoces platform progress</h1>
           <p>
             The home page surfaces the foundations already delivered across the
-            first ten sprints, while keeping future wedding operations out of
-            scope until their documented sprint begins.
+            first thirteen sprints, while keeping future wedding operations out
+            of scope until their documented sprint begins.
           </p>
           <div className="requirement-list" aria-label="Requirements covered">
             {coveredRequirementIds.map((requirementId) => (
@@ -267,7 +328,7 @@ export default function HomePage() {
       <section className="section" aria-label="Sprint progress">
         <div className="section-heading">
           <h2>What has been built so far</h2>
-          <span className="meta-list">10 sprint foundations</span>
+          <span className="meta-list">13 sprint foundations</span>
         </div>
         <div className="progress-overview">
           {sprintSummaries.map((sprint) => (
@@ -298,10 +359,12 @@ export default function HomePage() {
                 {sprint.modules.map((module) => (
                   <li key={module.name}>
                     <strong>{module.name}</strong>
-                    {"description" in module && module.description ? (
+                    {module.description ? (
                       <span>{module.description}</span>
                     ) : null}
-                    <small>{module.requirementIds.join(", ")}</small>
+                    {module.requirementIds ? (
+                      <small>{module.requirementIds.join(", ")}</small>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -329,6 +392,24 @@ export default function HomePage() {
               </Link>
               <Link className="button secondary" href="/platform/projects">
                 Projects
+              </Link>
+              <Link className="button secondary" href="/platform/dashboard">
+                Dashboards
+              </Link>
+              <Link className="button secondary" href="/platform/reports">
+                Reports
+              </Link>
+              <Link className="button secondary" href="/platform/audit-logs">
+                Audit logs
+              </Link>
+              <Link className="button secondary" href="/platform/partners">
+                Partners
+              </Link>
+              <Link
+                className="button secondary"
+                href="/platform/partner-dashboard"
+              >
+                Partner dashboard
               </Link>
               <Link className="button secondary" href="/api/health">
                 Health JSON

@@ -10,6 +10,10 @@ export type PermissionTarget =
       scope: "global";
     }
   | {
+      scope: "custom";
+      scopeId: string;
+    }
+  | {
       projectId: string;
       scope: "project";
     }
@@ -66,6 +70,12 @@ export function hasScopedPermission(
         (typeof target.projectId === "string" &&
           assignment.scope === "project" &&
           assignment.scopeId === target.projectId)
+      );
+    }
+
+    if (target.scope === "custom") {
+      return (
+        assignment.scope === "custom" && assignment.scopeId === target.scopeId
       );
     }
 
