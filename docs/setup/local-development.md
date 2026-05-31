@@ -265,4 +265,22 @@ http://127.0.0.1:3000/api/projects/{projectId}/commercial/payments
 - Contract approval opens the guest-list gate for bride/groom users. Internal commercial operators can still prepare guest work while the gate is locked.
 - Full confirmed payment or an active audited payment exception unlocks `wedding_projects.guest_page_access_status`, which is reused by the existing public guest page and WhatsApp invitation readiness checks.
 - Revenue/payment detail visibility is restricted to Diginoces/admin and explicitly authorized internal roles. Bride/groom users get contract/payment-summary access only; partners do not receive pricing, payment, exception, or revenue permissions.
+- Sprint 11 routes:
+
+```text
+http://127.0.0.1:3000/platform/dashboard
+http://127.0.0.1:3000/platform/projects/{projectId}/dashboard
+http://127.0.0.1:3000/platform/projects/{projectId}/couple-dashboard
+http://127.0.0.1:3000/platform/events/{eventId}/dashboard
+http://127.0.0.1:3000/platform/partner-dashboard
+http://127.0.0.1:3000/platform/reports
+http://127.0.0.1:3000/platform/audit-logs
+http://127.0.0.1:3000/api/dashboard
+http://127.0.0.1:3000/api/projects/{projectId}/dashboard
+http://127.0.0.1:3000/api/events/{eventId}/dashboard
+http://127.0.0.1:3000/api/reports
+http://127.0.0.1:3000/api/audit-logs
+```
+
+- Sprint 11 enables role-aware dashboard, report catalog, CSV export metadata, and audit-log viewer/export foundations. Report exports are generated as CSV responses/metadata records; source files are not persisted to object storage until a storage provider and retention policy are configured for production. Audit-log exports redact old/new value payloads and require internal audit permissions.
 - A historical PR `#17` WSL CodeRabbit full-diff review failed with `TRPCClientError` even when `coderabbit doctor` passed; a later PR `#18` full-diff review completed successfully. If the `TRPCClientError` recurs, use scoped directory reviews such as `coderabbit review --agent --base main --dir apps/web/src/lib/auth -c AGENTS.md`, then rely on the hosted CodeRabbit PR review as the full-diff backstop.

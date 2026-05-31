@@ -101,6 +101,9 @@ export default async function ProjectDetailPage({
     canReadMessages,
     canReadSeating,
     canReadCommercial,
+    canReadProjectDashboard,
+    canReadCoupleDashboard,
+    canReadReports,
   ] = await Promise.all([
     hasProjectPermission(permissionContext, projectId, "guests.read"),
     hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
@@ -108,6 +111,17 @@ export default async function ProjectDetailPage({
     hasProjectPermission(permissionContext, projectId, "messages.read"),
     hasProjectPermission(permissionContext, projectId, "seating.read"),
     hasAnyCommercialReadPermission(permissionContext, projectId),
+    hasProjectPermission(
+      permissionContext,
+      projectId,
+      "dashboards.project.read",
+    ),
+    hasProjectPermission(
+      permissionContext,
+      projectId,
+      "dashboards.couple.read",
+    ),
+    hasProjectPermission(permissionContext, projectId, "reports.catalog.read"),
   ]);
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",
@@ -128,6 +142,30 @@ export default async function ProjectDetailPage({
         <Link className="button secondary" href="/platform/projects">
           Projects
         </Link>
+        {canReadProjectDashboard ? (
+          <Link
+            className="button"
+            href={`/platform/projects/${projectId}/dashboard`}
+          >
+            Dashboard
+          </Link>
+        ) : null}
+        {canReadCoupleDashboard ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/couple-dashboard`}
+          >
+            Couple view
+          </Link>
+        ) : null}
+        {canReadReports ? (
+          <Link
+            className="button secondary"
+            href={`/platform/reports?projectId=${projectId}`}
+          >
+            Reports
+          </Link>
+        ) : null}
         {canReadGuests ? (
           <Link
             className="button"
