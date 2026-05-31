@@ -6,6 +6,7 @@ export type AuthContext =
   | {
       email: string;
       status: "authenticated";
+      supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
       user: User;
     }
   | {
@@ -58,6 +59,7 @@ export async function getAuthContext(): Promise<AuthContext> {
   return {
     email: user.email ?? "unknown user",
     status: "authenticated",
+    supabase,
     user,
   };
 }

@@ -16,6 +16,7 @@ The implementation remains limited to Sprint 11. It does not add guest-book work
 - Sprint plan: `docs/planning/sprint-11-plan.md`.
 - Merge commit on `main`: `9437322de89d50b376cc3b4e15221b383fddfc6b`.
 - Post-merge Sprint 12 metadata commit on `main`: `f37c765`.
+- Post-merge Sprint 11 completion-report update on `main`: `cb524f6`.
 
 ## Requirements Covered
 

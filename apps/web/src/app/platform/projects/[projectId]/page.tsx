@@ -104,6 +104,8 @@ export default async function ProjectDetailPage({
     canReadProjectDashboard,
     canReadCoupleDashboard,
     canReadReports,
+    canReadGuestBook,
+    canReadPostEventFeedback,
   ] = await Promise.all([
     hasProjectPermission(permissionContext, projectId, "guests.read"),
     hasProjectPermission(permissionContext, projectId, "guest_imports.read"),
@@ -122,6 +124,12 @@ export default async function ProjectDetailPage({
       "dashboards.couple.read",
     ),
     hasProjectPermission(permissionContext, projectId, "reports.catalog.read"),
+    hasProjectPermission(permissionContext, projectId, "guest_messages.read"),
+    hasProjectPermission(
+      permissionContext,
+      projectId,
+      "post_event_feedback.read",
+    ),
   ]);
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",
@@ -204,6 +212,22 @@ export default async function ProjectDetailPage({
             href={`/platform/projects/${projectId}/commercial`}
           >
             Contracts & payments
+          </Link>
+        ) : null}
+        {canReadGuestBook ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/guest-book`}
+          >
+            Guest book
+          </Link>
+        ) : null}
+        {canReadPostEventFeedback ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/feedback`}
+          >
+            Feedback
           </Link>
         ) : null}
       </div>
@@ -342,6 +366,43 @@ export default async function ProjectDetailPage({
             Open contracts and payments
           </Link>
         ) : null}
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>Guest wishes and feedback</h2>
+          <span className="meta-list">Sprint 12 foundation</span>
+        </div>
+        <p className="page-summary">
+          Collect text guest wishes from public guest pages, moderate approved
+          guest-book content, track Canva CSV export metadata, and collect
+          private post-event feedback with testimonial permission.
+        </p>
+        {canReadGuestBook || canReadPostEventFeedback ? (
+          <div className="button-group">
+            {canReadGuestBook ? (
+              <Link
+                className="button"
+                href={`/platform/projects/${projectId}/guest-book`}
+              >
+                Open guest book
+              </Link>
+            ) : null}
+            {canReadPostEventFeedback ? (
+              <Link
+                className="button secondary"
+                href={`/platform/projects/${projectId}/feedback`}
+              >
+                Open feedback
+              </Link>
+            ) : null}
+          </div>
+        ) : (
+          <div className="empty-state">
+            Guest wishes and post-event feedback are not available for your
+            current project access.
+          </div>
+        )}
       </section>
 
       <section className="section">

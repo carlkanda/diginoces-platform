@@ -106,6 +106,24 @@ export type AuditAction =
   | "commercial_gestures.applied"
   | "commercial_gestures.updated"
   | "payment_gate_events.created"
+  | "guest_messages.approved"
+  | "guest_messages.couple_approved"
+  | "guest_messages.couple_correction_requested"
+  | "guest_messages.couple_reviewed"
+  | "guest_messages.edited"
+  | "guest_messages.edited_by_admin"
+  | "guest_messages.excluded"
+  | "guest_messages.exported"
+  | "guest_messages.flagged"
+  | "guest_messages.moderated"
+  | "guest_messages.submitted"
+  | "guest_book_exports.generated"
+  | "guest_book_exports.updated"
+  | "post_event_feedback.submitted"
+  | "post_event_feedback.reviewed"
+  | "post_event_feedback.testimonial_permission_changed"
+  | "testimonial_permissions.recorded"
+  | "testimonial_permissions.reviewed"
   | "reports.exported"
   | "reports.updated"
   | "audit_logs.exported"
@@ -189,6 +207,11 @@ export function getAuditFoundationSummary() {
       "payment_gate_events",
       "report_exports",
       "audit_log_exports",
+      "guest_messages",
+      "guest_message_reviews",
+      "guest_book_exports",
+      "post_event_feedback",
+      "testimonial_permissions",
       "reports",
       "audit_logs",
     ],
