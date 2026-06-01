@@ -652,7 +652,6 @@ set search_path = public, pg_temp
 as $$
 declare
   v_actor_user_id uuid := (select auth.uid());
-  v_existing_role public.partner_user_role;
   v_partner_user public.partner_users%rowtype;
   v_role_id uuid;
 begin
@@ -663,11 +662,6 @@ begin
   if p_role not in ('admin', 'member') then
     raise exception 'Partner user role is not supported.';
   end if;
-
-  select role into v_existing_role
-  from public.partner_users
-  where partner_id = p_partner_id
-    and user_id = p_user_id;
 
   insert into public.partner_users (
     partner_id,
@@ -718,7 +712,7 @@ begin
       )
       on conflict do nothing;
     end if;
-  elsif v_existing_role = 'admin' and v_role_id is not null then
+  elsif v_role_id is not null then
     delete from public.role_assignments
     where user_id = p_user_id
       and role_id = v_role_id

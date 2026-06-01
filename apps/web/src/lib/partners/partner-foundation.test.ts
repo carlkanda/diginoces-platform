@@ -514,9 +514,7 @@ describe("Sprint 13 partner foundation", () => {
       /\bapp_private\.partner_user_is_active\(\s*p_user_id\s*,\s*p_partner_id\s*\)/,
     );
     expect(migration).toContain("p_role text default 'member'");
-    expect(migration).toMatch(
-      /\bv_existing_role\s+public\.partner_user_role\b/i,
-    );
+    expect(migration).not.toMatch(/\bv_existing_role\b/i);
     expect(migration).toMatch(
       /delete\s+from\s+public\.role_assignments[\s\S]*scope_id\s*=\s*p_partner_id/i,
     );

@@ -85,7 +85,7 @@ The sprint does not implement partner commission management, referral-fee calcul
 - Hosted CodeRabbit rerun hardening tightened:
   - malformed project-comment JSON handling returns the existing invalid-request path;
   - partner dashboard login redirects preserve explicit `partnerId` deep links;
-  - partner-user downgrades revoke stale custom-scope `partner_admin` assignments and omitted SQL roles default to `member`.
+  - partner-user downgrades revoke stale custom-scope `partner_admin` assignments whenever the final role is `member`, and omitted SQL roles default to `member`.
 - Partner audit snapshots redact contact details, internal notes, partner notes, review reasons, and sensitive contact fields.
 - Partner roles do not receive pricing, revenue, payment, payment-exception, contract-management, internal-note, or audit-log permissions.
 
@@ -158,6 +158,17 @@ The sprint does not implement partner commission management, referral-fee calcul
 - `git diff --check` - passed after hosted rerun fixes; only repository LF/CRLF warnings were printed.
 - Targeted secret scan with `rg` - passed after hosted rerun fixes with no credential matches. A broader policy-text scan matched documentation references to banned secrets only.
 - Local CodeRabbit review from WSL (`coderabbit review --agent -t uncommitted -c AGENTS.md`) - passed after hosted rerun fixes with 0 findings.
+- Hosted CodeRabbit review on commit `140f3a0` - completed with 1 additional non-blocking actionable comment to key partner-admin grant cleanup off the final `member` role state instead of the previous row state.
+- `npm.cmd run test -- --run src/lib/partners/partner-foundation.test.ts` - passed after final hosted CodeRabbit cleanup, 12 tests.
+- `npm.cmd run format:check` - passed after final hosted CodeRabbit cleanup.
+- `npm.cmd run lint` - passed after final hosted CodeRabbit cleanup.
+- `npm.cmd run typecheck` - passed after final hosted CodeRabbit cleanup.
+- `npm.cmd run test` - passed after final hosted CodeRabbit cleanup, 14 test files and 143 tests.
+- `npm.cmd audit --omit=dev` - passed after final hosted CodeRabbit cleanup, 0 vulnerabilities.
+- `npm.cmd run build` - passed after final hosted CodeRabbit cleanup; Next.js build listed the partner dashboard, partner profile, review, and project comments routes.
+- `npm.cmd run db:lint` - passed after final hosted CodeRabbit cleanup against linked `public` and `app_private` schemas, no schema errors found.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after final hosted CodeRabbit cleanup; dry run would push only `20260531224203_sprint_13_partner_provider_model.sql`.
+- Local CodeRabbit review from WSL (`coderabbit review --agent -t uncommitted -c AGENTS.md`) - passed after final hosted CodeRabbit cleanup with 0 findings.
 
 ## Checks Passed Or Failed
 
