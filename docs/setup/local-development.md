@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, the Sprint 7 guided WhatsApp communication workflow for issue `#21`, the Sprint 8 tables/seating/print-materials foundation for issue `#23`, the Sprint 9 check-in/wedding-day operations foundation for issue `#25`, the Sprint 10 contracts/pricing/payment-controls foundation for issue `#26`, the Sprint 11 dashboard/report/audit-log foundation for issue `#27`, the Sprint 12 guest wishes/guest-book/post-event-feedback foundation for issue `#28`, and the Sprint 13 partner/external-provider foundation for issue `#29`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, automatic duplicate merging, direct Canva API integration, full print partner workflow, online payment processing, tax/VAT handling, multi-currency pricing, e-signature integration, partner commission management, partner billing, white-label SaaS, full marketing testimonial publishing, advanced AI assistance, or guest audio/video/photo/file submissions.
+This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, the Sprint 7 guided WhatsApp communication workflow for issue `#21`, the Sprint 8 tables/seating/print-materials foundation for issue `#23`, the Sprint 9 check-in/wedding-day operations foundation for issue `#25`, the Sprint 10 contracts/pricing/payment-controls foundation for issue `#26`, the Sprint 11 dashboard/report/audit-log foundation for issue `#27`, the Sprint 12 guest wishes/guest-book/post-event-feedback foundation for issue `#28`, the Sprint 13 partner/external-provider foundation for issue `#29`, and the Sprint 14 files/storage/retention/archive foundation for issue `#30`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, automatic duplicate merging, direct Canva API integration, full print partner workflow, online payment processing, tax/VAT handling, multi-currency pricing, e-signature integration, partner commission management, partner billing, white-label SaaS, full marketing testimonial publishing, advanced AI assistance, guest audio/video/photo submissions, advanced digital asset management, or automated destructive file deletion without admin review.
 
 ## Prerequisites
 
@@ -317,4 +317,21 @@ http://127.0.0.1:3000/api/projects/{projectId}/comments
 - Sprint 13 adds partner profiles, partner user linkage, partner lifecycle status, partner-created draft projects, Diginoces/admin review, partner project source tracking, restricted partner dashboard visibility, and project comment threads. Partners remain under Diginoces branding, pricing, contracts, payment gates, and approval controls.
 - Sprint 13 partner users can create and submit their own partner-originated draft projects only while the partner profile and partner user link are active. Couple access remains closed until Diginoces/admin approval and the existing contract/payment gates.
 - Sprint 13 partner dashboard and project comment access are server-side permission gated. Partner-facing views do not expose revenue amounts, payment details, discounts, payment exception reasons, internal notes, audit logs, commission fields, referral-fee fields, billing fields, or payout fields.
+- Sprint 14 routes:
+
+```text
+http://127.0.0.1:3000/platform/projects/{projectId}/files
+http://127.0.0.1:3000/platform/projects/{projectId}/files/{fileId}
+http://127.0.0.1:3000/platform/events/{eventId}/files
+http://127.0.0.1:3000/api/projects/{projectId}/files
+http://127.0.0.1:3000/api/projects/{projectId}/files/{fileId}
+http://127.0.0.1:3000/api/projects/{projectId}/files/{fileId}/download
+http://127.0.0.1:3000/api/projects/{projectId}/files/{fileId}/archive
+http://127.0.0.1:3000/api/public/guest/{guestPublicToken}/files/{fileId}/download
+```
+
+- Sprint 14 registers file metadata for project, event, guest, invitation, report/export, contract, payment, partner, and archive files. The UI records file metadata and storage paths; production object upload UX remains provider-backed and private.
+- The Sprint 14 migration creates private Supabase Storage buckets for `project-files`, `invitation-files`, and `archive-files`, plus RLS-backed file registry, access-event, retention-policy, archive-event, and download-token tables.
+- Authenticated app downloads require file read/download permissions and issue short-lived Supabase signed URLs through the server route. Public guest downloads remain guest-token scoped and can only resolve latest active guest-facing files bound to that guest.
+- Retention and archive workflows are foundation controls only. They support review dates, retention extension metadata, project archive events, file archive events, soft-delete/revoke states, and audit logging; automated destructive deletion is intentionally out of scope.
 - A historical PR `#17` WSL CodeRabbit full-diff review failed with `TRPCClientError` even when `coderabbit doctor` passed; a later PR `#18` full-diff review completed successfully. If the `TRPCClientError` recurs, use scoped directory reviews such as `coderabbit review --agent --base main --dir apps/web/src/lib/auth -c AGENTS.md`, then rely on the hosted CodeRabbit PR review as the full-diff backstop.

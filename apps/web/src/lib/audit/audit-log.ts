@@ -82,7 +82,29 @@ export type AuditAction =
   | "guest_table_assignments.updated"
   | "seating_exports.generated"
   | "seating_exports.updated"
+  // Legacy Sprint 1 storage-adapter placeholder; Sprint 14 file registry emits files.registered.
   | "storage.file_registered"
+  | "files.registered"
+  | "files.uploaded"
+  | "files.updated"
+  | "files.download_requested"
+  | "files.download_denied"
+  | "files.signed_url_created"
+  | "files.guest_signed_url_created"
+  | "files.version_created"
+  | "files.latest_changed"
+  | "files.archived"
+  | "files.soft_deleted"
+  | "files.restored"
+  | "files.retention_extended"
+  | "file_retention_policies.created"
+  | "file_retention_policies.updated"
+  | "projects.completed"
+  | "projects.archived"
+  | "projects.retention_extended"
+  | "projects.marked_pending_deletion"
+  | "projects.cancelled_pending_deletion"
+  | "projects.retention_updated"
   | "service_packages.created"
   | "service_packages.updated"
   | "service_package_addons.created"
@@ -216,6 +238,12 @@ export function getAuditFoundationSummary() {
       // Redaction matches literal DB table names like seating_export_files;
       // audit actions use semantic groups like seating_exports.* for queries.
       "seating_export_files",
+      "file_categories",
+      "file_access_events",
+      "file_retention_policies",
+      "project_archive_events",
+      "file_archive_events",
+      "file_download_tokens",
       "service_packages",
       "service_package_addons",
       "project_event_package_selections",

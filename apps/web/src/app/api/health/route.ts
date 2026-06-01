@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSprint10CommercialStatus } from "@/lib/contracts/contract-service";
 import { getPublicEnvironment } from "@/lib/env/public-env";
+import { getSprint14FilesStatus } from "@/lib/files/file-service";
 import { getSprint4ImportStatus } from "@/lib/guest-imports/guest-import-service";
 import { getSprint12GuestWishesStatus } from "@/lib/guest-wishes/guest-wish-service";
 import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
@@ -30,6 +31,7 @@ export function GET() {
   const sprint11Foundation = getSprint11ReportingStatus();
   const sprint12Foundation = getSprint12GuestWishesStatus();
   const sprint13Foundation = getSprint13PartnerStatus();
+  const sprint14Foundation = getSprint14FilesStatus();
   const env = getPublicEnvironment();
 
   return NextResponse.json(
@@ -113,6 +115,12 @@ export function GET() {
           issue: sprint13Foundation.issue,
           moduleCount: sprint13Foundation.modules.length,
           sprint: sprint13Foundation.sprint,
+        },
+        {
+          featureCount: sprint14Foundation.features.length,
+          issue: sprint14Foundation.issue,
+          moduleCount: sprint14Foundation.modules.length,
+          sprint: sprint14Foundation.sprint,
         },
       ],
       supabaseConfigured: env.supabaseConfigured,

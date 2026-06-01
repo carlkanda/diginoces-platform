@@ -87,7 +87,9 @@ export type GuestPageLanguage = "en" | "fr";
 export const DEFAULT_GUEST_PAGE_LANGUAGE: GuestPageLanguage = "fr";
 
 export type GuestPageLabels = {
+  availableDownloads: string;
   downloadPlaceholder: string;
+  filesTitle: string;
   lockedBody: string;
   lockedTitle: string;
   maybe: string;
@@ -135,7 +137,9 @@ const publicPreviewPermission: PermissionSlug = "guest_public_pages.preview";
 
 const labels: Record<GuestPageLanguage, GuestPageLabels> = {
   en: {
+    availableDownloads: "Available downloads",
     downloadPlaceholder: "Invitation download will be available later.",
+    filesTitle: "Files",
     lockedBody:
       "This personal guest page is not open yet. Please check your invitation link again later.",
     lockedTitle: "Guest page not yet open",
@@ -173,8 +177,10 @@ const labels: Record<GuestPageLanguage, GuestPageLabels> = {
     yes: "Yes",
   },
   fr: {
+    availableDownloads: "téléchargements disponibles",
     downloadPlaceholder:
       "Le téléchargement de l'invitation sera disponible plus tard.",
+    filesTitle: "Fichiers",
     lockedBody:
       "Cette page personnelle n'est pas encore ouverte. Veuillez réessayer avec votre lien d'invitation plus tard.",
     lockedTitle: "Page invité pas encore ouverte",

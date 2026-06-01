@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSprint10CommercialStatus } from "@/lib/contracts/contract-service";
 import { getPublicEnvironment } from "@/lib/env/public-env";
+import { getSprint14FilesStatus } from "@/lib/files/file-service";
 import { getSprint4ImportStatus } from "@/lib/guest-imports/guest-import-service";
 import { getSprint12GuestWishesStatus } from "@/lib/guest-wishes/guest-wish-service";
 import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
@@ -75,6 +76,12 @@ const projectRouteExamples = [
     path: "/platform/projects/{projectId}/comments",
   },
   {
+    description:
+      "Sprint 14 project file library, registration, retention review, download, and archive foundation.",
+    label: "Files and archive",
+    path: "/platform/projects/{projectId}/files",
+  },
+  {
     description: "Sprint 5 admin/staff preview for one guest page.",
     label: "Guest preview",
     path: "/platform/projects/{projectId}/guests/{guestId}/public-preview",
@@ -115,6 +122,12 @@ const eventRouteExamples = [
     label: "QR check-in scan",
     path: "/platform/events/{eventId}/check-in/scan",
   },
+  {
+    description:
+      "Sprint 14 event-scoped file library and secure download foundation.",
+    label: "Event files",
+    path: "/platform/events/{eventId}/files",
+  },
 ];
 
 const deferredScope = [
@@ -123,7 +136,7 @@ const deferredScope = [
   "partner commission management",
   "partner billing",
   "white-label SaaS",
-  "files, storage, retention, and archive hardening",
+  "advanced digital asset management",
 ];
 
 type HomeSprintModule = {
@@ -155,6 +168,7 @@ export default function HomePage() {
   const sprint11Foundation = getSprint11ReportingStatus();
   const sprint12Foundation = getSprint12GuestWishesStatus();
   const sprint13Foundation = getSprint13PartnerStatus();
+  const sprint14Foundation = getSprint14FilesStatus();
   const env = getPublicEnvironment();
   const coveredRequirementIds = Array.from(
     new Set([
@@ -171,6 +185,7 @@ export default function HomePage() {
       ...sprint11Foundation.requirementIds,
       ...sprint12Foundation.requirementIds,
       ...sprint13Foundation.requirementIds,
+      ...sprint14Foundation.requirementIds,
     ]),
   ).sort();
 
@@ -285,17 +300,26 @@ export default function HomePage() {
       modules: sprint13Foundation.modules,
       sprint: sprint13Foundation.sprint,
     },
+    {
+      description:
+        "Project, event, guest, invitation, report/export, contract, and partner file library with secure signed-download routing, version/latest tracking, retention review, archive lifecycle, storage buckets, permissions, and audit coverage.",
+      features: sprint14Foundation.features,
+      issue: sprint14Foundation.issue,
+      modules: sprint14Foundation.modules,
+      sprint: sprint14Foundation.sprint,
+      stories: sprint14Foundation.stories,
+    },
   ];
 
   return (
     <>
       <section className="hero">
         <div>
-          <p className="eyebrow">Sprint 1-13 implementation status</p>
+          <p className="eyebrow">Sprint 1-14 implementation status</p>
           <h1>Diginoces platform progress</h1>
           <p>
             The home page surfaces the foundations already delivered across the
-            first thirteen sprints, while keeping future wedding operations out
+            first fourteen sprints, while keeping future wedding operations out
             of scope until their documented sprint begins.
           </p>
           <div className="requirement-list" aria-label="Requirements covered">
@@ -328,7 +352,7 @@ export default function HomePage() {
       <section className="section" aria-label="Sprint progress">
         <div className="section-heading">
           <h2>What has been built so far</h2>
-          <span className="meta-list">13 sprint foundations</span>
+          <span className="meta-list">14 sprint foundations</span>
         </div>
         <div className="progress-overview">
           {sprintSummaries.map((sprint) => (

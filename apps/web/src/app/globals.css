@@ -425,6 +425,10 @@ textarea {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.form-grid .span-2 {
+  grid-column: span 2;
+}
+
 :is(.form-grid, .stacked-form) label {
   display: grid;
   gap: 6px;
@@ -840,6 +844,10 @@ textarea {
   .form-grid,
   .form-grid.compact {
     grid-template-columns: 1fr;
+  }
+
+  .form-grid .span-2 {
+    grid-column: span 1;
   }
 
   .table-like div {

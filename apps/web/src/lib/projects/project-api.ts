@@ -10,6 +10,16 @@ export type ProjectApiContext = {
   user: User;
 };
 
+type UntypedRpcClient = {
+  rpc(
+    fn: string,
+    args?: Record<string, unknown>,
+  ): Promise<{
+    data: unknown;
+    error: Error | null;
+  }>;
+};
+
 export class ProjectAccessError extends Error {
   constructor(
     message: string,
@@ -102,6 +112,32 @@ export async function hasProjectPermission(
   }
 
   return Boolean(data);
+}
+
+export async function hasProjectPermissions(
+  context: ProjectApiContext,
+  projectId: string,
+  permissions: PermissionSlug[],
+) {
+  const { data, error } = await (
+    context.supabase as unknown as UntypedRpcClient
+  ).rpc("current_user_can_access_project_permissions", {
+    p_permissions: permissions,
+    p_project_id: projectId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const values =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : {};
+
+  return new Map(
+    permissions.map((permission) => [permission, values[permission] === true]),
+  );
 }
 
 export async function requireProjectPermission(

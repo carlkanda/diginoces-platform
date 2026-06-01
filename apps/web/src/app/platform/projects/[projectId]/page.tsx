@@ -19,6 +19,7 @@ import {
   getPostEventFeedbackPagePermissions,
 } from "@/lib/guest-wishes/guest-wish-api";
 import { hasAnyCommercialReadPermission } from "@/lib/contracts/contract-api";
+import { hasAnyProjectFileCapability } from "@/lib/files/file-api";
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -109,6 +110,7 @@ export default async function ProjectDetailPage({
     canReadCoupleDashboard,
     canReadReports,
     canReadProjectComments,
+    canReadFiles,
     guestBookPermissions,
     feedbackPermissions,
   ] = await Promise.all([
@@ -130,6 +132,7 @@ export default async function ProjectDetailPage({
     ),
     hasProjectPermission(permissionContext, projectId, "reports.catalog.read"),
     hasProjectPermission(permissionContext, projectId, "project_comments.read"),
+    hasAnyProjectFileCapability(permissionContext, projectId),
     getGuestBookPagePermissions(permissionContext, projectId),
     getPostEventFeedbackPagePermissions(permissionContext, projectId),
   ]);
@@ -217,6 +220,14 @@ export default async function ProjectDetailPage({
             href={`/platform/projects/${projectId}/comments`}
           >
             Project comments
+          </Link>
+        ) : null}
+        {canReadFiles ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/files`}
+          >
+            Files
           </Link>
         ) : null}
         {canReadCommercial ? (
@@ -439,6 +450,31 @@ export default async function ProjectDetailPage({
         ) : (
           <div className="empty-state">
             Project comments are not available for your current project access.
+          </div>
+        )}
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>Files and archive</h2>
+          <span className="meta-list">Sprint 14 foundation</span>
+        </div>
+        <p className="page-summary">
+          Manage the project file library, event files, guest-facing file
+          controls, version history, secure download links, retention review,
+          and archive lifecycle without automated destructive deletion.
+        </p>
+        {canReadFiles ? (
+          <Link
+            className="button"
+            href={`/platform/projects/${projectId}/files`}
+          >
+            Open files
+          </Link>
+        ) : (
+          <div className="empty-state">
+            Files and archive controls are not available for your current
+            project access.
           </div>
         )}
       </section>
