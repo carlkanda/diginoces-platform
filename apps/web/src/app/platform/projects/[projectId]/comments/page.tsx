@@ -5,6 +5,7 @@ import {
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import { createPartnerCommentAction } from "@/app/platform/partners/actions";
+import { serverLogger } from "@/lib/logging";
 import { listProjectComments } from "@/lib/partners/partner-db";
 import {
   hasProjectPermission,
@@ -21,6 +22,30 @@ type PageProps = {
     projectId: string;
   }>;
 };
+
+async function optionalProjectCommentPermission(
+  context: Parameters<typeof hasProjectPermission>[0],
+  projectId: string,
+  permission: "project_comments.create" | "project_comments.internal.read",
+) {
+  try {
+    return {
+      allowed: await hasProjectPermission(context, projectId, permission),
+      failed: false,
+    };
+  } catch (error) {
+    serverLogger.error("Optional project comment permission check failed.", {
+      error,
+      permission,
+      projectId,
+    });
+
+    return {
+      allowed: false,
+      failed: true,
+    };
+  }
+}
 
 export default async function ProjectCommentsPage({ params }: PageProps) {
   const { projectId } = await params;
@@ -59,17 +84,29 @@ export default async function ProjectCommentsPage({ params }: PageProps) {
     throw error;
   }
 
-  const [details, comments, canCreateInternalComment] = await Promise.all([
-    getProjectDetails(supabase, projectId),
-    listProjectComments(supabase, projectId),
-    hasProjectPermission(context, projectId, "project_comments.internal.read"),
-  ]);
+  const [details, comments, createCommentAccess, createInternalCommentAccess] =
+    await Promise.all([
+      getProjectDetails(supabase, projectId),
+      listProjectComments(supabase, projectId),
+      optionalProjectCommentPermission(
+        context,
+        projectId,
+        "project_comments.create",
+      ),
+      optionalProjectCommentPermission(
+        context,
+        projectId,
+        "project_comments.internal.read",
+      ),
+    ]);
 
   if (!details) {
     notFound();
   }
 
   const commentAction = createPartnerCommentAction.bind(null, projectId);
+  const permissionCheckFailed =
+    createCommentAccess.failed || createInternalCommentAccess.failed;
 
   return (
     <>
@@ -106,30 +143,41 @@ export default async function ProjectCommentsPage({ params }: PageProps) {
         </div>
       </section>
 
-      <section className="section">
-        <div className="section-heading">
-          <h2>Add comment</h2>
-          <span className="meta-list">Partner-visible by default</span>
-        </div>
-        <form action={commentAction} className="form-panel stacked-form">
-          <label>
-            Comment
-            <textarea name="body" required rows={4} />
-          </label>
-          <label>
-            Visibility
-            <select defaultValue="partner_visible" name="visibility">
-              <option value="partner_visible">Partner visible</option>
-              {canCreateInternalComment ? (
-                <option value="internal_only">Internal only</option>
-              ) : null}
-            </select>
-          </label>
-          <button className="button" type="submit">
-            Post comment
-          </button>
-        </form>
-      </section>
+      {permissionCheckFailed ? (
+        <section className="section">
+          <div className="alert">
+            Comment permissions could not be verified. Try again or contact a
+            Diginoces administrator.
+          </div>
+        </section>
+      ) : null}
+
+      {createCommentAccess.allowed ? (
+        <section className="section">
+          <div className="section-heading">
+            <h2>Add comment</h2>
+            <span className="meta-list">Partner-visible by default</span>
+          </div>
+          <form action={commentAction} className="form-panel stacked-form">
+            <label>
+              Comment
+              <textarea name="body" required rows={4} />
+            </label>
+            <label>
+              Visibility
+              <select defaultValue="partner_visible" name="visibility">
+                <option value="partner_visible">Partner visible</option>
+                {createInternalCommentAccess.allowed ? (
+                  <option value="internal_only">Internal only</option>
+                ) : null}
+              </select>
+            </label>
+            <button className="button" type="submit">
+              Post comment
+            </button>
+          </form>
+        </section>
+      ) : null}
 
       <section className="section">
         <div className="section-heading">

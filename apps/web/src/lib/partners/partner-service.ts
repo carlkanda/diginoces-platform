@@ -534,6 +534,9 @@ export function canPerformPartnerAction(
   partnerId: string,
   action: PartnerAction,
   projectId?: string,
+  options: {
+    projectBelongsToPartner?: boolean;
+  } = {},
 ) {
   const permission = actionPermissions[action];
 
@@ -543,15 +546,23 @@ export function canPerformPartnerAction(
     action === "comments.read" ||
     action === "dashboard.read"
   ) {
+    const hasPartnerScopedPermission = hasScopedPermission(
+      assignments,
+      permission,
+      {
+        scope: "custom",
+        scopeId: partnerId,
+      },
+    );
+
     return projectId
       ? hasScopedPermission(assignments, permission, {
           projectId,
           scope: "project",
-        })
-      : hasScopedPermission(assignments, permission, {
-          scope: "custom",
-          scopeId: partnerId,
-        });
+        }) ||
+          (options.projectBelongsToPartner === true &&
+            hasPartnerScopedPermission)
+      : hasPartnerScopedPermission;
   }
 
   return hasScopedPermission(assignments, permission, {

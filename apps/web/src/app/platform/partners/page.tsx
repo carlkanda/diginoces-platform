@@ -5,25 +5,11 @@ import {
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import { createPartnerAction } from "@/app/platform/partners/actions";
+import { serverLogger } from "@/lib/logging";
+import { hasGlobalPartnerPermission } from "@/lib/partners/partner-api";
 import { listPartners } from "@/lib/partners/partner-db";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-
-async function hasManagePermission(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-) {
-  const { data, error } = await supabase.rpc("current_user_has_permission", {
-    p_permission: "partners.manage",
-    p_scope: "global",
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  return Boolean(data);
-}
 
 export default async function PartnersPage() {
   const authContext = await getAuthContext();
@@ -46,10 +32,18 @@ export default async function PartnersPage() {
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = authContext.supabase;
   const [partners, canManagePartners] = await Promise.all([
     listPartners(supabase),
-    hasManagePermission(supabase),
+    hasGlobalPartnerPermission(supabase, "partners.manage").catch(
+      (error: unknown) => {
+        serverLogger.error("Partner manage permission check failed.", {
+          error,
+        });
+
+        return false;
+      },
+    ),
   ]);
 
   return (

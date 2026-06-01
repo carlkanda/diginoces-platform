@@ -9,6 +9,7 @@ import {
   parsePartnerStatusPayload,
   parseProjectCommentPayload,
   parseReviewPartnerProjectPayload,
+  requiredProjectCommentPermissions,
   requirePartnerManagePermission,
   requirePartnerPermission,
 } from "@/lib/partners/partner-api";
@@ -26,7 +27,6 @@ import {
   requireGlobalPermission,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function formObject(formData: FormData) {
   return Object.fromEntries(
@@ -37,9 +37,20 @@ function formObject(formData: FormData) {
 }
 
 function nextPath(path: string, params: Record<string, string>) {
-  const searchParams = new URLSearchParams(params);
+  const [pathname, existingQuery = ""] = path.split("?", 2);
+  const searchParams = new URLSearchParams(existingQuery);
 
-  return `${path}?${searchParams.toString()}`;
+  for (const [key, value] of Object.entries(params)) {
+    searchParams.set(key, value);
+  }
+
+  return `${pathname}?${searchParams.toString()}`;
+}
+
+function partnerDashboardPath(partnerId: string) {
+  return `/platform/partner-dashboard?${new URLSearchParams({
+    partnerId,
+  }).toString()}`;
 }
 
 async function getActionContext() {
@@ -54,7 +65,7 @@ async function getActionContext() {
   }
 
   return {
-    supabase: await createSupabaseServerClient(),
+    supabase: authContext.supabase,
     user: authContext.user,
   };
 }
@@ -135,7 +146,7 @@ export async function createPartnerProjectDraftAction(
   partnerId: string,
   formData: FormData,
 ) {
-  await runPartnerAction("/platform/partner-dashboard", async () => {
+  await runPartnerAction(partnerDashboardPath(partnerId), async () => {
     const context = await getActionContext();
 
     await requirePartnerPermission(
@@ -172,11 +183,17 @@ export async function submitPartnerProjectAction(
 }
 
 export async function submitPartnerDashboardProjectAction(
+  partnerId: string,
   submissionId: string,
 ) {
-  await runPartnerAction("/platform/partner-dashboard", async () => {
+  await runPartnerAction(partnerDashboardPath(partnerId), async () => {
     const context = await getActionContext();
 
+    await requirePartnerPermission(
+      context,
+      partnerId,
+      "partner_projects.submit",
+    );
     await submitPartnerProjectSubmission(context.supabase, submissionId);
 
     return "partner_project_submitted";
@@ -210,12 +227,12 @@ export async function createPartnerCommentAction(
     async () => {
       const context = await getActionContext();
       const input = parseProjectCommentPayload(formObject(formData));
-      const permission =
-        input.visibility === "internal_only"
-          ? "project_comments.internal.read"
-          : "project_comments.create";
 
-      await requireProjectPermission(context, projectId, permission);
+      await Promise.all(
+        requiredProjectCommentPermissions(input.visibility).map((permission) =>
+          requireProjectPermission(context, projectId, permission),
+        ),
+      );
 
       await createProjectComment(context.supabase, {
         ...input,

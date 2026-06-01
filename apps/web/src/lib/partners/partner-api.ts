@@ -105,6 +105,22 @@ export async function hasPartnerPermission(
   return Boolean(data);
 }
 
+export async function hasGlobalPartnerPermission(
+  supabase: SupabaseClient,
+  permission: PermissionSlug,
+) {
+  const { data, error } = await supabase.rpc("current_user_has_permission", {
+    p_permission: permission,
+    p_scope: "global",
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data);
+}
+
 export async function requirePartnerPermission(
   context: ProjectApiContext,
   partnerId: string,
@@ -165,7 +181,7 @@ export function parseLinkPartnerUserPayload(payload: unknown) {
   }
 
   return {
-    role: body.role === "member" ? "member" : "admin",
+    role: body.role === "admin" ? "admin" : "member",
     userId: requiredText(body.userId, "userId"),
   } as const;
 }
@@ -222,6 +238,19 @@ export function parseProjectCommentPayload(payload: unknown) {
     visibility:
       body.visibility === "internal_only" ? "internal_only" : "partner_visible",
   } as const;
+}
+
+export function requiredProjectCommentPermissions(
+  visibility: ReturnType<typeof parseProjectCommentPayload>["visibility"],
+) {
+  return visibility === "internal_only"
+    ? ([
+        "project_comments.create",
+        "project_comments.internal.read",
+      ] as const satisfies readonly PermissionSlug[])
+    : ([
+        "project_comments.create",
+      ] as const satisfies readonly PermissionSlug[]);
 }
 
 export function handlePartnerApiError(error: unknown) {

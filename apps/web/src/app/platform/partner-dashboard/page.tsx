@@ -8,6 +8,7 @@ import {
   createPartnerProjectDraftAction,
   submitPartnerDashboardProjectAction,
 } from "@/app/platform/partners/actions";
+import { serverLogger } from "@/lib/logging";
 import { hasPartnerPermission } from "@/lib/partners/partner-api";
 import {
   getPartnerDashboardOverview,
@@ -16,12 +17,32 @@ import {
 } from "@/lib/partners/partner-db";
 import { ProjectAccessError } from "@/lib/projects/project-api";
 import { requirePartnerDashboardPermission } from "@/lib/reports/report-api";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function PartnerDashboardPage() {
+type PageProps = {
+  searchParams?: Promise<{
+    partnerId?: string | string[];
+  }>;
+};
+
+function firstSearchParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function partnerRowId(partner: { id?: unknown }) {
+  if (typeof partner.id !== "string" || partner.id.length === 0) {
+    throw new Error("Partner row is missing a valid id.");
+  }
+
+  return partner.id;
+}
+
+export default async function PartnerDashboardPage({
+  searchParams,
+}: PageProps) {
   const authContext = await getAuthContext();
+  const requestedPartnerId = firstSearchParam((await searchParams)?.partnerId);
 
   if (authContext.status === "anonymous") {
     redirect(buildLoginRedirectPath("/platform/partner-dashboard"));
@@ -41,22 +62,63 @@ export default async function PartnerDashboardPage() {
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = authContext.supabase;
   const context = { supabase, user: authContext.user };
   const partners = await listPartners(supabase);
-  const selectedPartner = partners[0] ?? null;
+  const [onlyPartner] = partners;
+  const selectedPartner = requestedPartnerId
+    ? (partners.find(
+        (partner) => partnerRowId(partner) === requestedPartnerId,
+      ) ?? null)
+    : partners.length === 1
+      ? onlyPartner
+      : null;
 
-  try {
-    await requirePartnerDashboardPermission(
-      context,
-      selectedPartner ? String(selectedPartner.id) : undefined,
+  if (requestedPartnerId && !selectedPartner) {
+    notFound();
+  }
+
+  if (partners.length > 1 && !selectedPartner) {
+    return (
+      <>
+        <div className="page-heading">
+          <div>
+            <p className="eyebrow">Restricted partner view</p>
+            <h1 className="page-title">Partner dashboard</h1>
+            <p className="page-summary">
+              Select a partner profile before loading dashboard data or creating
+              project submissions.
+            </p>
+          </div>
+          <Link className="button secondary" href="/platform/partners">
+            Partners
+          </Link>
+        </div>
+        <section className="section">
+          <div className="section-heading">
+            <h2>Choose partner</h2>
+            <span className="meta-list">{partners.length} profiles</span>
+          </div>
+          <div className="record-list">
+            {partners.map((partner) => (
+              <Link
+                className="record-row"
+                href={`/platform/partner-dashboard?${new URLSearchParams({
+                  partnerId: partnerRowId(partner),
+                }).toString()}`}
+                key={partnerRowId(partner)}
+              >
+                <span>
+                  <strong>{String(partner.organization_name)}</strong>
+                  <small>{String(partner.contact_email)}</small>
+                </span>
+                <span className="tag">{String(partner.status)}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </>
     );
-  } catch (error) {
-    if (error instanceof ProjectAccessError) {
-      notFound();
-    }
-
-    throw error;
   }
 
   if (!selectedPartner) {
@@ -84,7 +146,23 @@ export default async function PartnerDashboardPage() {
     );
   }
 
-  const partnerId = String(selectedPartner.id);
+  const partnerId = partnerRowId(selectedPartner);
+
+  try {
+    await requirePartnerDashboardPermission(context, partnerId);
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      serverLogger.error("Permission denied for partner dashboard.", {
+        error,
+        partnerId,
+        userId: context.user.id,
+      });
+      notFound();
+    }
+
+    throw error;
+  }
+
   const [details, overview] = await Promise.all([
     getPartnerDetails(supabase, partnerId),
     getPartnerDashboardOverview(supabase, partnerId),
@@ -143,7 +221,11 @@ export default async function PartnerDashboardPage() {
         <section className="section">
           <div className="section-heading">
             <h2>Create project draft</h2>
-            <span className="meta-list">Diginoces approval required</span>
+            <span className="meta-list">Details are fixed after creation</span>
+          </div>
+          <div className="alert">
+            If draft details change, create a replacement draft or contact
+            Diginoces before submitting for review.
           </div>
           <form action={createDraftAction} className="form-panel form-grid">
             <label>
@@ -231,6 +313,7 @@ export default async function PartnerDashboardPage() {
                 status === "draft" || status === "changes_requested";
               const submitAction = submitPartnerDashboardProjectAction.bind(
                 null,
+                partnerId,
                 String(submission.id),
               );
 

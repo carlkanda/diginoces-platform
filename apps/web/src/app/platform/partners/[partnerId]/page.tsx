@@ -9,10 +9,13 @@ import {
   submitPartnerProjectAction,
   updatePartnerStatusAction,
 } from "@/app/platform/partners/actions";
-import { requirePartnerPermission } from "@/lib/partners/partner-api";
+import {
+  hasGlobalPartnerPermission,
+  hasPartnerPermission,
+  requirePartnerPermission,
+} from "@/lib/partners/partner-api";
 import { getPartnerDetails } from "@/lib/partners/partner-db";
 import { ProjectAccessError } from "@/lib/projects/project-api";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,22 +24,6 @@ type PageProps = {
     partnerId: string;
   }>;
 };
-
-async function hasGlobalPermission(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  permission: string,
-) {
-  const { data, error } = await supabase.rpc("current_user_has_permission", {
-    p_permission: permission,
-    p_scope: "global",
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  return Boolean(data);
-}
 
 function formatValue(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : "Not set";
@@ -64,7 +51,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = authContext.supabase;
   const context = { supabase, user: authContext.user };
 
   try {
@@ -77,10 +64,16 @@ export default async function PartnerDetailPage({ params }: PageProps) {
     throw error;
   }
 
-  const [details, canManagePartners, canReviewProjects] = await Promise.all([
+  const [
+    details,
+    canManagePartners,
+    canReviewProjects,
+    canSubmitPartnerProjects,
+  ] = await Promise.all([
     getPartnerDetails(supabase, partnerId),
-    hasGlobalPermission(supabase, "partners.manage"),
-    hasGlobalPermission(supabase, "partner_projects.review"),
+    hasGlobalPartnerPermission(supabase, "partners.manage"),
+    hasGlobalPartnerPermission(supabase, "partner_projects.review"),
+    hasPartnerPermission(context, partnerId, "partner_projects.submit"),
   ]);
 
   if (!details) {
@@ -161,9 +154,9 @@ export default async function PartnerDetailPage({ params }: PageProps) {
               </label>
               <label>
                 Role
-                <select defaultValue="admin" name="role">
-                  <option value="admin">Admin</option>
+                <select defaultValue="member" name="role">
                   <option value="member">Member</option>
+                  <option value="admin">Admin</option>
                 </select>
               </label>
               <button className="button" type="submit">
@@ -227,7 +220,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
                   </span>
                   <span className="tag">{status}</span>
                   <span className="button-group">
-                    {canSubmit ? (
+                    {canSubmit && canSubmitPartnerProjects ? (
                       <form action={submitAction}>
                         <button className="button secondary" type="submit">
                           Submit

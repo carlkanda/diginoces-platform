@@ -266,6 +266,10 @@ create unique index if not exists partner_project_assignments_unique_active
 create index if not exists partner_project_assignments_project_idx
   on public.partner_project_assignments (project_id, status);
 
+create index if not exists partner_project_assignments_active_project_partner_idx
+  on public.partner_project_assignments (project_id, partner_id)
+  where status = 'active';
+
 create table if not exists public.project_comments (
   id uuid primary key default extensions.gen_random_uuid(),
   project_id uuid not null references public.wedding_projects (id) on delete cascade,
@@ -357,7 +361,10 @@ as $$
   select p_user_id is not null
     and (
       app_private.user_has_permission(p_user_id, p_permission, 'global', null)
-      or app_private.user_has_permission(p_user_id, p_permission, 'custom', p_partner_id)
+      or (
+        app_private.partner_user_is_active(p_user_id, p_partner_id)
+        and app_private.user_has_permission(p_user_id, p_permission, 'custom', p_partner_id)
+      )
       or (
         app_private.partner_user_is_active(p_user_id, p_partner_id)
         and p_permission in (
@@ -986,8 +993,7 @@ begin
   set
     approval_status = v_next_status::text::public.partner_project_approval_status,
     approved_by = case when v_next_status = 'approved' then v_actor_user_id else null end,
-    approved_at = case when v_next_status = 'approved' then now() else null end,
-    source_notes = trim(p_reason)
+    approved_at = case when v_next_status = 'approved' then now() else null end
   where project_id = v_submission.project_id;
 
   update public.wedding_projects
@@ -1027,6 +1033,10 @@ begin
   end if;
 
   if v_visibility = 'internal_only' then
+    if not app_private.user_can_access_project(v_actor_user_id, p_project_id, 'project_comments.create') then
+      raise exception 'Project comment permission denied.';
+    end if;
+
     if not app_private.user_can_access_project(v_actor_user_id, p_project_id, 'project_comments.internal.read') then
       raise exception 'Internal project comment permission denied.';
     end if;
@@ -1041,6 +1051,12 @@ begin
       from public.partner_project_sources pps
       where pps.project_id = p_project_id
         and app_private.partner_user_is_active(v_actor_user_id, pps.partner_id)
+      union all
+      select 1
+      from public.partner_project_assignments ppa
+      where ppa.project_id = p_project_id
+        and ppa.status = 'active'
+        and app_private.partner_user_is_active(v_actor_user_id, ppa.partner_id)
     ) then
       v_author_type := 'partner';
     elsif app_private.user_can_access_project(v_actor_user_id, p_project_id, 'guest_messages.couple_review') then
@@ -1156,21 +1172,28 @@ create policy "Partner submissions created by active partners"
 on public.partner_project_submissions
 for insert
 to authenticated
-with check (app_private.user_can_access_partner((select auth.uid()), partner_id, 'partner_projects.create'));
+with check (
+  app_private.user_can_access_partner((select auth.uid()), partner_id, 'partner_projects.create')
+  and created_by = (select auth.uid())
+  and status = 'draft'
+  and submitted_by is null
+  and submitted_at is null
+  and reviewed_by is null
+  and reviewed_at is null
+  and approved_by is null
+  and approved_at is null
+  and review_reason is null
+);
 
 drop policy if exists "Partner submissions reviewed by internal users" on public.partner_project_submissions;
 create policy "Partner submissions reviewed by internal users"
 on public.partner_project_submissions
 for update
 to authenticated
-using (
-  app_private.user_can_access_partner((select auth.uid()), partner_id, 'partner_projects.submit')
-  or app_private.user_has_permission((select auth.uid()), 'partner_projects.review', 'global', null)
-)
-with check (
-  app_private.user_can_access_partner((select auth.uid()), partner_id, 'partner_projects.submit')
-  or app_private.user_has_permission((select auth.uid()), 'partner_projects.review', 'global', null)
-);
+-- Sprint 13 exposes create/submit/review RPCs only; partner self-editing of
+-- draft submissions is intentionally deferred until a draft-update workflow is approved.
+using (app_private.user_has_permission((select auth.uid()), 'partner_projects.review', 'global', null))
+with check (app_private.user_has_permission((select auth.uid()), 'partner_projects.review', 'global', null));
 
 drop policy if exists "Partner project assignments visible to partner readers" on public.partner_project_assignments;
 create policy "Partner project assignments visible to partner readers"
@@ -1215,13 +1238,47 @@ on public.project_comments
 for insert
 to authenticated
 with check (
+  author_user_id = (select auth.uid())
+  and created_by = (select auth.uid())
+  and updated_by = (select auth.uid())
+  and deleted_at is null
+  and
   (
-    visibility = 'partner_visible'
-    and app_private.user_can_access_partner_project((select auth.uid()), project_id, 'project_comments.create')
-  )
-  or (
-    visibility = 'internal_only'
-    and app_private.user_can_access_project((select auth.uid()), project_id, 'project_comments.internal.read')
+    (
+      visibility = 'partner_visible'
+      and app_private.user_can_access_partner_project((select auth.uid()), project_id, 'project_comments.create')
+      and (
+        (
+          author_type = 'partner'
+          and exists (
+            select 1
+            from public.partner_project_sources pps
+            where pps.project_id = project_comments.project_id
+              and app_private.partner_user_is_active((select auth.uid()), pps.partner_id)
+            union all
+            select 1
+            from public.partner_project_assignments ppa
+            where ppa.project_id = project_comments.project_id
+              and ppa.status = 'active'
+              and app_private.partner_user_is_active((select auth.uid()), ppa.partner_id)
+          )
+        )
+        or (
+          author_type = 'couple'
+          and app_private.user_can_access_project((select auth.uid()), project_id, 'guest_messages.couple_review')
+        )
+        or (
+          author_type in ('admin', 'staff')
+          and app_private.user_can_access_project((select auth.uid()), project_id, 'project_comments.create')
+        )
+      )
+    )
+    or (
+      visibility = 'internal_only'
+      and author_type in ('admin', 'staff')
+      and app_private.user_can_access_project((select auth.uid()), project_id, 'project_comments.create')
+      and app_private.user_can_access_project((select auth.uid()), project_id, 'project_comments.internal.read')
+    )
   )
 );
 
@@ -1236,9 +1293,9 @@ with check (app_private.user_can_access_project((select auth.uid()), project_id,
 grant select, insert, update on public.partners to authenticated;
 grant select, insert, update on public.partner_users to authenticated;
 grant select, insert, update on public.partner_project_sources to authenticated;
-grant select, insert, update on public.partner_project_submissions to authenticated;
+grant select on public.partner_project_submissions to authenticated;
 grant select, insert, update on public.partner_project_assignments to authenticated;
-grant select, insert, update on public.project_comments to authenticated;
+grant select on public.project_comments to authenticated;
 
 grant select, insert, update on public.partners to service_role;
 grant select, insert, update on public.partner_users to service_role;
@@ -1319,6 +1376,8 @@ with sprint_13_grants(role_slug, permission_slug) as (
     ('partner_admin', 'partner_projects.create'),
     ('partner_admin', 'partner_projects.submit'),
     ('partner_admin', 'dashboards.partner.read'),
+    ('partner_admin', 'project_comments.read'),
+    ('partner_admin', 'project_comments.create'),
     ('partner_project_operator', 'projects.read'),
     ('partner_project_operator', 'events.read'),
     ('partner_project_operator', 'workflow_tasks.read'),

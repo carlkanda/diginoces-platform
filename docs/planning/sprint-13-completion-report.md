@@ -12,7 +12,7 @@ The sprint does not implement partner commission management, referral-fee calcul
 
 - GitHub issue: `#29` - Sprint 13 - Partner / External Provider Model.
 - Branch: `codex/sprint-13-partner-provider-model`.
-- Pull request: pending.
+- Pull request: `#40` - Sprint 13 - Partner / External Provider Model - https://github.com/carlkanda/diginoces-platform/pull/40.
 - Sprint plan: `docs/planning/sprint-13-plan.md`.
 - Product source: `docs/product/12-partner-external-provider-model.md`.
 
@@ -72,6 +72,16 @@ The sprint does not implement partner commission management, referral-fee calcul
 - Added partner access helpers in `app_private` and a public `current_user_can_access_partner` RPC.
 - Added permission-gated RPCs for partner user linkage, partner project draft creation, submission, review, and project comment creation.
 - Added RLS, grants, indexes, updated-at triggers, and audit triggers for partner-owned tables.
+- Hosted CodeRabbit review hardening tightened:
+  - partner dashboard partner selection;
+  - partner submit/comment UI authorization;
+  - server-action permission checks;
+  - partner-user least-privilege defaults;
+  - partner-scoped permission parity;
+  - partner submission/comment raw-write controls;
+  - active partner-link checks;
+  - author classification;
+  - source-note provenance preservation.
 - Partner audit snapshots redact contact details, internal notes, partner notes, review reasons, and sensitive contact fields.
 - Partner roles do not receive pricing, revenue, payment, payment-exception, contract-management, internal-note, or audit-log permissions.
 
@@ -85,6 +95,9 @@ The sprint does not implement partner commission management, referral-fee calcul
   - Partner permission and commercial restriction behavior.
   - Restricted partner dashboard redaction of revenue/payment/internal/audit data.
   - Partner-visible comments separated from internal notes.
+  - Partner user linkage defaults to member unless admin is explicitly selected.
+  - Partner-scoped dashboard/comment permissions remain available for partner-originated projects.
+  - Hosted CodeRabbit regression checks for dashboard partner selection, partner assignment dashboard coverage, event date loading, restricted raw table grants, source-note preservation, and server-action permission gates.
   - Partner audit actions without commission/referral/payout/billing scope.
   - Migration, health endpoint, home page, local setup docs, and completion-report evidence.
 
@@ -99,30 +112,48 @@ The sprint does not implement partner commission management, referral-fee calcul
 - `npm.cmd ci` - passed, installed 496 packages and reported 0 vulnerabilities.
 - `npm.cmd run lint` - passed after rerun following `npm ci`.
 - `npm.cmd run typecheck` - passed after rerun following `npm ci`.
-- `npm.cmd run test` - passed, 14 test files and 140 tests.
+- `npm.cmd run test` - passed before hosted review, 14 test files and 140 tests.
 - `npm.cmd run build` - passed; Next.js build listed the new partner API/UI routes.
 - `npm.cmd audit --omit=dev` - passed, 0 vulnerabilities.
 - `npm.cmd run db:lint` - passed against linked `public` and `app_private` schemas, no schema errors found.
 - `npx.cmd supabase@latest db push --linked --dry-run` - passed; dry run would push only `20260531224203_sprint_13_partner_provider_model.sql`.
 - `git diff --check` - passed; only repository LF/CRLF warnings were printed.
 - Targeted secret scan with `rg` - passed for real secrets. The only match was the placeholder `DATABASE_URL=postgresql://postgres:placeholder@localhost:54322/postgres` in `.env.example`.
+- Hosted CodeRabbit review on PR #40 - changes requested with 14 actionable comments.
+- `npm.cmd run test -- --run src/lib/partners/partner-foundation.test.ts` - passed after hosted CodeRabbit fixes, 12 tests.
+- `npm.cmd run lint` - passed after hosted CodeRabbit fixes.
+- `npm.cmd run typecheck` - passed after hosted CodeRabbit fixes.
+- `npm.cmd run db:lint` - passed after hosted CodeRabbit fixes against linked `public` and `app_private` schemas, no schema errors found.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after hosted CodeRabbit fixes; dry run would push only `20260531224203_sprint_13_partner_provider_model.sql`.
+- Local CodeRabbit review from WSL (`coderabbit review --agent -t uncommitted -c AGENTS.md`) - rerun until clean; final run returned 0 findings.
+- `npm.cmd ci` - passed after review fixes, installed 496 packages and reported 0 vulnerabilities.
+- `npm.cmd run format:check` - passed after review fixes.
+- `npm.cmd run lint` - passed after review fixes.
+- `npm.cmd run typecheck` - passed after review fixes.
+- `npm.cmd run test` - passed after review fixes, 14 test files and 143 tests.
+- `npm.cmd run build` - passed after review fixes; Next.js build listed the partner dashboard, partner profile, review, and project comments routes.
+- `npm.cmd audit --omit=dev` - passed after review fixes, 0 vulnerabilities.
+- `npm.cmd run db:lint` - passed after review fixes against linked `public` and `app_private` schemas, no schema errors found.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after review fixes; dry run would push only `20260531224203_sprint_13_partner_provider_model.sql`.
+- `git diff --check` - passed after review fixes; only repository LF/CRLF warnings were printed.
+- Targeted secret scan with `rg` - passed after review fixes with no matches.
 
 ## Checks Passed Or Failed
 
 - Passed: install, format check, lint, typecheck, tests, build, dependency audit, Supabase linked dry-run, Supabase linked db lint, whitespace check, and targeted secret scan.
 - Failed: one transient lint/typecheck run started in parallel with `npm ci` and failed because local binaries were temporarily unavailable while `node_modules` was being rebuilt. Both commands passed when rerun after `npm ci`.
-- Blocked: none for local verification.
+- Post-review verification and local CodeRabbit reruns are documented above; no local review-loop blocker remains.
 
 ## Assumptions
 
 - Partner project creation in Sprint 13 creates a controlled Diginoces project draft and partner submission record, not a partner-owned commercial flow.
+- Partner project draft editing is intentionally not exposed in Sprint 13. Partners supply draft details at creation and can submit or respond to Diginoces review outcomes; a dedicated draft-update RPC/UI can be considered in a later sprint if partner self-editing is approved.
 - Couple access remains closed until Diginoces/admin approval and existing contract/payment gates.
 - Partner comments are text-only project comments. Full CRM/lead-pipeline behavior remains outside Sprint 13.
 - Generated Supabase TypeScript types are not refreshed until the linked migration is validated or the project adopts a tracked generated-type refresh workflow.
 
 ## Open Issues Or Blockers
 
-- Draft pull request is not opened yet.
 - The Sprint 13 migration has passed linked dry-run and db lint but has not been applied to the linked dev project. Apply it after the PR is merged, following the established sprint workflow.
 
 ## Out Of Scope Intentionally Deferred

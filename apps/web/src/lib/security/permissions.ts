@@ -609,6 +609,8 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "partner_projects.create",
       "partner_projects.submit",
       "dashboards.partner.read",
+      "project_comments.read",
+      "project_comments.create",
     ],
     requirementIds: [
       "PART-001",
@@ -616,6 +618,7 @@ export const roleDefinitions: Record<RoleSlug, RoleDefinition> = {
       "PART-003",
       "PART-004",
       "PART-005",
+      "PART-006",
       "ROLE-004",
       "ROLE-007",
       "REP-004",

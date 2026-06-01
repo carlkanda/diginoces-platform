@@ -326,50 +326,159 @@ export async function createProjectComment(
   );
 }
 
+function nestedProject(row: BaseRow) {
+  const project = Array.isArray(row.wedding_projects)
+    ? row.wedding_projects[0]
+    : row.wedding_projects;
+
+  return project && typeof project === "object" ? (project as BaseRow) : null;
+}
+
+function projectField(project: BaseRow | null, fieldName: string) {
+  return project && typeof project[fieldName] === "string"
+    ? project[fieldName]
+    : "";
+}
+
+async function listEventDatesByProject(
+  supabase: AnySupabase,
+  projectIds: string[],
+) {
+  const eventDatesByProject = new Map<string, string[]>();
+  const uniqueProjectIds = Array.from(new Set(projectIds)).filter(Boolean);
+
+  if (uniqueProjectIds.length === 0) {
+    return eventDatesByProject;
+  }
+
+  const rows = await listRows(
+    table(supabase, "events")
+      .select("project_id, event_date")
+      .in("project_id", uniqueProjectIds)
+      .not("event_date", "is", null)
+      .order("event_date", { ascending: true }),
+  );
+
+  for (const row of rows) {
+    const projectId =
+      typeof row.project_id === "string" ? row.project_id : undefined;
+    const eventDate =
+      typeof row.event_date === "string" ? row.event_date : undefined;
+
+    if (!projectId || !eventDate) {
+      continue;
+    }
+
+    const existingDates = eventDatesByProject.get(projectId);
+
+    if (existingDates) {
+      existingDates.push(eventDate);
+    } else {
+      eventDatesByProject.set(projectId, [eventDate]);
+    }
+  }
+
+  return eventDatesByProject;
+}
+
 export async function getPartnerDashboardOverview(
   supabase: AnySupabase,
   partnerId: string,
 ) {
-  const rows = await listRows(
-    table(supabase, "partner_project_sources")
-      .select(
-        "approval_status, partner_id, project_id, wedding_projects(id, project_code, bride_name, groom_name, status)",
-      )
-      .eq("partner_id", partnerId)
-      .order("created_at", { ascending: false }),
+  const [sourceRows, assignmentRows] = await Promise.all([
+    listRows(
+      table(supabase, "partner_project_sources")
+        .select(
+          "approval_status, partner_id, project_id, wedding_projects(id, project_code, bride_name, groom_name, status)",
+        )
+        .eq("partner_id", partnerId)
+        .order("created_at", { ascending: false }),
+    ),
+    listRows(
+      table(supabase, "partner_project_assignments")
+        .select(
+          "partner_id, project_id, status, wedding_projects(id, project_code, bride_name, groom_name, status)",
+        )
+        .eq("partner_id", partnerId)
+        .eq("status", "active")
+        .order("created_at", { ascending: false }),
+    ),
+  ]);
+  const projectIds = [
+    ...sourceRows
+      .map((row) => row.project_id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ...assignmentRows
+      .map((row) => row.project_id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0),
+  ];
+  const eventDatesByProject = await listEventDatesByProject(
+    supabase,
+    projectIds,
   );
-  const projects = rows.map((row) => {
-    const project = Array.isArray(row.wedding_projects)
-      ? row.wedding_projects[0]
-      : row.wedding_projects;
+  const projectsById = new Map<string, PartnerProjectDashboardInput>();
 
-    return normalizeProjectDashboardInput({
-      approval_status: row.approval_status,
-      bride_name:
-        project && typeof project === "object" && "bride_name" in project
-          ? project.bride_name
-          : "",
-      event_dates: [],
-      groom_name:
-        project && typeof project === "object" && "groom_name" in project
-          ? project.groom_name
-          : "",
-      project_code:
-        project && typeof project === "object" && "project_code" in project
-          ? project.project_code
-          : "",
-      project_id: row.project_id,
-      source_partner_id: row.partner_id,
-      status:
-        project && typeof project === "object" && "status" in project
-          ? project.status
-          : "draft",
-    });
-  });
+  for (const row of sourceRows) {
+    const projectId = String(row.project_id ?? "");
+
+    if (!projectId) {
+      continue;
+    }
+
+    const project = nestedProject(row);
+
+    projectsById.set(
+      projectId,
+      normalizeProjectDashboardInput({
+        approval_status: row.approval_status,
+        assigned_partner_ids: [],
+        bride_name: projectField(project, "bride_name"),
+        event_dates: eventDatesByProject.get(projectId) ?? [],
+        groom_name: projectField(project, "groom_name"),
+        project_code: projectField(project, "project_code"),
+        project_id: projectId,
+        source_partner_id: row.partner_id,
+        status: projectField(project, "status") || "draft",
+      }),
+    );
+  }
+
+  for (const row of assignmentRows) {
+    const projectId = String(row.project_id ?? "");
+
+    if (!projectId) {
+      continue;
+    }
+
+    const existing = projectsById.get(projectId);
+
+    if (existing) {
+      if (!existing.assignedPartnerIds.includes(partnerId)) {
+        existing.assignedPartnerIds.push(partnerId);
+      }
+      continue;
+    }
+
+    const project = nestedProject(row);
+    projectsById.set(
+      projectId,
+      normalizeProjectDashboardInput({
+        approval_status: "approved",
+        assigned_partner_ids: [partnerId],
+        bride_name: projectField(project, "bride_name"),
+        event_dates: eventDatesByProject.get(projectId) ?? [],
+        groom_name: projectField(project, "groom_name"),
+        project_code: projectField(project, "project_code"),
+        project_id: projectId,
+        source_partner_id: null,
+        status: projectField(project, "status") || "active",
+      }),
+    );
+  }
 
   return buildPartnerDashboardView({
     now: new Date().toISOString(),
     partnerId,
-    projects,
+    projects: Array.from(projectsById.values()),
   });
 }

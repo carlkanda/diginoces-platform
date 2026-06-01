@@ -4,6 +4,7 @@ import {
   handlePartnerApiError,
   isPartnerApiContext,
   parseProjectCommentPayload,
+  requiredProjectCommentPermissions,
 } from "@/lib/partners/partner-api";
 import {
   createProjectComment,
@@ -47,11 +48,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   try {
     const input = parseProjectCommentPayload(await request.json());
-    const permission =
-      input.visibility === "internal_only"
-        ? "project_comments.internal.read"
-        : "project_comments.create";
-    await requireProjectPermission(context, projectId, permission);
+
+    // The RPC enforces the same permission list; internal notes need both
+    // comment creation and internal-note visibility.
+    await Promise.all(
+      requiredProjectCommentPermissions(input.visibility).map((permission) =>
+        requireProjectPermission(context, projectId, permission),
+      ),
+    );
+
     const comment = await createProjectComment(context.supabase, {
       ...input,
       projectId,

@@ -5,6 +5,11 @@ import { getAuditFoundationSummary } from "@/lib/audit/audit-log";
 import { canPerformCommercialAction } from "@/lib/contracts/contract-service";
 import type { RoleAssignment } from "@/lib/security/permissions";
 import {
+  parseLinkPartnerUserPayload,
+  parseProjectCommentPayload,
+  requiredProjectCommentPermissions,
+} from "@/lib/partners/partner-api";
+import {
   buildPartnerAuditActions,
   buildPartnerDashboardView,
   canPartnerCreateProject,
@@ -13,6 +18,7 @@ import {
   createPartnerProfileFoundation,
   isPartnerRestrictedField,
   linkPartnerUserFoundation,
+  PartnerValidationError,
   reviewPartnerProjectSubmission,
   submitPartnerProjectForReview,
   type PartnerProjectSubmission,
@@ -260,6 +266,35 @@ describe("Sprint 13 partner foundation", () => {
       ),
     ).toBe(false);
     expect(
+      canPerformPartnerAction(
+        partnerAssignments,
+        "partner-1",
+        "dashboard.read",
+        "project-1",
+      ),
+    ).toBe(true);
+    expect(
+      canPerformPartnerAction(
+        partnerAssignments,
+        "partner-1",
+        "comments.create",
+        "project-2",
+      ),
+    ).toBe(false);
+    expect(
+      canPerformPartnerAction(
+        partnerAssignments,
+        "partner-1",
+        "comments.create",
+        "project-2",
+        {
+          // canPerformPartnerAction checks permission grants; callers must
+          // prove project-to-partner binding before partner-scope fallback.
+          projectBelongsToPartner: true,
+        },
+      ),
+    ).toBe(true);
+    expect(
       canPerformPartnerAction(adminAssignments, "partner-2", "profile.manage"),
     ).toBe(true);
 
@@ -338,25 +373,56 @@ describe("Sprint 13 partner foundation", () => {
   });
 
   it("keeps partner-visible comments separate from internal notes", () => {
-    const comment = {
-      authorType: "partner" as const,
+    const comment = parseProjectCommentPayload({
       body: "Could we confirm the reception date?",
-      id: "comment-1",
-      internalNote: null,
-      projectId: "project-1",
-      visibility: "partner_visible" as const,
-    };
-    const internal = {
-      ...comment,
+    });
+    const internal = parseProjectCommentPayload({
       body: "Finance follow-up",
-      id: "comment-2",
-      internalNote: "Internal only",
-      visibility: "internal_only" as const,
-    };
+      visibility: "internal_only",
+    });
 
-    expect(comment.visibility).toBe("partner_visible");
+    expect(comment).toMatchObject({
+      body: "Could we confirm the reception date?",
+      visibility: "partner_visible",
+    });
     expect(internal.visibility).toBe("internal_only");
     expect(isPartnerRestrictedField("internalNotes")).toBe(true);
+  });
+
+  it("requires visibility-appropriate permissions for project comments", () => {
+    expect(requiredProjectCommentPermissions("partner_visible")).toEqual([
+      "project_comments.create",
+    ]);
+    expect(requiredProjectCommentPermissions("internal_only")).toEqual([
+      "project_comments.create",
+      "project_comments.internal.read",
+    ]);
+  });
+
+  it("rejects unsupported project comment visibility values", () => {
+    expect(() =>
+      parseProjectCommentPayload({
+        body: "Visibility should fail",
+        visibility: "unsupported_visibility",
+      }),
+    ).toThrow(PartnerValidationError);
+  });
+
+  it("defaults linked partner users to member unless admin is explicit", () => {
+    expect(
+      parseLinkPartnerUserPayload({
+        userId: "partner-user-1",
+      }),
+    ).toEqual({
+      role: "member",
+      userId: "partner-user-1",
+    });
+    expect(
+      parseLinkPartnerUserPayload({
+        role: "admin",
+        userId: "partner-user-1",
+      }).role,
+    ).toBe("admin");
   });
 
   it("lists partner audit actions and omits out-of-scope commission management", () => {
@@ -411,6 +477,18 @@ describe("Sprint 13 partner foundation", () => {
       join(repoRoot, "docs/setup/local-development.md"),
       "utf8",
     );
+    const partnerDashboardPage = readFileSync(
+      join(repoRoot, "apps/web/src/app/platform/partner-dashboard/page.tsx"),
+      "utf8",
+    );
+    const partnerActions = readFileSync(
+      join(repoRoot, "apps/web/src/app/platform/partners/actions.ts"),
+      "utf8",
+    );
+    const partnerDb = readFileSync(
+      join(repoRoot, "apps/web/src/lib/partners/partner-db.ts"),
+      "utf8",
+    );
 
     expect(migration).toContain("create table if not exists public.partners");
     expect(migration).toContain(
@@ -425,6 +503,26 @@ describe("Sprint 13 partner foundation", () => {
     expect(migration).not.toMatch(
       /partner_commissions|commission_rate|referral_fee|billing_account|payout_account/i,
     );
+    expect(migration).toMatch(
+      /\bapp_private\.partner_user_is_active\(\s*p_user_id\s*,\s*p_partner_id\s*\)/,
+    );
+    expect(migration).toMatch(
+      /\bgrant\s+select\s+on\s+public\.project_comments\b/i,
+    );
+    expect(migration).toMatch(
+      /\bgrant\s+select\s+on\s+public\.partner_project_submissions\b/i,
+    );
+    // Prevent review reasons from overwriting partner-provided source notes.
+    expect(migration).not.toMatch(
+      /source_notes\s*=\s*trim\s*\(\s*p_reason\s*\)/i,
+    );
+    expect(partnerDashboardPage).toContain("searchParams");
+    expect(partnerDashboardPage).not.toMatch(/partners\s*\[\s*0\s*\]/);
+    expect(partnerDashboardPage).toContain("partnerId");
+    expect(partnerActions).toMatch(/partner_projects\.submit/);
+    expect(partnerActions).toMatch(/requiredProjectCommentPermissions/);
+    expect(partnerDb).toMatch(/\bpartner_project_assignments\b/);
+    expect(partnerDb).toMatch(/\bevent_date\b/);
     expect(healthRoute).toContain("getSprint13PartnerStatus");
     expect(homePage).toContain("Sprint 1-13 implementation status");
     expect(localSetup).toContain("Sprint 13 partner");
