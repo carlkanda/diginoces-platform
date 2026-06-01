@@ -12,7 +12,7 @@ The sprint does not implement advanced digital asset management, automated destr
 
 - GitHub issue: `#30` - Sprint 14 - Files, Storage, Retention & Archive.
 - Branch: `codex/sprint-14-files-storage-retention-archive`.
-- Draft pull request: to be opened after this report is committed and pushed.
+- Draft pull request: `#41` - https://github.com/carlkanda/diginoces-platform/pull/41.
 - Sprint plan: `docs/planning/sprint-14-plan.md`.
 - Prior sprint plan: `docs/planning/sprint-13-plan.md`.
 - Product source: `docs/product/14-files-storage-retention-security.md`.
