@@ -10,6 +10,7 @@ import {
   createProjectComment,
   listProjectComments,
 } from "@/lib/partners/partner-db";
+import { PartnerValidationError } from "@/lib/partners/partner-service";
 import { requireProjectPermission } from "@/lib/projects/project-api";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +48,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
 
   try {
-    const input = parseProjectCommentPayload(await request.json());
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      throw new PartnerValidationError("Request body must be valid JSON.");
+    }
+
+    const input = parseProjectCommentPayload(body);
 
     // The RPC enforces the same permission list; internal notes need both
     // comment creation and internal-note visibility.

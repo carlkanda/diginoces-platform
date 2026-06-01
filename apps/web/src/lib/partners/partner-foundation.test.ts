@@ -481,6 +481,13 @@ describe("Sprint 13 partner foundation", () => {
       join(repoRoot, "apps/web/src/app/platform/partner-dashboard/page.tsx"),
       "utf8",
     );
+    const projectCommentRoute = readFileSync(
+      join(
+        repoRoot,
+        "apps/web/src/app/api/projects/[projectId]/comments/route.ts",
+      ),
+      "utf8",
+    );
     const partnerActions = readFileSync(
       join(repoRoot, "apps/web/src/app/platform/partners/actions.ts"),
       "utf8",
@@ -506,6 +513,13 @@ describe("Sprint 13 partner foundation", () => {
     expect(migration).toMatch(
       /\bapp_private\.partner_user_is_active\(\s*p_user_id\s*,\s*p_partner_id\s*\)/,
     );
+    expect(migration).toContain("p_role text default 'member'");
+    expect(migration).toMatch(
+      /\bv_existing_role\s+public\.partner_user_role\b/i,
+    );
+    expect(migration).toMatch(
+      /delete\s+from\s+public\.role_assignments[\s\S]*scope_id\s*=\s*p_partner_id/i,
+    );
     expect(migration).toMatch(
       /\bgrant\s+select\s+on\s+public\.project_comments\b/i,
     );
@@ -519,6 +533,10 @@ describe("Sprint 13 partner foundation", () => {
     expect(partnerDashboardPage).toContain("searchParams");
     expect(partnerDashboardPage).not.toMatch(/partners\s*\[\s*0\s*\]/);
     expect(partnerDashboardPage).toContain("partnerId");
+    expect(partnerDashboardPage).toContain(
+      "redirect(buildLoginRedirectPath(dashboardPath))",
+    );
+    expect(projectCommentRoute).toContain("Request body must be valid JSON.");
     expect(partnerActions).toMatch(/partner_projects\.submit/);
     expect(partnerActions).toMatch(/requiredProjectCommentPermissions/);
     expect(partnerDb).toMatch(/\bpartner_project_assignments\b/);

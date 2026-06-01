@@ -45,7 +45,13 @@ export default async function PartnerDashboardPage({
   const requestedPartnerId = firstSearchParam((await searchParams)?.partnerId);
 
   if (authContext.status === "anonymous") {
-    redirect(buildLoginRedirectPath("/platform/partner-dashboard"));
+    const dashboardPath = requestedPartnerId
+      ? `/platform/partner-dashboard?${new URLSearchParams({
+          partnerId: requestedPartnerId,
+        }).toString()}`
+      : "/platform/partner-dashboard";
+
+    redirect(buildLoginRedirectPath(dashboardPath));
   }
 
   if (authContext.status === "not_configured") {

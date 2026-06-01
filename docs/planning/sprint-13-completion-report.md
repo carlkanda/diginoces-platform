@@ -82,6 +82,10 @@ The sprint does not implement partner commission management, referral-fee calcul
   - active partner-link checks;
   - author classification;
   - source-note provenance preservation.
+- Hosted CodeRabbit rerun hardening tightened:
+  - malformed project-comment JSON handling returns the existing invalid-request path;
+  - partner dashboard login redirects preserve explicit `partnerId` deep links;
+  - partner-user downgrades revoke stale custom-scope `partner_admin` assignments and omitted SQL roles default to `member`.
 - Partner audit snapshots redact contact details, internal notes, partner notes, review reasons, and sensitive contact fields.
 - Partner roles do not receive pricing, revenue, payment, payment-exception, contract-management, internal-note, or audit-log permissions.
 
@@ -98,6 +102,7 @@ The sprint does not implement partner commission management, referral-fee calcul
   - Partner user linkage defaults to member unless admin is explicitly selected.
   - Partner-scoped dashboard/comment permissions remain available for partner-originated projects.
   - Hosted CodeRabbit regression checks for dashboard partner selection, partner assignment dashboard coverage, event date loading, restricted raw table grants, source-note preservation, and server-action permission gates.
+  - Hosted CodeRabbit rerun regression checks for malformed project-comment JSON handling, dashboard login redirect partner preservation, and partner-admin role assignment revocation on downgrade.
   - Partner audit actions without commission/referral/payout/billing scope.
   - Migration, health endpoint, home page, local setup docs, and completion-report evidence.
 
@@ -137,11 +142,28 @@ The sprint does not implement partner commission management, referral-fee calcul
 - `npx.cmd supabase@latest db push --linked --dry-run` - passed after review fixes; dry run would push only `20260531224203_sprint_13_partner_provider_model.sql`.
 - `git diff --check` - passed after review fixes; only repository LF/CRLF warnings were printed.
 - Targeted secret scan with `rg` - passed after review fixes with no matches.
+- Hosted CodeRabbit rerun on PR #40 - changes requested with 3 actionable comments.
+- `npm.cmd run test -- --run src/lib/partners/partner-foundation.test.ts` - passed after hosted rerun fixes, 12 tests.
+- `npm.cmd ci` - passed after hosted rerun fixes, installed 496 packages and reported 0 vulnerabilities.
+- `npm.cmd run format:check` - initially failed after hosted rerun fixes because `partner-foundation.test.ts` needed Prettier formatting.
+- `npm.cmd run format` - passed and formatted `partner-foundation.test.ts`.
+- `npm.cmd run format:check` - passed after formatting.
+- `npm.cmd run lint` - passed after hosted rerun fixes.
+- `npm.cmd run typecheck` - passed after hosted rerun fixes.
+- `npm.cmd run test` - passed after hosted rerun fixes, 14 test files and 143 tests.
+- `npm.cmd run build` - passed after hosted rerun fixes; Next.js build listed the partner dashboard, partner profile, review, and project comments routes.
+- `npm.cmd audit --omit=dev` - passed after hosted rerun fixes, 0 vulnerabilities.
+- `npm.cmd run db:lint` - passed after hosted rerun fixes against linked `public` and `app_private` schemas, no schema errors found.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after hosted rerun fixes; dry run would push only `20260531224203_sprint_13_partner_provider_model.sql`.
+- `git diff --check` - passed after hosted rerun fixes; only repository LF/CRLF warnings were printed.
+- Targeted secret scan with `rg` - passed after hosted rerun fixes with no credential matches. A broader policy-text scan matched documentation references to banned secrets only.
+- Local CodeRabbit review from WSL (`coderabbit review --agent -t uncommitted -c AGENTS.md`) - passed after hosted rerun fixes with 0 findings.
 
 ## Checks Passed Or Failed
 
 - Passed: install, format check, lint, typecheck, tests, build, dependency audit, Supabase linked dry-run, Supabase linked db lint, whitespace check, and targeted secret scan.
 - Failed: one transient lint/typecheck run started in parallel with `npm ci` and failed because local binaries were temporarily unavailable while `node_modules` was being rebuilt. Both commands passed when rerun after `npm ci`.
+- Failed and fixed: one hosted-rerun `format:check` run reported Prettier formatting needed in `partner-foundation.test.ts`. `npm.cmd run format` fixed it and the follow-up `format:check` passed.
 - Post-review verification and local CodeRabbit reruns are documented above; no local review-loop blocker remains.
 
 ## Assumptions

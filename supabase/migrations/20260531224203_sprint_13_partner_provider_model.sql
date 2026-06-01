@@ -643,7 +643,7 @@ execute function app_private.audit_partner_change();
 create or replace function public.link_partner_user(
   p_partner_id uuid,
   p_user_id uuid,
-  p_role text default 'admin'
+  p_role text default 'member'
 )
 returns public.partner_users
 language plpgsql
@@ -652,6 +652,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_actor_user_id uuid := (select auth.uid());
+  v_existing_role public.partner_user_role;
   v_partner_user public.partner_users%rowtype;
   v_role_id uuid;
 begin
@@ -662,6 +663,11 @@ begin
   if p_role not in ('admin', 'member') then
     raise exception 'Partner user role is not supported.';
   end if;
+
+  select role into v_existing_role
+  from public.partner_users
+  where partner_id = p_partner_id
+    and user_id = p_user_id;
 
   insert into public.partner_users (
     partner_id,
@@ -690,11 +696,11 @@ begin
     active_at = excluded.active_at
   returning * into v_partner_user;
 
-  if p_role = 'admin' then
-    select id into v_role_id
-    from public.roles
-    where slug = 'partner_admin';
+  select id into v_role_id
+  from public.roles
+  where slug = 'partner_admin';
 
+  if v_partner_user.role = 'admin' then
     if v_role_id is not null then
       insert into public.role_assignments (
         user_id,
@@ -712,6 +718,12 @@ begin
       )
       on conflict do nothing;
     end if;
+  elsif v_existing_role = 'admin' and v_role_id is not null then
+    delete from public.role_assignments
+    where user_id = p_user_id
+      and role_id = v_role_id
+      and scope = 'custom'
+      and scope_id = p_partner_id;
   end if;
 
   return v_partner_user;
