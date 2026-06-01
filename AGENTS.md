@@ -18,44 +18,44 @@ No requirement may be marked complete unless it is implemented, tested, reviewed
 ## Current sprint assignment
 
 ```text
-Sprint 13 — Partner / External Provider Model
-Issue: #29
-Issue URL: https://github.com/carlkanda/diginoces-platform/issues/29
-Plan: docs/planning/sprint-13-plan.md
-Branch: codex/sprint-13-partner-provider-model
-PR title: Sprint 13 — Partner / External Provider Model
-Completion report: docs/planning/sprint-13-completion-report.md
+Sprint 14 — Files, Storage, Retention & Archive
+Issue: #30
+Issue URL: https://github.com/carlkanda/diginoces-platform/issues/30
+Plan: docs/planning/sprint-14-plan.md
+Branch: codex/sprint-14-files-storage-retention-archive
+PR title: Sprint 14 — Files, Storage, Retention & Archive
+Completion report: docs/planning/sprint-14-completion-report.md
 ```
 
 Last completed sprint:
 
 ```text
-Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback
+Sprint 13 — Partner / External Provider Model
 ```
 
 Last completed GitHub issue:
 
 ```text
-#28 — Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback
-https://github.com/carlkanda/diginoces-platform/issues/28
+#29 — Sprint 13 — Partner / External Provider Model
+https://github.com/carlkanda/diginoces-platform/issues/29
 ```
 
 Last completed PR:
 
 ```text
-#39 — Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback
+#40 — Sprint 13 — Partner / External Provider Model
 ```
 
 Last completed report:
 
 ```text
-docs/planning/sprint-12-completion-report.md
+docs/planning/sprint-13-completion-report.md
 ```
 
 Next planned sprint:
 
 ```text
-Sprint 14 — Files, Storage, Retention & Archive
+Sprint 15 — Release Hardening, QA & MVP Launch
 ```
 
 ## Active sprint sync rule
@@ -84,47 +84,44 @@ Always read:
 - relevant product documents in `docs/product/`
 - relevant technical design documents in `docs/technical-design/`
 
-Sprint 13 is active. Implement only the scope described in issue #29 and `docs/planning/sprint-13-plan.md`.
+Sprint 14 is active. Implement only the scope described in issue #30 and `docs/planning/sprint-14-plan.md`.
 
-For the active Sprint 13 assignment, read:
+For the active Sprint 14 assignment, read:
 
+- `docs/planning/sprint-14-plan.md`
 - `docs/planning/sprint-13-plan.md`
-- `docs/planning/sprint-12-plan.md`
 - `docs/planning/mvp-build-execution-plan.md`
-- `docs/product/12-partner-external-provider-model.md`
-- `docs/product/01-product-vision-business-model.md`
-- `docs/product/02-user-roles-permissions-access-control.md`
-- `docs/product/03-wedding-project-structure.md`
+- `docs/product/14-files-storage-retention-security.md`
+- `docs/product/06-invitation-template-pdf-generation.md`
+- `docs/product/09-tables-seating-print-materials.md`
 - `docs/product/10-contracts-pricing-payment-controls.md`
+- `docs/product/11-post-event-messages.md`
 - `docs/product/13-dashboards-reports-audit-logs.md`
+- `docs/product/02-user-roles-permissions-access-control.md`
 - `docs/technical-design/database-schema-core-entities.md`
 - `docs/technical-design/api-backend-service-design.md`
 - `docs/technical-design/security-permissions-access-control.md`
 
 ## Scope guard
 
-Implement only Sprint 13: Partner / External Provider Model. Do not add Sprint 14 files/storage/retention/archive scope or any later-sprint product scope.
+Implement only Sprint 14: Files, Storage, Retention & Archive. Do not add Sprint 15 release hardening/QA/MVP launch scope or any later-sprint product scope.
 
 ## Active sprint out of scope
 
-For Sprint 13, do not implement:
+For Sprint 14, do not implement:
 
+- AI assistance;
+- advanced integrations;
+- direct Canva API integration;
+- partner white-label SaaS;
 - partner commission management;
-- referral-fee calculation;
-- partner billing;
-- white-label SaaS;
-- partner-controlled pricing;
-- partner-controlled contracts;
-- partner payment exception approval;
-- partner access to revenue/payment details;
-- partner access to internal notes or audit logs;
-- public partner marketplace;
-- automated partner payout reports;
-- multi-tenant white-label branding;
-- partner API access;
-- full CRM/lead pipeline unless separately approved.
+- online payment provider integration;
+- external accounting storage sync;
+- automated destructive file deletion without admin review;
+- public marketing asset library;
+- full digital asset management system beyond MVP needs.
 
-Partner and external provider functionality begins in Sprint 13 only after the sprint is explicitly assigned.
+Files, storage, retention, and archive functionality begins in Sprint 14 only after the sprint is explicitly assigned.
 
 ## Workflow
 

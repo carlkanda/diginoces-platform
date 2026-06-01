@@ -2,7 +2,7 @@
 
 ## Summary
 
-Sprint 13 implements the partner/external-provider foundation for issue `#29` on branch `codex/sprint-13-partner-provider-model`.
+Sprint 13 implemented, reviewed, merged, and applied the partner/external-provider foundation for issue `#29` on branch `codex/sprint-13-partner-provider-model`.
 
 The implementation is limited to partner profiles, partner user linkage, lifecycle status, partner-originated project draft/submission/review flow, project source tracking, restricted partner dashboard visibility, partner-visible project comments, backend permission checks, RLS/RPC foundations, audit hooks, UI routes, documentation, and tests.
 
@@ -13,6 +13,7 @@ The sprint does not implement partner commission management, referral-fee calcul
 - GitHub issue: `#29` - Sprint 13 - Partner / External Provider Model.
 - Branch: `codex/sprint-13-partner-provider-model`.
 - Pull request: `#40` - Sprint 13 - Partner / External Provider Model - https://github.com/carlkanda/diginoces-platform/pull/40.
+- Merge commit: `a7a867824de660763a7d9152b962d59f00ced416`.
 - Sprint plan: `docs/planning/sprint-13-plan.md`.
 - Product source: `docs/product/12-partner-external-provider-model.md`.
 
@@ -39,6 +40,7 @@ The sprint does not implement partner commission management, referral-fee calcul
 ## Files Created Or Changed
 
 - `supabase/migrations/20260531224203_sprint_13_partner_provider_model.sql`
+- `supabase/migrations/20260601101836_sprint_13_project_comment_lint_fix.sql`
 - `apps/web/src/lib/partners/partner-service.ts`
 - `apps/web/src/lib/partners/partner-db.ts`
 - `apps/web/src/lib/partners/partner-api.ts`
@@ -88,6 +90,7 @@ The sprint does not implement partner commission management, referral-fee calcul
   - partner-user downgrades revoke stale custom-scope `partner_admin` assignments whenever the final role is `member`, and omitted SQL roles default to `member`.
 - Partner audit snapshots redact contact details, internal notes, partner notes, review reasons, and sensitive contact fields.
 - Partner roles do not receive pricing, revenue, payment, payment-exception, contract-management, internal-note, or audit-log permissions.
+- Post-merge linked dev database application exposed a Supabase lint warning for `create_project_comment`; follow-up migration `20260601101836_sprint_13_project_comment_lint_fix.sql` recreates the function with explicit `project_comment_actor_type` enum casts and preserves the same execute grants.
 
 ## Tests Added
 
@@ -169,10 +172,20 @@ The sprint does not implement partner commission management, referral-fee calcul
 - `npm.cmd run db:lint` - passed after final hosted CodeRabbit cleanup against linked `public` and `app_private` schemas, no schema errors found.
 - `npx.cmd supabase@latest db push --linked --dry-run` - passed after final hosted CodeRabbit cleanup; dry run would push only `20260531224203_sprint_13_partner_provider_model.sql`.
 - Local CodeRabbit review from WSL (`coderabbit review --agent -t uncommitted -c AGENTS.md`) - passed after final hosted CodeRabbit cleanup with 0 findings.
+- `gh pr merge 40 --squash --subject "Sprint 13 — Partner / External Provider Model (#40)"` - passed; PR `#40` merged into `main`.
+- `git switch main` - passed; local checkout switched to `main`.
+- `git pull` - passed; local `main` fast-forwarded to merge commit `a7a867824de660763a7d9152b962d59f00ced416`.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after merge; dry run would push `20260531224203_sprint_13_partner_provider_model.sql`.
+- `npx.cmd supabase@latest db push --linked --yes` - passed; applied `20260531224203_sprint_13_partner_provider_model.sql` to the linked dev project.
+- `npx.cmd supabase@latest migration new sprint_13_project_comment_lint_fix` - passed; created `20260601101836_sprint_13_project_comment_lint_fix.sql`.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after the lint-fix migration was added; dry run would push only `20260601101836_sprint_13_project_comment_lint_fix.sql`.
+- `npx.cmd supabase@latest db push --linked --yes` - passed; applied `20260601101836_sprint_13_project_comment_lint_fix.sql` to the linked dev project.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after applying the lint-fix migration; remote database is up to date.
+- `npm.cmd run db:lint` - passed after the lint-fix migration; no schema errors found.
 
 ## Checks Passed Or Failed
 
-- Passed: install, format check, lint, typecheck, tests, build, dependency audit, Supabase linked dry-run, Supabase linked db lint, whitespace check, and targeted secret scan.
+- Passed: install, format check, lint, typecheck, tests, build, dependency audit, Supabase linked dry-run, Supabase linked dev DB migration application, Supabase linked db lint, whitespace check, and targeted secret scan.
 - Failed: one transient lint/typecheck run started in parallel with `npm ci` and failed because local binaries were temporarily unavailable while `node_modules` was being rebuilt. Both commands passed when rerun after `npm ci`.
 - Failed and fixed: one hosted-rerun `format:check` run reported Prettier formatting needed in `partner-foundation.test.ts`. `npm.cmd run format` fixed it and the follow-up `format:check` passed.
 - Post-review verification and local CodeRabbit reruns are documented above; no local review-loop blocker remains.
@@ -183,11 +196,11 @@ The sprint does not implement partner commission management, referral-fee calcul
 - Partner project draft editing is intentionally not exposed in Sprint 13. Partners supply draft details at creation and can submit or respond to Diginoces review outcomes; a dedicated draft-update RPC/UI can be considered in a later sprint if partner self-editing is approved.
 - Couple access remains closed until Diginoces/admin approval and existing contract/payment gates.
 - Partner comments are text-only project comments. Full CRM/lead-pipeline behavior remains outside Sprint 13.
-- Generated Supabase TypeScript types are not refreshed until the linked migration is validated or the project adopts a tracked generated-type refresh workflow.
+- Generated Supabase TypeScript types were not refreshed as part of the post-merge metadata/lint-fix commit because the project does not yet use a tracked generated-type refresh workflow.
 
 ## Open Issues Or Blockers
 
-- The Sprint 13 migration has passed linked dry-run and db lint but has not been applied to the linked dev project. Apply it after the PR is merged, following the established sprint workflow.
+- None remain for Sprint 13. PR `#40` is merged, the linked dev database is up to date, and Sprint 14 metadata is prepared in `AGENTS.md` and `README.md`.
 
 ## Out Of Scope Intentionally Deferred
 
