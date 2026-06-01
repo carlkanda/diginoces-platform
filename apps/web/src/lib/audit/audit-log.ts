@@ -124,6 +124,28 @@ export type AuditAction =
   | "post_event_feedback.testimonial_permission_changed"
   | "testimonial_permissions.recorded"
   | "testimonial_permissions.reviewed"
+  | "partners.created"
+  | "partners.updated"
+  | "partners.activated"
+  | "partners.suspended"
+  | "partners.reactivated"
+  | "partners.archived"
+  | "partner_users.linked"
+  | "partner_users.updated"
+  | "partner_project_submissions.created"
+  | "partner_project_submissions.submitted"
+  | "partner_project_submissions.approved"
+  | "partner_project_submissions.rejected"
+  | "partner_project_submissions.changes_requested"
+  | "partner_project_submissions.archived"
+  | "partner_project_sources.created"
+  | "partner_project_sources.updated"
+  | "partner_project_assignments.created"
+  | "partner_project_assignments.updated"
+  | "partner_project_assignments.removed"
+  | "project_comments.created"
+  | "project_comments.updated"
+  | "project_comments.deleted"
   | "reports.exported"
   | "reports.updated"
   | "audit_logs.exported"
@@ -212,6 +234,12 @@ export function getAuditFoundationSummary() {
       "guest_book_exports",
       "post_event_feedback",
       "testimonial_permissions",
+      "partners",
+      "partner_users",
+      "partner_project_sources",
+      "partner_project_submissions",
+      "partner_project_assignments",
+      "project_comments",
       "reports",
       "audit_logs",
     ],

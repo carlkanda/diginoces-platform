@@ -7,6 +7,7 @@ import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
 import { getSprint9CheckInStatus } from "@/lib/check-in/check-in-service";
 import { getSprint6InvitationStatus } from "@/lib/invitations/invitation-service";
 import { getSprint7CommunicationStatus } from "@/lib/messages/message-service";
+import { getSprint13PartnerStatus } from "@/lib/partners/partner-service";
 import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
 import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
 import { getSprint11ReportingStatus } from "@/lib/reports/report-service";
@@ -28,6 +29,7 @@ export function GET() {
   const sprint10Foundation = getSprint10CommercialStatus();
   const sprint11Foundation = getSprint11ReportingStatus();
   const sprint12Foundation = getSprint12GuestWishesStatus();
+  const sprint13Foundation = getSprint13PartnerStatus();
   const env = getPublicEnvironment();
 
   return NextResponse.json(
@@ -105,6 +107,12 @@ export function GET() {
           issue: sprint12Foundation.issue,
           moduleCount: sprint12Foundation.modules.length,
           sprint: sprint12Foundation.sprint,
+        },
+        {
+          featureCount: sprint13Foundation.features.length,
+          issue: sprint13Foundation.issue,
+          moduleCount: sprint13Foundation.modules.length,
+          sprint: sprint13Foundation.sprint,
         },
       ],
       supabaseConfigured: env.supabaseConfigured,

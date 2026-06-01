@@ -68,6 +68,15 @@ export default async function PlatformPage() {
             <Link className="button secondary" href="/platform/projects">
               Projects
             </Link>
+            <Link className="button secondary" href="/platform/partners">
+              Partners
+            </Link>
+            <Link
+              className="button secondary"
+              href="/platform/partner-dashboard"
+            >
+              Partner dashboard
+            </Link>
           </div>
         </div>
         <div className="table-like">

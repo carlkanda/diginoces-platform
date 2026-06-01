@@ -108,6 +108,7 @@ export default async function ProjectDetailPage({
     canReadProjectDashboard,
     canReadCoupleDashboard,
     canReadReports,
+    canReadProjectComments,
     guestBookPermissions,
     feedbackPermissions,
   ] = await Promise.all([
@@ -128,6 +129,7 @@ export default async function ProjectDetailPage({
       "dashboards.couple.read",
     ),
     hasProjectPermission(permissionContext, projectId, "reports.catalog.read"),
+    hasProjectPermission(permissionContext, projectId, "project_comments.read"),
     getGuestBookPagePermissions(permissionContext, projectId),
     getPostEventFeedbackPagePermissions(permissionContext, projectId),
   ]);
@@ -207,6 +209,14 @@ export default async function ProjectDetailPage({
             href={`/platform/projects/${projectId}/communications`}
           >
             Communications
+          </Link>
+        ) : null}
+        {canReadProjectComments ? (
+          <Link
+            className="button secondary"
+            href={`/platform/projects/${projectId}/comments`}
+          >
+            Project comments
           </Link>
         ) : null}
         {canReadCommercial ? (
@@ -404,6 +414,31 @@ export default async function ProjectDetailPage({
           <div className="empty-state">
             Guest wishes and post-event feedback are not available for your
             current project access.
+          </div>
+        )}
+      </section>
+
+      <section className="section">
+        <div className="section-heading">
+          <h2>Partner collaboration</h2>
+          <span className="meta-list">Sprint 13 foundation</span>
+        </div>
+        <p className="page-summary">
+          Track partner-originated or assigned projects through restricted
+          partner views and a partner-visible project comment thread. Internal
+          notes, audit logs, revenue, payment details, and exception reasons
+          remain internal.
+        </p>
+        {canReadProjectComments ? (
+          <Link
+            className="button"
+            href={`/platform/projects/${projectId}/comments`}
+          >
+            Open project comments
+          </Link>
+        ) : (
+          <div className="empty-state">
+            Project comments are not available for your current project access.
           </div>
         )}
       </section>

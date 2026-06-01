@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, the Sprint 7 guided WhatsApp communication workflow for issue `#21`, the Sprint 8 tables/seating/print-materials foundation for issue `#23`, the Sprint 9 check-in/wedding-day operations foundation for issue `#25`, the Sprint 10 contracts/pricing/payment-controls foundation for issue `#26`, the Sprint 11 dashboard/report/audit-log foundation for issue `#27`, and the Sprint 12 guest wishes/guest-book/post-event-feedback foundation for issue `#28`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, partner project creation, automatic duplicate merging, direct Canva API integration, full print partner workflow, online payment processing, tax/VAT handling, multi-currency pricing, e-signature integration, full marketing testimonial publishing, advanced AI assistance, or guest audio/video/photo/file submissions.
+This guide covers the Sprint 1 foundation setup for issue `#1`, the Sprint 2 project/event foundation for issue `#3`, the Sprint 3 guest-management foundation for issue `#5`, the Sprint 4 CSV guest import and approval workflow for issue `#7`, the Sprint 5 RSVP/public guest page foundation for issue `#10`, the Sprint 6 invitation template/PDF generation foundation for issue `#12`, the Sprint 7 guided WhatsApp communication workflow for issue `#21`, the Sprint 8 tables/seating/print-materials foundation for issue `#23`, the Sprint 9 check-in/wedding-day operations foundation for issue `#25`, the Sprint 10 contracts/pricing/payment-controls foundation for issue `#26`, the Sprint 11 dashboard/report/audit-log foundation for issue `#27`, the Sprint 12 guest wishes/guest-book/post-event-feedback foundation for issue `#28`, and the Sprint 13 partner/external-provider foundation for issue `#29`. It does not include Excel import, production WhatsApp API sending, unofficial WhatsApp Web automation, automatic duplicate merging, direct Canva API integration, full print partner workflow, online payment processing, tax/VAT handling, multi-currency pricing, e-signature integration, partner commission management, partner billing, white-label SaaS, full marketing testimonial publishing, advanced AI assistance, or guest audio/video/photo/file submissions.
 
 ## Prerequisites
 
@@ -297,4 +297,24 @@ http://127.0.0.1:3000/api/projects/{projectId}/feedback
 - Sprint 12 adds text-only guest wish submission to the existing public guest page. Each guest can have one message; edits update the same record before the configured project/event message deadline. Emoji text is supported. Audio, video, photo, and file uploads remain out of scope.
 - Sprint 12 moderation, couple review, guest-book export, feedback, and testimonial review are server-side permission-gated and audited. Canva CSV export is generated for approved/couple-reviewed messages and registered as project file metadata with storage upload still pending until a production storage provider is configured.
 - Testimonials are private by default. Couple permission plus Diginoces/admin review is required before any future public use; Sprint 12 does not publish testimonials to a marketing website.
+- Sprint 13 partner routes:
+
+```text
+http://127.0.0.1:3000/platform/partners
+http://127.0.0.1:3000/platform/partners/{partnerId}
+http://127.0.0.1:3000/platform/partners/review
+http://127.0.0.1:3000/platform/partner-dashboard
+http://127.0.0.1:3000/platform/projects/{projectId}/comments
+http://127.0.0.1:3000/api/partners
+http://127.0.0.1:3000/api/partners/{partnerId}
+http://127.0.0.1:3000/api/partners/{partnerId}/users
+http://127.0.0.1:3000/api/partners/{partnerId}/projects
+http://127.0.0.1:3000/api/partner-project-submissions/{submissionId}/submit
+http://127.0.0.1:3000/api/partner-project-submissions/{submissionId}/review
+http://127.0.0.1:3000/api/projects/{projectId}/comments
+```
+
+- Sprint 13 adds partner profiles, partner user linkage, partner lifecycle status, partner-created draft projects, Diginoces/admin review, partner project source tracking, restricted partner dashboard visibility, and project comment threads. Partners remain under Diginoces branding, pricing, contracts, payment gates, and approval controls.
+- Sprint 13 partner users can create and submit their own partner-originated draft projects only while the partner profile and partner user link are active. Couple access remains closed until Diginoces/admin approval and the existing contract/payment gates.
+- Sprint 13 partner dashboard and project comment access are server-side permission gated. Partner-facing views do not expose revenue amounts, payment details, discounts, payment exception reasons, internal notes, audit logs, commission fields, referral-fee fields, billing fields, or payout fields.
 - A historical PR `#17` WSL CodeRabbit full-diff review failed with `TRPCClientError` even when `coderabbit doctor` passed; a later PR `#18` full-diff review completed successfully. If the `TRPCClientError` recurs, use scoped directory reviews such as `coderabbit review --agent --base main --dir apps/web/src/lib/auth -c AGENTS.md`, then rely on the hosted CodeRabbit PR review as the full-diff backstop.
