@@ -33,8 +33,21 @@ export async function POST(request: NextRequest, context: RouteContext) {
     await requireProjectFileArchivePermission(apiContext, projectId);
 
     const body = await readJson(request);
-    const action: "archive" | "soft_delete" =
-      body.action === "soft_delete" ? "soft_delete" : "archive";
+    const actionValue = body.action;
+
+    if (actionValue !== "archive" && actionValue !== "soft_delete") {
+      return NextResponse.json(
+        {
+          error: {
+            code: "invalid_request",
+            message: "Archive action must be archive or soft_delete.",
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    const action = actionValue;
     const reason = typeof body.reason === "string" ? body.reason.trim() : "";
 
     if (action === "soft_delete") {

@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import {
-  recordFileAccessEvent,
-  resolveGuestFileDownload,
-} from "@/lib/files/file-db";
+import { resolveGuestFileDownload } from "@/lib/files/file-db";
 import { serverLogger } from "@/lib/logging";
 import { createSupabaseStorageAdapter } from "@/lib/storage/storage-provider";
 
@@ -65,11 +62,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       path,
     });
   } catch (error) {
-    await recordGuestDownloadEvent(supabase, fileId, {
-      accessAction: "download_denied",
-      allowed: false,
-      denialReason: "signed_url_failed",
-    });
     serverLogger.error("Guest file signed URL generation failed.", {
       error,
       fileId,
@@ -85,14 +77,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     );
   }
 
-  await recordGuestDownloadEvent(supabase, fileId, {
-    accessAction: "guest_signed_url_created",
-    allowed: true,
-    signedUrlExpiresAt: new Date(
-      Date.now() + expiresInSeconds * 1000,
-    ).toISOString(),
-  });
-
   const downloadUrl = new URL(signedUrl);
   downloadUrl.searchParams.set(
     "download",
@@ -100,24 +84,4 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   );
 
   return NextResponse.redirect(downloadUrl.toString(), 307);
-}
-
-async function recordGuestDownloadEvent(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  fileId: string,
-  input: Parameters<typeof recordFileAccessEvent>[2],
-) {
-  try {
-    await recordFileAccessEvent(supabase, fileId, {
-      ...input,
-      metadata: {
-        accessContext: "public_guest_page",
-      },
-    });
-  } catch (error) {
-    serverLogger.error("Guest file access-event recording failed.", {
-      error,
-      fileId,
-    });
-  }
 }

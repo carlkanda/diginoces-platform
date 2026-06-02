@@ -892,6 +892,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_actor_user_id uuid := (select auth.uid());
+  v_category public.file_categories%rowtype;
   v_file public.files;
   v_safe_filename text;
   v_storage_path text;
@@ -916,20 +917,22 @@ begin
     raise exception 'File MIME type is required.' using errcode = '23514';
   end if;
 
-  if not exists (
-    select 1
-    from public.file_categories fc
-    where fc.slug = p_category
-      and (
-        coalesce(array_length(fc.allowed_mime_types, 1), 0) = 0
-        or lower(p_mime_type) = any(fc.allowed_mime_types)
-      )
-  ) then
+  select *
+  into v_category
+  from public.file_categories fc
+  where fc.slug = p_category;
+
+  if not found then
+    raise exception 'File category configuration not found.' using errcode = 'P0002';
+  end if;
+
+  if coalesce(array_length(v_category.allowed_mime_types, 1), 0) > 0
+    and lower(p_mime_type) <> all(v_category.allowed_mime_types) then
     raise exception 'MIME type is not allowed for this category.' using errcode = '23514';
   end if;
 
-  if p_visibility = 'guest_visible' and p_guest_id is null then
-    raise exception 'Guest-visible files require a guest.' using errcode = '23514';
+  if p_visibility = 'guest_visible' and (p_guest_id is null or not v_category.guest_visible_allowed) then
+    raise exception 'Guest-visible files require a guest and an allowed category.' using errcode = '23514';
   end if;
 
   if p_event_id is not null and not exists (
@@ -1301,6 +1304,10 @@ begin
     raise exception 'Project was not found.' using errcode = 'P0002';
   end if;
 
+  if p_action = 'extend_retention' and p_extended_until is null then
+    raise exception 'Retention extension date is required.' using errcode = '23514';
+  end if;
+
   v_previous_status := v_project.status;
   v_previous_retention_status := v_project.file_retention_status;
   v_retention_start := coalesce(v_project.retention_started_at, v_project.completed_at, now());
@@ -1433,6 +1440,10 @@ declare
   v_file public.files;
   v_event public.file_access_events;
 begin
+  if v_actor_user_id is null then
+    raise exception 'Authentication is required.' using errcode = '28000';
+  end if;
+
   select *
   into v_file
   from public.files
@@ -1442,8 +1453,7 @@ begin
     raise exception 'File was not found.' using errcode = 'P0002';
   end if;
 
-  if v_actor_user_id is not null
-    and not app_private.user_can_access_file(v_actor_user_id, p_file_id, 'files.download') then
+  if not app_private.user_can_access_file(v_actor_user_id, p_file_id, 'files.download') then
     raise exception 'File download permission denied.' using errcode = '42501';
   end if;
 
@@ -1671,7 +1681,7 @@ grant execute on function public.register_project_file(uuid, public.file_categor
 grant execute on function public.create_file_version(uuid, text, text, bigint, text, text, jsonb) to authenticated;
 grant execute on function public.archive_project_file(uuid, public.file_archive_action, text) to authenticated;
 grant execute on function public.update_project_archive_lifecycle(uuid, public.project_archive_action, text, timestamptz) to authenticated;
-grant execute on function public.record_file_access_event(uuid, public.file_access_action, boolean, text, timestamptz, jsonb) to anon, authenticated;
+grant execute on function public.record_file_access_event(uuid, public.file_access_action, boolean, text, timestamptz, jsonb) to authenticated;
 grant execute on function public.resolve_guest_file_download(text, uuid) to anon, authenticated;
 grant execute on function public.list_guest_file_downloads(text) to anon, authenticated;
 

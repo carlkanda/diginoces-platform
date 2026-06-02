@@ -46,6 +46,7 @@ The sprint does not implement advanced digital asset management, automated destr
 
 - `supabase/migrations/20260601114646_sprint_14_files_storage_retention_archive.sql`
 - `apps/web/src/lib/files/file-service.ts`
+- `apps/web/src/lib/files/file-form.ts`
 - `apps/web/src/lib/files/file-db.ts`
 - `apps/web/src/lib/files/file-api.ts`
 - `apps/web/src/lib/files/file-foundation.test.ts`
@@ -108,6 +109,8 @@ The sprint does not implement advanced digital asset management, automated destr
 - `apps/web/src/lib/files/file-foundation.test.ts`
   - Documented file categories.
   - File upload metadata validation and unsafe filename rejection.
+  - Zero-byte `File` placeholder metadata parsing and RPC forwarding.
+  - Malformed file RPC response fail-fast behavior.
   - MIME/extension mismatch rejection.
   - Version/latest invariant.
   - Guest-token scoped latest active file download checks.
@@ -154,13 +157,20 @@ The sprint does not implement advanced digital asset management, automated destr
 - `npm.cmd run format:check` - passed after CodeRabbit-driven fixes.
 - `npm.cmd run lint` - passed after CodeRabbit-driven fixes.
 - `npm.cmd run typecheck` - passed after CodeRabbit-driven fixes.
-- `npm.cmd run test` - passed after CodeRabbit-driven fixes, 15 test files and 154 tests.
+- `npm.cmd run test` - passed after CodeRabbit-driven fixes, 15 test files and 157 tests.
 - `npm.cmd run build` - passed after CodeRabbit-driven fixes.
 - `npm.cmd audit --omit=dev` - passed after CodeRabbit-driven fixes, 0 vulnerabilities.
 - `npx.cmd supabase@latest db push --linked --dry-run` - passed after CodeRabbit-driven fixes; dry run would push only `20260601114646_sprint_14_files_storage_retention_archive.sql`.
 - `npm.cmd run db:lint` - passed after CodeRabbit-driven fixes, no schema errors found.
 - `git diff --check` - passed after CodeRabbit-driven fixes; Git printed LF/CRLF warnings only.
 - Targeted secret scan with `rg` - passed after CodeRabbit-driven fixes, no matches for real secrets or private client/guest data.
+- Hosted CodeRabbit review on PR `#41` - changes requested with 8 comments. Fixed explicit archive action validation, unreachable GET JSON handling, zero-byte `File` metadata handling, malformed RPC response guards, previous-version deactivation, authenticated-only access-event RPC execution, guest-visible category validation, and required retention extension dates.
+- Local WSL CodeRabbit full uncommitted review - blocked by `TRPCClientError`; scoped reviews were used as the repository-documented workaround.
+- `wsl.exe ... coderabbit review --agent -t uncommitted --dir apps/web/src/lib/files -c AGENTS.md` - passed after local review fixes, 0 issues.
+- `wsl.exe ... coderabbit review --agent -t uncommitted --dir apps/web/src/app/api -c AGENTS.md` - passed, 0 issues.
+- `wsl.exe ... coderabbit review --agent -t uncommitted --dir apps/web/src/app/platform/projects/[projectId]/files ...` - passed after adding zero-byte placeholder tests, 0 issues.
+- `wsl.exe ... coderabbit review --agent -t uncommitted --dir supabase/migrations -c AGENTS.md` - passed after splitting category lookup and MIME validation, 0 issues.
+- `npm.cmd --workspace apps/web run test -- src/lib/files/file-foundation.test.ts` - passed after hosted/local review fixes, 14 tests.
 
 ## Checks Passed Or Failed
 

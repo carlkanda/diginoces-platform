@@ -18,9 +18,11 @@ import {
   updateProjectArchiveLifecycle,
 } from "@/lib/files/file-db";
 import {
-  FileValidationError,
-  type FileVisibility,
-} from "@/lib/files/file-service";
+  fileMetadataFromForm,
+  formValue,
+  requiredFormValue,
+} from "@/lib/files/file-form";
+import { FileValidationError } from "@/lib/files/file-service";
 
 type ProjectArchiveLifecycleAction =
   | "archive"
@@ -36,38 +38,6 @@ const projectArchiveLifecycleActions = new Set<ProjectArchiveLifecycleAction>([
   "mark_completed",
   "mark_pending_deletion",
 ]);
-
-const allowedFileVisibilities = new Set<FileVisibility>([
-  "couple_visible",
-  "guest_visible",
-  "internal",
-  "partner_visible",
-]);
-
-function formValue(formData: FormData, key: string) {
-  const value = formData.get(key);
-
-  if (value === null) {
-    return undefined;
-  }
-
-  if (typeof value !== "string") {
-    throw new FileValidationError(`${key} must be a text value.`);
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
-
-function requiredFormValue(formData: FormData, key: string) {
-  const value = formValue(formData, key);
-
-  if (!value) {
-    throw new FileValidationError(`${key} is required.`);
-  }
-
-  return value;
-}
 
 function fileLibraryPath(projectId: string, params: Record<string, string>) {
   return `/platform/projects/${projectId}/files?${new URLSearchParams(
@@ -99,16 +69,6 @@ function parseProjectArchiveLifecycleAction(
   }
 
   throw new FileValidationError("Project archive action is invalid.");
-}
-
-function parseFileVisibility(value: string | undefined): FileVisibility {
-  const visibility = value ?? "internal";
-
-  if (allowedFileVisibilities.has(visibility as FileVisibility)) {
-    return visibility as FileVisibility;
-  }
-
-  throw new FileValidationError("File visibility is invalid.");
 }
 
 function isPermissionFailure(error: unknown) {
@@ -147,40 +107,6 @@ async function getActionContext() {
     supabase: authContext.supabase,
     user: authContext.user,
   };
-}
-
-function fileMetadataFromForm(formData: FormData) {
-  const upload = formData.get("file");
-  const file =
-    upload instanceof File && upload.size > 0
-      ? {
-          fileSizeBytes: upload.size,
-          filename: upload.name,
-          mimeType: upload.type || "application/octet-stream",
-        }
-      : null;
-
-  return {
-    category: requiredFormValue(formData, "category"),
-    fileSizeBytes: file
-      ? file.fileSizeBytes
-      : parseFileSizeBytes(requiredFormValue(formData, "fileSizeBytes")),
-    filename: file?.filename ?? requiredFormValue(formData, "filename"),
-    mimeType: file?.mimeType ?? requiredFormValue(formData, "mimeType"),
-    visibility: parseFileVisibility(formValue(formData, "visibility")),
-  };
-}
-
-function parseFileSizeBytes(value: string) {
-  const parsed = Number(value);
-
-  if (!Number.isSafeInteger(parsed) || parsed < 0) {
-    throw new FileValidationError(
-      "fileSizeBytes must be a non-negative integer.",
-    );
-  }
-
-  return parsed;
 }
 
 export async function registerProjectFileAction(

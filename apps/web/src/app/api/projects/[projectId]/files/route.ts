@@ -74,18 +74,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     );
   } catch (error) {
-    if (error instanceof InvalidJsonBodyError) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "invalid_request",
-            message: "Request body must be valid JSON.",
-          },
-        },
-        { status: 400 },
-      );
-    }
-
     if (error instanceof FileValidationError) {
       return NextResponse.json(
         {
@@ -131,6 +119,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ file }, { status: 201 });
   } catch (error) {
+    if (error instanceof InvalidJsonBodyError) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "invalid_request",
+            message: "Request body must be valid JSON.",
+          },
+        },
+        { status: 400 },
+      );
+    }
+
     if (error instanceof FileValidationError) {
       return NextResponse.json(
         {

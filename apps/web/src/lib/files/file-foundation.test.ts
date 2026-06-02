@@ -15,6 +15,12 @@ import {
   validateGuestFileDownload,
   type ProjectFileRecord,
 } from "@/lib/files/file-service";
+import { fileMetadataFromForm } from "@/lib/files/file-form";
+import {
+  createProjectFileVersion,
+  registerProjectFile,
+  type ProjectFileRow,
+} from "@/lib/files/file-db";
 import {
   roleDefinitions,
   type PermissionSlug,
@@ -60,6 +66,42 @@ function fileRecord(
     version: 1,
     versionGroupId: "group-1",
     visibility: "guest_visible",
+    ...overrides,
+  };
+}
+
+function fileDbRow(overrides: Partial<ProjectFileRow> = {}): ProjectFileRow {
+  return {
+    archive_reason: null,
+    archived_at: null,
+    archived_by: null,
+    bucket: "project-files",
+    category: "other",
+    created_at: "2026-01-01T00:00:00.000Z",
+    created_by: "user-1",
+    event_id: null,
+    file_size_bytes: 1,
+    filename: "notes.txt",
+    guest_id: null,
+    id: "file-row-1",
+    invitation_id: null,
+    is_active: true,
+    is_latest: true,
+    metadata: {},
+    mime_type: "text/plain",
+    project_id: "project-1",
+    retention_expires_at: null,
+    retention_status: "active",
+    revoked_at: null,
+    scope_id: "project-1",
+    scope_type: "project",
+    soft_deleted_at: null,
+    status: "active",
+    storage_path: "projects/project-1/files/file-row-1-notes.txt",
+    updated_at: "2026-01-01T00:00:00.000Z",
+    version: 1,
+    version_group_id: "version-group-1",
+    visibility: "internal",
     ...overrides,
   };
 }
@@ -139,6 +181,90 @@ describe("Sprint 14 file foundation", () => {
     ).toThrow("File extension and MIME type do not match.");
   });
 
+  it("extracts metadata from a zero-byte File placeholder", () => {
+    const formData = new FormData();
+    formData.set("category", "other");
+    formData.set("file", new File([], "empty.txt", { type: "text/plain" }));
+    formData.set("visibility", "internal");
+
+    expect(fileMetadataFromForm(formData)).toMatchObject({
+      category: "other",
+      fileSizeBytes: 0,
+      filename: "empty.txt",
+      mimeType: "text/plain",
+      visibility: "internal",
+    });
+  });
+
+  it("fails fast when a file registration RPC returns a malformed row", async () => {
+    const supabase = {
+      rpc: async () => ({ data: null, error: null }),
+    } as unknown as Parameters<typeof registerProjectFile>[0];
+
+    await expect(
+      registerProjectFile(supabase, "project-1", {
+        category: "other",
+        fileSizeBytes: 1,
+        filename: "notes.txt",
+        mimeType: "text/plain",
+        visibility: "internal",
+      }),
+    ).rejects.toThrow(
+      "register_project_file RPC returned an invalid file row.",
+    );
+  });
+
+  it("forwards zero-byte placeholders through registration and version RPCs", async () => {
+    const calls: Array<{ args: Record<string, unknown>; fn: string }> = [];
+    const supabase = {
+      rpc: async (fn: string, args: Record<string, unknown>) => {
+        calls.push({ args, fn });
+
+        return {
+          data: fileDbRow({
+            file_size_bytes: Number(args.p_file_size_bytes),
+            filename: String(args.p_filename),
+            id:
+              fn === "create_file_version"
+                ? "file-row-version-2"
+                : "file-row-1",
+            mime_type: String(args.p_mime_type),
+            version: fn === "create_file_version" ? 2 : 1,
+          }),
+          error: null,
+        };
+      },
+    } as unknown as Parameters<typeof registerProjectFile>[0];
+
+    const payload = {
+      category: "other",
+      fileSizeBytes: 0,
+      filename: "empty.txt",
+      mimeType: "text/plain",
+      visibility: "internal",
+    };
+
+    await expect(
+      registerProjectFile(supabase, "project-1", payload),
+    ).resolves.toMatchObject({
+      file_size_bytes: 0,
+      filename: "empty.txt",
+    });
+    await expect(
+      createProjectFileVersion(supabase, "file-row-1", payload),
+    ).resolves.toMatchObject({
+      file_size_bytes: 0,
+      filename: "empty.txt",
+      version: 2,
+    });
+
+    expect(calls.map((call) => call.fn)).toEqual([
+      "register_project_file",
+      "create_file_version",
+    ]);
+    expect(calls.map((call) => call.args.p_file_size_bytes)).toEqual([0, 0]);
+  });
+
   it("creates a new file version without destroying previous versions", () => {
     const versions = createNextFileVersion(
       [
@@ -171,6 +297,7 @@ describe("Sprint 14 file foundation", () => {
       ),
     ).toHaveLength(1);
     expect(versions.find((version) => version.id === "file-1")).toMatchObject({
+      isActive: false,
       isLatest: false,
       status: "superseded",
     });
@@ -402,6 +529,16 @@ describe("Sprint 14 file foundation", () => {
     expect(migration).toContain("p_file_size_bytes < 0");
     expect(migration).toContain(
       "Diginoces admin role is required for file soft deletion.",
+    );
+    expect(migration).toContain("not v_category.guest_visible_allowed");
+    expect(migration).toContain(
+      "p_action = 'extend_retention' and p_extended_until is null",
+    );
+    expect(migration).toMatch(
+      /grant\s+execute\s+on\s+function\s+public\.record_file_access_event\s*\(\s*uuid\s*,\s*public\.file_access_action\s*,\s*boolean\s*,\s*text\s*,\s*timestamptz\s*,\s*jsonb\s*\)\s+to\s+authenticated\s*;/,
+    );
+    expect(migration).not.toMatch(
+      /grant execute on function public\.record_file_access_event\(uuid, public\.file_access_action, boolean, text, timestamptz, jsonb\) to [^;]*(anon|public)[^;]*;/,
     );
     expect(migration).toContain("projects.retention_extended");
     expect(migration).toContain("projects.marked_pending_deletion");

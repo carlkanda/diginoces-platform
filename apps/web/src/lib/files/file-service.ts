@@ -25,20 +25,26 @@ export const fileCategories = [
 
 export type FileCategory = (typeof fileCategories)[number];
 
-export type FileVisibility =
-  | "couple_visible"
-  | "guest_visible"
-  | "internal"
-  | "partner_visible";
+export const fileVisibilities = [
+  "couple_visible",
+  "guest_visible",
+  "internal",
+  "partner_visible",
+] as const;
 
-export type FileStatus =
-  | "active"
-  | "archived"
-  | "deleted"
-  | "failed"
-  | "generated"
-  | "pending_cleanup"
-  | "superseded";
+export type FileVisibility = (typeof fileVisibilities)[number];
+
+export const fileStatuses = [
+  "active",
+  "archived",
+  "deleted",
+  "failed",
+  "generated",
+  "pending_cleanup",
+  "superseded",
+] as const;
+
+export type FileStatus = (typeof fileStatuses)[number];
 
 export type RetentionStatus =
   | "active"
@@ -371,6 +377,7 @@ export function createNextFileVersion(
       file.versionGroupId === input.versionGroupId
         ? {
             ...file,
+            isActive: false,
             isLatest: false,
             status:
               file.status === "active" || file.status === "generated"

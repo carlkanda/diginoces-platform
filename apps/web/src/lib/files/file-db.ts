@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  fileCategories,
+  fileStatuses,
+  fileVisibilities,
   parseFileRegistrationPayload,
   type FileCategory,
   type FileStatus,
@@ -9,6 +12,17 @@ import type { ProjectRow } from "@/lib/projects/project-service";
 
 type AnySupabase = SupabaseClient;
 type BaseRow = Record<string, unknown>;
+
+const fileStatusSet = new Set<FileStatus>(fileStatuses);
+const fileVisibilitySet = new Set<FileVisibility>(fileVisibilities);
+
+const fileScopeTypes = new Set<ProjectFileRow["scope_type"]>([
+  "event",
+  "guest",
+  "invitation",
+  "platform",
+  "project",
+]);
 
 export type ProjectFileRow = {
   archive_reason: string | null;
@@ -136,7 +150,139 @@ function rpcClient(supabase: AnySupabase) {
   };
 }
 
-function normalizeProjectFileRow(row: BaseRow): ProjectFileRow {
+function isRecord(value: unknown): value is BaseRow {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function requireTextField(row: BaseRow, field: string, source: string) {
+  const value = row[field];
+
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`${source} returned invalid ${field}.`);
+  }
+
+  return value;
+}
+
+function requireBooleanField(row: BaseRow, field: string, source: string) {
+  const value = row[field];
+
+  if (typeof value !== "boolean") {
+    throw new Error(`${source} returned invalid ${field}.`);
+  }
+
+  return value;
+}
+
+function requireIntegerField(row: BaseRow, field: string, source: string) {
+  const raw = row[field];
+
+  if (raw === null || raw === undefined) {
+    throw new Error(`${source} returned invalid ${field}.`);
+  }
+
+  const value = Number(raw);
+
+  if (!Number.isSafeInteger(value)) {
+    throw new Error(`${source} returned invalid ${field}.`);
+  }
+
+  return value;
+}
+
+function requireNullableTextField(row: BaseRow, field: string, source: string) {
+  const value = row[field];
+
+  if (value !== null && typeof value !== "string") {
+    throw new Error(`${source} returned invalid ${field}.`);
+  }
+
+  return value;
+}
+
+function requireNullableRecordField(
+  row: BaseRow,
+  field: string,
+  source: string,
+) {
+  const value = row[field];
+
+  if (value !== null && (typeof value !== "object" || Array.isArray(value))) {
+    throw new Error(`${source} returned invalid ${field}.`);
+  }
+
+  return value;
+}
+
+function requireNonNegativeIntegerField(
+  row: BaseRow,
+  field: string,
+  source: string,
+  minimum = 0,
+) {
+  const value = requireIntegerField(row, field, source);
+
+  if (value < minimum) {
+    throw new Error(`${source} returned invalid ${field}.`);
+  }
+
+  return value;
+}
+
+function assertProjectFileRow(
+  value: unknown,
+  source: string,
+): asserts value is BaseRow {
+  if (!isRecord(value)) {
+    throw new Error(`${source} returned an invalid file row.`);
+  }
+
+  const category = requireTextField(value, "category", source);
+  const scopeType = requireTextField(value, "scope_type", source);
+  const status = requireTextField(value, "status", source);
+  const visibility = requireTextField(value, "visibility", source);
+
+  for (const field of [
+    "bucket",
+    "created_at",
+    "filename",
+    "id",
+    "mime_type",
+    "storage_path",
+    "updated_at",
+    "version_group_id",
+  ]) {
+    requireTextField(value, field, source);
+  }
+
+  requireNonNegativeIntegerField(value, "file_size_bytes", source);
+  requireNonNegativeIntegerField(value, "version", source, 1);
+  requireBooleanField(value, "is_active", source);
+  requireBooleanField(value, "is_latest", source);
+
+  if (!fileCategories.includes(category as FileCategory)) {
+    throw new Error(`${source} returned invalid category.`);
+  }
+
+  if (!fileScopeTypes.has(scopeType as ProjectFileRow["scope_type"])) {
+    throw new Error(`${source} returned invalid scope_type.`);
+  }
+
+  if (!fileStatusSet.has(status as FileStatus)) {
+    throw new Error(`${source} returned invalid status.`);
+  }
+
+  if (!fileVisibilitySet.has(visibility as FileVisibility)) {
+    throw new Error(`${source} returned invalid visibility.`);
+  }
+}
+
+function normalizeProjectFileRow(
+  row: unknown,
+  source = "File query",
+): ProjectFileRow {
+  assertProjectFileRow(row, source);
+
   return {
     archive_reason:
       typeof row.archive_reason === "string" ? row.archive_reason : null,
@@ -147,7 +293,7 @@ function normalizeProjectFileRow(row: BaseRow): ProjectFileRow {
     created_at: String(row.created_at ?? ""),
     created_by: typeof row.created_by === "string" ? row.created_by : null,
     event_id: typeof row.event_id === "string" ? row.event_id : null,
-    file_size_bytes: Number(row.file_size_bytes ?? 0),
+    file_size_bytes: Number(row.file_size_bytes),
     filename: String(row.filename ?? ""),
     guest_id: typeof row.guest_id === "string" ? row.guest_id : null,
     id: String(row.id ?? ""),
@@ -178,10 +324,137 @@ function normalizeProjectFileRow(row: BaseRow): ProjectFileRow {
     status: String(row.status ?? "active") as FileStatus,
     storage_path: String(row.storage_path ?? ""),
     updated_at: String(row.updated_at ?? row.created_at ?? ""),
-    version: Number(row.version ?? 0),
+    version: Number(row.version),
     version_group_id: String(row.version_group_id ?? ""),
     visibility: String(row.visibility ?? "internal") as FileVisibility,
   };
+}
+
+function normalizeFileAccessEventRow(
+  value: unknown,
+  source = "File access-event RPC",
+): FileAccessEventRow {
+  if (!isRecord(value)) {
+    throw new Error(`${source} returned an invalid access-event row.`);
+  }
+
+  for (const field of [
+    "access_action",
+    "access_context",
+    "created_at",
+    "file_id",
+    "id",
+  ]) {
+    requireTextField(value, field, source);
+  }
+
+  requireBooleanField(value, "allowed", source);
+
+  for (const field of [
+    "actor_user_id",
+    "denial_reason",
+    "event_id",
+    "guest_id",
+    "invitation_id",
+    "project_id",
+    "public_token_id",
+    "signed_url_expires_at",
+  ]) {
+    requireNullableTextField(value, field, source);
+  }
+
+  requireNullableRecordField(value, "metadata", source);
+
+  return value as FileAccessEventRow;
+}
+
+function normalizeRpcObject(
+  value: unknown,
+  source: string,
+): Record<string, unknown> {
+  if (!isRecord(value)) {
+    throw new Error(`${source} returned an invalid response.`);
+  }
+
+  if (typeof value.status !== "string" || value.status.length === 0) {
+    throw new Error(`${source} returned invalid status.`);
+  }
+
+  return value;
+}
+
+function normalizeProjectRow(value: unknown, source: string): ProjectRow {
+  if (!isRecord(value)) {
+    throw new Error(`${source} returned an invalid project row.`);
+  }
+
+  for (const field of [
+    "bride_name",
+    "created_at",
+    "groom_name",
+    "guest_page_access_status",
+    "id",
+    "project_code",
+    "status",
+    "updated_at",
+  ]) {
+    requireTextField(value, field, source);
+  }
+
+  for (const field of ["project_year", "workflow_template_version"]) {
+    requireIntegerField(value, field, source);
+  }
+
+  for (const field of [
+    "couple_photo_url",
+    "created_by",
+    "guest_page_access_unlocked_at",
+    "guest_page_access_unlocked_by",
+    "guest_page_payment_exception_reason",
+    "internal_notes",
+    "preferred_language",
+    "primary_contact_email",
+    "primary_contact_name",
+    "primary_contact_phone",
+    "timeline_notes",
+    "updated_by",
+  ]) {
+    requireNullableTextField(value, field, source);
+  }
+
+  return value as ProjectRow;
+}
+
+function normalizeGuestFileDownloadResponse(value: unknown) {
+  const result = normalizeRpcObject(value, "resolve_guest_file_download RPC");
+
+  if (result.status !== "ok") {
+    return result;
+  }
+
+  for (const field of ["bucket", "filename", "mimeType", "storagePath"]) {
+    requireTextField(result, field, "resolve_guest_file_download RPC");
+  }
+
+  const expiresInSeconds = Number(result.expiresInSeconds);
+
+  if (!Number.isSafeInteger(expiresInSeconds) || expiresInSeconds <= 0) {
+    throw new Error(
+      "resolve_guest_file_download RPC returned invalid expiresInSeconds.",
+    );
+  }
+
+  return result;
+}
+
+function normalizeGuestFileDownloadListResponse(value: unknown) {
+  const result = normalizeRpcObject(value, "list_guest_file_downloads RPC");
+
+  if (result.status === "ok" && !Array.isArray(result.files)) {
+    throw new Error("list_guest_file_downloads RPC returned invalid files.");
+  }
+
+  return result;
 }
 
 export async function listFileCategories(
@@ -234,7 +507,7 @@ export async function listProjectFiles(
     throw error;
   }
 
-  return ((data ?? []) as BaseRow[]).map(normalizeProjectFileRow);
+  return (data ?? []).map((row) => normalizeProjectFileRow(row));
 }
 
 export async function listEventFiles(
@@ -250,7 +523,7 @@ export async function listEventFiles(
     throw error;
   }
 
-  return ((data ?? []) as BaseRow[]).map(normalizeProjectFileRow);
+  return (data ?? []).map((row) => normalizeProjectFileRow(row));
 }
 
 export async function getProjectFileDetails(
@@ -270,7 +543,7 @@ export async function getProjectFileDetails(
     return null;
   }
 
-  const normalizedFile = normalizeProjectFileRow(file as BaseRow);
+  const normalizedFile = normalizeProjectFileRow(file);
   const [versionsResult, accessResult, archiveResult] = await Promise.all([
     table(supabase, "files")
       .select("*")
@@ -306,8 +579,8 @@ export async function getProjectFileDetails(
     accessEvents: (accessResult.data ?? []) as FileAccessEventRow[],
     archiveEvents: (archiveResult.data ?? []) as FileArchiveEventRow[],
     file: normalizedFile,
-    versions: ((versionsResult.data ?? []) as BaseRow[]).map(
-      normalizeProjectFileRow,
+    versions: (versionsResult.data ?? []).map((row) =>
+      normalizeProjectFileRow(row),
     ),
   };
 }
@@ -344,7 +617,7 @@ export async function registerProjectFile(
     throw error;
   }
 
-  return normalizeProjectFileRow(data as BaseRow);
+  return normalizeProjectFileRow(data, "register_project_file RPC");
 }
 
 export async function createProjectFileVersion(
@@ -368,7 +641,7 @@ export async function createProjectFileVersion(
     throw error;
   }
 
-  return normalizeProjectFileRow(data as BaseRow);
+  return normalizeProjectFileRow(data, "create_file_version RPC");
 }
 
 export async function archiveProjectFile(
@@ -390,7 +663,7 @@ export async function archiveProjectFile(
     throw error;
   }
 
-  return normalizeProjectFileRow(data as BaseRow);
+  return normalizeProjectFileRow(data, "archive_project_file RPC");
 }
 
 export async function updateProjectArchiveLifecycle(
@@ -419,7 +692,7 @@ export async function updateProjectArchiveLifecycle(
     throw error;
   }
 
-  return data as ProjectRow;
+  return normalizeProjectRow(data, "update_project_archive_lifecycle RPC");
 }
 
 export async function listProjectRetentionPolicies(
@@ -491,7 +764,7 @@ export async function recordFileAccessEvent(
     throw error;
   }
 
-  return data as FileAccessEventRow;
+  return normalizeFileAccessEventRow(data);
 }
 
 export async function resolveGuestFileDownload(
@@ -511,7 +784,7 @@ export async function resolveGuestFileDownload(
     throw error;
   }
 
-  return data as Record<string, unknown>;
+  return normalizeGuestFileDownloadResponse(data);
 }
 
 export type GuestDownloadableFile = {
@@ -552,15 +825,12 @@ export async function listGuestFileDownloads(
     throw error;
   }
 
-  if (
-    !data ||
-    typeof data !== "object" ||
-    Array.isArray(data) ||
-    (data as Record<string, unknown>).status !== "ok"
-  ) {
+  const result = normalizeGuestFileDownloadListResponse(data);
+
+  if (result.status !== "ok") {
     return [];
   }
 
-  const files = (data as Record<string, unknown>).files;
+  const files = result.files;
   return Array.isArray(files) ? files.filter(isGuestDownloadableFile) : [];
 }
