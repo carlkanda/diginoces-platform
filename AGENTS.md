@@ -18,44 +18,44 @@ No requirement may be marked complete unless it is implemented, tested, reviewed
 ## Current sprint assignment
 
 ```text
-Sprint 14 — Files, Storage, Retention & Archive
-Issue: #30
-Issue URL: https://github.com/carlkanda/diginoces-platform/issues/30
-Plan: docs/planning/sprint-14-plan.md
-Branch: codex/sprint-14-files-storage-retention-archive
-PR title: Sprint 14 — Files, Storage, Retention & Archive
-Completion report: docs/planning/sprint-14-completion-report.md
+Sprint 15 — Release Hardening, QA & MVP Launch
+Issue: #31
+Issue URL: https://github.com/carlkanda/diginoces-platform/issues/31
+Plan: docs/planning/sprint-15-plan.md
+Branch: codex/sprint-15-release-hardening-mvp-launch
+PR title: Sprint 15 — Release Hardening, QA & MVP Launch
+Completion report: docs/planning/sprint-15-completion-report.md
 ```
 
 Last completed sprint:
 
 ```text
-Sprint 13 — Partner / External Provider Model
+Sprint 14 — Files, Storage, Retention & Archive
 ```
 
 Last completed GitHub issue:
 
 ```text
-#29 — Sprint 13 — Partner / External Provider Model
-https://github.com/carlkanda/diginoces-platform/issues/29
+#30 — Sprint 14 — Files, Storage, Retention & Archive
+https://github.com/carlkanda/diginoces-platform/issues/30
 ```
 
 Last completed PR:
 
 ```text
-#40 — Sprint 13 — Partner / External Provider Model
+#41 — Sprint 14 — Files, Storage, Retention & Archive
 ```
 
 Last completed report:
 
 ```text
-docs/planning/sprint-13-completion-report.md
+docs/planning/sprint-14-completion-report.md
 ```
 
 Next planned sprint:
 
 ```text
-Sprint 15 — Release Hardening, QA & MVP Launch
+Sprint 16 — AI Assistance
 ```
 
 ## Active sprint sync rule
@@ -84,44 +84,57 @@ Always read:
 - relevant product documents in `docs/product/`
 - relevant technical design documents in `docs/technical-design/`
 
-Sprint 14 is active. Implement only the scope described in issue #30 and `docs/planning/sprint-14-plan.md`.
+Sprint 15 is active. Implement only the scope described in issue #31 and `docs/planning/sprint-15-plan.md`.
 
-For the active Sprint 14 assignment, read:
+For the active Sprint 15 assignment, read:
 
+- `docs/planning/sprint-15-plan.md`
 - `docs/planning/sprint-14-plan.md`
-- `docs/planning/sprint-13-plan.md`
 - `docs/planning/mvp-build-execution-plan.md`
-- `docs/product/14-files-storage-retention-security.md`
+- `docs/planning/technical-debt.md`
+- `docs/product/01-product-vision-business-model.md`
+- `docs/product/02-user-roles-permissions-access-control.md`
+- `docs/product/03-wedding-project-structure.md`
+- `docs/product/04-guest-management-guest-lists.md`
+- `docs/product/05-rsvp-public-guest-page.md`
 - `docs/product/06-invitation-template-pdf-generation.md`
+- `docs/product/07-whatsapp-communication-message-workflows.md`
+- `docs/product/08-check-in-wedding-day-operations.md`
 - `docs/product/09-tables-seating-print-materials.md`
 - `docs/product/10-contracts-pricing-payment-controls.md`
 - `docs/product/11-post-event-messages.md`
+- `docs/product/12-partner-external-provider-model.md`
 - `docs/product/13-dashboards-reports-audit-logs.md`
-- `docs/product/02-user-roles-permissions-access-control.md`
+- `docs/product/14-files-storage-retention-security.md`
+- `docs/product/16-technical-architecture.md`
+- `docs/product/17-mvp-roadmap-development-phases.md`
 - `docs/technical-design/database-schema-core-entities.md`
 - `docs/technical-design/api-backend-service-design.md`
 - `docs/technical-design/security-permissions-access-control.md`
+- `docs/technical-design/background-jobs-pdf-qr-whatsapp-offline-checkin.md`
+- `docs/backlog/traceability-matrix.csv`
+- `docs/backlog/module-coverage.csv`
 
 ## Scope guard
 
-Implement only Sprint 14: Files, Storage, Retention & Archive. Do not add Sprint 15 release hardening/QA/MVP launch scope or any later-sprint product scope.
+Implement only Sprint 15: Release Hardening, QA & MVP Launch. Do not add Sprint 16 AI assistance or any later-sprint product scope.
 
 ## Active sprint out of scope
 
-For Sprint 14, do not implement:
+For Sprint 15, do not implement:
 
+- new major product features;
 - AI assistance;
-- advanced integrations;
 - direct Canva API integration;
-- partner white-label SaaS;
+- official WhatsApp API production integration unless already approved and required;
+- online payment processing;
+- native mobile apps;
+- white-label SaaS;
 - partner commission management;
-- online payment provider integration;
-- external accounting storage sync;
-- automated destructive file deletion without admin review;
-- public marketing asset library;
-- full digital asset management system beyond MVP needs.
+- advanced BI analytics;
+- unrelated refactoring.
 
-Files, storage, retention, and archive functionality begins in Sprint 14 only after the sprint is explicitly assigned.
+Release hardening, QA, and MVP launch readiness begin in Sprint 15 only after the sprint is explicitly assigned.
 
 ## Workflow
 

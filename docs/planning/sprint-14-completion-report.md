@@ -12,7 +12,7 @@ The sprint does not implement advanced digital asset management, automated destr
 
 - GitHub issue: `#30` - Sprint 14 - Files, Storage, Retention & Archive.
 - Branch: `codex/sprint-14-files-storage-retention-archive`.
-- Draft pull request: `#41` - https://github.com/carlkanda/diginoces-platform/pull/41.
+- Pull request: `#41` - https://github.com/carlkanda/diginoces-platform/pull/41. Merged to `main` on 2026-06-03; issue `#30` was closed by the merge.
 - Sprint plan: `docs/planning/sprint-14-plan.md`.
 - Prior sprint plan: `docs/planning/sprint-13-plan.md`.
 - Product source: `docs/product/14-files-storage-retention-security.md`.
@@ -45,6 +45,7 @@ The sprint does not implement advanced digital asset management, automated destr
 ## Files Created Or Changed
 
 - `supabase/migrations/20260601114646_sprint_14_files_storage_retention_archive.sql`
+- `supabase/migrations/20260603034627_sprint_14_post_merge_db_lint_fix.sql`
 - `apps/web/src/lib/files/file-service.ts`
 - `apps/web/src/lib/files/file-form.ts`
 - `apps/web/src/lib/files/file-db.ts`
@@ -88,6 +89,7 @@ The sprint does not implement advanced digital asset management, automated destr
 - Added permission-gated RPCs for file registration, version creation, file archive/soft-delete, project archive lifecycle, access-event recording, guest file download resolution, and guest file listing.
 - Added RLS, grants, indexes, updated-at triggers, audit triggers, and private Supabase Storage buckets for `project-files`, `invitation-files`, and `archive-files`.
 - Added category MIME validation, non-negative file-size checks, guarded public/authenticated signed URL generation, and admin-only soft-delete backstops in API/server actions and SQL.
+- Added a post-merge corrective migration after linked `db:lint` found cross-sprint SQL issues. The migration keeps the canonical `guest_book_export` file category, updates the Sprint 12 guest-book export RPC to write the Sprint 14-required file metadata, and casts computed file scopes in `register_project_file`.
 - Storage routes create short-lived Supabase signed URLs server-side after project/file or guest-token checks. Direct physical deletion of storage objects is intentionally not implemented.
 - File audit snapshots redact storage paths, checksums, download-token hashes, denial details, signed-URL expiry metadata, and archive/retention free-text notes.
 
@@ -122,6 +124,8 @@ The sprint does not implement advanced digital asset management, automated destr
   - Canva/export metadata redaction.
   - File audit action representation.
   - Migration evidence for enums, tables, RPCs, storage buckets, RLS helpers, and absence of physical storage deletion.
+  - Post-merge database-lint fix coverage for `register_project_file` scope casting and `create_guest_book_export` compatibility with the Sprint 14 file registry.
+  - Final full-suite status: 15 test files and 158 tests passing after the post-merge database-lint fix.
 - `apps/web/src/lib/platform/smoke.test.ts`
   - Updated storage fail-closed smoke test to use the structured signed-read URL input.
 - `apps/web/src/lib/partners/partner-foundation.test.ts`
@@ -171,12 +175,32 @@ The sprint does not implement advanced digital asset management, automated destr
 - `wsl.exe ... coderabbit review --agent -t uncommitted --dir apps/web/src/app/platform/projects/[projectId]/files ...` - passed after adding zero-byte placeholder tests, 0 issues.
 - `wsl.exe ... coderabbit review --agent -t uncommitted --dir supabase/migrations -c AGENTS.md` - passed after splitting category lookup and MIME validation, 0 issues.
 - `npm.cmd --workspace apps/web run test -- src/lib/files/file-foundation.test.ts` - passed after hosted/local review fixes, 14 tests.
+- `gh pr merge 41 --squash --delete-branch --subject "Sprint 14 — Files, Storage, Retention & Archive" --body "Closes #30"` - passed; PR `#41` merged and issue `#30` closed.
+- `npx.cmd supabase@latest db push --linked --yes` - passed after merge; applied `20260601114646_sprint_14_files_storage_retention_archive.sql` to the linked dev database.
+- `npm.cmd run db:lint` - initially failed after applying the Sprint 14 migration. Linked schema lint found stale SQL in `public.create_guest_book_export` using the old `guest_book_exports` category and a missing `public.file_scope_type` cast in `public.register_project_file`.
+- `npx.cmd supabase@latest migration new sprint_14_post_merge_db_lint_fix` - passed; created `20260603034627_sprint_14_post_merge_db_lint_fix.sql`.
+- `npm.cmd --workspace apps/web run test -- src/lib/files/file-foundation.test.ts` - passed after adding the post-merge database-lint regression guard, 15 tests.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed; dry run showed only `20260603034627_sprint_14_post_merge_db_lint_fix.sql` pending.
+- `npx.cmd supabase@latest db push --linked --yes` - passed; applied `20260603034627_sprint_14_post_merge_db_lint_fix.sql` to the linked dev database.
+- `npm.cmd run db:lint` - passed after the corrective migration, no schema errors found.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after the corrective migration, remote database is up to date.
+- `npm.cmd run format` - passed after the post-merge report, metadata, and test updates.
+- `npm.cmd run format:check` - passed after the post-merge updates.
+- `npm.cmd run lint` - passed after the post-merge updates.
+- `npm.cmd run typecheck` - passed after the post-merge updates.
+- `npm.cmd run test` - passed after the post-merge updates, 15 test files and 158 tests.
+- `npm.cmd run build` - passed after the post-merge updates.
+- `npm.cmd audit --omit=dev` - passed after the post-merge updates, 0 vulnerabilities.
+- `npm.cmd run db:lint` - passed after the post-merge updates, no schema errors found.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after the post-merge updates, remote database is up to date.
+- `git diff --check` - passed after the post-merge updates; Git printed LF/CRLF warnings only.
+- Targeted secret scan with `rg` - broad scan found only expected documentation warnings and SQL grants to the Postgres `service_role` role, not real secrets or private data.
 
 ## Checks Passed Or Failed
 
 - Passed: install, format check, lint, typecheck, tests, build, dependency audit, linked Supabase dry-run, linked Supabase schema lint, whitespace check, targeted secret scan, and local WSL CodeRabbit review loops with actionable findings addressed.
-- Failed and fixed: initial file-foundation test red run, storage smoke-test typecheck, Prettier formatting, one lint warning, and one stale Sprint 13 home-page assertion.
-- Not run: `npx.cmd supabase@latest db push --linked --yes` was not run before PR review. The migration is pending for the linked dev project and should be applied after merge or when the reviewer explicitly approves applying this feature branch migration to the dev database.
+- Failed and fixed: initial file-foundation test red run, storage smoke-test typecheck, Prettier formatting, one lint warning, one stale Sprint 13 home-page assertion, and the post-merge linked `db:lint` findings for guest-book export file-category compatibility and `register_project_file` scope casting.
+- Post-merge database state: the Sprint 14 migration and the corrective post-merge lint-fix migration were applied to the linked dev database; linked dry-run now reports the remote database is up to date and `db:lint` reports no schema errors. Final post-merge verification also passed format check, lint, typecheck, full tests, build, dependency audit, whitespace check, and targeted secret scan.
 
 ## Security Checks Performed
 
@@ -190,14 +214,14 @@ The sprint does not implement advanced digital asset management, automated destr
 ## Assumptions
 
 - Sprint 14 stores and governs file metadata plus storage paths. Full browser-to-storage upload UX and production storage provider hardening can be extended later without changing the registry/security model.
-- The linked Supabase project is the dev project; the branch migration is dry-run verified but not applied before review.
+- The linked Supabase project is the dev project. The Sprint 14 migration was applied after PR merge, then a corrective lint-fix migration was applied after linked `db:lint` exposed cross-sprint SQL compatibility issues.
 - Guest-facing files are only downloadable when registered as latest, active, guest-visible files bound to the resolved public guest token.
 - Automated destructive deletion is intentionally excluded; archive/soft-delete metadata and review flows are the approved Sprint 14 behavior.
 - Supabase Storage buckets remain private, and signed URLs are created only after server-side access checks.
 
 ## Open Issues Or Blockers
 
-- The Sprint 14 migration has not yet been applied to the linked dev database. The dry-run indicates it is the only pending migration, and `db:lint` reports no current linked-schema errors. Apply it after merge or explicit review approval.
+- No Sprint 14 merge or linked-database blocker remains. The linked dev database is up to date and `db:lint` reports no schema errors after the post-merge corrective migration.
 - Direct object upload UX is still provider-backed/foundation-only. Sprint 14 registers metadata and paths, but does not implement a complete browser upload workflow.
 
 ## Out Of Scope Intentionally Deferred

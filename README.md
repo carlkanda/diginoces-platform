@@ -19,22 +19,23 @@ Completed:
 - Sprint 11 — Dashboards, Reports & Audit Logs
 - Sprint 12 — Guest Wishes, Guest Book & Post-Event Feedback
 - Sprint 13 — Partner / External Provider Model
+- Sprint 14 — Files, Storage, Retention & Archive
 
 Current sprint assignment:
 
 ```text
-Sprint 14 — Files, Storage, Retention & Archive
-Current issue: #30
-Current issue URL: https://github.com/carlkanda/diginoces-platform/issues/30
-Current branch: codex/sprint-14-files-storage-retention-archive
-Current PR title: Sprint 14 — Files, Storage, Retention & Archive
-Current sprint plan: docs/planning/sprint-14-plan.md
-Current completion report: docs/planning/sprint-14-completion-report.md
-Last completed sprint: Sprint 13 — Partner / External Provider Model
-Last completed issue: #29
-Last completed PR: #40
-Last completed report: docs/planning/sprint-13-completion-report.md
-Next planned sprint: Sprint 15 — Release Hardening, QA & MVP Launch
+Sprint 15 — Release Hardening, QA & MVP Launch
+Current issue: #31
+Current issue URL: https://github.com/carlkanda/diginoces-platform/issues/31
+Current branch: codex/sprint-15-release-hardening-mvp-launch
+Current PR title: Sprint 15 — Release Hardening, QA & MVP Launch
+Current sprint plan: docs/planning/sprint-15-plan.md
+Current completion report: docs/planning/sprint-15-completion-report.md
+Last completed sprint: Sprint 14 — Files, Storage, Retention & Archive
+Last completed issue: #30
+Last completed PR: #41
+Last completed report: docs/planning/sprint-14-completion-report.md
+Next planned sprint: Sprint 16 — AI Assistance
 ```
 
 ## Agent instructions
@@ -48,7 +49,7 @@ Work must be assigned one sprint issue at a time. Do not ask an agent to build t
 ```text
 AGENTS.md
 docs/planning/mvp-build-execution-plan.md
-docs/planning/sprint-14-plan.md
+docs/planning/sprint-15-plan.md
 docs/backlog/master-requirements-register.csv
 docs/backlog/initial-product-backlog-features.csv
 docs/backlog/initial-product-backlog-user-stories.csv
@@ -73,8 +74,8 @@ docs/backlog/initial-product-backlog-test-cases.csv
 | 11 | Dashboards, Reports & Audit Logs | Completed |
 | 12 | Guest Wishes, Guest Book & Post-Event Feedback | Completed |
 | 13 | Partner / External Provider Model | Completed |
-| 14 | Files, Storage, Retention & Archive | In progress |
-| 15 | Release Hardening, QA & MVP Launch | Planned |
+| 14 | Files, Storage, Retention & Archive | Completed |
+| 15 | Release Hardening, QA & MVP Launch | In progress |
 | 16 | AI Assistance | Post-MVP planned |
 | 17 | Advanced Integrations | Post-MVP planned |
 | 18 | SaaS / Partner Scaling Enhancements | Post-MVP planned |

@@ -31,13 +31,23 @@ const repoRoot = join(here, "..", "..", "..", "..", "..");
 const migrationDir = join(repoRoot, "supabase", "migrations");
 
 function readSprint14Migration() {
+  return readMigrationBySuffix(
+    "_sprint_14_files_storage_retention_archive.sql",
+  );
+}
+
+function readPostMergeDbLintFixMigration() {
+  return readMigrationBySuffix("_sprint_14_post_merge_db_lint_fix.sql");
+}
+
+function readMigrationBySuffix(suffix: string) {
   const matches = readdirSync(migrationDir).filter((entry) =>
-    entry.endsWith("_sprint_14_files_storage_retention_archive.sql"),
+    entry.endsWith(suffix),
   );
 
   if (matches.length !== 1) {
     throw new Error(
-      `Expected exactly one Sprint 14 migration file, found ${matches.length}.`,
+      `Expected exactly one migration ending with ${suffix}, found ${matches.length}.`,
     );
   }
 
@@ -567,5 +577,27 @@ describe("Sprint 14 file foundation", () => {
     expect(migration).toContain("current_user_can_access_project_permissions");
     expect(migration).toContain("insert into storage.buckets");
     expect(migration).not.toContain("delete from storage.objects");
+  });
+
+  it("keeps post-merge database lint fixes traceable", () => {
+    const migration = readPostMergeDbLintFixMigration();
+
+    expect(migration).toContain(
+      "create or replace function public.register_project_file",
+    );
+    expect(migration).toContain("'guest'::public.file_scope_type");
+    expect(migration).toContain("'event'::public.file_scope_type");
+    expect(migration).toContain("'project'::public.file_scope_type");
+    expect(migration).toContain(
+      "create or replace function public.create_guest_book_export",
+    );
+    expect(migration).toContain("'guest_book_export'::public.file_category");
+    expect(migration).not.toContain(
+      "'guest_book_exports'::public.file_category",
+    );
+    expect(migration).toContain("filename,");
+    expect(migration).toContain("mime_type,");
+    expect(migration).toContain("version_group_id,");
+    expect(migration).toContain("normalizedBySprint14PostMergeFix");
   });
 });
