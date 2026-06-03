@@ -62,7 +62,11 @@ describe("Sprint 1 platform foundation smoke test", () => {
     const storage = createStorageAdapter();
 
     await expect(
-      storage.getSignedReadUrl("project/file.pdf"),
+      storage.getSignedReadUrl({
+        bucket: "project-files",
+        expiresInSeconds: 60,
+        path: "project/file.pdf",
+      }),
     ).rejects.toBeInstanceOf(StorageNotConfiguredError);
   });
 

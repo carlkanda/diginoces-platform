@@ -89,38 +89,27 @@ export default async function EventDetailPage({
     notFound();
   }
 
-  const canReadInvitations = await hasProjectPermission(
-    {
-      supabase,
-      user: authContext.user,
-    },
-    details.project.id,
-    "invitation_templates.read",
-  );
-  const canReadSeating = await hasProjectPermission(
-    {
-      supabase,
-      user: authContext.user,
-    },
-    details.project.id,
-    "seating.read",
-  );
-  const canReadCheckIn = await hasEventPermission(
-    {
-      supabase,
-      user: authContext.user,
-    },
-    eventId,
-    "check_in.read",
-  );
-  const canReadEventDashboard = await hasEventPermission(
-    {
-      supabase,
-      user: authContext.user,
-    },
-    eventId,
-    "dashboards.event.read",
-  );
+  const permissionContext = {
+    supabase,
+    user: authContext.user,
+  };
+  const [
+    canReadInvitations,
+    canReadSeating,
+    canReadCheckIn,
+    canReadEventDashboard,
+    canReadFiles,
+  ] = await Promise.all([
+    hasProjectPermission(
+      permissionContext,
+      details.project.id,
+      "invitation_templates.read",
+    ),
+    hasProjectPermission(permissionContext, details.project.id, "seating.read"),
+    hasEventPermission(permissionContext, eventId, "check_in.read"),
+    hasEventPermission(permissionContext, eventId, "dashboards.event.read"),
+    hasEventPermission(permissionContext, eventId, "files.read"),
+  ]);
 
   return (
     <>
@@ -169,6 +158,14 @@ export default async function EventDetailPage({
             href={`/platform/events/${eventId}/check-in`}
           >
             Check-in
+          </Link>
+        ) : null}
+        {canReadFiles ? (
+          <Link
+            className="button secondary"
+            href={`/platform/events/${eventId}/files`}
+          >
+            Files
           </Link>
         ) : null}
       </div>

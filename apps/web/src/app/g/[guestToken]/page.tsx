@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPublicEnvironment } from "@/lib/env/public-env";
+import { listGuestFileDownloads } from "@/lib/files/file-db";
+import { serverLogger } from "@/lib/logging";
 import { getGuestPageLabels } from "@/lib/rsvp/rsvp-service";
 import { PublicGuestPageView } from "@/lib/rsvp/public-guest-page-view";
 import { resolvePublicGuestPage } from "@/lib/rsvp/rsvp-db";
@@ -42,10 +44,8 @@ export default async function PublicGuestPage({
     );
   }
 
-  const payload = await resolvePublicGuestPage(
-    await createSupabaseServerClient(),
-    guestToken,
-  );
+  const supabase = await createSupabaseServerClient();
+  const payload = await resolvePublicGuestPage(supabase, guestToken);
 
   if (payload.status === "invalid") {
     notFound();
@@ -63,6 +63,17 @@ export default async function PublicGuestPage({
     );
   }
 
+  let downloadableFiles: Awaited<ReturnType<typeof listGuestFileDownloads>> =
+    [];
+
+  try {
+    downloadableFiles = await listGuestFileDownloads(supabase, guestToken);
+  } catch (error) {
+    serverLogger.error("Guest file list failed on public page.", {
+      error,
+    });
+  }
+
   return (
     <PublicGuestPageView
       formActionFactory={(eventId) =>
@@ -71,7 +82,9 @@ export default async function PublicGuestPage({
       messageFormAction={submitPublicGuestMessageAction.bind(null, guestToken)}
       messageResult={message}
       payload={payload}
+      downloadableFiles={downloadableFiles}
       result={rsvp}
+      guestToken={guestToken}
     />
   );
 }

@@ -6,12 +6,15 @@ import {
   type RsvpResponseStatus,
 } from "@/lib/rsvp/rsvp-service";
 import { canEditGuestMessage as canEditGuestMessageForStatus } from "@/lib/guest-wishes/guest-wish-service";
+import type { GuestDownloadableFile } from "@/lib/files/file-db";
 import type { PublicGuestPagePayload } from "@/lib/rsvp/rsvp-db";
 
 type PublicGuestPageViewProps = {
+  downloadableFiles?: GuestDownloadableFile[];
   formActionFactory?: (
     eventId: string,
   ) => (formData: FormData) => Promise<void> | void;
+  guestToken?: string;
   messageFormAction?: (formData: FormData) => Promise<void> | void;
   messageResult?: string;
   payload: Extract<PublicGuestPagePayload, { status: "ok" }>;
@@ -149,7 +152,9 @@ function messageResultLabel(
 }
 
 export function PublicGuestPageView({
+  downloadableFiles = [],
   formActionFactory,
+  guestToken,
   messageFormAction,
   messageResult,
   payload,
@@ -179,6 +184,12 @@ export function PublicGuestPageView({
     guestMessageEditState.allowed &&
     !payload.guest.isPrintedOnly &&
     payload.project.guestPageAccessStatus !== "locked";
+  const publicGuestToken = guestToken?.trim() ?? "";
+  const canRenderDownloads =
+    publicGuestToken.length > 0 && downloadableFiles.length > 0;
+  const displayedDownloadCount = canRenderDownloads
+    ? downloadableFiles.length
+    : 0;
 
   return (
     <div className="public-page">
@@ -319,13 +330,41 @@ export function PublicGuestPageView({
       </section>
 
       <section className="section">
-        <div className="scope-note">
-          <strong>{labels.downloadPlaceholder}</strong>
-          <p>
-            Sprint 5 exposes only the placeholder. Invitation PDF generation, QR
-            images, WhatsApp sending, seating, and check-in remain out of scope.
-          </p>
+        <div className="section-heading">
+          <h2>{labels.filesTitle}</h2>
+          <span className="meta-list">
+            {displayedDownloadCount} {labels.availableDownloads}
+          </span>
         </div>
+        {!canRenderDownloads ? (
+          <div className="scope-note">
+            <strong>{labels.downloadPlaceholder}</strong>
+            <p>
+              Invitation files appear here only after Diginoces/admin approves a
+              latest active guest-facing file.
+            </p>
+          </div>
+        ) : (
+          <div className="record-list">
+            {downloadableFiles.map((file) => (
+              <a
+                className="record-row"
+                href={`/api/public/guest/${encodeURIComponent(
+                  publicGuestToken,
+                )}/files/${encodeURIComponent(file.fileId)}/download`}
+                key={file.fileId}
+              >
+                <span>
+                  <strong>{file.filename}</strong>
+                  <small>
+                    {file.category} - v{file.version} - {file.mimeType}
+                  </small>
+                </span>
+                <span className="tag">download</span>
+              </a>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="section">

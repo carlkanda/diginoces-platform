@@ -540,7 +540,8 @@ describe("Sprint 13 partner foundation", () => {
     expect(partnerDb).toMatch(/\bpartner_project_assignments\b/);
     expect(partnerDb).toMatch(/\bevent_date\b/);
     expect(healthRoute).toContain("getSprint13PartnerStatus");
-    expect(homePage).toContain("Sprint 1-13 implementation status");
+    expect(homePage).toContain("getSprint13PartnerStatus");
+    expect(homePage).toContain("Project comments");
     expect(localSetup).toContain("Sprint 13 partner");
     expect(localSetup).toContain("/platform/partners");
     expect(
