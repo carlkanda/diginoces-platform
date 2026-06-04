@@ -480,4 +480,38 @@ describe("Sprint 4 guest import foundation", () => {
       "guest_imports.file_parsed",
     );
   });
+
+  it("keeps the guest import audit trigger from reading row-only fields on sessions", () => {
+    const migrationPath = new URL(
+      "../../../../../supabase/migrations/20260604212303_mvp_guest_import_audit_trigger_fix.sql",
+      import.meta.url,
+    );
+
+    expect(
+      existsSync(migrationPath),
+      "Expected MVP guest import audit trigger fix migration to exist at its generated path.",
+    ).toBe(true);
+
+    const migration = readFileSync(migrationPath, "utf8");
+    const sessionBranchIndex = migration.indexOf(
+      "if tg_table_name = 'guest_import_sessions' then",
+    );
+    const rowBranchIndex = migration.indexOf(
+      "elsif tg_table_name = 'guest_import_rows' then",
+    );
+    const firstApprovalStatusIndex = migration.indexOf("new.approval_status");
+    const liveActorFallbackIndex = migration.indexOf(
+      "actor_user_id := coalesce((select auth.uid()), actor_user_id)",
+    );
+    const parentSessionLookupIndex = migration.indexOf(
+      "from public.guest_import_sessions gis",
+    );
+
+    expect(sessionBranchIndex).toBeGreaterThanOrEqual(0);
+    expect(rowBranchIndex).toBeGreaterThan(sessionBranchIndex);
+    expect(firstApprovalStatusIndex).toBeGreaterThan(rowBranchIndex);
+    expect(liveActorFallbackIndex).toBeGreaterThan(rowBranchIndex);
+    expect(parentSessionLookupIndex).toBeGreaterThan(liveActorFallbackIndex);
+    expect(parentSessionLookupIndex).toBeGreaterThan(rowBranchIndex);
+  });
 });
