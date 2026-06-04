@@ -445,7 +445,9 @@ function hasAnonGrantStatementForSignature(content: string, signature: string) {
 // required assumption that keeps this structural test valid.
 type EffectiveFunctionPrivilegeState = {
   anonState: boolean;
+  authenticatedState: boolean;
   publicState: boolean;
+  serviceRoleState: boolean;
 };
 
 function buildEffectiveFunctionPrivilegeStates(migrations: MigrationFile[]) {
@@ -464,15 +466,25 @@ function buildEffectiveFunctionPrivilegeStates(migrations: MigrationFile[]) {
       );
       const state = states.get(normalizedSignature) ?? {
         anonState: false,
+        authenticatedState: false,
         publicState: false,
+        serviceRoleState: false,
       };
 
       if (statement.roles.includes("anon")) {
         state.anonState = statement.operation === "grant";
       }
 
+      if (statement.roles.includes("authenticated")) {
+        state.authenticatedState = statement.operation === "grant";
+      }
+
       if (statement.roles.includes("public")) {
         state.publicState = statement.operation === "grant";
+      }
+
+      if (statement.roles.includes("service_role")) {
+        state.serviceRoleState = statement.operation === "grant";
       }
 
       states.set(normalizedSignature, state);
@@ -489,6 +501,32 @@ function hasEffectiveAnonGrantForSignature(
   const state = states.get(normalizeFunctionSignature(signature));
 
   return Boolean(state?.anonState || state?.publicState);
+}
+
+function hasEffectiveFunctionGrantForRole(
+  states: Map<string, EffectiveFunctionPrivilegeState>,
+  signature: string,
+  role: "anon" | "authenticated" | "public" | "service_role",
+) {
+  const state = states.get(normalizeFunctionSignature(signature));
+
+  if (!state) {
+    return false;
+  }
+
+  if (role === "anon") {
+    return state.anonState;
+  }
+
+  if (role === "authenticated") {
+    return state.authenticatedState;
+  }
+
+  if (role === "service_role") {
+    return state.serviceRoleState;
+  }
+
+  return state.publicState;
 }
 
 function parseCanonicalLaunchClassificationCounts() {
@@ -731,30 +769,43 @@ describe("Sprint 15 release readiness", () => {
   });
 
   it("keeps RLS helper execute grants explicit for authenticated UI reads", () => {
-    const migration = readMigrationBySuffix(
-      "_mvp_ui_qa_permission_helper_grants.sql",
-    );
+    const effectiveFunctionPrivilegeStates =
+      buildEffectiveFunctionPrivilegeStates(readMigrationHistory());
     const requiredHelperSignatures = [
       "app_private.user_can_access_check_in_event_any(uuid, uuid, uuid, text[])",
       "app_private.user_can_access_partner(uuid, uuid, text)",
       "app_private.user_can_access_partner_project(uuid, uuid, text)",
     ].map(normalizeFunctionSignature);
-    const authenticatedGrantSignatureSet = new Set(
-      parseFunctionGrants(migration, "authenticated, service_role").map(
-        normalizeFunctionSignature,
-      ),
-    );
-    const publicRevokeSignatureSet = new Set(
-      parseFunctionRevokes(migration, "public").map(normalizeFunctionSignature),
-    );
-    const anonRevokeSignatureSet = new Set(
-      parseFunctionRevokes(migration, "anon").map(normalizeFunctionSignature),
-    );
 
     for (const signature of requiredHelperSignatures) {
-      expect(authenticatedGrantSignatureSet.has(signature)).toBe(true);
-      expect(publicRevokeSignatureSet.has(signature)).toBe(true);
-      expect(anonRevokeSignatureSet.has(signature)).toBe(true);
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "authenticated",
+        ),
+      ).toBe(true);
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "service_role",
+        ),
+      ).toBe(true);
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "public",
+        ),
+      ).toBe(false);
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "anon",
+        ),
+      ).toBe(false);
     }
   });
 });

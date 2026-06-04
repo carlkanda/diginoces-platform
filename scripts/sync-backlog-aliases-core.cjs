@@ -24,10 +24,23 @@ function syncBacklogAliases({
   let synced = 0;
   let failed = 0;
 
-  if (
-    !fileSystem.existsSync(backlogDir) ||
-    !fileSystem.statSync(backlogDir).isDirectory()
-  ) {
+  let backlogDirectoryExists = false;
+
+  try {
+    backlogDirectoryExists =
+      fileSystem.existsSync(backlogDir) &&
+      fileSystem.statSync(backlogDir).isDirectory();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    logger.error(
+      `Unable to inspect backlog directory ${backlogDir}: ${message}`,
+    );
+
+    return { failed: 1, synced: 0 };
+  }
+
+  if (!backlogDirectoryExists) {
     logger.error(
       `Backlog directory not found: ${backlogDir}. Ensure docs/backlog exists.`,
     );

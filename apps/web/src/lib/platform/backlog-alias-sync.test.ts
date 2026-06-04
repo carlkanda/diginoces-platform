@@ -156,6 +156,32 @@ describe("syncBacklogAliases", () => {
     );
   });
 
+  it("reports backlog directory inspection failures without crashing", async () => {
+    const syncBacklogAliases = await loadSyncBacklogAliases();
+    const logger = createLogger();
+
+    const result = syncBacklogAliases({
+      aliases: [["traceability_matrix.csv", "traceability-matrix.csv"]],
+      fileSystem: {
+        copyFileSync: vi.fn(),
+        existsSync: () => true,
+        statSync: () => {
+          throw new Error("permission denied");
+        },
+      },
+      logger,
+      repoRoot: "repo",
+    });
+
+    expect(result).toEqual({ failed: 1, synced: 0 });
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("Unable to inspect backlog directory"),
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("permission denied"),
+    );
+  });
+
   it("warns when no aliases are configured", async () => {
     const syncBacklogAliases = await loadSyncBacklogAliases();
     const logger = createLogger();
