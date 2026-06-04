@@ -7,8 +7,9 @@
  * @github GitHub issue #31
  */
 import { existsSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join, normalize } from "node:path";
-import { pathToFileURL, fileURLToPath } from "node:url";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
@@ -52,10 +53,10 @@ type SyncBacklogAliases = (options: {
 }) => { failed: number; synced: number };
 
 async function loadSyncBacklogAliases() {
-  const scriptUrl = pathToFileURL(
-    join(repoRoot, "scripts", "sync-backlog-aliases.mjs"),
-  ).href;
-  const syncModule = await import(/* @vite-ignore */ scriptUrl);
+  const require = createRequire(import.meta.url);
+  const syncModule = require(
+    join(repoRoot, "scripts", "sync-backlog-aliases-core.cjs"),
+  ) as { syncBacklogAliases: SyncBacklogAliases };
 
   return syncModule.syncBacklogAliases as SyncBacklogAliases;
 }

@@ -1,0 +1,117 @@
+const { copyFileSync, existsSync, statSync } = require("node:fs");
+const { join, resolve, sep } = require("node:path");
+
+const defaultRepoRoot = resolve(__dirname, "..");
+const defaultBacklogAliases = [
+  ["traceability_matrix.csv", "traceability-matrix.csv"],
+  ["module_coverage.csv", "module-coverage.csv"],
+];
+
+const defaultFileSystem = {
+  copyFileSync,
+  existsSync,
+  statSync,
+};
+
+function syncBacklogAliases({
+  aliases = defaultBacklogAliases,
+  fileSystem = defaultFileSystem,
+  logger = console,
+  repoRoot = defaultRepoRoot,
+} = {}) {
+  const backlogDir = join(repoRoot, "docs", "backlog");
+  const resolvedBacklogDir = resolve(backlogDir);
+  let synced = 0;
+  let failed = 0;
+
+  if (
+    !fileSystem.existsSync(backlogDir) ||
+    !fileSystem.statSync(backlogDir).isDirectory()
+  ) {
+    logger.error(
+      `Backlog directory not found: ${backlogDir}. Ensure docs/backlog exists.`,
+    );
+
+    return { failed: 1, synced: 0 };
+  }
+
+  if (!aliases || aliases.length === 0) {
+    logger.warn?.("No backlog aliases configured; nothing to sync.");
+    logger.log("Backlog alias sync summary: 0 synced, 0 failed.");
+
+    return { failed: 0, synced: 0 };
+  }
+
+  for (const item of aliases) {
+    if (
+      !Array.isArray(item) ||
+      item.length < 2 ||
+      typeof item[0] !== "string" ||
+      typeof item[1] !== "string"
+    ) {
+      logger.error(
+        `Invalid backlog alias entry: ${JSON.stringify(item)}. Expected [canonical, alias] strings.`,
+      );
+      failed += 1;
+      continue;
+    }
+
+    const [canonical, alias] = item;
+    const resolvedCanonicalPath = resolve(resolvedBacklogDir, canonical);
+    const resolvedAliasPath = resolve(resolvedBacklogDir, alias);
+    const isSafeBacklogFileName = (fileName) =>
+      !fileName.includes("..") &&
+      !fileName.includes("/") &&
+      !fileName.includes("\\");
+    const isInsideBacklogDir = (path) =>
+      path.startsWith(`${resolvedBacklogDir}${sep}`);
+
+    if (
+      !isSafeBacklogFileName(canonical) ||
+      !isSafeBacklogFileName(alias) ||
+      !isInsideBacklogDir(resolvedCanonicalPath) ||
+      !isInsideBacklogDir(resolvedAliasPath)
+    ) {
+      logger.error(
+        `Unsafe backlog alias entry: ${JSON.stringify(item)}. Expected filenames inside ${backlogDir}.`,
+      );
+      failed += 1;
+      continue;
+    }
+
+    const canonicalPath = resolvedCanonicalPath;
+    const aliasPath = resolvedAliasPath;
+
+    if (!fileSystem.existsSync(canonicalPath)) {
+      logger.error(
+        `Canonical backlog file missing: ${canonical} in ${backlogDir}. Export it before syncing ${alias}.`,
+      );
+      failed += 1;
+      continue;
+    }
+
+    try {
+      fileSystem.copyFileSync(canonicalPath, aliasPath);
+      logger.log(`Synced ${alias} from ${canonical} in ${backlogDir}`);
+      synced += 1;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      logger.error(
+        `Failed to sync ${alias} from ${canonical} in ${backlogDir}: ${message}`,
+      );
+      failed += 1;
+    }
+  }
+
+  logger.log(`Backlog alias sync summary: ${synced} synced, ${failed} failed.`);
+
+  return { failed, synced };
+}
+
+module.exports = {
+  defaultBacklogAliases,
+  defaultFileSystem,
+  defaultRepoRoot,
+  syncBacklogAliases,
+};
