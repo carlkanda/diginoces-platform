@@ -4,7 +4,7 @@ Traceability: GitHub issue `#31` - Sprint 15 - Release Hardening, QA & MVP Launc
 
 ## Summary
 
-Sprint 15 reviewed MVP coverage against the Master Requirements Register, backlog CSV snapshots, sprint plans, completion reports, hardening reports, migrations, tests, and current source modules after Sprints 1-14.
+Sprint 15 reviewed MVP coverage against the Master Requirements Register, backlog CSV snapshots, sprint plans, completion reports, hardening reports, migrations, tests, and current source modules after Sprints 1-14. Post-merge linked dev checks on June 4, 2026 applied the Sprint 15 security-grants migration and verified no non-allowlisted `PUBLIC`/`anon` execute grants remain.
 
 The MVP is suitable for controlled dev/staging QA with a conditional launch posture. Core operational foundations exist across projects, guests, imports, RSVP, invitations, messages, seating, check-in, contracts/payments, reports, guest-book, partners, and files. Production go-live still depends on the conditions and limitations documented in `docs/planning/mvp-known-limitations.md` and `docs/planning/mvp-launch-checklist.md`.
 
@@ -42,9 +42,11 @@ The MVP is suitable for controlled dev/staging QA with a conditional launch post
 
 ## Launch Classification
 
-Canonical launch classification counts: `launch_blocker=1`, `launch_risk=4`, `acceptable_mvp_risk=6`, `post_launch_follow_up=7`.
+Canonical launch classification counts: `launch_blocker=0`, `launch_risk=4`, `acceptable_mvp_risk=6`, `post_launch_follow_up=7`.
 
-- `launch_blocker`: inherited PUBLIC execute grants on authenticated SECURITY DEFINER RPCs. Sprint 15 adds `20260603113922_sprint_15_release_security_grants.sql` to fix this before launch.
+These counts reflect linked-dev status after post-merge Sprint 15 migration apply and RPC grant verification.
+
+- `launch_blocker`: none open in linked dev after applying `20260603113922_sprint_15_release_security_grants.sql` and verifying zero non-allowlisted `PUBLIC`/`anon` execute grants.
 - `launch_risk`: production MFA enforcement (`LIM-001`), full locked-list/change-request workflow (`LIM-006`), production PDF/worker execution (`LIM-007`), and production offline check-in UX (`LIM-008`).
 - `acceptable_mvp_risk`: `TD-001` Next.js canary (`LIM-002`), guided manual WhatsApp workflow (`LIM-003`), manual payments (`LIM-004`), external Canva workflow (`LIM-005`), CSV-first exports, and provider-backed file registration (`LIM-009`).
 - `post_launch_follow_up`: Supabase performance advisor cleanup (`LIM-010`), direct Canva API (`LIM-011`), online payment processing, native mobile app, advanced BI, partner commissions, AI assistance (`LIM-018`).

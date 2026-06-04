@@ -39,8 +39,10 @@ Rechecked again on June 3, 2026 during Sprint 15 release hardening:
 - `npm run test` passed.
 - `npm run build` passed.
 - `npm run db:lint` passed against the linked dev schema.
-- `npx supabase@latest db push --linked --dry-run` passed and reported only the pending Sprint 15 security-grants migration.
-- Pending migration: `20260603113922_sprint_15_release_security_grants.sql`.
+- `npx supabase@latest db push --linked --dry-run` passed before merge and reported only the pending Sprint 15 security-grants migration.
+- Post-merge on June 4, 2026, `20260603113922_sprint_15_release_security_grants.sql` was applied to the linked dev project.
+- Post-apply `npx supabase@latest db push --linked --dry-run` passed and reported the remote database is up to date.
+- Post-apply `npm run db:lint` passed against the linked dev schema.
 - The project pins `next@16.3.0-canary.25` and `eslint-config-next@16.3.0-canary.25` in `apps/web/package.json`; `package-lock.json` locks those exact versions and their matching `@next/*` packages.
 
 Because the latest stable Next.js release still depends on the vulnerable-range PostCSS version, this item remains open for MVP launch readiness and must be rechecked again before production go-live.

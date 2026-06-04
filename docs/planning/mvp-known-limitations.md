@@ -45,4 +45,4 @@ Change note: the previous duplicate WhatsApp follow-up row `LIM-013` was consoli
 
 ## Launch Position
 
-These limitations support a `conditional_go` recommendation only after the Sprint 15 database migration is applied, CI/checks pass, and staging manual QA is recorded.
+These limitations support a `conditional_go` recommendation for linked dev after the Sprint 15 database migration was applied, CI/checks passed, and the post-apply RPC grant verification returned zero non-allowlisted `PUBLIC`/`anon` execute grants. Any separate staging or production Supabase project must repeat the same migration and verification checks, and manual staging QA must still be recorded before broad launch.

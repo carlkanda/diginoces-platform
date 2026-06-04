@@ -4,20 +4,20 @@
 
 Current recommendation: `conditional_go`.
 
-The MVP can proceed to controlled staging QA after Sprint 15 changes for issue `#31` and sprint plan `docs/planning/sprint-15-plan.md` are merged. Production launch should wait until all required launch gates below are checked, every gate remains mapped to requirement IDs/backlog items per `AGENTS.md`, and any failed item is classified.
+The MVP can proceed to controlled staging QA after Sprint 15 changes for issue `#31` and sprint plan `docs/planning/sprint-15-plan.md` were merged. Production launch should wait until all required launch gates below are checked for the target environment, every gate remains mapped to requirement IDs/backlog items per `AGENTS.md`, and any failed item is classified.
 
 ## Checklist
 
-| Area | Gate | Status before merge | Required before production |
+| Area | Gate | Current status | Required before production |
 | --- | --- | --- | --- |
-| Product scope | Sprints 1-14 MVP foundations present | Ready for verification | Confirm no Sprint 16+ scope is required |
+| Product scope | Sprints 1-15 MVP foundations present | Ready for staging QA | Confirm no Sprint 16+ scope is required |
 | Requirements coverage | MVP coverage review exists | Added in Sprint 15 | Review `docs/planning/mvp-requirements-coverage.md` with Diginoces owner |
-| CI | `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run env:check-public`, `npm run build`; Supabase/database checks where linked access exists | Pending final PR checks | Green CI |
-| Dependencies | `npm audit --omit=dev` | Pending final run | 0 vulnerabilities or documented exception |
+| CI | `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run env:check-public`, `npm run build`; Supabase/database checks where linked access exists | Green on PR `#42` before merge | Green CI on target release branch |
+| Dependencies | `npm audit --omit=dev` | Passed before merge with 0 vulnerabilities | 0 vulnerabilities or documented exception |
 | TD-001 | Next.js canary reviewed | Accepted MVP risk / still open | Recheck stable Next.js before production readiness; see `docs/planning/mvp-known-limitations.md` and `docs/planning/mvp-requirements-coverage.md` |
-| Supabase migrations | Sprint 15 grant migration added | Pending apply | Apply and verify linked project |
-| RLS/security | Advisors reviewed | Findings documented | Re-run advisors after migration and complete `docs/qa/rls-review.md` post-apply verification |
-| Secrets | No committed real secrets/private data | Pending final scan | Clean targeted scan |
+| Supabase migrations | Sprint 15 grant migration added | Applied to linked dev on June 4, 2026; dry-run now reports remote database is up to date | Apply and verify every target project that differs from linked dev |
+| RLS/security | Advisors reviewed | Linked dev post-apply RPC grant verification passed with zero non-allowlisted `PUBLIC`/`anon` execute grants | Re-run advisors and `docs/qa/rls-review.md` verification in the target environment |
+| Secrets | No committed real secrets/private data | Maintained scan passed before merge | Clean targeted scan |
 | Permissions | Role boundary review exists | Added in Sprint 15 | Run manual role QA |
 | MFA | Sensitive roles require MFA metadata | Risk remains | Follow MFA decision flow below; enforce/configure MFA or restrict launch with accepted risk |
 | Storage | Private buckets and signed URLs documented | Ready for verification | Confirm bucket policies in target project |
@@ -33,7 +33,7 @@ Record post-apply RLS/RPC grant verification sign-off here before production pro
 
 | Signer name | Role | Date | Evidence ID / Reference |
 | --- | --- | --- | --- |
-| Pending | Engineering lead | Pending | Runbook Ref ID: RBR-pending - URL stored in secured runbook |
+| Linked dev RPC grant verification | Engineering lead | 2026-06-04 | Query result: zero non-allowlisted `PUBLIC`/`anon` execute grants; opaque runbook reference to be stored externally |
 | Pending | Operations lead | Pending | Runbook Ref ID: RBR-pending - URL stored in secured runbook |
 
 ## QA Infrastructure Readiness
@@ -69,6 +69,8 @@ Evaluate outcomes in order: use `Enforce MFA` when complete production controls 
 
 ## Current Blocker Handling
 
-Sprint 15 found one database security launch blocker: authenticated app RPCs inherited PUBLIC execute privileges. The fix is `20260603113922_sprint_15_release_security_grants.sql`. This checklist is `conditional_go` only for non-production staging or controlled pilot review until that migration is applied and advisors/checks are rerun on the target project. Production remains `no_go` while the migration is unapplied or the rerun checks are unresolved.
+Sprint 15 found one database security launch blocker: authenticated app RPCs inherited PUBLIC execute privileges. The fix is `20260603113922_sprint_15_release_security_grants.sql`. That migration was applied to the linked dev project on June 4, 2026, linked dry-run now reports the remote database is up to date, `db:lint` reports no schema errors, and the corrected grant verification query returned zero non-allowlisted `PUBLIC`/`anon` execute grants.
+
+Production remains target-environment gated: if production or staging uses a different Supabase project than linked dev, repeat migration apply, linked dry-run, `db:lint`, advisors, and RPC grant verification there before changing this checklist to `go`.
 
 `LIM-010` remains a post-launch performance-advisor follow-up only while `docs/qa/rls-review.md` confirms no RLS misconfiguration, wrong-scope access, or unauthorized data exposure. Any confirmed security/access defect under that limitation immediately escalates to `launch_blocker`.

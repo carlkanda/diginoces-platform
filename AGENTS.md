@@ -18,44 +18,44 @@ No requirement may be marked complete unless it is implemented, tested, reviewed
 ## Current sprint assignment
 
 ```text
-Sprint 15 — Release Hardening, QA & MVP Launch
-Issue: #31
-Issue URL: https://github.com/carlkanda/diginoces-platform/issues/31
-Plan: docs/planning/sprint-15-plan.md
-Branch: codex/sprint-15-release-hardening-mvp-launch
-PR title: Sprint 15 — Release Hardening, QA & MVP Launch
-Completion report: docs/planning/sprint-15-completion-report.md
+Sprint 16 — AI Assistance
+Issue: #32
+Issue URL: https://github.com/carlkanda/diginoces-platform/issues/32
+Plan: docs/planning/sprint-16-plan.md
+Branch: codex/sprint-16-ai-assistance
+PR title: Sprint 16 — AI Assistance
+Completion report: docs/planning/sprint-16-completion-report.md
 ```
 
 Last completed sprint:
 
 ```text
-Sprint 14 — Files, Storage, Retention & Archive
+Sprint 15 — Release Hardening, QA & MVP Launch
 ```
 
 Last completed GitHub issue:
 
 ```text
-#30 — Sprint 14 — Files, Storage, Retention & Archive
-https://github.com/carlkanda/diginoces-platform/issues/30
+#31 — Sprint 15 — Release Hardening, QA & MVP Launch
+https://github.com/carlkanda/diginoces-platform/issues/31
 ```
 
 Last completed PR:
 
 ```text
-#41 — Sprint 14 — Files, Storage, Retention & Archive
+#42 — Sprint 15 — Release Hardening, QA & MVP Launch
 ```
 
 Last completed report:
 
 ```text
-docs/planning/sprint-14-completion-report.md
+docs/planning/sprint-15-completion-report.md
 ```
 
 Next planned sprint:
 
 ```text
-Sprint 16 — AI Assistance
+Sprint 17 — Advanced Integrations
 ```
 
 ## Active sprint sync rule
@@ -84,57 +84,47 @@ Always read:
 - relevant product documents in `docs/product/`
 - relevant technical design documents in `docs/technical-design/`
 
-Sprint 15 is active. Implement only the scope described in issue #31 and `docs/planning/sprint-15-plan.md`.
+Sprint 16 is active. Implement only the scope described in issue #32 and `docs/planning/sprint-16-plan.md`.
 
-For the active Sprint 15 assignment, read:
+For the active Sprint 16 assignment, read:
 
+- `docs/planning/sprint-16-plan.md`
 - `docs/planning/sprint-15-plan.md`
-- `docs/planning/sprint-14-plan.md`
 - `docs/planning/mvp-build-execution-plan.md`
-- `docs/planning/technical-debt.md`
-- `docs/product/01-product-vision-business-model.md`
+- `docs/product/15-smart-assistance.md`
 - `docs/product/02-user-roles-permissions-access-control.md`
-- `docs/product/03-wedding-project-structure.md`
 - `docs/product/04-guest-management-guest-lists.md`
-- `docs/product/05-rsvp-public-guest-page.md`
-- `docs/product/06-invitation-template-pdf-generation.md`
 - `docs/product/07-whatsapp-communication-message-workflows.md`
-- `docs/product/08-check-in-wedding-day-operations.md`
 - `docs/product/09-tables-seating-print-materials.md`
-- `docs/product/10-contracts-pricing-payment-controls.md`
 - `docs/product/11-post-event-messages.md`
-- `docs/product/12-partner-external-provider-model.md`
 - `docs/product/13-dashboards-reports-audit-logs.md`
-- `docs/product/14-files-storage-retention-security.md`
-- `docs/product/16-technical-architecture.md`
-- `docs/product/17-mvp-roadmap-development-phases.md`
-- `docs/technical-design/database-schema-core-entities.md`
 - `docs/technical-design/api-backend-service-design.md`
 - `docs/technical-design/security-permissions-access-control.md`
-- `docs/technical-design/background-jobs-pdf-qr-whatsapp-offline-checkin.md`
-- `docs/backlog/traceability-matrix.csv`
-- `docs/backlog/module-coverage.csv`
+- `docs/backlog/master-requirements-register.csv`
+- `docs/backlog/initial-product-backlog-epics.csv`
+- `docs/backlog/initial-product-backlog-features.csv`
+- `docs/backlog/initial-product-backlog-user-stories.csv`
+- `docs/backlog/initial-product-backlog-tasks.csv`
+- `docs/backlog/initial-product-backlog-test-cases.csv`
 
 ## Scope guard
 
-Implement only Sprint 15: Release Hardening, QA & MVP Launch. Do not add Sprint 16 AI assistance or any later-sprint product scope.
+Implement only Sprint 16: AI Assistance. Do not add Sprint 17 advanced integrations or any later-sprint product scope.
 
 ## Active sprint out of scope
 
-For Sprint 15, do not implement:
+For Sprint 16, do not implement:
 
-- new major product features;
-- AI assistance;
-- direct Canva API integration;
-- official WhatsApp API production integration unless already approved and required;
-- online payment processing;
-- native mobile apps;
-- white-label SaaS;
-- partner commission management;
-- advanced BI analytics;
-- unrelated refactoring.
+- autonomous contract approval;
+- autonomous payment exception approval;
+- autonomous unexpected guest approval;
+- automatic WhatsApp sending;
+- automatic duplicate merge;
+- AI access to unauthorized revenue/payment/internal-note/audit data;
+- AI assistance for guests;
+- advanced AI agents that modify multiple modules without human review.
 
-Release hardening, QA, and MVP launch readiness begin in Sprint 15 only after the sprint is explicitly assigned.
+AI assistance work begins in Sprint 16 only after the sprint is explicitly assigned.
 
 ## Workflow
 

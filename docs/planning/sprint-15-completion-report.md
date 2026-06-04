@@ -2,7 +2,7 @@
 
 ## Sprint Status
 
-Status: Ready for PR review after hosted CodeRabbit follow-up fixes.
+Status: Merged into `main` through PR `#42`; post-merge linked dev migration applied and verified.
 
 GitHub issue: `#31` - Sprint 15 - Release Hardening, QA & MVP Launch; sprint plan `docs/planning/sprint-15-plan.md`.
 
@@ -10,21 +10,20 @@ GitHub issue: `#31` - Sprint 15 - Release Hardening, QA & MVP Launch; sprint pla
 
 Recommendation: `conditional_go`.
 
-The platform is ready for controlled staging QA after this branch is merged and the Sprint 15 Supabase migration is applied. Production launch must wait until:
+The platform is ready for controlled staging QA after the Sprint 15 merge and linked dev Supabase migration apply. Production launch must wait until:
 
-- Sprint 15 migration is applied to the target Supabase project.
-- Linked checks are rerun.
-- Inherited PUBLIC execute grants on authenticated SECURITY DEFINER RPCs are verified closed.
+- any production/staging target separate from the linked dev project has the Sprint 15 migration applied.
+- target-environment linked checks are rerun.
+- inherited PUBLIC execute grants on authenticated SECURITY DEFINER RPCs are verified closed in the target environment.
 - Manual staging QA is recorded.
 - Sensitive-role MFA handling is accepted/enforced.
-- Final CI/checks pass.
 - All launch gates in `docs/planning/mvp-launch-checklist.md` are closed.
 
 Pre-staging launch classification summary:
 
 | Classification | Count | Example items/IDs |
 | --- | ---: | --- |
-| `launch_blocker` | 1 | Apply `20260603113922_sprint_15_release_security_grants.sql`, rerun linked checks, and record post-apply RPC grant verification |
+| `launch_blocker` | 0 | No open linked-dev blocker after applying `20260603113922_sprint_15_release_security_grants.sql` and recording RPC grant verification |
 | `launch_risk` | 4 | Production MFA enforcement; full locked-list/change-request workflow; production PDF/worker execution; production offline check-in UX |
 | `acceptable_mvp_risk` | 6 | `TD-001` Next.js canary; guided manual WhatsApp workflow; manual payments; external Canva workflow; CSV-first exports; provider-backed file registration |
 | `post_launch_follow_up` | 7 | Supabase performance advisor cleanup; direct Canva API; online payment processing; native mobile app; advanced BI; partner commissions; AI assistance |
@@ -104,9 +103,9 @@ Added `apps/web/src/lib/platform/public-env-check.test.ts` to cover restricted p
 
 Added `apps/web/src/lib/platform/backlog-alias-sync.test.ts` to cover canonical backlog alias synchronization, missing source files/directories, empty alias config, malformed alias entries, unsafe path traversal entries, and copy-failure reporting.
 
-Final local test status: 18 test files and 176 tests passing.
+Final local test status before merge: 18 test files and 176 tests passing.
 
-Post-apply database checks are not executable yet from this branch because `20260603113922_sprint_15_release_security_grants.sql` has not been applied to staging or production. After apply, the engineering lead must run the RPC grant verification query in `docs/qa/rls-review.md`, rerun Supabase security/performance advisors with elevated linked-project access, and attach the results to the external release evidence. The pre-apply structural guard lives in `apps/web/src/lib/platform/release-readiness.test.ts` and verifies the migration text and public-token allowlist before database execution.
+Post-merge linked dev database checks were completed on June 4, 2026. The Sprint 15 migration is recorded in linked migration history, linked dry-run reports the remote database is up to date, `npm.cmd run db:lint` reports no schema errors, and the corrected RPC grant verification query in `docs/qa/rls-review.md` returned zero non-allowlisted `PUBLIC`/`anon` execute grants. Production or staging environments separate from this linked dev project must repeat the same target-environment checks before promotion.
 
 ## Commands Run
 
@@ -126,6 +125,22 @@ Pre-documentation evidence already gathered:
 - `npx.cmd supabase@latest migration new sprint_15_release_security_grants` - passed; created `20260603113922_sprint_15_release_security_grants.sql`.
 - `npx.cmd supabase@latest db push --linked --dry-run` - passed after the migration file was created locally; dry-run verified `20260603113922_sprint_15_release_security_grants.sql` is pending and ready to apply, but did not execute it against the linked database.
 
+Post-merge linked dev evidence gathered on June 4, 2026:
+
+- `gh pr merge 42 --repo carlkanda/diginoces-platform --squash --delete-branch --subject "Sprint 15 — Release Hardening, QA & MVP Launch" --body "Closes #31"` - passed; PR `#42` merged into `main` as `af402fe`, and issue `#31` closed.
+- `git switch main` - passed.
+- `git pull` - passed; local `main` fast-forwarded from `46eed08` to `af402fe`.
+- `npx.cmd supabase@latest migration list --linked` - passed before apply; linked history showed `20260603113922` pending remotely.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed before apply; dry-run listed only `20260603113922_sprint_15_release_security_grants.sql`.
+- `npx.cmd supabase@latest db push --linked --yes` - passed; applied `20260603113922_sprint_15_release_security_grants.sql` to the linked dev project.
+- `npx.cmd supabase@latest migration list --linked` - passed after apply; local and remote history both show `20260603113922`.
+- `npx.cmd supabase@latest db push --linked --dry-run` - passed after apply; remote database is up to date.
+- `npm.cmd run db:lint` - passed after apply; no schema errors found in `public` or `app_private`.
+- `npx.cmd supabase@latest db advisors --linked --type security --level info --fail-on none` - ran after apply; advisors still report expected `SECURITY DEFINER` warnings for explicitly granted authenticated app RPCs and token-scoped public guest RPCs.
+- `npx.cmd supabase@latest db advisors --linked --type performance --level info --fail-on none` - ran after apply; performance follow-ups remain tracked as post-launch cleanup.
+- Documented RPC grant verification query from `docs/qa/rls-review.md` - first run returned only the five intended public guest-token RPCs because the allowlist used unnamed signatures while `pg_get_function_identity_arguments` returned named arguments.
+- Corrected RPC grant verification query with named public-token signatures - passed; returned zero rows for non-allowlisted `PUBLIC`/`anon` execute grants.
+
 - `npm.cmd --workspace apps/web run test -- --run src/lib/platform/release-readiness.test.ts` - passed, 1 test file and 4 tests.
 - `npm.cmd run format` - passed; formatted the new release-readiness test.
 - `npm.cmd ci` - passed; installed 496 packages and reported 0 vulnerabilities.
@@ -137,7 +152,7 @@ Pre-documentation evidence already gathered:
 - `npm.cmd audit --omit=dev` - passed, 0 vulnerabilities.
 - `npm.cmd run db:lint` - passed against linked `public` and `app_private` schemas; no schema errors.
 - `npx.cmd supabase@latest db push --linked --dry-run` - passed; dry-run would push only `20260603113922_sprint_15_release_security_grants.sql`.
-- `npx.cmd supabase@latest db advisors --linked --type security --level info --fail-on none` - ran successfully; current linked DB still reports SECURITY DEFINER execute warnings because the Sprint 15 migration is pending.
+- `npx.cmd supabase@latest db advisors --linked --type security --level info --fail-on none` - ran successfully before merge; at that point the linked DB still reported SECURITY DEFINER execute warnings because the Sprint 15 migration was pending.
 - `npx.cmd supabase@latest db advisors --linked --type performance --level info --fail-on none` - ran successfully; reported unindexed foreign-key and multiple-permissive-policy performance follow-ups.
 - `git diff --check` - passed; Git printed LF/CRLF warnings for Markdown files only.
 - Targeted `rg` secret scan - passed with expected documentation and `.env.example` matches only; no real secrets or private client/guest data were found.
@@ -174,7 +189,7 @@ Hosted CodeRabbit review follow-up:
 
 - Passed: install, format check, lint, typecheck, full tests, build, dependency audit, public environment check, maintained secret scan, linked `db:lint`, linked dry-run, Supabase advisor command execution, whitespace check, backlog alias sync, and focused Sprint 15 platform tests.
 - CodeRabbit: local WSL CLI review timed out after 10 minutes without output; hosted CodeRabbit review on PR `#42` completed and requested changes that are addressed by the follow-up patch.
-- Advisor findings: security warnings are mitigated by the pending Sprint 15 migration; performance warnings are documented as post-launch follow-up unless staging load testing exposes a launch blocker.
+- Advisor findings: post-apply security advisors still report expected warnings for explicitly exposed `SECURITY DEFINER` RPCs; the targeted RPC grant verification query confirms no non-allowlisted `PUBLIC`/`anon` execute grants remain in linked dev. Performance warnings are documented as post-launch follow-up unless staging load testing exposes a launch blocker.
 
 ## Security Checks Performed
 
@@ -196,8 +211,7 @@ Launch-blocking database finding fixed in this branch:
 
 Remaining database follow-ups:
 
-- Apply the Sprint 15 migration to the linked target project before launch.
-- Re-run security/performance advisors after apply.
+- Repeat migration apply, linked dry-run, `db:lint`, advisors, and RPC grant verification for any staging or production target that is separate from the linked dev project.
 - Address performance advisor cleanup before higher-volume production.
 
 ## Secrets/Environment Review Summary
@@ -242,7 +256,7 @@ Fixed in branch:
 
 Open before production:
 
-- Apply the Sprint 15 migration to the target Supabase project, rerun linked checks, and record the post-apply RPC grant verification result.
+- Repeat the linked dev database verification against the actual production/staging target if it is a separate Supabase project.
 - Complete manual staging QA and classify failures.
 
 ## Launch Risks
@@ -269,4 +283,4 @@ Rollback plan is documented in `docs/planning/mvp-rollback-plan.md`. Preferred d
 
 ## Recommended Next Scope
 
-After Sprint 15 is merged and launch gates are reviewed, the next planned sprint is Sprint 16 - AI Assistance. Sprint 16 should not begin until MVP launch risks are explicitly accepted or converted into follow-up issues.
+Sprint 15 is merged, and the next planned sprint is Sprint 16 - AI Assistance. Sprint 16 should not begin until MVP launch risks are explicitly accepted or converted into follow-up issues.

@@ -9,7 +9,7 @@
 
 ## Scope
 
-This review covers Supabase/Postgres security posture for public business tables, RLS policies, grants, helper functions, RPCs, audit logs, file access, and migration state after Sprints 1-14.
+This review covers Supabase/Postgres security posture for public business tables, RLS policies, grants, helper functions, RPCs, audit logs, file access, and migration state after Sprints 1-15.
 
 ## Checks Performed
 
@@ -19,14 +19,18 @@ This review covers Supabase/Postgres security posture for public business tables
 - Used Supabase security advisors to scan the linked dev database.
 - Used Supabase performance advisors to scan the linked dev database.
 - Added a Sprint 15 migration to narrow function execute grants flagged by security advisors.
+- Applied the Sprint 15 migration to the linked dev project on June 4, 2026.
+- Re-ran linked migration list, linked dry-run, `npm run db:lint`, security advisors, performance advisors, and RPC grant verification after apply.
 
 ## Security Advisor Findings
 
-Supabase security advisors flagged inherited execute access on multiple `SECURITY DEFINER` functions for `anon` and `authenticated`.
+Supabase security advisors flagged inherited execute access on multiple `SECURITY DEFINER` functions for `anon` and `authenticated` before the Sprint 15 migration. After apply, advisors still report expected warnings for explicitly exposed authenticated app RPCs and token-scoped public guest RPCs; the targeted grant verification below is the release gate for anonymous or inherited-public execute exposure.
 
 Sprint 15 classifies anonymous execute access on authenticated application RPCs as `launch_blocker`. The migration `20260603113922_sprint_15_release_security_grants.sql` revokes inherited `public` execute access and direct `anon` execute grants on authenticated-only RPCs, then grants only the intended roles. The release-readiness test also scans historical migration SQL to confirm authenticated RPCs were not explicitly granted to `anon`; that historical scan is an additional safeguard, not a substitute for the explicit Sprint 15 revokes.
 
 Post-apply verification owner: engineering lead, with operations lead sign-off recorded in `docs/planning/mvp-launch-checklist.md` or the external release runbook. After applying the migration, query function privileges for the authenticated RPC set and confirm no authenticated application RPC remains executable by `anon` or inherited `PUBLIC`. The token-scoped functions listed below remain intentionally granted to `anon`.
+
+Linked dev result on June 4, 2026: passed. The corrected query below returned zero non-allowlisted `PUBLIC`/`anon` execute grants.
 
 Run this verification against the target linked project:
 
@@ -37,11 +41,11 @@ set local search_path = '';
 with allowed_public_rpc(signature) as (
   -- MUST match documented public guest functions below.
   values
-    ('public.list_guest_file_downloads(text)'),
-    ('public.resolve_guest_file_download(text, uuid)'),
-    ('public.resolve_guest_public_page(text)'),
-    ('public.submit_public_guest_message(text, text, text, uuid)'),
-    ('public.submit_public_rsvp(text, uuid, public.rsvp_status, text)')
+    ('public.list_guest_file_downloads(p_token text)'),
+    ('public.resolve_guest_file_download(p_token text, p_file_id uuid)'),
+    ('public.resolve_guest_public_page(p_token text)'),
+    ('public.submit_public_guest_message(p_token text, p_message_text text, p_language text, p_event_id uuid)'),
+    ('public.submit_public_rsvp(p_token text, p_event_id uuid, p_response public.rsvp_status, p_preferred_language text)')
 ),
 direct_execute_grants as (
   select
@@ -91,7 +95,7 @@ Supabase performance advisors reported informational and warning-level items, in
 | --- | --- | --- |
 | Public business tables | RLS is used across sprint migrations for app tables | acceptable_mvp_risk |
 | Public guest page flows | `anon` access is limited to token-scoped guest public flows | acceptable_mvp_risk |
-| Authenticated app RPCs | Sprint 15 migration removes inherited public and direct anon execute grants | launch_blocker until applied |
+| Authenticated app RPCs | Sprint 15 migration removed inherited public and direct anon execute grants in linked dev; corrected verification query returned zero rows | conditional_go |
 | Service role | Used only as database role grants/server-side concept; no key committed | acceptable_mvp_risk |
 | Audit logs | Audit tables/triggers/RPCs exist across modules; audit entries are append-oriented | acceptable_mvp_risk |
 | File access | Signed download routes and RPCs enforce project/guest access before URL creation | acceptable_mvp_risk |
@@ -99,6 +103,6 @@ Supabase performance advisors reported informational and warning-level items, in
 
 ## Remaining Work
 
-- Apply the Sprint 15 grant migration to the target Supabase project before launch.
-- Re-run `npm run db:lint`, `npx supabase@latest db push --linked --dry-run`, and Supabase advisors after the migration is applied.
+- Repeat the Sprint 15 grant migration apply and verification on any staging or production Supabase project that is separate from linked dev.
+- Re-run `npm run db:lint`, `npx supabase@latest db push --linked --dry-run`, Supabase advisors, and the RPC grant verification query for each target environment before production promotion.
 - Track performance-advisor cleanup as post-launch hardening unless staging reveals a launch-blocking issue.
