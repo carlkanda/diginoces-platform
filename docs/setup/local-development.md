@@ -38,11 +38,13 @@ The web app intentionally uses the Supabase publishable key. Do not expose a ser
 
 ## Web App
 
-Start the app:
+Start the app from the repository root:
 
 ```bash
 npm run dev
 ```
+
+The root `dev` script loads root `.env` and `.env.local` values before starting the `apps/web` Next.js workspace. If you run `npm --workspace apps/web run dev` directly, export the same environment variables in that shell or place a local, uncommitted env file where that Next.js process can read it.
 
 Default local URL:
 

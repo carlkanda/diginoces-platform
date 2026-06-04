@@ -4,7 +4,7 @@
   "private": true,
   "description": "Diginoces wedding guest-management platform",
   "scripts": {
-    "dev": "npm --workspace apps/web run dev",
+    "dev": "node scripts/run-web-script-with-root-env.mjs dev",
     "build": "npm --workspaces --if-present run build",
     "lint": "npm --workspaces --if-present run lint",
     "format": "npm --workspaces --if-present run format",
