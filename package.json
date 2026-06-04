@@ -12,7 +12,10 @@
     "test": "npm --workspaces --if-present run test",
     "typecheck": "npm --workspaces --if-present run typecheck",
     "smoke": "npm --workspace apps/web run test -- --run src/lib/platform/smoke.test.ts",
-    "db:lint": "node scripts/supabase-db-lint.mjs"
+    "db:lint": "node scripts/supabase-db-lint.mjs",
+    "backlog:sync-aliases": "node scripts/sync-backlog-aliases.mjs",
+    "env:check-public": "node scripts/check-public-env-vars.mjs",
+    "secrets:scan": "node scripts/scan-secrets.mjs"
   },
   "workspaces": [
     "apps/*",

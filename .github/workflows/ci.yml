@@ -13,14 +13,30 @@ jobs:
   verify:
     name: Verify
     runs-on: ubuntu-latest
+    # Gitleaks needs PR write access only in this job to publish findings.
+    permissions:
+      contents: read
+      pull-requests: write # gitleaks-action publishes findings as PR comments
     env:
+      HAS_GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE != '' }}
       NEXT_TELEMETRY_DISABLED: "1"
 
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Secret scan
+        if: github.repository_owner == 'carlkanda' || env.HAS_GITLEAKS_LICENSE == 'true'
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e
+        env:
+          GITLEAKS_VERSION: "8.25.0"
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -42,6 +58,9 @@ jobs:
 
       - name: Test
         run: npm run test
+
+      - name: Check public environment variables
+        run: npm run env:check-public
 
       - name: Build
         run: npm run build
