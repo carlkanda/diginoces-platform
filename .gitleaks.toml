@@ -1,0 +1,28 @@
+title = "Diginoces Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Documented Sprint 15 secret-scan placeholder patterns; not real credentials."
+condition = "AND"
+paths = [
+  '^docs/qa/security-review\.md$',
+]
+regexTarget = "line"
+regexes = [
+  '''(?i)service[-_ ]?role key''',
+  '''(?i)supabase_service_role''',
+  '''(?i)database password''',
+  '''(?i)db_password''',
+  '''(?i)whatsapp token''',
+  '''(?i)google secret''',
+  '''(?i)api secret''',
+  '''(?i)private key''',
+  '''(?i)BEGIN [A-Z ]*PRIVATE KEY''',
+  '''(?i)(^|[^A-Za-z0-9_])sk_live([^A-Za-z0-9_]|$)''',
+  '''(?i)(^|[^A-Za-z0-9_])sk_test([^A-Za-z0-9_]|$)''',
+  '''(?i)real guest''',
+  '''(?i)real client''',
+  '''(?i)real couple''',
+]

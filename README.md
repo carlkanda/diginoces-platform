@@ -89,6 +89,7 @@ npm run dev
 npm run lint
 npm run typecheck
 npm run test
+npm run env:check-public
 npm run build
 ```
 

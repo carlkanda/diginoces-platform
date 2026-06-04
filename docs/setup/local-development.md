@@ -57,6 +57,7 @@ npm run format:check
 npm run lint
 npm run typecheck
 npm run test
+npm run env:check-public
 npm run build
 npm audit --omit=dev
 ```

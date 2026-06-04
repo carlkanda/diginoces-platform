@@ -26,6 +26,27 @@ Rechecked on May 23, 2026 during the platform hardening pass after Sprints 1-5:
 
 Because the latest stable Next.js line still pins the vulnerable PostCSS version, this item remains open and the project stays pinned to `16.3.0-canary.25` until a stable Next.js release is safe.
 
+Rechecked again on June 3, 2026 during Sprint 15 release hardening:
+
+- `npm view next version` returned `16.2.7`.
+- `npm view eslint-config-next version` returned `16.2.7`.
+- `npm view next@16.2.7 dependencies --json` still shows `postcss: 8.4.31`.
+- `npm audit --omit=dev` returned `0 vulnerabilities` with the currently pinned canary dependency.
+- `npm ci` passed with the currently pinned canary dependency.
+- `npm run format:check` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run test` passed.
+- `npm run build` passed.
+- `npm run db:lint` passed against the linked dev schema.
+- `npx supabase@latest db push --linked --dry-run` passed and reported only the pending Sprint 15 security-grants migration.
+- Pending migration: `20260603113922_sprint_15_release_security_grants.sql`.
+- The project pins `next@16.3.0-canary.25` and `eslint-config-next@16.3.0-canary.25` in `apps/web/package.json`; `package-lock.json` locks those exact versions and their matching `@next/*` packages.
+
+Because the latest stable Next.js release still depends on the vulnerable-range PostCSS version, this item remains open for MVP launch readiness and must be rechecked again before production go-live.
+
+Launch impact: TD-001 is non-blocking for controlled MVP pilot launch as an accepted limitation under `docs/planning/mvp-known-limitations.md` (`LIM-002`), provided exact pins remain in place, `npm audit --omit=dev` stays clean, and the item is rechecked before production go-live.
+
 ### Risk
 
 Canary framework releases may contain regressions or API changes that are not appropriate for production hardening.
