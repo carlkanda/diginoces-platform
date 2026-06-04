@@ -33,7 +33,7 @@ export default async function PublicGuestPage({
 
   if (!env.supabaseConfigured) {
     return (
-      <section className="public-locked">
+      <section className="public-route public-locked">
         <p className="eyebrow">Diginoces RSVP</p>
         <h1>Public RSVP is not configured locally</h1>
         <p>
@@ -55,7 +55,7 @@ export default async function PublicGuestPage({
     const labels = getGuestPageLabels(payload.preferredLanguage);
 
     return (
-      <section className="public-locked">
+      <section className="public-route public-locked">
         <p className="eyebrow">Diginoces RSVP</p>
         <h1>{labels.lockedTitle}</h1>
         <p>{labels.lockedBody}</p>

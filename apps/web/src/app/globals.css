@@ -680,6 +680,15 @@ textarea {
   gap: 18px;
 }
 
+body:has(.public-route) .topbar {
+  display: none;
+}
+
+body:has(.public-route) .main {
+  max-width: min(1120px, calc(100% - 32px));
+  padding: 56px 0;
+}
+
 .public-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 0.36fr);

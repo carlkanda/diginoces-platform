@@ -5,6 +5,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Diginoces Platform",
   description: "Secure platform foundation for Diginoces wedding operations.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
