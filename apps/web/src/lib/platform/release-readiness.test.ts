@@ -114,6 +114,8 @@ function normalizeSqlStatement(statement: string) {
 function normalizeFunctionSignature(signature: string) {
   return signature
     .toLowerCase()
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
     .replace(/\s*,\s*/g, ", ")
     .replace(/\s+/g, " ")
     .trim();
@@ -724,6 +726,34 @@ describe("Sprint 15 release readiness", () => {
       expect(revokeSignatureSet.has(normalizedSignature)).toBe(true);
       expect(anonRevokeSignatureSet.has(normalizedSignature)).toBe(true);
       expect(publicTokenGrantSignatureSet.has(normalizedSignature)).toBe(true);
+    }
+  });
+
+  it("keeps RLS helper execute grants explicit for authenticated UI reads", () => {
+    const migration = readMigrationBySuffix(
+      "_mvp_ui_qa_permission_helper_grants.sql",
+    );
+    const requiredHelperSignatures = [
+      "app_private.user_can_access_check_in_event_any(uuid, uuid, uuid, text[])",
+      "app_private.user_can_access_partner(uuid, uuid, text)",
+      "app_private.user_can_access_partner_project(uuid, uuid, text)",
+    ].map(normalizeFunctionSignature);
+    const authenticatedGrantSignatureSet = new Set(
+      parseFunctionGrants(migration, "authenticated, service_role").map(
+        normalizeFunctionSignature,
+      ),
+    );
+    const publicRevokeSignatureSet = new Set(
+      parseFunctionRevokes(migration, "public").map(normalizeFunctionSignature),
+    );
+    const anonRevokeSignatureSet = new Set(
+      parseFunctionRevokes(migration, "anon").map(normalizeFunctionSignature),
+    );
+
+    for (const signature of requiredHelperSignatures) {
+      expect(authenticatedGrantSignatureSet.has(signature)).toBe(true);
+      expect(publicRevokeSignatureSet.has(signature)).toBe(true);
+      expect(anonRevokeSignatureSet.has(signature)).toBe(true);
     }
   });
 });
