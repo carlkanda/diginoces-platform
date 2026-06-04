@@ -87,6 +87,16 @@ describe("public environment variable check", () => {
       publicEnvModule.hasRestrictedPublicName("NEXT_PUBLIC_SERVICE_ROLE_KEY"),
     ).toBe(true);
     expect(
+      publicEnvModule.hasRestrictedPublicName(
+        "NEXT_PUBLIC_SUPABASE_SERVICE_ROLE",
+      ),
+    ).toBe(true);
+    expect(
+      publicEnvModule.hasRestrictedPublicName(
+        "NEXT_PUBLIC_SIGNING_PRIVATE_KEY_PATH",
+      ),
+    ).toBe(true);
+    expect(
       publicEnvModule.hasRestrictedPublicName("NEXT_PUBLIC_SUPABASE_URL"),
     ).toBe(false);
   });

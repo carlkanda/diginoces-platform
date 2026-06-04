@@ -209,4 +209,34 @@ describe("syncBacklogAliases", () => {
       "Backlog alias sync summary: 0 synced, 1 failed.",
     );
   });
+
+  it("reports malformed alias entries without aborting valid syncs", async () => {
+    const syncBacklogAliases = await loadSyncBacklogAliases();
+    const logger = createLogger();
+    const copyFileSync = vi.fn();
+
+    const result = syncBacklogAliases({
+      aliases: [
+        ["traceability_matrix.csv", "traceability-matrix.csv"],
+        ["missing-target.csv"] as unknown as [string, string],
+        "invalid-entry" as unknown as [string, string],
+      ],
+      fileSystem: {
+        copyFileSync,
+        existsSync: () => true,
+        statSync: () => ({ isDirectory: () => true }),
+      },
+      logger,
+      repoRoot: "repo",
+    });
+
+    expect(result).toEqual({ failed: 2, synced: 1 });
+    expect(copyFileSync).toHaveBeenCalledOnce();
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid backlog alias entry"),
+    );
+    expect(logger.log).toHaveBeenCalledWith(
+      "Backlog alias sync summary: 1 synced, 2 failed.",
+    );
+  });
 });

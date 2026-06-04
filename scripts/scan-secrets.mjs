@@ -55,6 +55,30 @@ const excludedGlobs = [
   "!scripts/scan-secrets.mjs",
 ];
 
+function printRipgrepInstallHelp(error) {
+  const detail = error ? ` (${error.message})` : "";
+
+  console.error(`Failed to run ripgrep (rg)${detail}.`);
+  console.error(
+    "Install ripgrep before running npm run secrets:scan: macOS `brew install ripgrep`, Debian/Ubuntu `sudo apt-get install ripgrep`, or Windows `winget install BurntSushi.ripgrep.MSVC`.",
+  );
+}
+
+const ripgrepCheck = spawnSync("rg", ["--version"], { encoding: "utf8" });
+
+if (ripgrepCheck.error) {
+  printRipgrepInstallHelp(ripgrepCheck.error);
+  process.exitCode = 1;
+  process.exit();
+}
+
+if (ripgrepCheck.status !== 0) {
+  printRipgrepInstallHelp();
+  process.stderr.write(ripgrepCheck.stderr);
+  process.exitCode = 1;
+  process.exit();
+}
+
 let found = false;
 
 for (const pattern of patterns) {
@@ -71,7 +95,7 @@ for (const pattern of patterns) {
   );
 
   if (result.error) {
-    console.error(`Failed to run rg: ${result.error.message}`);
+    printRipgrepInstallHelp(result.error);
     process.exitCode = 1;
     process.exit();
   }

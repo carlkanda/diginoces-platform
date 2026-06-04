@@ -162,12 +162,16 @@ export function containsRestrictedToken(value) {
 
 export function hasRestrictedPublicName(name) {
   const upperName = name.toUpperCase();
+  const forbiddenMarkers = [
+    "PRIVATE",
+    "SERVICE_ROLE",
+    "SERVICE_ROLE_KEY",
+    "SECRET",
+    "SIGNING_PRIVATE",
+    "SIGNING",
+  ];
 
-  return (
-    upperName.endsWith("_PRIVATE_KEY") ||
-    upperName.endsWith("_SERVICE_ROLE_KEY") ||
-    upperName.endsWith("_SECRET")
-  );
+  return forbiddenMarkers.some((marker) => upperName.includes(marker));
 }
 
 export function escapeRegExp(value) {

@@ -62,7 +62,21 @@ export function syncBacklogAliases({
     return { failed: 0, synced: 0 };
   }
 
-  for (const [canonical, alias] of aliases) {
+  for (const item of aliases) {
+    if (
+      !Array.isArray(item) ||
+      item.length < 2 ||
+      typeof item[0] !== "string" ||
+      typeof item[1] !== "string"
+    ) {
+      logger.error(
+        `Invalid backlog alias entry: ${JSON.stringify(item)}. Expected [canonical, alias] strings.`,
+      );
+      failed += 1;
+      continue;
+    }
+
+    const [canonical, alias] = item;
     const canonicalPath = join(backlogDir, canonical);
     const aliasPath = join(backlogDir, alias);
 

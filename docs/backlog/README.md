@@ -40,7 +40,7 @@ Keep those aliases content-compatible with the underscore-named exports.
 
 Dual naming exists because historical backlog exports use underscore filenames while the active Sprint 15 agent instructions and some external review consumers reference hyphenated filenames. The underscore files remain canonical Google Sheet exports; the hyphenated files are compatibility aliases that must carry the same content.
 
-Synchronization automation: after refreshing the canonical underscore exports, run `npm run backlog:sync-aliases` to copy `traceability_matrix.csv` to `traceability-matrix.csv` and `module_coverage.csv` to `module-coverage.csv`. Synchronization guard: `apps/web/src/lib/platform/release-readiness.test.ts` compares each alias pair and fails if the generated hyphenated files drift from the canonical exports.
+Synchronization automation: after refreshing the canonical underscore exports, run `npm run backlog:sync-aliases` to copy `traceability_matrix.csv` to `traceability-matrix.csv` and `module_coverage.csv` to `module-coverage.csv`. The generated aliases `traceability-matrix.csv` and `module-coverage.csv` must also be committed so active-agent docs and `apps/web/src/lib/platform/release-readiness.test.ts` can validate byte-for-byte alias parity. Synchronization guard: `apps/web/src/lib/platform/release-readiness.test.ts` compares each alias pair and fails if the generated hyphenated files drift from the canonical exports.
 
 ## Export rule
 

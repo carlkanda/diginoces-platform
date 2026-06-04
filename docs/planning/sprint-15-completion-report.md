@@ -2,7 +2,7 @@
 
 ## Sprint Status
 
-Status: Ready for draft PR review.
+Status: Ready for PR review after hosted CodeRabbit follow-up fixes.
 
 GitHub issue: `#31` - Sprint 15 - Release Hardening, QA & MVP Launch; sprint plan `docs/planning/sprint-15-plan.md`.
 
@@ -102,9 +102,9 @@ Added `apps/web/src/lib/platform/release-readiness.test.ts` to cover:
 
 Added `apps/web/src/lib/platform/public-env-check.test.ts` to cover restricted public environment variable names, service-role/private-key/JWT value detection, `.env` discovery, inline-comment handling, and runtime/file violation aggregation.
 
-Added `apps/web/src/lib/platform/backlog-alias-sync.test.ts` to cover canonical backlog alias synchronization, missing source files/directories, empty alias config, and copy-failure reporting.
+Added `apps/web/src/lib/platform/backlog-alias-sync.test.ts` to cover canonical backlog alias synchronization, missing source files/directories, empty alias config, malformed alias entries, and copy-failure reporting.
 
-Final local test status: 18 test files and 174 tests passing.
+Final local test status: 18 test files and 175 tests passing.
 
 Post-apply database checks are not executable yet from this branch because `20260603113922_sprint_15_release_security_grants.sql` has not been applied to staging or production. After apply, the engineering lead must run the RPC grant verification query in `docs/qa/rls-review.md`, rerun Supabase security/performance advisors with elevated linked-project access, and attach the results to the external release evidence. The pre-apply structural guard lives in `apps/web/src/lib/platform/release-readiness.test.ts` and verifies the migration text and public-token allowlist before database execution.
 
@@ -161,10 +161,17 @@ Final verification rerun after review fixes:
 - `git diff --check` - passed; Git printed LF/CRLF warnings only.
 - `wsl.exe bash -lc "coderabbit review --agent -t uncommitted -c AGENTS.md"` - attempted for local WSL review and timed out after the full 10-minute window without usable output. No GitHub PR existed for this branch at verification time, so hosted CodeRabbit review threads were not available to fetch yet.
 
+Hosted CodeRabbit review follow-up:
+
+- PR `#42` was marked ready for review after the draft PR initially skipped CodeRabbit.
+- Hosted CodeRabbit completed on June 4, 2026, and requested 8 actionable changes.
+- Follow-up fixes applied: README verification flow includes `npm ci` and `npm run format:check`; backlog alias docs explicitly require committed hyphenated aliases; release-readiness tests include the risk acceptance template and byte-for-byte CSV parity; placeholder detection docs require explicit placeholder signals; launch checklist records opaque evidence IDs instead of direct URLs; controlled-pilot risk template no longer allows unrestricted production; public env checks reject forbidden markers anywhere in public variable names; the secret scanner now preflights `rg`; backlog alias sync handles malformed entries without throwing.
+- Post-fix local verification: `npm.cmd run format`, focused platform tests, `npm.cmd run env:check-public`, `npm.cmd run secrets:scan`, `npm.cmd run backlog:sync-aliases`, `npm.cmd run format:check`, `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run test` (18 files, 175 tests), `npm.cmd audit --omit=dev`, `git diff --check`, `npm.cmd run build`, `npm.cmd run db:lint`, and `npx.cmd supabase@latest db push --linked --dry-run` all passed.
+
 ## Checks Passed Or Failed
 
 - Passed: install, format check, lint, typecheck, full tests, build, dependency audit, public environment check, maintained secret scan, linked `db:lint`, linked dry-run, Supabase advisor command execution, whitespace check, backlog alias sync, and focused Sprint 15 platform tests.
-- Failed: local WSL CodeRabbit CLI review timed out after 10 minutes without output; hosted CodeRabbit review must run once the draft PR exists.
+- CodeRabbit: local WSL CLI review timed out after 10 minutes without output; hosted CodeRabbit review on PR `#42` completed and requested changes that are addressed by the follow-up patch.
 - Advisor findings: security warnings are mitigated by the pending Sprint 15 migration; performance warnings are documented as post-launch follow-up unless staging load testing exposes a launch blocker.
 
 ## Security Checks Performed

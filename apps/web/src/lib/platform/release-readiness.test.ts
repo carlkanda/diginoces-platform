@@ -45,10 +45,6 @@ function expectRepoFileExists(path: string) {
   expect(existsSync(join(repoRoot, path)), `${path} exists`).toBe(true);
 }
 
-function normalizeCsv(content: string) {
-  return content.replace(/\r\n?/g, "\n").trimEnd();
-}
-
 function readMigrationBySuffix(suffix: string) {
   const matches = readdirSync(migrationDir).filter((entry) =>
     entry.endsWith(suffix),
@@ -590,6 +586,7 @@ describe("Sprint 15 release readiness", () => {
       "docs/planning/sprint-15-completion-report.md",
       "docs/architecture/file-management-policy.md",
       "docs/setup/qa-artifact-store.md",
+      "docs/setup/security-risk-acceptance-template.md",
       "docs/qa/mvp-manual-qa-scenarios.md",
       "docs/qa/security-review.md",
       "docs/qa/permissions-review.md",
@@ -616,11 +613,11 @@ describe("Sprint 15 release readiness", () => {
       expectRepoFileExists(path);
     }
 
-    expect(
-      normalizeCsv(readRepoFile("docs/backlog/traceability-matrix.csv")),
-    ).toBe(normalizeCsv(readRepoFile("docs/backlog/traceability_matrix.csv")));
-    expect(normalizeCsv(readRepoFile("docs/backlog/module-coverage.csv"))).toBe(
-      normalizeCsv(readRepoFile("docs/backlog/module_coverage.csv")),
+    expect(readRepoFile("docs/backlog/traceability-matrix.csv")).toBe(
+      readRepoFile("docs/backlog/traceability_matrix.csv"),
+    );
+    expect(readRepoFile("docs/backlog/module-coverage.csv")).toBe(
+      readRepoFile("docs/backlog/module_coverage.csv"),
     );
   });
 

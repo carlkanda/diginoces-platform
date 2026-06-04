@@ -84,14 +84,18 @@ docs/backlog/initial-product-backlog-test-cases.csv
 ## Local development
 
 ```bash
-npm install
+npm ci
 npm run dev
+npm run format:check
 npm run lint
 npm run typecheck
 npm run test
 npm run env:check-public
 npm run build
 ```
+
+Run Supabase/database checks such as `npm run db:lint` when linked project
+access is available.
 
 ## Security
 

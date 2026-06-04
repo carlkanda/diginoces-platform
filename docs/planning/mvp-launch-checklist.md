@@ -31,25 +31,27 @@ The MVP can proceed to controlled staging QA after Sprint 15 changes for issue `
 
 Record post-apply RLS/RPC grant verification sign-off here before production promotion:
 
-| Signer name | Role | Date | Evidence link |
+| Signer name | Role | Date | Evidence ID / Reference |
 | --- | --- | --- | --- |
-| Pending | Engineering lead | Pending | Link to post-apply `docs/qa/rls-review.md` query result in the QA artifact store |
-| Pending | Operations lead | Pending | Link to post-apply `docs/qa/rls-review.md` query result in the QA artifact store |
+| Pending | Engineering lead | Pending | Runbook Ref ID: RBR-pending - URL stored in secured runbook |
+| Pending | Operations lead | Pending | Runbook Ref ID: RBR-pending - URL stored in secured runbook |
 
 ## QA Infrastructure Readiness
 
 Record QA artifact-store verification here before manual staging QA begins:
 
-| Item | Owner | Status | Evidence link |
+| Item | Owner | Status | Evidence ID / Reference |
 | --- | --- | --- | --- |
-| Artifact store endpoint available in external secure release runbook | Operations lead | Pending | Link to access-controlled runbook entry |
-| QA access ticketing flow or approved temporary fallback documented | Engineering lead | Pending | Link to ticket or approved encrypted-vault note |
-| Upload/read authorization and unauthorized denial verified | QA lead | Pending | Link to fake smoke artifact and access-test evidence |
-| Retention, encryption, and audit logging verified | Engineering lead | Pending | Link to provider configuration evidence |
+| Artifact store endpoint available in external secure release runbook | Operations lead | Pending | Runbook Ref ID: RBR-pending - URL stored in secured runbook |
+| QA access ticketing flow or approved temporary fallback documented | Engineering lead | Pending | Ticket ID: QA-pending - URL stored in secured runbook or vault |
+| Upload/read authorization and unauthorized denial verified | QA lead | Pending | Artifact ID: QAART-pending - URL stored in secured runbook |
+| Retention, encryption, and audit logging verified | Engineering lead | Pending | Artifact ID: QAART-pending - URL stored in secured runbook |
+
+Store real evidence endpoints only in the external runbook, ticket system, or vault described by `docs/setup/qa-artifact-store.md`; this checklist records opaque references only.
 
 ## MFA Decision Flow
 
-Each MFA decision must include requirement/backlog traceability (`ROLE-009`, `FEAT-REL-002`), active sprint plan `docs/planning/sprint-15-plan.md`, GitHub issue `#31`, owner, date, environment, affected roles, and evidence link.
+Each MFA decision must include requirement/backlog traceability (`ROLE-009`, `FEAT-REL-002`), active sprint plan `docs/planning/sprint-15-plan.md`, GitHub issue `#31`, owner, date, environment, affected roles, and an opaque evidence ID/reference. Store real evidence URLs only in the external runbook or vault.
 
 Evaluate outcomes in order: use `Enforce MFA` when complete production controls are ready, use `Configure MFA` only for an accepted controlled-pilot exception with a dated remediation plan, and use `Restrict launch` when neither condition is satisfied or the exception evidence is missing/expired.
 

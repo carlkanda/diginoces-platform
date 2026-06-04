@@ -14,7 +14,7 @@ The `Pilot user list` field may reference internal numeric user IDs, role names,
 | --- | --- |
 | Risk ID | Unique ticket or approval ID |
 | Decision date | ISO8601 date/time |
-| Environment | Local, dev, staging, controlled pilot, or production |
+| Environment | Local, dev, staging, controlled pilot, or production-hosted pilot |
 | Affected workflow | MFA, permission, RLS, file, payment gate, public token, or other security-sensitive area |
 | Pilot user list | See Pilot User Identity Restrictions for allowed identifiers |
 | Risk statement | Clear description of what remains incomplete or manually controlled |
