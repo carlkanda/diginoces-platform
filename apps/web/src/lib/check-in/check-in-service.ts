@@ -226,6 +226,18 @@ export const checkInMethodLabels = {
   unexpected_guest_approval: "Unexpected guest approval",
 } as const satisfies Record<CheckInMethod, string>;
 
+export type CheckInMethodGateSettings = {
+  allowedMethods?: readonly string[] | null;
+  enabled?: boolean | null;
+  status?: string | null;
+};
+
+export function isCheckInOpen(
+  settings?: Pick<CheckInMethodGateSettings, "enabled" | "status"> | null,
+) {
+  return Boolean(settings?.enabled && settings.status === "active");
+}
+
 // Null means settings are not configured yet and falls back to defaults.
 // An explicit empty array is an admin choice to disable every method.
 export function resolveAllowedCheckInMethods(
@@ -237,6 +249,16 @@ export function resolveAllowedCheckInMethods(
         checkInMethods.includes(method as CheckInMethod),
     ),
   );
+}
+
+export function resolveOpenCheckInMethods(
+  settings?: CheckInMethodGateSettings | null,
+): Set<CheckInMethod> {
+  if (!isCheckInOpen(settings)) {
+    return new Set();
+  }
+
+  return resolveAllowedCheckInMethods(settings?.allowedMethods);
 }
 
 export const checkInSyncStatuses = [

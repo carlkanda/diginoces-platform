@@ -10,7 +10,8 @@ import {
   checkInMethodLabels,
   defaultCheckInMethods,
   manualCheckInMethods,
-  resolveAllowedCheckInMethods,
+  isCheckInOpen,
+  resolveOpenCheckInMethods,
   searchCheckInGuests,
   type CheckInMethod,
   type CheckInGuest,
@@ -198,9 +199,12 @@ export default async function EventCheckInPage({
     hasEventPermission(context, eventId, "check_in.offline_sync"),
     hasEventPermission(context, eventId, "check_in.dashboard"),
   ]);
-  const allowedMethods = resolveAllowedCheckInMethods(
-    overview.settings?.allowed_methods,
-  );
+  const checkInOpen = isCheckInOpen(overview.settings);
+  const allowedMethods = resolveOpenCheckInMethods({
+    allowedMethods: overview.settings?.allowed_methods,
+    enabled: overview.settings?.enabled,
+    status: overview.settings?.status,
+  });
   const isCheckInMethodAllowed = (method: CheckInMethod) =>
     allowedMethods.has(method);
   const qrScanAllowed = isCheckInMethodAllowed("qr_scan");
@@ -360,7 +364,12 @@ export default async function EventCheckInPage({
             </button>
           </form>
         ) : null}
-        {canPerform && !qrScanAllowed ? (
+        {canPerform && !checkInOpen ? (
+          <div className="empty-state">
+            Check-in is not open for this event.
+          </div>
+        ) : null}
+        {canPerform && checkInOpen && !qrScanAllowed ? (
           <div className="empty-state">
             QR scanning is disabled for this event.
           </div>
@@ -408,7 +417,14 @@ export default async function EventCheckInPage({
           </button>
         </form>
 
-        {canPerform && allowedManualCheckInMethods.length === 0 ? (
+        {canPerform && !checkInOpen ? (
+          <div className="empty-state">
+            Check-in is not open for this event.
+          </div>
+        ) : null}
+        {canPerform &&
+        checkInOpen &&
+        allowedManualCheckInMethods.length === 0 ? (
           <div className="empty-state">
             Manual check-in methods are disabled for this event.
           </div>

@@ -17,6 +17,7 @@ import {
   hashCheckInToken,
   parseCheckInDevicePayload,
   parseCheckInSettingsPayload,
+  resolveOpenCheckInMethods,
   searchCheckInGuests,
   tokenPreview,
   type CheckInGuest,
@@ -299,6 +300,31 @@ describe("Sprint 9 check-in foundation", () => {
     ]);
   });
 
+  it("does not expose check-in methods when event settings are missing or inactive", () => {
+    expect([...resolveOpenCheckInMethods(null)]).toEqual([]);
+    expect([
+      ...resolveOpenCheckInMethods({
+        allowedMethods: ["manual_name_search"],
+        enabled: false,
+        status: "active",
+      }),
+    ]).toEqual([]);
+    expect([
+      ...resolveOpenCheckInMethods({
+        allowedMethods: ["manual_name_search"],
+        enabled: true,
+        status: "inactive",
+      }),
+    ]).toEqual([]);
+    expect([
+      ...resolveOpenCheckInMethods({
+        allowedMethods: ["manual_name_search"],
+        enabled: true,
+        status: "active",
+      }),
+    ]).toEqual(["manual_name_search"]);
+  });
+
   it("builds offline preload datasets and detects sync conflicts", () => {
     const dataset = buildOfflinePreloadDataset({
       eventId,
@@ -453,5 +479,38 @@ describe("Sprint 9 check-in foundation", () => {
     expect(migration).not.toContain(
       "create table if not exists public.payment",
     );
+  });
+
+  it("keeps the check-in audit trigger from reading table-specific fields early", () => {
+    const migrationPath = join(
+      findMigrationRoot(here),
+      "20260604214050_mvp_check_in_audit_trigger_fix.sql",
+    );
+
+    expect(
+      existsSync(migrationPath),
+      "Expected MVP check-in audit trigger fix migration to exist at its generated path.",
+    ).toBe(true);
+
+    const migration = readFileSync(migrationPath, "utf8");
+    const settingsBranchIndex = migration.indexOf(
+      "if tg_table_name = 'check_in_settings' then",
+    );
+    const tokenBranchIndex = migration.indexOf(
+      "elsif tg_table_name = 'check_in_tokens' then",
+    );
+    const recordBranchIndex = migration.indexOf(
+      "elsif tg_table_name = 'check_in_records' then",
+    );
+    const firstTokenFieldIndex = migration.indexOf(
+      "new.regenerated_from_token_id",
+    );
+    const firstRecordFieldIndex = migration.indexOf("new.is_duplicate_scan");
+
+    expect(settingsBranchIndex).toBeGreaterThanOrEqual(0);
+    expect(tokenBranchIndex).toBeGreaterThan(settingsBranchIndex);
+    expect(recordBranchIndex).toBeGreaterThan(tokenBranchIndex);
+    expect(firstTokenFieldIndex).toBeGreaterThan(tokenBranchIndex);
+    expect(firstRecordFieldIndex).toBeGreaterThan(recordBranchIndex);
   });
 });
