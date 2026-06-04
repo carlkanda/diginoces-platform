@@ -38,21 +38,23 @@ Run this verification against the target linked project:
 begin;
 set local search_path = '';
 
-with allowed_public_rpc(signature) as (
+with allowed_public_rpc(function_name, identity_arguments) as (
   -- MUST match documented public guest functions below.
   values
-    ('public.list_guest_file_downloads(p_token text)'),
-    ('public.resolve_guest_file_download(p_token text, p_file_id uuid)'),
-    ('public.resolve_guest_public_page(p_token text)'),
-    ('public.submit_public_guest_message(p_token text, p_message_text text, p_language text, p_event_id uuid)'),
-    ('public.submit_public_rsvp(p_token text, p_event_id uuid, p_response public.rsvp_status, p_preferred_language text)')
+    ('list_guest_file_downloads', 'p_token text'),
+    ('resolve_guest_file_download', 'p_token text, p_file_id uuid'),
+    ('resolve_guest_public_page', 'p_token text'),
+    ('submit_public_guest_message', 'p_token text, p_message_text text, p_language text, p_event_id uuid'),
+    ('submit_public_rsvp', 'p_token text, p_event_id uuid, p_response rsvp_status, p_preferred_language text')
 ),
 direct_execute_grants as (
   select
+    p.proname as function_name,
+    replace(pg_get_function_identity_arguments(p.oid), 'public.', '') as identity_arguments,
     format(
       'public.%I(%s)',
       p.proname,
-      pg_get_function_identity_arguments(p.oid)
+      replace(pg_get_function_identity_arguments(p.oid), 'public.', '')
     ) as signature,
     coalesce(r.rolname, 'PUBLIC') as grantee
   from pg_proc p
@@ -67,13 +69,18 @@ direct_execute_grants as (
 )
 select signature, grantee
 from direct_execute_grants
-where signature not in (select signature from allowed_public_rpc)
+where not exists (
+  select 1
+  from allowed_public_rpc allowlist
+  where allowlist.function_name = direct_execute_grants.function_name
+    and allowlist.identity_arguments = direct_execute_grants.identity_arguments
+)
 order by signature, grantee;
 
 rollback;
 ```
 
-Expected result: zero rows. If any authenticated-only RPC appears, add a corrective migration that runs `revoke execute on function <signature> from public;` for inherited grants or `revoke execute on function <signature> from anon;` for direct `anon` grants, rerun the query, and store the query output plus owner sign-off in the QA artifact store from `docs/setup/qa-artifact-store.md` as part of the release evidence.
+Expected result: zero rows. The query normalizes `public.` from identity arguments because `pg_get_function_identity_arguments` may report the `rsvp_status` enum as either `public.rsvp_status` or `rsvp_status` depending on the connection context. If any authenticated-only RPC appears, add a corrective migration that runs `revoke execute on function <signature> from public;` for inherited grants or `revoke execute on function <signature> from anon;` for direct `anon` grants, rerun the query, and store the query output plus owner sign-off in the QA artifact store from `docs/setup/qa-artifact-store.md` as part of the release evidence.
 
 The following token-scoped public guest functions intentionally remain available to `anon`:
 
