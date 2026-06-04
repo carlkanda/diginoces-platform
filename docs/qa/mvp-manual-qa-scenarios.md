@@ -14,6 +14,7 @@ This checklist defines the end-to-end manual QA pass for staging and launch. Aut
 - `.env.local` exists locally or deployment environment variables exist in the host, using non-production secrets for staging.
 - Test users exist for admin, operations/staff, bride, groom, partner, check-in staff, and guest-token access. Test credentials must be stored securely outside the repository in the approved encrypted vault or secure password manager, must never be checked into git, and must be requested from the Diginoces owner role or engineering lead through the internal QA access process.
 - Test project data is fake and clearly marked as demo data.
+- Environment setup follows `docs/qa/mvp-ui-qa-setup.md`, including the MFA-sensitive role gate and fake-data rules.
 
 ## Pre-QA Setup
 

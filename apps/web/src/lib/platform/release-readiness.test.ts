@@ -590,6 +590,7 @@ describe("Sprint 15 release readiness", () => {
       "docs/setup/qa-artifact-store.md",
       "docs/setup/security-risk-acceptance-template.md",
       "docs/qa/mvp-manual-qa-scenarios.md",
+      "docs/qa/mvp-ui-qa-setup.md",
       "docs/qa/security-review.md",
       "docs/qa/permissions-review.md",
       "docs/qa/rls-review.md",
