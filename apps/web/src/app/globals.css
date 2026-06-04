@@ -148,6 +148,20 @@ textarea {
   gap: 18px;
 }
 
+.page-heading {
+  flex-wrap: wrap;
+}
+
+.page-heading > :first-child {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.page-heading > .button,
+.page-heading > .button-group {
+  flex: 0 1 auto;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: var(--accent);

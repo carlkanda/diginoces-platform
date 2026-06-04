@@ -772,9 +772,16 @@ describe("Sprint 15 release readiness", () => {
     const effectiveFunctionPrivilegeStates =
       buildEffectiveFunctionPrivilegeStates(readMigrationHistory());
     const requiredHelperSignatures = [
+      "app_private.check_in_settings_permit_method(uuid, uuid, public.check_in_method)",
+      "app_private.user_can_access_check_in_event(uuid, uuid, uuid, text)",
       "app_private.user_can_access_check_in_event_any(uuid, uuid, uuid, text[])",
+      "app_private.user_can_access_file(uuid, uuid, text)",
       "app_private.user_can_access_partner(uuid, uuid, text)",
       "app_private.user_can_access_partner_project(uuid, uuid, text)",
+      "app_private.user_can_manage_guest_assignment(uuid, uuid, uuid, text)",
+      "app_private.user_can_manage_guest_seating(uuid, uuid, uuid)",
+      "app_private.user_can_manage_guest_side(uuid, uuid, public.guest_side)",
+      "app_private.user_can_read_guest_import_session(uuid, uuid, public.guest_side, uuid)",
     ].map(normalizeFunctionSignature);
 
     for (const signature of requiredHelperSignatures) {
@@ -806,6 +813,49 @@ describe("Sprint 15 release readiness", () => {
           "anon",
         ),
       ).toBe(false);
+    }
+  });
+
+  it("keeps guest assignment management RLS non-recursive after check-in policies", () => {
+    const migration = readMigrationBySuffix(
+      "_mvp_ui_qa_rls_route_hardening.sql",
+    );
+    const normalizedMigration = normalizeSqlStatement(migration);
+    const eventAssignmentPolicy =
+      normalizedMigration.match(
+        /create policy "Guest event assignments managed by assignment managers"[\s\S]*?with check \([\s\S]*?\);/,
+      )?.[0] ?? "";
+    const tagAssignmentPolicy =
+      normalizedMigration.match(
+        /create policy "Guest tag assignments managed by tag managers"[\s\S]*?with check \([\s\S]*?\);/,
+      )?.[0] ?? "";
+
+    expect(migration).toContain(
+      "create or replace function app_private.user_can_manage_guest_assignment",
+    );
+    expect(eventAssignmentPolicy).toContain(
+      "app_private.user_can_manage_guest_assignment",
+    );
+    expect(tagAssignmentPolicy).toContain(
+      "app_private.user_can_manage_guest_assignment",
+    );
+    expect(eventAssignmentPolicy).not.toContain("from public.guests");
+    expect(tagAssignmentPolicy).not.toContain("from public.guests");
+  });
+
+  it("keeps bride and groom roles aligned with project detail read access", () => {
+    const migration = readMigrationBySuffix(
+      "_mvp_ui_qa_bride_groom_project_read_grants.sql",
+    );
+
+    for (const role of ["bride", "groom"]) {
+      for (const permission of [
+        "projects.read",
+        "events.read",
+        "workflow_tasks.read",
+      ]) {
+        expect(migration).toContain(`('${role}', '${permission}')`);
+      }
     }
   });
 });
