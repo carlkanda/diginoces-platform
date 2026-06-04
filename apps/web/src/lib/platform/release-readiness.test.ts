@@ -114,6 +114,8 @@ function normalizeSqlStatement(statement: string) {
 function normalizeFunctionSignature(signature: string) {
   return signature
     .toLowerCase()
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
     .replace(/\s*,\s*/g, ", ")
     .replace(/\s+/g, " ")
     .trim();
@@ -443,7 +445,9 @@ function hasAnonGrantStatementForSignature(content: string, signature: string) {
 // required assumption that keeps this structural test valid.
 type EffectiveFunctionPrivilegeState = {
   anonState: boolean;
+  authenticatedState: boolean;
   publicState: boolean;
+  serviceRoleState: boolean;
 };
 
 function buildEffectiveFunctionPrivilegeStates(migrations: MigrationFile[]) {
@@ -462,15 +466,25 @@ function buildEffectiveFunctionPrivilegeStates(migrations: MigrationFile[]) {
       );
       const state = states.get(normalizedSignature) ?? {
         anonState: false,
+        authenticatedState: false,
         publicState: false,
+        serviceRoleState: false,
       };
 
       if (statement.roles.includes("anon")) {
         state.anonState = statement.operation === "grant";
       }
 
+      if (statement.roles.includes("authenticated")) {
+        state.authenticatedState = statement.operation === "grant";
+      }
+
       if (statement.roles.includes("public")) {
         state.publicState = statement.operation === "grant";
+      }
+
+      if (statement.roles.includes("service_role")) {
+        state.serviceRoleState = statement.operation === "grant";
       }
 
       states.set(normalizedSignature, state);
@@ -487,6 +501,32 @@ function hasEffectiveAnonGrantForSignature(
   const state = states.get(normalizeFunctionSignature(signature));
 
   return Boolean(state?.anonState || state?.publicState);
+}
+
+function hasEffectiveFunctionGrantForRole(
+  states: Map<string, EffectiveFunctionPrivilegeState>,
+  signature: string,
+  role: "anon" | "authenticated" | "public" | "service_role",
+) {
+  const state = states.get(normalizeFunctionSignature(signature));
+
+  if (!state) {
+    return false;
+  }
+
+  if (role === "anon") {
+    return state.anonState;
+  }
+
+  if (role === "authenticated") {
+    return state.authenticatedState;
+  }
+
+  if (role === "service_role") {
+    return state.serviceRoleState;
+  }
+
+  return state.publicState;
 }
 
 function parseCanonicalLaunchClassificationCounts() {
@@ -588,6 +628,7 @@ describe("Sprint 15 release readiness", () => {
       "docs/setup/qa-artifact-store.md",
       "docs/setup/security-risk-acceptance-template.md",
       "docs/qa/mvp-manual-qa-scenarios.md",
+      "docs/qa/mvp-ui-qa-setup.md",
       "docs/qa/security-review.md",
       "docs/qa/permissions-review.md",
       "docs/qa/rls-review.md",
@@ -724,6 +765,97 @@ describe("Sprint 15 release readiness", () => {
       expect(revokeSignatureSet.has(normalizedSignature)).toBe(true);
       expect(anonRevokeSignatureSet.has(normalizedSignature)).toBe(true);
       expect(publicTokenGrantSignatureSet.has(normalizedSignature)).toBe(true);
+    }
+  });
+
+  it("keeps RLS helper execute grants explicit for authenticated UI reads", () => {
+    const effectiveFunctionPrivilegeStates =
+      buildEffectiveFunctionPrivilegeStates(readMigrationHistory());
+    const requiredHelperSignatures = [
+      "app_private.check_in_settings_permit_method(uuid, uuid, public.check_in_method)",
+      "app_private.user_can_access_check_in_event(uuid, uuid, uuid, text)",
+      "app_private.user_can_access_check_in_event_any(uuid, uuid, uuid, text[])",
+      "app_private.user_can_access_file(uuid, uuid, text)",
+      "app_private.user_can_access_partner(uuid, uuid, text)",
+      "app_private.user_can_access_partner_project(uuid, uuid, text)",
+      "app_private.user_can_manage_guest_assignment(uuid, uuid, uuid, text)",
+      "app_private.user_can_manage_guest_seating(uuid, uuid, uuid)",
+      "app_private.user_can_manage_guest_side(uuid, uuid, public.guest_side)",
+      "app_private.user_can_read_guest_import_session(uuid, uuid, public.guest_side, uuid)",
+    ].map(normalizeFunctionSignature);
+
+    for (const signature of requiredHelperSignatures) {
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "authenticated",
+        ),
+      ).toBe(true);
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "service_role",
+        ),
+      ).toBe(true);
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "public",
+        ),
+      ).toBe(false);
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "anon",
+        ),
+      ).toBe(false);
+    }
+  });
+
+  it("keeps guest assignment management RLS non-recursive after check-in policies", () => {
+    const migration = readMigrationBySuffix(
+      "_mvp_ui_qa_rls_route_hardening.sql",
+    );
+    const normalizedMigration = normalizeSqlStatement(migration);
+    const eventAssignmentPolicy =
+      normalizedMigration.match(
+        /create policy "Guest event assignments managed by assignment managers"[\s\S]*?with check \([\s\S]*?\);/,
+      )?.[0] ?? "";
+    const tagAssignmentPolicy =
+      normalizedMigration.match(
+        /create policy "Guest tag assignments managed by tag managers"[\s\S]*?with check \([\s\S]*?\);/,
+      )?.[0] ?? "";
+
+    expect(migration).toContain(
+      "create or replace function app_private.user_can_manage_guest_assignment",
+    );
+    expect(eventAssignmentPolicy).toContain(
+      "app_private.user_can_manage_guest_assignment",
+    );
+    expect(tagAssignmentPolicy).toContain(
+      "app_private.user_can_manage_guest_assignment",
+    );
+    expect(eventAssignmentPolicy).not.toContain("from public.guests");
+    expect(tagAssignmentPolicy).not.toContain("from public.guests");
+  });
+
+  it("keeps bride and groom roles aligned with project detail read access", () => {
+    const migration = readMigrationBySuffix(
+      "_mvp_ui_qa_bride_groom_project_read_grants.sql",
+    );
+
+    for (const role of ["bride", "groom"]) {
+      for (const permission of [
+        "projects.read",
+        "events.read",
+        "workflow_tasks.read",
+      ]) {
+        expect(migration).toContain(`('${role}', '${permission}')`);
+      }
     }
   });
 });

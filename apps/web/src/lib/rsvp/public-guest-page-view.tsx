@@ -192,7 +192,7 @@ export function PublicGuestPageView({
     : 0;
 
   return (
-    <div className="public-page">
+    <div className="public-route public-page">
       {isPreview ? (
         <div className="alert">
           Internal preview. This does not count as a guest page access.

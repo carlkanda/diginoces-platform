@@ -148,6 +148,20 @@ textarea {
   gap: 18px;
 }
 
+.page-heading {
+  flex-wrap: wrap;
+}
+
+.page-heading > :first-child {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.page-heading > .button,
+.page-heading > .button-group {
+  flex: 0 1 auto;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: var(--accent);
@@ -678,6 +692,15 @@ textarea {
 .public-page {
   display: grid;
   gap: 18px;
+}
+
+body:has(.public-route) .topbar {
+  display: none;
+}
+
+body:has(.public-route) .main {
+  max-width: min(1120px, calc(100% - 32px));
+  padding: 56px 0;
 }
 
 .public-hero {
