@@ -87,14 +87,14 @@ begin
     end;
   end if;
 
+  actor_user_id := coalesce((select auth.uid()), actor_user_id);
+
   if actor_user_id is null and parent_import_session_id is not null then
     select coalesce(gis.updated_by, gis.applied_by, gis.reviewed_by, gis.uploaded_by, gis.created_by)
     into actor_user_id
     from public.guest_import_sessions gis
     where gis.id = parent_import_session_id;
   end if;
-
-  actor_user_id := coalesce(actor_user_id, (select auth.uid()));
 
   if tg_table_name = 'guest_import_sessions' then
     action_name := case
