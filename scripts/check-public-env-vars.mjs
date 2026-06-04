@@ -168,7 +168,6 @@ export function hasRestrictedPublicName(name) {
     "SERVICE_ROLE_KEY",
     "SECRET",
     "SIGNING_PRIVATE",
-    "SIGNING",
   ];
 
   return forbiddenMarkers.some((marker) => upperName.includes(marker));

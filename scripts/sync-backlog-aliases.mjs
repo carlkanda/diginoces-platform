@@ -19,7 +19,7 @@
  * release-readiness test guards that aliases remain content-compatible.
  */
 import { copyFileSync, existsSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const defaultRepoRoot = fileURLToPath(new URL("../", import.meta.url));
@@ -41,6 +41,7 @@ export function syncBacklogAliases({
   repoRoot = defaultRepoRoot,
 } = {}) {
   const backlogDir = join(repoRoot, "docs", "backlog");
+  const resolvedBacklogDir = resolve(backlogDir);
   let synced = 0;
   let failed = 0;
 
@@ -77,8 +78,30 @@ export function syncBacklogAliases({
     }
 
     const [canonical, alias] = item;
-    const canonicalPath = join(backlogDir, canonical);
-    const aliasPath = join(backlogDir, alias);
+    const resolvedCanonicalPath = resolve(resolvedBacklogDir, canonical);
+    const resolvedAliasPath = resolve(resolvedBacklogDir, alias);
+    const isSafeBacklogFileName = (fileName) =>
+      !fileName.includes("..") &&
+      !fileName.includes("/") &&
+      !fileName.includes("\\");
+    const isInsideBacklogDir = (path) =>
+      path.startsWith(`${resolvedBacklogDir}${sep}`);
+
+    if (
+      !isSafeBacklogFileName(canonical) ||
+      !isSafeBacklogFileName(alias) ||
+      !isInsideBacklogDir(resolvedCanonicalPath) ||
+      !isInsideBacklogDir(resolvedAliasPath)
+    ) {
+      logger.error(
+        `Unsafe backlog alias entry: ${JSON.stringify(item)}. Expected filenames inside ${backlogDir}.`,
+      );
+      failed += 1;
+      continue;
+    }
+
+    const canonicalPath = resolvedCanonicalPath;
+    const aliasPath = resolvedAliasPath;
 
     if (!fileSystem.existsSync(canonicalPath)) {
       logger.error(

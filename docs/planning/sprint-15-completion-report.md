@@ -102,9 +102,9 @@ Added `apps/web/src/lib/platform/release-readiness.test.ts` to cover:
 
 Added `apps/web/src/lib/platform/public-env-check.test.ts` to cover restricted public environment variable names, service-role/private-key/JWT value detection, `.env` discovery, inline-comment handling, and runtime/file violation aggregation.
 
-Added `apps/web/src/lib/platform/backlog-alias-sync.test.ts` to cover canonical backlog alias synchronization, missing source files/directories, empty alias config, malformed alias entries, and copy-failure reporting.
+Added `apps/web/src/lib/platform/backlog-alias-sync.test.ts` to cover canonical backlog alias synchronization, missing source files/directories, empty alias config, malformed alias entries, unsafe path traversal entries, and copy-failure reporting.
 
-Final local test status: 18 test files and 175 tests passing.
+Final local test status: 18 test files and 176 tests passing.
 
 Post-apply database checks are not executable yet from this branch because `20260603113922_sprint_15_release_security_grants.sql` has not been applied to staging or production. After apply, the engineering lead must run the RPC grant verification query in `docs/qa/rls-review.md`, rerun Supabase security/performance advisors with elevated linked-project access, and attach the results to the external release evidence. The pre-apply structural guard lives in `apps/web/src/lib/platform/release-readiness.test.ts` and verifies the migration text and public-token allowlist before database execution.
 
@@ -167,6 +167,8 @@ Hosted CodeRabbit review follow-up:
 - Hosted CodeRabbit completed on June 4, 2026, and requested 8 actionable changes.
 - Follow-up fixes applied: README verification flow includes `npm ci` and `npm run format:check`; backlog alias docs explicitly require committed hyphenated aliases; release-readiness tests include the risk acceptance template and byte-for-byte CSV parity; placeholder detection docs require explicit placeholder signals; launch checklist records opaque evidence IDs instead of direct URLs; controlled-pilot risk template no longer allows unrestricted production; public env checks reject forbidden markers anywhere in public variable names; the secret scanner now preflights `rg`; backlog alias sync handles malformed entries without throwing.
 - Post-fix local verification: `npm.cmd run format`, focused platform tests, `npm.cmd run env:check-public`, `npm.cmd run secrets:scan`, `npm.cmd run backlog:sync-aliases`, `npm.cmd run format:check`, `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run test` (18 files, 175 tests), `npm.cmd audit --omit=dev`, `git diff --check`, `npm.cmd run build`, `npm.cmd run db:lint`, and `npx.cmd supabase@latest db push --linked --dry-run` all passed.
+- Hosted CodeRabbit rerun then requested 3 follow-up changes: separate `npm run dev` from the README non-interactive verification sequence, remove the overbroad `SIGNING` public-env marker, and reject backlog alias path traversal or separator entries.
+- Second follow-up local verification: focused platform tests passed (3 files, 18 tests), `npm.cmd run env:check-public`, `npm.cmd run backlog:sync-aliases`, `npm.cmd run secrets:scan`, `npm.cmd run format:check`, `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run test` (18 files, 176 tests), `npm.cmd audit --omit=dev`, `git diff --check`, `npm.cmd run db:lint`, `npm.cmd run build`, and `npx.cmd supabase@latest db push --linked --dry-run` all passed.
 
 ## Checks Passed Or Failed
 

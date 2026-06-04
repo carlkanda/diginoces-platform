@@ -239,4 +239,30 @@ describe("syncBacklogAliases", () => {
       "Backlog alias sync summary: 1 synced, 2 failed.",
     );
   });
+
+  it("rejects alias entries that escape the backlog directory", async () => {
+    const syncBacklogAliases = await loadSyncBacklogAliases();
+    const logger = createLogger();
+    const copyFileSync = vi.fn();
+
+    const result = syncBacklogAliases({
+      aliases: [
+        ["../traceability_matrix.csv", "traceability-matrix.csv"],
+        ["module_coverage.csv", "nested/module-coverage.csv"],
+      ],
+      fileSystem: {
+        copyFileSync,
+        existsSync: () => true,
+        statSync: () => ({ isDirectory: () => true }),
+      },
+      logger,
+      repoRoot: "repo",
+    });
+
+    expect(result).toEqual({ failed: 2, synced: 0 });
+    expect(copyFileSync).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("Unsafe backlog alias entry"),
+    );
+  });
 });
