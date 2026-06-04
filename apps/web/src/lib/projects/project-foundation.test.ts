@@ -287,4 +287,17 @@ describe("Sprint 2 projects and events foundation", () => {
     expect(migration).toContain("'guest_tags.manage'");
     expect(migration).toContain("public.guest_event_assignments.status");
   });
+
+  it("keeps the project list API aligned with page-level RLS visibility", () => {
+    const route = readRepoFile("apps/web/src/app/api/projects/route.ts");
+    const getHandler = route.slice(
+      route.indexOf("export async function GET()"),
+      route.indexOf("export async function POST"),
+    );
+
+    expect(getHandler).toContain("listProjects(context.supabase)");
+    expect(getHandler).not.toContain(
+      'requireGlobalPermission(context, "projects.read")',
+    );
+  });
 });
