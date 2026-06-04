@@ -500,9 +500,17 @@ describe("Sprint 4 guest import foundation", () => {
       "elsif tg_table_name = 'guest_import_rows' then",
     );
     const firstApprovalStatusIndex = migration.indexOf("new.approval_status");
+    const actorFallbackIndex = migration.indexOf(
+      "actor_user_id := coalesce(actor_user_id, (select auth.uid()))",
+    );
+    const parentSessionLookupIndex = migration.indexOf(
+      "from public.guest_import_sessions gis",
+    );
 
     expect(sessionBranchIndex).toBeGreaterThanOrEqual(0);
     expect(rowBranchIndex).toBeGreaterThan(sessionBranchIndex);
     expect(firstApprovalStatusIndex).toBeGreaterThan(rowBranchIndex);
+    expect(parentSessionLookupIndex).toBeGreaterThan(rowBranchIndex);
+    expect(actorFallbackIndex).toBeGreaterThan(parentSessionLookupIndex);
   });
 });

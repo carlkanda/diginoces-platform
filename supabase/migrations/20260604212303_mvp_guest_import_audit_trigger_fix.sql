@@ -13,8 +13,10 @@ set search_path = public, pg_temp
 as $$
 declare
   action_name text;
+  actor_user_id uuid;
   changed_object_id uuid;
   changed_object_type text;
+  parent_import_session_id uuid;
   sanitized_new jsonb;
   sanitized_old jsonb;
 begin
@@ -28,6 +30,71 @@ begin
     when 'DELETE' then old.id
     else new.id
   end;
+
+  if tg_table_name = 'guest_import_sessions' then
+    actor_user_id := coalesce(
+      case
+        when tg_op in ('INSERT', 'UPDATE') then
+          coalesce(
+            (to_jsonb(new)->>'updated_by')::uuid,
+            (to_jsonb(new)->>'applied_by')::uuid,
+            (to_jsonb(new)->>'reviewed_by')::uuid,
+            (to_jsonb(new)->>'uploaded_by')::uuid,
+            (to_jsonb(new)->>'created_by')::uuid
+          )
+        else null
+      end,
+      case
+        when tg_op in ('UPDATE', 'DELETE') then
+          coalesce(
+            (to_jsonb(old)->>'updated_by')::uuid,
+            (to_jsonb(old)->>'applied_by')::uuid,
+            (to_jsonb(old)->>'reviewed_by')::uuid,
+            (to_jsonb(old)->>'uploaded_by')::uuid,
+            (to_jsonb(old)->>'created_by')::uuid
+          )
+        else null
+      end
+    );
+  elsif tg_table_name = 'guest_import_mappings' then
+    parent_import_session_id := case
+      when tg_op = 'DELETE' then old.import_session_id
+      else new.import_session_id
+    end;
+
+    actor_user_id := coalesce(
+      case
+        when tg_op in ('INSERT', 'UPDATE') then
+          coalesce(
+            (to_jsonb(new)->>'updated_by')::uuid,
+            (to_jsonb(new)->>'created_by')::uuid
+          )
+        else null
+      end,
+      case
+        when tg_op in ('UPDATE', 'DELETE') then
+          coalesce(
+            (to_jsonb(old)->>'updated_by')::uuid,
+            (to_jsonb(old)->>'created_by')::uuid
+          )
+        else null
+      end
+    );
+  elsif tg_table_name = 'guest_import_rows' then
+    parent_import_session_id := case
+      when tg_op = 'DELETE' then old.import_session_id
+      else new.import_session_id
+    end;
+  end if;
+
+  if actor_user_id is null and parent_import_session_id is not null then
+    select coalesce(gis.updated_by, gis.applied_by, gis.reviewed_by, gis.uploaded_by, gis.created_by)
+    into actor_user_id
+    from public.guest_import_sessions gis
+    where gis.id = parent_import_session_id;
+  end if;
+
+  actor_user_id := coalesce(actor_user_id, (select auth.uid()));
 
   if tg_table_name = 'guest_import_sessions' then
     action_name := case
@@ -71,7 +138,7 @@ begin
     source
   )
   values (
-    (select auth.uid()),
+    actor_user_id,
     action_name,
     changed_object_type,
     changed_object_id,
