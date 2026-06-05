@@ -530,7 +530,12 @@ describe("Sprint 6 invitation template and PDF generation foundation", () => {
     expect(templateBranch).toContain("invitation_templates.created");
     expect(templateBranch).toContain("new.status = 'preview_generated'");
     expect(templateBranch).not.toContain("new.status = 'needs_regeneration'");
-    expect(invitationsBranch).toContain("new.status = 'needs_regeneration'");
+    expect(invitationsBranch).toContain(
+      "old.status is distinct from new.status and new.status = 'needs_regeneration'",
+    );
+    expect(invitationsBranch).toContain(
+      "old.status is distinct from new.status and new.status = 'generated'",
+    );
     expect(invitationsBranch).toContain("invitations.regeneration_required");
     expect(migration).toContain(
       "return case when tg_op = 'DELETE' then old else new end;",

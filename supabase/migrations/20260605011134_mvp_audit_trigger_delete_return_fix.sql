@@ -202,9 +202,9 @@ begin
 
     if tg_op = 'INSERT' then
       action_name := 'invitations.created';
-    elsif tg_op = 'UPDATE' and new.status = 'needs_regeneration' then
+    elsif tg_op = 'UPDATE' and old.status is distinct from new.status and new.status = 'needs_regeneration' then
       action_name := 'invitations.regeneration_required';
-    elsif tg_op = 'UPDATE' and new.status = 'generated' then
+    elsif tg_op = 'UPDATE' and old.status is distinct from new.status and new.status = 'generated' then
       action_name := 'invitations.generated';
     else
       action_name := lower(tg_table_name || '.' || tg_op);

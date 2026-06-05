@@ -20,6 +20,9 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 4. Invitation template registration failed because `app_private.audit_invitation_change()` compared invitation-only status values while auditing `invitation_templates`.
    - Fixed in `20260605004902_mvp_invitation_audit_trigger_fix.sql`.
 
+5. Invitation audit lifecycle actions could be emitted on ordinary invitation updates when the status value was unchanged.
+   - Fixed in `20260605015457_mvp_invitation_status_transition_audit_fix.sql`.
+
 ## Files Changed
 
 - `apps/web/src/lib/contracts/contract-foundation.test.ts`
@@ -33,6 +36,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `supabase/migrations/20260605011134_mvp_audit_trigger_delete_return_fix.sql`
 - `supabase/migrations/20260605012009_mvp_guest_wishes_delete_object_id_fix.sql`
 - `supabase/migrations/20260605013031_mvp_guest_wishes_delete_branch_fix.sql`
+- `supabase/migrations/20260605015457_mvp_invitation_status_transition_audit_fix.sql`
 
 ## Tests Added
 
@@ -40,12 +44,13 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify payment-exception audit triggers do not compare contract-only status values.
 - Verify public guest-message inserts do not reference review-only fields.
 - Verify invitation-template audit inserts do not compare invitation-only status values.
+- Verify invitation status audit actions require a real status transition.
 - Verify guest-wishes and invitation audit triggers use the correct `DELETE` return pattern.
 - Verify guest-wishes audit `DELETE` object ids use `old.id`.
 
 ## Linked Dev Verification
 
-- Applied all seven migrations to the linked dev Supabase project.
+- Applied all eight migrations to the linked dev Supabase project.
 - Public guest token creation succeeded after the RSVP/public-page audit fix.
 - Payment-gate exception override succeeded after the commercial audit fix.
 - Public guest message submission succeeded through the guest-facing UI after the guest-wishes audit fix.
@@ -63,12 +68,15 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npm run build` - passed.
 - `npm audit --omit=dev` - passed, 0 vulnerabilities.
 - `npm run db:lint` - passed, no schema errors.
+- `npx supabase@latest db push --linked --yes` - passed, applied `20260605015457_mvp_invitation_status_transition_audit_fix.sql`.
 - `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after applying migrations.
 - `git diff --check` - passed with an informational CRLF warning for one touched test file.
 - Targeted secret scan - passed; no service-role keys, database URLs, WhatsApp tokens, Google secrets, private keys, auth refresh/access tokens, or QA public token values found in changed files.
 - `coderabbit review --agent -t committed -c AGENTS.md` - initially reported two minor `DELETE` return issues and one trivial report-wording issue; all were addressed.
 - `coderabbit review --agent -t uncommitted -c AGENTS.md` - reported guest-wishes `DELETE` object-id and DELETE old-row handling issues; addressed with follow-up migration hardening.
 - `coderabbit review --agent -t uncommitted -c AGENTS.md` - final rerun passed with 0 issues.
+- Hosted CodeRabbit review reported missing invitation status-transition guards; addressed with `20260605015457_mvp_invitation_status_transition_audit_fix.sql`.
+- `coderabbit review --agent -t uncommitted -c AGENTS.md` - final rerun after the hosted review fix passed with 0 issues.
 
 ## Security Review
 

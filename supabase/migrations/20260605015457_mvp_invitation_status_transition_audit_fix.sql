@@ -1,5 +1,6 @@
--- MVP QA hardening: keep the Sprint 6 invitation audit trigger from comparing
--- status enum values that belong to sibling invitation tables.
+-- MVP QA hardening follow-up: keep invitation audit actions tied to actual
+-- status transitions so ordinary invitation updates do not emit lifecycle
+-- actions for unchanged statuses.
 
 create or replace function app_private.audit_invitation_change()
 returns trigger
