@@ -10,7 +10,7 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 
 | Item | Result |
 | --- | --- |
-| Date | 2026-06-04 |
+| Date | 2026-06-05 |
 | App target | Local Next.js dev server at `http://localhost:3000` |
 | Browser target | Chrome CDP session at `127.0.0.1:9222` |
 | Supabase target | Linked dev project |
@@ -49,6 +49,16 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 | Invalid public token | `/g/invalid-token-mvp-negative-qa` and `resolve_guest_public_page` with an invalid token returned no protected project/guest data. |
 | RLS grant verification | Updated `docs/qa/rls-review.md` query returned zero non-allowlisted `PUBLIC`/`anon` execute grants on linked dev. |
 
+## 2026-06-05 Follow-Up Browser QA
+
+| Area | Evidence |
+| --- | --- |
+| Public responsive matrix | Chrome rendered `/`, `/login?next=%2Fplatform%2Faudit-logs`, `/login` with the magic-link rate-limit message, and `/g/invalid-token-for-ui-qa` at mobile, tablet, and desktop viewports with no horizontal overflow, no offscreen controls, and no visible token leakage. |
+| Auth callback regression | Chrome opened `/auth/callback?next=%2Fplatform%2Faudit-logs#access_token=<fake>&refresh_token=<fake>` and redirected to `/login` with the retryable expired-link message, preserved `next=/platform/audit-logs`, and no fake token visible in page text or final URL after sanitization. |
+| Configured production smoke | A temporary `next start` server launched through `scripts/run-web-script-with-root-env.mjs` on port `3002`; `/`, `/login`, `/g/invalid-token-for-ui-qa`, and the implicit callback failure path rendered with no browser console exceptions, no overflow, and no visible token leakage. |
+| Development-mode note | The invalid public guest page on the local dev server produced a Next/React development instrumentation exception: `Failed to execute 'measure' on 'Performance': 'PublicGuestPage' cannot have a negative time stamp.` The configured production smoke did not reproduce it, so this is currently classified as a dev-mode canary/tooling issue, not an application runtime blocker. |
+| PR checks | PR `#48` CodeRabbit and Verify checks passed after auth callback hardening. |
+
 ## Current Fixture Coverage
 
 | Data area | Current linked-dev state |
@@ -70,6 +80,7 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 The MVP is not yet fully proven for production. The following gates still need evidence:
 
 - MFA/AAL2 admin or operations login for sensitive global workflows.
+- Fresh authenticated `diginoces@gmail.com` local session after Supabase magic-link rate limiting clears, so protected browser QA can continue.
 - Admin/operations review/apply of the guest import session.
 - Contract/payment gate configuration and approval flow.
 - Valid public guest token resolution, multi-event RSVP submit/change rules, and token isolation with a real generated fake token.
