@@ -8,15 +8,15 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 
 ## Environment
 
-| Item                   | Result                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------- |
-| Date                   | 2026-06-05                                                                                        |
-| App target             | Local Next.js dev server at `http://localhost:3000`                                               |
-| Browser target         | Chrome CDP session at `127.0.0.1:9222`                                                            |
-| Supabase target        | Linked dev project                                                                                |
-| Current signed-in user | `diginoces@gmail.com`                                                                             |
-| Current role evidence  | Project-scoped `bride`; event-scoped `event_staff`; global `operations_manager` requires MFA/AAL2 |
-| Sensitive-role state   | AAL1 session cannot prove admin/operations readiness                                              |
+| Item                   | Result                                                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Date                   | 2026-06-05; continued 2026-06-06                                                                                  |
+| App target             | Local Next.js dev server at `http://localhost:3000`                                                               |
+| Browser target         | Chrome CDP session at `127.0.0.1:9222`                                                                            |
+| Supabase target        | Linked dev project                                                                                                |
+| Current signed-in user | No active authenticated Chrome session on 2026-06-06; prior linked-dev evidence used `diginoces@gmail.com`        |
+| Current role evidence  | Prior evidence: project-scoped `bride`; event-scoped `event_staff`; global `operations_manager` requires MFA/AAL2 |
+| Sensitive-role state   | Current browser is unauthenticated; protected UI QA needs fresh sign-in and AAL2 evidence                         |
 
 ## Fake QA Fixture IDs
 
@@ -65,6 +65,17 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 | Supabase performance advisors         | `npx supabase@latest db advisors --linked --type performance --level info --fail-on none --output-format json` returned 246 `unindexed_foreign_keys` info items, 38 `multiple_permissive_policies` warnings, and 29 `unused_index` info items. These are performance-hardening backlog candidates, not current UI launch blockers.                                                                                                                                                                                                |
 | Development-mode note                 | The invalid public guest page on the local dev server produced a Next/React development instrumentation exception: `Failed to execute 'measure' on 'Performance': 'PublicGuestPage' cannot have a negative time stamp.` The configured production smoke did not reproduce it, so this is currently classified as a dev-mode canary/tooling issue, not an application runtime blocker.                                                                                                                                             |
 | PR checks                             | PR `#48` CodeRabbit and Verify checks passed after auth callback hardening.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+
+## 2026-06-06 Continuation QA
+
+| Area                                 | Evidence                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PR and branch state                  | PR `#48` remained open, ready for review, mergeable, and green with CodeRabbit and Verify passing. Local branch `codex/mvp-public-token-audit-hardening` was clean and aligned with origin.                                                                                                                                                 |
+| Browser automation path              | The official in-app Browser bridge was retried and still failed during setup with the known Windows sandbox failure. Chrome DevTools Protocol at `127.0.0.1:9222` remained available and was used for the browser QA fallback.                                                                                                              |
+| Authenticated session check          | Chrome navigation to `/platform` ended at `/login?next=%2Fplatform`, confirming there was no current authenticated browser session. Protected MVP UI testing remains paused until a fresh magic-link sign-in is completed.                                                                                                                  |
+| Public current-code matrix           | Chrome checked `/`, `/login?next=%2Fplatform`, fake `token=` auth-callback failure, `/g/invalid-token-for-ui-qa`, and protected `/platform` redirect at mobile `390x844` and desktop `1440x900`. Public pages had one `h1`, no horizontal overflow, no offscreen controls, no visible token leakage, and no visible application error text. |
+| Auth callback token-alias regression | The fake `token=` callback redirected to `/login` with the expected expired-link message and preserved `next=/platform/audit-logs`, without exposing the fake token in visible text or the final URL.                                                                                                                                       |
+| Protected redirect production smoke  | A temporary configured production server on port `3002` redirected `/platform` to `/login?next=%2Fplatform` in Chrome with no console errors, no horizontal overflow, and no visible error text. The temporary server was stopped after the check.                                                                                          |
 
 ## Current Fixture Coverage
 
