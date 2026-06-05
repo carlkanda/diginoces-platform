@@ -26,6 +26,16 @@ export type MagicLinkResult =
       status: "failed";
     };
 
+export type ImplicitCallbackPayload = {
+  accessToken: string;
+  nextPath: string;
+  refreshToken: string;
+};
+
+const invalidOrExpiredMagicLinkMessage =
+  "Authentication link is invalid or expired. Request a fresh magic link.";
+const maxImplicitCallbackTokenLength = 8192;
+
 export async function getAuthContext(): Promise<AuthContext> {
   const env = getPublicEnvironment();
 
@@ -165,6 +175,100 @@ export function buildLoginErrorRedirectPath(nextPath: string, error: string) {
   }).toString()}`;
 }
 
+export function getInvalidOrExpiredMagicLinkMessage() {
+  return invalidOrExpiredMagicLinkMessage;
+}
+
+export function buildImplicitAuthCallbackPage(nextPath: string) {
+  const normalizedNext = normalizeInternalPath(nextPath);
+  const loginErrorPath = buildLoginErrorRedirectPath(
+    normalizedNext,
+    invalidOrExpiredMagicLinkMessage,
+  );
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Diginoces authentication</title>
+  </head>
+  <body>
+    <p>Completing sign-in...</p>
+    <script>
+      (function completeImplicitAuthCallback() {
+        var nextPath = ${JSON.stringify(normalizedNext)};
+        var loginErrorPath = ${JSON.stringify(loginErrorPath)};
+        var hash = window.location.hash || "";
+
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+
+        var params = new URLSearchParams(hash.slice(1));
+        var accessToken = params.get("access_token");
+        var refreshToken = params.get("refresh_token");
+
+        if (!accessToken || !refreshToken) {
+          window.location.replace(loginErrorPath);
+          return;
+        }
+
+        fetch("/auth/callback/implicit", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            accessToken: accessToken,
+            next: nextPath,
+            refreshToken: refreshToken
+          })
+        })
+          .then(function (response) {
+            return response.json().catch(function () {
+              return {};
+            }).then(function (payload) {
+              if (response.ok && typeof payload.next === "string") {
+                window.location.replace(payload.next);
+                return;
+              }
+
+              window.location.replace(loginErrorPath);
+            });
+          })
+          .catch(function () {
+            window.location.replace(loginErrorPath);
+          });
+      })();
+    </script>
+  </body>
+</html>`;
+}
+
+export function parseImplicitAuthCallbackPayload(
+  payload: unknown,
+): ImplicitCallbackPayload {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Authentication callback payload is invalid.");
+  }
+
+  const candidate = payload as Record<string, unknown>;
+  const accessToken = getBoundedCallbackToken(candidate.accessToken);
+  const refreshToken = getBoundedCallbackToken(candidate.refreshToken);
+
+  if (!accessToken || !refreshToken) {
+    throw new Error("Authentication callback payload is missing tokens.");
+  }
+
+  return {
+    accessToken,
+    nextPath: normalizeInternalPath(
+      typeof candidate.next === "string" ? candidate.next : "/platform",
+    ),
+    refreshToken,
+  };
+}
+
 export function getMagicLinkRequestErrorMessage(
   error: Pick<AuthError, "code" | "status">,
 ) {
@@ -173,4 +277,18 @@ export function getMagicLinkRequestErrorMessage(
   }
 
   return "Unable to request a magic link.";
+}
+
+function getBoundedCallbackToken(value: unknown) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed || trimmed.length > maxImplicitCallbackTokenLength) {
+    return null;
+  }
+
+  return trimmed;
 }

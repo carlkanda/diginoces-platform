@@ -2,9 +2,9 @@
 
 ## Summary
 
-This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior after expired magic links and Supabase email rate limits blocked protected-route inspection.
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior, Supabase email rate-limit messaging, and implicit magic-link callback compatibility after auth issues blocked protected-route inspection.
 
-No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, and regression tests for already-implemented MVP flows.
+No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, implicit callback compatibility, and regression tests for already-implemented MVP flows.
 
 ## Findings And Fixes
 
@@ -29,11 +29,16 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 7. Supabase Auth email rate limiting returned a generic "Unable to request a magic link" error during MVP QA.
    - Fixed by mapping `over_email_send_rate_limit` and HTTP `429` auth errors to a clear retry-delay message.
 
+8. Supabase default implicit-flow magic links can redirect to `/auth/callback#access_token=...`, but URL fragments are unavailable to server route handlers.
+   - Fixed by adding a no-store implicit callback bridge that clears the fragment from browser history, posts tokens to a same-origin server route, validates the session with Supabase, and sets SSR cookies.
+
 ## Files Changed
 
+- `apps/web/src/app/auth/callback/implicit/route.ts`
 - `apps/web/src/app/auth/callback/route.ts`
 - `apps/web/src/lib/auth/auth-service.ts`
 - `apps/web/src/lib/auth/auth-service.test.ts`
+- `docs/setup/local-development.md`
 - `apps/web/src/lib/contracts/contract-foundation.test.ts`
 - `apps/web/src/lib/guest-wishes/guest-wishes-foundation.test.ts`
 - `apps/web/src/lib/invitations/invitation-foundation.test.ts`
@@ -58,6 +63,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify guest-wishes audit `DELETE` object ids use `old.id`.
 - Verify login error redirects preserve safe protected `next` paths without broadening query parameters.
 - Verify magic-link rate-limit messages cover both Supabase `over_email_send_rate_limit` codes and HTTP `429` statuses independently.
+- Verify the implicit magic-link callback bridge preserves safe internal next paths, strips unsafe next paths, avoids embedding token values, and rejects malformed callback payloads.
 
 ## Linked Dev Verification
 
@@ -69,6 +75,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Guided manual WhatsApp flow was verified through template creation, message preparation, opened status, and sent status.
 - Auth callback failure was verified locally to redirect to `/login`, preserve `next=/platform/audit-logs`, and show a retryable expired-link message without exposing tokens.
 - Supabase Auth magic-link request failure was verified as status `429`, code `over_email_send_rate_limit`; the login UI now surfaces a retry-delay message.
+- Supabase SSR magic-link guidance was refreshed against the current [Supabase passwordless email login docs](https://supabase.com/docs/guides/auth/auth-email-passwordless); local setup now documents the preferred `token_hash` email-template link and the app's implicit-flow compatibility bridge.
 
 ## UI And API QA Evidence
 
@@ -87,7 +94,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npm run format` - passed.
 - `npm run lint` - passed.
 - `npm run typecheck` - passed.
-- `npm run test` - passed, 18 files and 188 tests.
+- `npm run test` - passed, 18 files and 196 tests.
 - `npm run build` - passed.
 - `npm audit --omit=dev` - passed, 0 vulnerabilities.
 - `npm run db:lint` - passed, no schema errors.
@@ -100,15 +107,24 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `coderabbit review --agent -t uncommitted -c AGENTS.md` - final rerun passed with 0 issues.
 - Hosted CodeRabbit review reported missing invitation status-transition guards; addressed with `20260605015457_mvp_invitation_status_transition_audit_fix.sql`.
 - `coderabbit review --agent -t uncommitted -c AGENTS.md` - final rerun after the hosted review fix passed with 0 issues.
-- `npm --workspace @diginoces/web run test -- src/lib/auth/auth-service.test.ts` - passed, 8 auth helper tests after CodeRabbit follow-up coverage.
+- `npm --workspace @diginoces/web run test -- src/lib/auth/auth-service.test.ts` - passed, 12 auth helper tests after implicit-callback bridge coverage.
 - `npm --workspace @diginoces/web run lint -- src/app/auth/callback/route.ts src/lib/auth/auth-service.ts src/lib/auth/auth-service.test.ts` - passed.
 - `npm --workspace @diginoces/web run typecheck` - passed.
+- `npm run format:check` - passed after implicit-callback bridge changes.
+- `npm run lint` - passed after implicit-callback bridge changes.
+- `npm run typecheck` - passed after implicit-callback bridge changes.
+- `npm run test` - passed, 18 files and 196 tests after implicit-callback bridge changes.
+- `npm run build` - passed after implicit-callback bridge changes.
 - `npm run env:check-public` - passed.
 - `npm run secrets:scan` - passed.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after implicit-callback bridge changes.
 - `npm run db:lint` - passed, no schema errors.
 - `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date.
 - `npm audit --omit=dev` - passed, 0 vulnerabilities.
 - `npm run build` - passed after the auth hardening changes.
+- `curl.exe http://localhost:3000/auth/callback?next=%2Fplatform%2Faudit-logs` - passed; returned the implicit bridge with `200`, `private, no-store`, CSP, `Referrer-Policy: no-referrer`, and no token values.
+- `Invoke-WebRequest http://localhost:3000/auth/callback/implicit` with `text/plain` POST - passed; returned `415` JSON and `private, no-store`.
+- `git diff --check` - passed with informational CRLF warnings on touched files only.
 - `gh pr checks 48` - passed; Verify and CodeRabbit status checks completed successfully.
 - Local Chrome/CDP public UI checks and unauthenticated UI/API sweeps - passed as summarized above.
 
@@ -117,6 +133,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - No real secrets were added.
 - No `.env` or `.env.local` files were changed.
 - Auth callback checks sanitize and preserve only internal `next` paths.
+- Implicit magic-link fallback clears URL fragments before posting tokens and validates the session with Supabase server-side before returning the protected redirect target.
 - Supabase access, refresh, callback, and public guest tokens were not printed or committed.
 - Audit snapshots remain redacted where existing redaction helpers already removed storage paths, filenames, checksums, error messages, and internal moderation/review notes.
 - Fixes preserve the same audit action names while moving table-specific field and enum handling into table-specific branches.
@@ -126,10 +143,10 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - The linked Supabase project is the dev QA project.
 - The existing audit trigger tables and grants remain correct; this pass only fixes trigger runtime safety.
 - The invitation upload UI should now pass the database step; the authenticated Chrome session dropped before the full upload UI could be rerun, so the final verification used a rollback insert against the linked DB.
-- Protected UI role-by-role inspection still depends on a fresh `diginoces@gmail.com` magic-link login after Supabase email rate limiting clears.
+- Protected UI role-by-role inspection still depends on a fresh `diginoces@gmail.com` magic-link login after Supabase email rate limiting clears or after the configured Supabase email template emits the documented token-hash callback URL.
 
 ## Remaining Notes
 
 - Invitation-message sending still correctly requires generated invitations and an active invitation file before preparation.
 - Audit-log UI access still requires a global `diginoces_admin` role; the QA account currently has operations-manager coverage.
-- Supabase email sending temporarily rate-limited the QA account during local inspection; the app now displays the retry guidance, but full authenticated browser QA should continue after a fresh magic link succeeds.
+- Supabase email sending temporarily rate-limited the QA account during local inspection; the app now displays retry guidance and can bridge older implicit-flow magic links, but full authenticated browser QA should continue after a fresh magic link succeeds.

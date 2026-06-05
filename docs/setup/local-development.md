@@ -36,6 +36,18 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
 
 The web app intentionally uses the Supabase publishable key. Do not expose a service-role key through any `NEXT_PUBLIC_` variable.
 
+## Supabase Auth Magic Links
+
+For SSR cookie-based auth, configure Supabase Auth email templates to send token-hash links to the app callback route. In the Supabase Dashboard, update the Magic Link template to use this link shape:
+
+```text
+{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email
+```
+
+Keep `NEXT_PUBLIC_APP_URL` and the Supabase Auth Site URL aligned with the local app origin, usually `http://localhost:3000`. Add the same origin to Supabase Auth redirect URLs.
+
+The app also includes a local compatibility bridge for older implicit-flow magic links that redirect to `/auth/callback#access_token=...`. The bridge clears the URL fragment from browser history, posts the tokens to a same-origin callback endpoint, validates the session with Supabase, and sets SSR cookies. Prefer the token-hash email-template configuration for production readiness.
+
 ## Web App
 
 Start the app from the repository root:

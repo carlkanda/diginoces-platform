@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildImplicitAuthCallbackPage,
   buildLoginErrorRedirectPath,
   buildLoginRedirectPath,
   getMagicLinkRequestErrorMessage,
+  parseImplicitAuthCallbackPayload,
   normalizeInternalPath,
 } from "@/lib/auth/auth-service";
 
@@ -132,5 +134,61 @@ describe("auth redirect helpers", () => {
     ).toBe(
       "Too many magic links requested. Wait a few minutes, then request a fresh link.",
     );
+  });
+
+  it("builds an implicit callback bridge without embedding auth tokens", () => {
+    const html = buildImplicitAuthCallbackPage(
+      "/platform/audit-logs?actor=diginoces",
+    );
+
+    expect(html).toContain("Completing sign-in");
+    expect(html).toContain('"/platform/audit-logs?actor=diginoces"');
+    expect(html).toContain("window.history.replaceState");
+    expect(html).toContain('params.get("access_token")');
+    expect(html).toContain('params.get("refresh_token")');
+    expect(html).toContain('fetch("/auth/callback/implicit"');
+    expect(html).not.toContain("example-access-token");
+    expect(html).not.toContain("example-refresh-token");
+  });
+
+  it("defaults unsafe implicit callback next paths", () => {
+    const html = buildImplicitAuthCallbackPage(
+      "https://attacker.test/platform",
+    );
+
+    expect(html).toContain('"/platform"');
+    expect(html).not.toContain("attacker.test");
+  });
+
+  it("parses implicit callback payloads with safe internal next paths", () => {
+    expect(
+      parseImplicitAuthCallbackPayload({
+        accessToken: " access-token ",
+        next: "/platform/projects?tab=active",
+        refreshToken: " refresh-token ",
+      }),
+    ).toEqual({
+      accessToken: "access-token",
+      nextPath: "/platform/projects?tab=active",
+      refreshToken: "refresh-token",
+    });
+  });
+
+  it("rejects malformed implicit callback payloads", () => {
+    expect(() => parseImplicitAuthCallbackPayload(null)).toThrow(
+      "Authentication callback payload is invalid.",
+    );
+    expect(() =>
+      parseImplicitAuthCallbackPayload({
+        accessToken: "",
+        refreshToken: "refresh-token",
+      }),
+    ).toThrow("Authentication callback payload is missing tokens.");
+    expect(() =>
+      parseImplicitAuthCallbackPayload({
+        accessToken: "access-token",
+        refreshToken: "x".repeat(8193),
+      }),
+    ).toThrow("Authentication callback payload is missing tokens.");
   });
 });

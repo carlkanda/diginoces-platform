@@ -1,7 +1,9 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import {
+  buildImplicitAuthCallbackPage,
   buildLoginErrorRedirectPath,
+  getInvalidOrExpiredMagicLinkMessage,
   normalizeInternalPath,
 } from "@/lib/auth/auth-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -46,12 +48,22 @@ export async function GET(request: Request) {
     }
   }
 
+  if (!tokenHash && !type && !code) {
+    return new NextResponse(buildImplicitAuthCallbackPage(next), {
+      headers: {
+        "Cache-Control": "private, no-store",
+        "Content-Security-Policy":
+          "default-src 'none'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "Content-Type": "text/html; charset=utf-8",
+        "Referrer-Policy": "no-referrer",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  }
+
   return NextResponse.redirect(
     new URL(
-      buildLoginErrorRedirectPath(
-        next,
-        "Authentication link is invalid or expired. Request a fresh magic link.",
-      ),
+      buildLoginErrorRedirectPath(next, getInvalidOrExpiredMagicLinkMessage()),
       requestUrl,
     ),
   );
