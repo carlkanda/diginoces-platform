@@ -175,6 +175,52 @@ export function buildLoginErrorRedirectPath(nextPath: string, error: string) {
   }).toString()}`;
 }
 
+export function getAuthCallbackTokenHash(searchParams: URLSearchParams) {
+  return searchParams.get("token_hash") ?? searchParams.get("token");
+}
+
+export function getAuthCallbackNextPath(
+  searchParams: URLSearchParams,
+  allowedOrigins: string[],
+) {
+  const nextPath = searchParams.get("next");
+
+  if (nextPath) {
+    return normalizeInternalPath(nextPath);
+  }
+
+  const redirectTo = searchParams.get("redirect_to");
+
+  if (!redirectTo) {
+    return "/platform";
+  }
+
+  try {
+    const redirectUrl = new URL(redirectTo);
+    const allowed = new Set(allowedOrigins.filter(Boolean));
+
+    if (!allowed.has(redirectUrl.origin)) {
+      return "/platform";
+    }
+
+    const nestedNext = redirectUrl.searchParams.get("next");
+
+    if (nestedNext) {
+      return normalizeInternalPath(nestedNext);
+    }
+
+    if (redirectUrl.pathname === "/auth/callback") {
+      return "/platform";
+    }
+
+    return normalizeInternalPath(
+      `${redirectUrl.pathname}${redirectUrl.search}`,
+    );
+  } catch {
+    return "/platform";
+  }
+}
+
 export function getInvalidOrExpiredMagicLinkMessage() {
   return invalidOrExpiredMagicLinkMessage;
 }

@@ -13,15 +13,15 @@ Sprint 15 reviewed repository security posture for secrets, environment variable
 
 ## Environment And Secrets
 
-| Check | Result |
-| --- | --- |
-| `.env` and `.env.local` ignored | Pass; `.gitignore` covers environment files |
-| `.env.example` uses placeholders | Pass; no real keys are required in the repository |
-| Supabase service-role key committed | Not found in targeted scan |
-| Database passwords committed | Not found in targeted scan |
-| WhatsApp tokens committed | Not found in targeted scan |
-| Google/API secrets committed | Not found in targeted scan |
-| Private client/guest data committed | Not found in targeted scan |
+| Check                               | Result                                            |
+| ----------------------------------- | ------------------------------------------------- |
+| `.env` and `.env.local` ignored     | Pass; `.gitignore` covers environment files       |
+| `.env.example` uses placeholders    | Pass; no real keys are required in the repository |
+| Supabase service-role key committed | Not found in targeted scan                        |
+| Database passwords committed        | Not found in targeted scan                        |
+| WhatsApp tokens committed           | Not found in targeted scan                        |
+| Google/API secrets committed        | Not found in targeted scan                        |
+| Private client/guest data committed | Not found in targeted scan                        |
 
 Scan details: the targeted secret scan was executed from the repository root on the Sprint 15 branch during verification. The maintained command is:
 
@@ -69,10 +69,21 @@ Token-scoped public guest RPCs remain explicitly granted to `anon`:
 - `public.submit_public_guest_message(text, text, text, uuid)`
 - `public.submit_public_rsvp(text, uuid, public.rsvp_status, text)`
 
+## Advisor Refresh
+
+On June 5, 2026, the linked-dev Supabase advisor refresh returned:
+
+- Security: 34 `authenticated_security_definer_function_executable` warnings, 3 `anon_security_definer_function_executable` warnings, and 1 `auth_leaked_password_protection` warning.
+- Performance: 246 `unindexed_foreign_keys` info items, 38 `multiple_permissive_policies` warnings, and 29 `unused_index` info items.
+
+The security-definer warnings align with the documented permission-gated authenticated RPCs and the token-scoped public guest RPC allow-list above. The leaked-password protection warning remains an external Supabase Auth configuration decision before production; it is lower impact while the app exposes magic-link sign-in only, but it should be enabled or formally accepted before any password-based auth surface is exposed.
+
+The performance advisor items are launch-risk inputs for staging load testing and post-MVP database tuning, not current app security blockers.
+
 ## Seed And Demo Data
 
 No real wedding, couple, client, guest, payment, WhatsApp, or Google data should be committed. Demo data must remain fake and clearly marked if added in a future sprint.
 
 ## Security Recommendation
 
-Controlled staging QA can proceed after the Sprint 15 migration is applied. Production go-live is conditional on MFA handling for sensitive roles, successful staging QA, green CI, clean dependency audit, and no unresolved launch blockers.
+Controlled staging QA can proceed after the Sprint 15 migration is applied. Production go-live is conditional on MFA handling for sensitive roles, successful staging QA, green CI, clean dependency audit, Supabase Auth leaked-password protection sign-off, and no unresolved launch blockers.

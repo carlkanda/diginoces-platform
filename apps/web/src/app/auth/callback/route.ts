@@ -2,9 +2,10 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import {
   buildImplicitAuthCallbackPage,
+  getAuthCallbackNextPath,
+  getAuthCallbackTokenHash,
   buildLoginErrorRedirectPath,
   getInvalidOrExpiredMagicLinkMessage,
-  normalizeInternalPath,
 } from "@/lib/auth/auth-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getPublicEnvironment } from "@/lib/env/public-env";
@@ -13,13 +14,14 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
-  const next = normalizeInternalPath(
-    requestUrl.searchParams.get("next") ?? "/platform",
-  );
-  const tokenHash = requestUrl.searchParams.get("token_hash");
+  const env = getPublicEnvironment();
+  const next = getAuthCallbackNextPath(requestUrl.searchParams, [
+    requestUrl.origin,
+    env.appUrl,
+  ]);
+  const tokenHash = getAuthCallbackTokenHash(requestUrl.searchParams);
   const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
   const code = requestUrl.searchParams.get("code");
-  const env = getPublicEnvironment();
 
   if (!env.supabaseConfigured) {
     return NextResponse.redirect(

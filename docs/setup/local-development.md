@@ -46,7 +46,13 @@ For SSR cookie-based auth, configure Supabase Auth email templates to send token
 
 Keep `NEXT_PUBLIC_APP_URL` and the Supabase Auth Site URL aligned with the local app origin, usually `http://localhost:3000`. Add the same origin to Supabase Auth redirect URLs.
 
-The app also includes a local compatibility bridge for older implicit-flow magic links that redirect to `/auth/callback#access_token=...`. The bridge clears the URL fragment from browser history, posts the tokens to a same-origin callback endpoint, validates the session with Supabase, and sets SSR cookies. Prefer the token-hash email-template configuration for production readiness.
+The app also includes a local compatibility bridge for older implicit-flow magic links that redirect to `/auth/callback#access_token=...`. The bridge clears the URL fragment from browser history, posts the tokens to a same-origin callback endpoint, validates the session with Supabase, and sets SSR cookies. Prefer the token-hash email-template configuration for production readiness. The callback also accepts Supabase's `token=` query alias as a compatibility fallback, but `token_hash=` is the preferred template parameter.
+
+If a local sign-in ends at an authentication callback error:
+
+- make sure the app is running at the same origin configured in `NEXT_PUBLIC_APP_URL`;
+- make sure the linked Supabase Auth Site URL and redirect allow-list include that same origin;
+- request a fresh magic link after any rate-limit window, because Supabase magic links are single-use and expire quickly.
 
 ## Web App
 
@@ -61,7 +67,7 @@ The root `dev` script loads root `.env` and `.env.local` values before starting 
 Default local URL:
 
 ```text
-http://127.0.0.1:3000
+http://localhost:3000
 ```
 
 Useful checks:

@@ -3,6 +3,8 @@ import {
   buildImplicitAuthCallbackPage,
   buildLoginErrorRedirectPath,
   buildLoginRedirectPath,
+  getAuthCallbackNextPath,
+  getAuthCallbackTokenHash,
   getMagicLinkRequestErrorMessage,
   parseImplicitAuthCallbackPayload,
   normalizeInternalPath,
@@ -95,6 +97,64 @@ describe("auth redirect helpers", () => {
     expect(parsed.searchParams.get("next")).toBe("/platform");
     expect(parsed.searchParams.get("side")).toBeNull();
     expect(parsed.searchParams.get("eventId")).toBeNull();
+  });
+
+  it("accepts token_hash and token callback aliases", () => {
+    expect(
+      getAuthCallbackTokenHash(
+        new URLSearchParams({
+          token_hash: "hash-from-custom-template",
+        }),
+      ),
+    ).toBe("hash-from-custom-template");
+    expect(
+      getAuthCallbackTokenHash(
+        new URLSearchParams({
+          token: "hash-from-confirmation-url-shape",
+        }),
+      ),
+    ).toBe("hash-from-confirmation-url-shape");
+  });
+
+  it("derives callback next paths from safe redirect_to values", () => {
+    expect(
+      getAuthCallbackNextPath(
+        new URLSearchParams({
+          redirect_to:
+            "http://localhost:3000/auth/callback?next=%2Fplatform%2Faudit-logs",
+        }),
+        ["http://localhost:3000"],
+      ),
+    ).toBe("/platform/audit-logs");
+    expect(
+      getAuthCallbackNextPath(
+        new URLSearchParams({
+          redirect_to: "http://127.0.0.1:3000/platform/projects?tab=active",
+        }),
+        ["http://localhost:3000", "http://127.0.0.1:3000"],
+      ),
+    ).toBe("/platform/projects?tab=active");
+  });
+
+  it("rejects unsafe callback redirect_to values", () => {
+    expect(
+      getAuthCallbackNextPath(
+        new URLSearchParams({
+          redirect_to:
+            "https://attacker.test/auth/callback?next=%2Fplatform%2Faudit-logs",
+        }),
+        ["http://localhost:3000"],
+      ),
+    ).toBe("/platform");
+    expect(
+      getAuthCallbackNextPath(
+        new URLSearchParams({
+          redirect_to:
+            "http://localhost:3000/auth/callback?next=%2Fplatform%2F..%2Fadmin",
+        }),
+        ["http://localhost:3000"],
+      ),
+    ).toBe("/platform");
   });
 
   it("surfaces a retry delay when Supabase rate limits magic links", () => {
