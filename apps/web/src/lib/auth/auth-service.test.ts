@@ -111,4 +111,26 @@ describe("auth redirect helpers", () => {
       }),
     ).toBe("Unable to request a magic link.");
   });
+
+  it("surfaces a retry delay when Supabase sends the rate-limit error code", () => {
+    expect(
+      getMagicLinkRequestErrorMessage({
+        code: "over_email_send_rate_limit",
+        status: 400,
+      }),
+    ).toBe(
+      "Too many magic links requested. Wait a few minutes, then request a fresh link.",
+    );
+  });
+
+  it("surfaces a retry delay when Supabase sends a 429 status", () => {
+    expect(
+      getMagicLinkRequestErrorMessage({
+        code: "unexpected_failure",
+        status: 429,
+      }),
+    ).toBe(
+      "Too many magic links requested. Wait a few minutes, then request a fresh link.",
+    );
+  });
 });
