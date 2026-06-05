@@ -98,6 +98,20 @@ function readSprint6HardeningMigration() {
   return readFileSync(join(migrationDir, filename), "utf8");
 }
 
+function readMigrationByFragment(fragment: string) {
+  const repoRoot = repoRootFromCwd();
+  const migrationDir = join(repoRoot, "supabase", "migrations");
+  const filename = readdirSync(migrationDir).find(
+    (entry) => entry.includes(fragment) && entry.endsWith(".sql"),
+  );
+
+  if (!filename) {
+    throw new Error(`Expected migration file containing ${fragment}.`);
+  }
+
+  return readFileSync(join(migrationDir, filename), "utf8");
+}
+
 describe("Sprint 6 invitation template and PDF generation foundation", () => {
   it("maps the implemented scope to EPIC-INV, issue 12, and approved backlog IDs", () => {
     const status = getSprint6InvitationStatus();
@@ -490,5 +504,33 @@ describe("Sprint 6 invitation template and PDF generation foundation", () => {
     expect(migration).toContain(
       "elsif tg_op = 'UPDATE' and old.is_active and not new.is_active then",
     );
+  });
+
+  it("keeps invitation-template audit inserts away from invitation-only status values", () => {
+    const migration = readMigrationByFragment(
+      "mvp_invitation_audit_trigger_fix",
+    );
+    const templateBranchIndex = migration.indexOf(
+      "if tg_table_name = 'invitation_templates' then",
+    );
+    const invitationsBranchIndex = migration.indexOf(
+      "elsif tg_table_name = 'invitations' then",
+    );
+
+    expect(migration).toContain("app_private.audit_invitation_change");
+    expect(templateBranchIndex).toBeGreaterThanOrEqual(0);
+    expect(invitationsBranchIndex).toBeGreaterThan(templateBranchIndex);
+
+    const templateBranch = migration.slice(
+      templateBranchIndex,
+      invitationsBranchIndex,
+    );
+    const invitationsBranch = migration.slice(invitationsBranchIndex);
+
+    expect(templateBranch).toContain("invitation_templates.created");
+    expect(templateBranch).toContain("new.status = 'preview_generated'");
+    expect(templateBranch).not.toContain("new.status = 'needs_regeneration'");
+    expect(invitationsBranch).toContain("new.status = 'needs_regeneration'");
+    expect(invitationsBranch).toContain("invitations.regeneration_required");
   });
 });
