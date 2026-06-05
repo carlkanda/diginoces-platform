@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildLoginErrorRedirectPath,
   buildLoginRedirectPath,
+  getMagicLinkRequestErrorMessage,
   normalizeInternalPath,
 } from "@/lib/auth/auth-service";
 
@@ -92,5 +93,22 @@ describe("auth redirect helpers", () => {
     expect(parsed.searchParams.get("next")).toBe("/platform");
     expect(parsed.searchParams.get("side")).toBeNull();
     expect(parsed.searchParams.get("eventId")).toBeNull();
+  });
+
+  it("surfaces a retry delay when Supabase rate limits magic links", () => {
+    expect(
+      getMagicLinkRequestErrorMessage({
+        code: "over_email_send_rate_limit",
+        status: 429,
+      }),
+    ).toBe(
+      "Too many magic links requested. Wait a few minutes, then request a fresh link.",
+    );
+    expect(
+      getMagicLinkRequestErrorMessage({
+        code: "unexpected_failure",
+        status: 500,
+      }),
+    ).toBe("Unable to request a magic link.");
   });
 });

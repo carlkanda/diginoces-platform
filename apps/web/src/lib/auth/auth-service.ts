@@ -1,4 +1,4 @@
-import type { User } from "@supabase/supabase-js";
+import type { AuthError, User } from "@supabase/supabase-js";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -98,7 +98,7 @@ export async function requestMagicLink(
 
   if (error) {
     return {
-      message: "Unable to request a magic link.",
+      message: getMagicLinkRequestErrorMessage(error),
       status: "failed",
     };
   }
@@ -163,4 +163,14 @@ export function buildLoginErrorRedirectPath(nextPath: string, error: string) {
     error,
     next: normalizeInternalPath(nextPath),
   }).toString()}`;
+}
+
+export function getMagicLinkRequestErrorMessage(
+  error: Pick<AuthError, "code" | "status">,
+) {
+  if (error.code === "over_email_send_rate_limit" || error.status === 429) {
+    return "Too many magic links requested. Wait a few minutes, then request a fresh link.";
+  }
+
+  return "Unable to request a magic link.";
 }
