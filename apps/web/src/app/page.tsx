@@ -15,6 +15,8 @@ import { getSprint11ReportingStatus } from "@/lib/reports/report-service";
 import { getSprint5RsvpStatus } from "@/lib/rsvp/rsvp-service";
 import { getSprint8SeatingStatus } from "@/lib/seating/seating-service";
 
+export const dynamic = "force-dynamic";
+
 const projectRouteExamples = [
   {
     description: "Sprint 3 manual guest list, side/event filters, create/edit.",
