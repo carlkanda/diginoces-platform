@@ -532,5 +532,8 @@ describe("Sprint 6 invitation template and PDF generation foundation", () => {
     expect(templateBranch).not.toContain("new.status = 'needs_regeneration'");
     expect(invitationsBranch).toContain("new.status = 'needs_regeneration'");
     expect(invitationsBranch).toContain("invitations.regeneration_required");
+    expect(migration).toContain(
+      "return case when tg_op = 'DELETE' then old else new end;",
+    );
   });
 });

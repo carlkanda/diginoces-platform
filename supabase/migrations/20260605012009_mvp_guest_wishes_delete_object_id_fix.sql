@@ -1,5 +1,5 @@
--- MVP QA hardening: keep the Sprint 12 audit trigger from reading fields that
--- exist only on sibling guest-wish/feedback tables.
+-- MVP QA hardening follow-up: ensure guest-wishes audit DELETE rows use old.id
+-- for audit object ids in the linked dev database.
 
 create or replace function app_private.audit_guest_wishes_feedback_change()
 returns trigger

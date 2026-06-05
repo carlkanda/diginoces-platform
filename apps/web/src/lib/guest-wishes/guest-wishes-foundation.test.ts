@@ -406,6 +406,12 @@ describe("Sprint 12 guest wishes, guest-book export, and feedback foundation", (
     expect(guestMessagesBranch).not.toContain("new.actor_type");
     expect(reviewBranch).toContain("new.reviewer_user_id");
     expect(reviewBranch).toContain("new.actor_type");
+    expect(migration).toContain(
+      "return case when tg_op = 'DELETE' then old else new end;",
+    );
+    expect(migration).toContain("if tg_op = 'DELETE' then");
+    expect(migration).toContain("changed_object_id := old.id;");
+    expect(migration).toContain("when tg_op in ('UPDATE', 'DELETE')");
   });
 
   it("documents Sprint 12 database, permission, audit, public-page, and route foundations", () => {
