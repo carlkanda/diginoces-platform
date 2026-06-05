@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildLoginErrorRedirectPath,
   buildLoginRedirectPath,
   normalizeInternalPath,
 } from "@/lib/auth/auth-service";
@@ -50,6 +51,23 @@ describe("auth redirect helpers", () => {
     );
     expect(parsed.searchParams.get("side")).toBeNull();
     expect(parsed.searchParams.get("eventId")).toBeNull();
+  });
+
+  it("preserves safe next paths when building login error redirects", () => {
+    const loginPath = buildLoginErrorRedirectPath(
+      "/platform/audit-logs?actor=diginoces",
+      "Authentication link is invalid or expired. Request a fresh magic link.",
+    );
+    const parsed = new URL(loginPath, "https://diginoces.test");
+
+    expect(parsed.pathname).toBe("/login");
+    expect(parsed.searchParams.get("next")).toBe(
+      "/platform/audit-logs?actor=diginoces",
+    );
+    expect(parsed.searchParams.get("error")).toBe(
+      "Authentication link is invalid or expired. Request a fresh magic link.",
+    );
+    expect(parsed.searchParams.get("actor")).toBeNull();
   });
 
   it("defaults unsafe encoded next paths without leaking their query params", () => {

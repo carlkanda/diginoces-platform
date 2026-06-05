@@ -1,6 +1,9 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { normalizeInternalPath } from "@/lib/auth/auth-service";
+import {
+  buildLoginErrorRedirectPath,
+  normalizeInternalPath,
+} from "@/lib/auth/auth-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 
@@ -44,6 +47,12 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.redirect(
-    new URL("/login?error=Authentication%20callback%20failed", requestUrl),
+    new URL(
+      buildLoginErrorRedirectPath(
+        next,
+        "Authentication link is invalid or expired. Request a fresh magic link.",
+      ),
+      requestUrl,
+    ),
   );
 }

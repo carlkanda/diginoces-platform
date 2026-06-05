@@ -157,3 +157,10 @@ export function buildLoginRedirectPath(nextPath: string) {
     next: normalizeInternalPath(nextPath),
   }).toString()}`;
 }
+
+export function buildLoginErrorRedirectPath(nextPath: string, error: string) {
+  return `/login?${new URLSearchParams({
+    error,
+    next: normalizeInternalPath(nextPath),
+  }).toString()}`;
+}
