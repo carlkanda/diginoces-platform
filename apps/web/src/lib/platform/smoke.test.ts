@@ -3,7 +3,10 @@ import {
   getAuditFoundationSummary,
   recordAuditEvent,
 } from "@/lib/audit/audit-log";
-import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
+import {
+  getPlatformEntryActionVisibility,
+  getPlatformFoundationStatus,
+} from "@/lib/platform/foundation";
 import {
   hasPermission,
   sensitiveRolesRequireMfa,
@@ -23,6 +26,34 @@ describe("Sprint 1 platform foundation smoke test", () => {
       expect.arrayContaining(["PV-001", "ROLE-001", "REP-006", "FILE-001"]),
     );
     expect(foundation.modules).toHaveLength(5);
+  });
+
+  it("hides platform entry links that require unavailable permissions", () => {
+    expect(
+      getPlatformEntryActionVisibility({
+        canOpenPartnerDashboard: false,
+        canReadGlobalDashboard: false,
+        canReadReports: false,
+      }),
+    ).toEqual({
+      showGlobalDashboard: false,
+      showPartnerDashboard: false,
+      showPartners: true,
+      showProjects: true,
+      showReports: false,
+    });
+
+    expect(
+      getPlatformEntryActionVisibility({
+        canOpenPartnerDashboard: true,
+        canReadGlobalDashboard: true,
+        canReadReports: true,
+      }),
+    ).toMatchObject({
+      showGlobalDashboard: true,
+      showPartnerDashboard: true,
+      showReports: true,
+    });
   });
 
   it("grants admin foundation permissions and marks sensitive roles for MFA", () => {
