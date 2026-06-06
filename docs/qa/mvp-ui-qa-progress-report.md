@@ -101,6 +101,7 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 | Commercial form accessibility fix     | The first desktop AAL2 matrix found one unlabeled `expiresAt` `datetime-local` control in the payment exception form; the commercial workflow rerun later found unlabeled commercial gesture, approval confirmation, and addendum controls. These controls are now wrapped in explicit labels; targeted desktop/mobile reruns of the commercial page returned zero unlabeled visible controls. |
 | Guest import admin review/apply       | With the AAL2 `diginoces@gmail.com` admin/operations session, Chrome/CDP created disposable import session `27bf65cb-a728-4552-943c-493664a80195`, mapped French/English CSV headers, validated preview, submitted for review, approved one row, held one row, and applied approved rows. DB verification showed `status=applied`, 2 rows, 1 applied guest, 1 held row, zero still-approved rows, and audit actions `guest_imports.created`, `guest_imports.validation_completed`, `guest_imports.submitted`, `guest_imports.reviewed`, and `guest_imports.applied`. Cleanup removed the disposable guest, import session, import rows, mappings, assignments, RSVP/token/invitation/message/check-in/file references; follow-up counts for every checked table were zero. |
 | Commercial contract/payment flow      | Chrome/CDP exercised the Sprint 10 commercial page with a disposable `MVP_QA_*` fixture: service package creation, add-on creation, event package selection, stored pricing, commercial gesture, generated contract, in-app contract approval, confirmed manual payment, and payment exception creation. DB verification showed one approved disposable contract, one confirmed payment, one active exception, one gesture, and audit actions for catalog creation, selection, pricing, contract generation/approval, payment recording/confirmation, gesture application, and exception creation. The fake project already had a permanent exception, so the public/sending gate remained `exception_override`; disposable commercial rows were cleaned and follow-up counts were zero while the permanent fake-project exception remained. |
+| Invitation template/generation flow   | Chrome/CDP exercised the Sprint 6 invitation flow with a disposable in-memory PDF template: register Canva PDF metadata, save coordinate fields, generate technical preview, approve preview, enqueue event generation, and inspect the mobile template detail view. DB verification showed `status=technical_preview_approved`, two saved field rows including `public_guest_page_qr`, one queued event generation job with 3 ready guests, 3 not-generated invitation records, 3 job items, and audit actions for template create/update/preview/approval, job creation/update, and invitation creation. Cleanup removed the disposable template, fields, job, job items, invitation rows, and related invitation references; follow-up counts were zero. |
 
 ## Current Fixture Coverage
 
@@ -114,7 +115,7 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 | Check-in                     | Present: settings, manual records, preload snapshot, sync batch, conflict evidence |
 | RSVP records                 | Observed 2026-06-06: 2 RSVP rows                                                   |
 | Public guest tokens          | Observed 2026-06-06: 1 active public token; 0 public-file-route QA token residue    |
-| Invitation templates/jobs    | Missing                                                                            |
+| Invitation templates/jobs    | No permanent fixture; disposable template/generation job/invitation records cleaned after verification |
 | Guest messages               | Observed 2026-06-06: 1 guest message row; audit evidence remains                   |
 | Message templates/logs       | Missing                                                                            |
 | Seating tables/assignments   | Missing                                                                            |
@@ -125,7 +126,6 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 
 The MVP is not yet fully proven for production. The following gates still need evidence:
 
-- Invitation template upload/field config/preview/generation result flow.
 - Message template, guided manual WhatsApp send, queue/history status flow.
 - Seating table creation, guest assignment, capacity checks, and table-card export.
 - File registration, version, archive/retention, and authenticated signed-download checks; public guest signed-download browser-route rerun on a server with `SUPABASE_SECRET_KEY` configured.
