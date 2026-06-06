@@ -2,9 +2,9 @@
 
 ## Summary
 
-This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, and local loopback callback origin handling after auth issues blocked protected-route inspection.
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, and older documented magic-link callback type handling after auth issues blocked protected-route inspection.
 
-No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, and regression tests for already-implemented MVP flows.
+No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, and regression tests for already-implemented MVP flows.
 
 ## Findings And Fixes
 
@@ -35,6 +35,9 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 9. Local magic-link requests submitted from `127.0.0.1` could still receive callbacks on configured `localhost`, leaving Supabase PKCE verifier cookies on the wrong loopback host.
    - Fixed by deriving the magic-link callback origin from the current request origin when both the request and configured app origins are loopback hosts, while falling back to the configured app origin for untrusted external origins.
 
+10. Older Diginoces local setup guidance used `type=email` in the Magic Link template, which current Supabase magic-link verification can treat as the numeric-email OTP flow and reject.
+   - Fixed by normalizing callback `type=email` links to `magiclink`, updating the preferred template to `type=magiclink`, and adding local wildcard callback redirect patterns for future Supabase config syncs.
+
 ## Files Changed
 
 - `apps/web/src/app/auth/callback/implicit/route.ts`
@@ -43,6 +46,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `apps/web/src/lib/auth/auth-service.ts`
 - `apps/web/src/lib/auth/auth-service.test.ts`
 - `docs/setup/local-development.md`
+- `supabase/config.toml`
 - `apps/web/src/lib/contracts/contract-foundation.test.ts`
 - `apps/web/src/lib/guest-wishes/guest-wishes-foundation.test.ts`
 - `apps/web/src/lib/invitations/invitation-foundation.test.ts`
@@ -69,6 +73,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify magic-link rate-limit messages cover both Supabase `over_email_send_rate_limit` codes and HTTP `429` statuses independently.
 - Verify the implicit magic-link callback bridge preserves safe internal next paths, strips unsafe next paths, avoids embedding token values, and rejects malformed callback payloads.
 - Verify magic-link callback origin selection preserves safe loopback origins such as `127.0.0.1` and rejects untrusted external origins.
+- Verify older documented callback links using `type=email` are normalized to Supabase's `magiclink` verification type.
 
 ## Linked Dev Verification
 
@@ -82,6 +87,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Supabase Auth magic-link request failure was verified as status `429`, code `over_email_send_rate_limit`; the login UI now surfaces a retry-delay message.
 - Supabase SSR magic-link guidance was refreshed against the current [Supabase passwordless email login docs](https://supabase.com/docs/guides/auth/auth-email-passwordless); local setup now documents the preferred `token_hash` email-template link and the app's implicit-flow compatibility bridge.
 - Local auth callback origin handling was hardened so requesting a magic link from `127.0.0.1` keeps the callback on the same loopback host instead of forcing the configured `localhost` origin.
+- Supabase redirect and email-template guidance was rechecked against the current [Supabase redirect URL docs](https://supabase.com/docs/guides/auth/redirect-urls); local setup now documents `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=magiclink`, and the callback remains compatible with previously documented `type=email` links.
 
 ## UI And API QA Evidence
 
@@ -117,6 +123,16 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npm --workspace @diginoces/web run lint -- src/app/auth/callback/route.ts src/lib/auth/auth-service.ts src/lib/auth/auth-service.test.ts` - passed.
 - `npm --workspace @diginoces/web run typecheck` - passed.
 - `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - passed, 17 auth helper tests after loopback callback-origin coverage.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - first failed as expected for missing older-template type normalization, then passed with 18 auth helper tests after callback type hardening.
+- `npm run format:check` - initially failed on the two touched auth files after callback type hardening, then passed after formatting.
+- `npm run format` - passed after callback type hardening.
+- `npm run lint` - passed after callback type hardening.
+- `npm run typecheck` - passed after callback type hardening.
+- `npm run test` - passed, 18 files and 202 tests after callback type hardening.
+- `npm run build` - passed after callback type hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after callback type hardening.
+- `npm run secrets:scan` - passed after callback type hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched files only after callback type hardening.
 - `npm run format:check` - passed after loopback callback-origin hardening.
 - `npm run lint` - passed after loopback callback-origin hardening.
 - `npm run typecheck` - passed after loopback callback-origin hardening.
@@ -157,7 +173,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - The linked Supabase project is the dev QA project.
 - The existing audit trigger tables and grants remain correct; this pass only fixes trigger runtime safety.
 - The invitation upload UI should now pass the database step; the authenticated Chrome session dropped before the full upload UI could be rerun, so the final verification used a rollback insert against the linked DB.
-- Protected UI role-by-role inspection still depends on a fresh `diginoces@gmail.com` magic-link login after Supabase email rate limiting clears or after the configured Supabase email template emits the documented token-hash callback URL.
+- Protected UI role-by-role inspection still depends on a fresh `diginoces@gmail.com` magic-link login after Supabase email rate limiting clears and after the linked Supabase Magic Link template/redirect allow-list match the documented `type=magiclink` callback URL.
 
 ## Remaining Notes
 

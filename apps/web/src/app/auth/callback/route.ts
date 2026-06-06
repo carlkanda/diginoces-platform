@@ -1,8 +1,8 @@
-import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import {
   buildImplicitAuthCallbackPage,
   getAuthCallbackNextPath,
+  getAuthCallbackOtpType,
   getAuthCallbackTokenHash,
   buildLoginErrorRedirectPath,
   getInvalidOrExpiredMagicLinkMessage,
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     env.appUrl,
   ]);
   const tokenHash = getAuthCallbackTokenHash(requestUrl.searchParams);
-  const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
+  const type = getAuthCallbackOtpType(requestUrl.searchParams);
   const code = requestUrl.searchParams.get("code");
 
   if (!env.supabaseConfigured) {

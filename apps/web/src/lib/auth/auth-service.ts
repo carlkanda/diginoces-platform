@@ -1,4 +1,4 @@
-import type { AuthError, User } from "@supabase/supabase-js";
+import type { AuthError, EmailOtpType, User } from "@supabase/supabase-js";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -183,6 +183,29 @@ export function buildLoginErrorRedirectPath(nextPath: string, error: string) {
 
 export function getAuthCallbackTokenHash(searchParams: URLSearchParams) {
   return searchParams.get("token_hash") ?? searchParams.get("token");
+}
+
+const authCallbackOtpTypes = new Set<EmailOtpType>([
+  "email",
+  "email_change",
+  "invite",
+  "magiclink",
+  "recovery",
+  "signup",
+]);
+
+export function getAuthCallbackOtpType(searchParams: URLSearchParams) {
+  const type = searchParams.get("type");
+
+  if (!type || !authCallbackOtpTypes.has(type as EmailOtpType)) {
+    return null;
+  }
+
+  if (type === "email") {
+    return "magiclink";
+  }
+
+  return type as EmailOtpType;
 }
 
 export function getAuthRedirectOrigin(

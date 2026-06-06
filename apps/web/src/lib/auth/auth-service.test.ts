@@ -5,6 +5,7 @@ import {
   buildLoginRedirectPath,
   getAuthRedirectOrigin,
   getAuthCallbackNextPath,
+  getAuthCallbackOtpType,
   getAuthCallbackTokenHash,
   getMagicLinkRequestErrorMessage,
   parseImplicitAuthCallbackPayload,
@@ -115,6 +116,16 @@ describe("auth redirect helpers", () => {
         }),
       ),
     ).toBe("hash-from-confirmation-url-shape");
+  });
+
+  it("treats older documented type=email callback links as magic links", () => {
+    expect(
+      getAuthCallbackOtpType(
+        new URLSearchParams({
+          type: "email",
+        }),
+      ),
+    ).toBe("magiclink");
   });
 
   it("uses the current loopback origin for magic-link callbacks", () => {
