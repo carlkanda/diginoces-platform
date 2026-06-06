@@ -4,6 +4,26 @@ export type FoundationModule = {
   requirementIds: string[];
 };
 
+export type PlatformEntryActionVisibilityInput = {
+  canOpenPartnerDashboard: boolean;
+  canReadGlobalDashboard: boolean;
+  canReadReports: boolean;
+};
+
+export function getPlatformEntryActionVisibility({
+  canOpenPartnerDashboard,
+  canReadGlobalDashboard,
+  canReadReports,
+}: PlatformEntryActionVisibilityInput) {
+  return {
+    showGlobalDashboard: canReadGlobalDashboard,
+    showPartnerDashboard: canOpenPartnerDashboard,
+    showPartners: true,
+    showProjects: true,
+    showReports: canReadReports,
+  };
+}
+
 export function getPlatformFoundationStatus() {
   const modules: FoundationModule[] = [
     {

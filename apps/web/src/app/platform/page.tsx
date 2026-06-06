@@ -4,10 +4,80 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
-import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
+import { serverLogger } from "@/lib/logging";
+import {
+  getPlatformEntryActionVisibility,
+  getPlatformFoundationStatus,
+} from "@/lib/platform/foundation";
+import { listPartners } from "@/lib/partners/partner-db";
 import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
+import { getReportingPermissionSet } from "@/lib/reports/report-api";
+import { getDashboardVisibility } from "@/lib/reports/report-service";
+import type { PermissionSlug } from "@/lib/security/permissions";
 
 export const dynamic = "force-dynamic";
+
+function partnerRowId(partner: { id?: unknown }) {
+  if (typeof partner.id !== "string" || partner.id.length === 0) {
+    throw new Error("Partner row is missing a valid id.");
+  }
+
+  return partner.id;
+}
+
+type AuthenticatedAuthContext = Extract<
+  Awaited<ReturnType<typeof getAuthContext>>,
+  { status: "authenticated" }
+>;
+
+async function getAuthenticatedPlatformActionVisibility(
+  authContext: AuthenticatedAuthContext,
+) {
+  const supabase = authContext.supabase;
+  const context = { supabase, user: authContext.user };
+  const [permissions, partners] = await Promise.all([
+    getReportingPermissionSet(context).catch((error: unknown) => {
+      serverLogger.error("Platform reporting permission check failed.", {
+        error,
+      });
+
+      return new Set<PermissionSlug>();
+    }),
+    listPartners(supabase).catch((error: unknown) => {
+      serverLogger.error("Platform partner list check failed.", { error });
+
+      return [];
+    }),
+  ]);
+  const dashboardVisibility = getDashboardVisibility(permissions);
+  const partnerDashboardAccess = await Promise.all(
+    partners.map(async (partner) => {
+      try {
+        const partnerId = partnerRowId(partner);
+        const partnerPermissions = await getReportingPermissionSet(context, {
+          customScopeId: partnerId,
+          includeCustom: true,
+        });
+
+        return partnerPermissions.has("dashboards.partner.read");
+      } catch (error) {
+        serverLogger.error("Platform partner dashboard check failed.", {
+          error,
+        });
+
+        return false;
+      }
+    }),
+  );
+
+  return getPlatformEntryActionVisibility({
+    canOpenPartnerDashboard:
+      dashboardVisibility.canReadPartnerDashboard ||
+      partnerDashboardAccess.some(Boolean),
+    canReadGlobalDashboard: dashboardVisibility.canReadGlobalDashboard,
+    canReadReports: dashboardVisibility.canReadReports,
+  });
+}
 
 export default async function PlatformPage() {
   const [authContext, foundation] = await Promise.all([
@@ -20,13 +90,22 @@ export default async function PlatformPage() {
     redirect(buildLoginRedirectPath("/platform"));
   }
 
+  const actionVisibility =
+    authContext.status === "not_configured"
+      ? getPlatformEntryActionVisibility({
+          canOpenPartnerDashboard: true,
+          canReadGlobalDashboard: true,
+          canReadReports: true,
+        })
+      : await getAuthenticatedPlatformActionVisibility(authContext);
+
   return (
     <>
-      <h1 className="page-title">Platform shell</h1>
+      <h1 className="page-title">MVP workspace</h1>
       <p className="page-summary">
-        This protected placeholder exists to verify the Sprint 1 app shell,
-        authentication boundary, permission model, audit foundation, and storage
-        abstraction without implementing future business modules.
+        Use the areas available to this account to manage wedding projects,
+        partners, reports, and operational workflows. Access is filtered by
+        server-side roles and permissions.
       </p>
 
       <section className="section">
@@ -59,24 +138,34 @@ export default async function PlatformPage() {
         <div className="section-heading">
           <h2>{sprint2Foundation.sprint}</h2>
           <div className="button-group">
-            <Link className="button secondary" href="/platform/dashboard">
-              Dashboard
-            </Link>
-            <Link className="button secondary" href="/platform/reports">
-              Reports
-            </Link>
-            <Link className="button secondary" href="/platform/projects">
-              Projects
-            </Link>
-            <Link className="button secondary" href="/platform/partners">
-              Partners
-            </Link>
-            <Link
-              className="button secondary"
-              href="/platform/partner-dashboard"
-            >
-              Partner dashboard
-            </Link>
+            {actionVisibility.showGlobalDashboard ? (
+              <Link className="button secondary" href="/platform/dashboard">
+                Dashboard
+              </Link>
+            ) : null}
+            {actionVisibility.showReports ? (
+              <Link className="button secondary" href="/platform/reports">
+                Reports
+              </Link>
+            ) : null}
+            {actionVisibility.showProjects ? (
+              <Link className="button secondary" href="/platform/projects">
+                Projects
+              </Link>
+            ) : null}
+            {actionVisibility.showPartners ? (
+              <Link className="button secondary" href="/platform/partners">
+                Partners
+              </Link>
+            ) : null}
+            {actionVisibility.showPartnerDashboard ? (
+              <Link
+                className="button secondary"
+                href="/platform/partner-dashboard"
+              >
+                Partner dashboard
+              </Link>
+            ) : null}
           </div>
         </div>
         <div className="table-like">
