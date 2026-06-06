@@ -2,7 +2,7 @@
 
 ## Summary
 
-This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, older documented magic-link callback type handling, and public guest file-download storage signing after auth/storage issues blocked protected-route and public-download inspection.
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, and public guest file-download storage signing after auth/storage issues blocked protected-route and public-download inspection.
 
 No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, and regression tests for already-implemented MVP flows.
 
@@ -35,8 +35,8 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 9. Local magic-link requests submitted from `127.0.0.1` could still receive callbacks on configured `localhost`, leaving Supabase PKCE verifier cookies on the wrong loopback host.
    - Fixed by deriving the magic-link callback origin from the current request origin when both the request and configured app origins are loopback hosts, while falling back to the configured app origin for untrusted external origins.
 
-10. Older Diginoces local setup guidance used `type=email` in the Magic Link template, which current Supabase magic-link verification can treat as the numeric-email OTP flow and reject.
-   - Fixed by normalizing callback `type=email` links to `magiclink`, updating the preferred template to `type=magiclink`, and adding local wildcard callback redirect patterns for future Supabase config syncs.
+10. A follow-up local authentication failure exposed a Supabase callback type mismatch risk between `type=email` and `type=magiclink` token-hash links.
+   - Fixed by verifying the received callback type first, trying the paired `email`/`magiclink` fallback if needed, updating the preferred local template to `type=email`, and adding local wildcard callback redirect patterns for future Supabase config syncs.
 
 11. Public guest file downloads authorized the guest token in Postgres but attempted to create private Supabase Storage signed URLs with the anonymous SSR client, causing valid guest-visible files to fail with a generic storage `502`.
    - Fixed by adding a server-only `SUPABASE_SECRET_KEY` storage-signing adapter and using it only after `resolve_guest_file_download` authorizes the exact latest active guest-facing file.
@@ -81,7 +81,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify magic-link rate-limit messages cover both Supabase `over_email_send_rate_limit` codes and HTTP `429` statuses independently.
 - Verify the implicit magic-link callback bridge preserves safe internal next paths, strips unsafe next paths, avoids embedding token values, and rejects malformed callback payloads.
 - Verify magic-link callback origin selection preserves safe loopback origins such as `127.0.0.1` and rejects untrusted external origins.
-- Verify older documented callback links using `type=email` are normalized to Supabase's `magiclink` verification type.
+- Verify current documented callback links using `type=email` are tried before `magiclink`, while `type=magiclink` links are tried before `email` for compatibility.
 - Verify private Storage signed URLs use a server-only Supabase secret key and fail closed when it is not configured.
 - Verify the public guest file download route uses the server-only storage adapter instead of the anonymous SSR client after token-scoped file authorization.
 
@@ -97,7 +97,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Supabase Auth magic-link request failure was verified as status `429`, code `over_email_send_rate_limit`; the login UI now surfaces a retry-delay message.
 - Supabase SSR magic-link guidance was refreshed against the current [Supabase passwordless email login docs](https://supabase.com/docs/guides/auth/auth-email-passwordless); local setup now documents the preferred `token_hash` email-template link and the app's implicit-flow compatibility bridge.
 - Local auth callback origin handling was hardened so requesting a magic link from `127.0.0.1` keeps the callback on the same loopback host instead of forcing the configured `localhost` origin.
-- Supabase redirect and email-template guidance was rechecked against the current [Supabase redirect URL docs](https://supabase.com/docs/guides/auth/redirect-urls); local setup now documents `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=magiclink`, and the callback remains compatible with previously documented `type=email` links.
+- Supabase redirect and email-template guidance was rechecked against the current [Supabase redirect URL docs](https://supabase.com/docs/guides/auth/redirect-urls); local setup now documents `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`, and the callback remains compatible with `type=magiclink` links by trying the paired fallback if the received type is rejected.
 - Supabase API key guidance was rechecked against the current [Supabase API keys docs](https://supabase.com/docs/guides/getting-started/api-keys); public guest file downloads now require a server-only secret key for private Storage signing after backend authorization.
 
 ## UI And API QA Evidence
@@ -183,6 +183,18 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `git diff --check` - passed with informational CRLF warnings on touched files only.
 - `gh pr checks 48` - passed; Verify and CodeRabbit status checks completed successfully.
 - Local Chrome/CDP public UI checks and unauthenticated UI/API sweeps - passed as summarized above.
+- `npm run test -- apps/web/src/lib/auth/auth-service.test.ts` - failed because the root workspace forwarded a root-relative path into the web workspace; rerun with the workspace-relative path below.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - passed, 20 auth helper tests after preserving `type=email` as the primary callback type and adding paired `email`/`magiclink` fallback coverage.
+- `npm run format:check` - initially failed on the touched auth files, then passed after formatting.
+- `npm run format` - passed after callback fallback hardening.
+- `npm run lint` - passed after callback fallback hardening.
+- `npm run typecheck` - passed after callback fallback hardening.
+- `npm run test` - passed, 19 files and 207 tests after callback fallback hardening.
+- `npm run build` - passed after callback fallback hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after callback fallback hardening.
+- `npm run secrets:scan` - passed after callback fallback hardening.
+- Targeted `rg` secret sweep - passed with expected placeholder, SQL grant, and test/documentation matches only.
+- `git diff --check` - passed with informational CRLF warnings on touched files only after callback fallback hardening.
 
 ## Security Review
 
@@ -200,7 +212,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - The linked Supabase project is the dev QA project.
 - The existing audit trigger tables and grants remain correct; this pass only fixes trigger runtime safety.
 - The invitation upload UI should now pass the database step; the authenticated Chrome session dropped before the full upload UI could be rerun, so the final verification used a rollback insert against the linked DB.
-- Protected UI role-by-role inspection still depends on a fresh `diginoces@gmail.com` magic-link login after Supabase email rate limiting clears and after the linked Supabase Magic Link template/redirect allow-list match the documented `type=magiclink` callback URL.
+- Protected UI role-by-role inspection still depends on a fresh `diginoces@gmail.com` magic-link login after Supabase email rate limiting clears and after the linked Supabase Magic Link template/redirect allow-list match the documented `type=email` callback URL.
 - Positive public guest signed-file browser-route rerun depends on starting the app with server-only `SUPABASE_SECRET_KEY`; the current long-running local dev server on port `3000` was started without that variable. The same DB authorization and private Storage signing path passed in linked-dev service-level QA.
 
 ## Remaining Notes

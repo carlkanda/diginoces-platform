@@ -42,12 +42,12 @@ The web app intentionally uses the Supabase publishable key for browser and SSR 
 For SSR cookie-based auth, configure Supabase Auth email templates to send token-hash links to the app callback route. In the Supabase Dashboard, update the Magic Link template to use this link shape:
 
 ```text
-{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=magiclink
+{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email
 ```
 
 `{{ .RedirectTo }}` preserves the app-generated callback origin and `next` path, and the Diginoces sign-in action always includes a query string, so the token parameters are appended with `&`. Keep `NEXT_PUBLIC_APP_URL` and the Supabase Auth Site URL aligned with the local app origin, usually `http://localhost:3000`. Add the same origin to Supabase Auth redirect URLs. For local browser QA, also allow the loopback origins you actually open in Chrome, such as `http://127.0.0.1:3000/**` and `http://localhost:3000/**` or exact callback entries if your Supabase project does not use wildcard redirect rules. The app preserves safe loopback origins when requesting magic links so PKCE verifier cookies stay on the same host as the callback.
 
-The app also includes a local compatibility bridge for older implicit-flow magic links that redirect to `/auth/callback#access_token=...`. The bridge clears the URL fragment from browser history, posts the tokens to a same-origin callback endpoint, validates the session with Supabase, and sets SSR cookies. Prefer the token-hash email-template configuration for production readiness. The callback also accepts Supabase's `token=` query alias and normalizes older Diginoces links with `type=email` to Supabase's `magiclink` verification type as compatibility fallbacks, but `token_hash=` and `type=magiclink` are the preferred template parameters.
+The app also includes a local compatibility bridge for older implicit-flow magic links that redirect to `/auth/callback#access_token=...`. The bridge clears the URL fragment from browser history, posts the tokens to a same-origin callback endpoint, validates the session with Supabase, and sets SSR cookies. Prefer the token-hash email-template configuration for production readiness. The callback also accepts Supabase's `token=` query alias. `token_hash=` and `type=email` are the preferred template parameters, and the callback will try the paired `email`/`magiclink` verification fallback if Supabase rejects the received type.
 
 If a local sign-in ends at an authentication callback error:
 

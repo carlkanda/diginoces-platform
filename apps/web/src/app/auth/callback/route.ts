@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   buildImplicitAuthCallbackPage,
   getAuthCallbackNextPath,
-  getAuthCallbackOtpType,
+  getAuthCallbackOtpTypeCandidates,
   getAuthCallbackTokenHash,
   buildLoginErrorRedirectPath,
   getInvalidOrExpiredMagicLinkMessage,
@@ -20,7 +20,10 @@ export async function GET(request: Request) {
     env.appUrl,
   ]);
   const tokenHash = getAuthCallbackTokenHash(requestUrl.searchParams);
-  const type = getAuthCallbackOtpType(requestUrl.searchParams);
+  const typeCandidates = getAuthCallbackOtpTypeCandidates(
+    requestUrl.searchParams,
+  );
+  const type = typeCandidates[0] ?? null;
   const code = requestUrl.searchParams.get("code");
 
   if (!env.supabaseConfigured) {
@@ -31,14 +34,16 @@ export async function GET(request: Request) {
 
   const supabase = await createSupabaseServerClient();
 
-  if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type,
-    });
+  if (tokenHash && typeCandidates.length > 0) {
+    for (const candidateType of typeCandidates) {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: candidateType,
+      });
 
-    if (!error) {
-      return NextResponse.redirect(new URL(next, requestUrl));
+      if (!error) {
+        return NextResponse.redirect(new URL(next, requestUrl));
+      }
     }
   }
 

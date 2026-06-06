@@ -6,6 +6,7 @@ import {
   getAuthRedirectOrigin,
   getAuthCallbackNextPath,
   getAuthCallbackOtpType,
+  getAuthCallbackOtpTypeCandidates,
   getAuthCallbackTokenHash,
   getMagicLinkRequestErrorMessage,
   parseImplicitAuthCallbackPayload,
@@ -118,14 +119,48 @@ describe("auth redirect helpers", () => {
     ).toBe("hash-from-confirmation-url-shape");
   });
 
-  it("treats older documented type=email callback links as magic links", () => {
+  it("accepts the current documented type=email callback links", () => {
     expect(
       getAuthCallbackOtpType(
         new URLSearchParams({
           type: "email",
         }),
       ),
+    ).toBe("email");
+  });
+
+  it("keeps magiclink callback links supported for compatibility", () => {
+    expect(
+      getAuthCallbackOtpType(
+        new URLSearchParams({
+          type: "magiclink",
+        }),
+      ),
     ).toBe("magiclink");
+  });
+
+  it("tries email and magiclink token-hash callback candidates in a stable order", () => {
+    expect(
+      getAuthCallbackOtpTypeCandidates(
+        new URLSearchParams({
+          type: "email",
+        }),
+      ),
+    ).toEqual(["email", "magiclink"]);
+    expect(
+      getAuthCallbackOtpTypeCandidates(
+        new URLSearchParams({
+          type: "magiclink",
+        }),
+      ),
+    ).toEqual(["magiclink", "email"]);
+    expect(
+      getAuthCallbackOtpTypeCandidates(
+        new URLSearchParams({
+          type: "invite",
+        }),
+      ),
+    ).toEqual(["invite"]);
   });
 
   it("uses the current loopback origin for magic-link callbacks", () => {

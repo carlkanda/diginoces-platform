@@ -201,11 +201,27 @@ export function getAuthCallbackOtpType(searchParams: URLSearchParams) {
     return null;
   }
 
-  if (type === "email") {
-    return "magiclink";
+  return type as EmailOtpType;
+}
+
+export function getAuthCallbackOtpTypeCandidates(
+  searchParams: URLSearchParams,
+) {
+  const type = getAuthCallbackOtpType(searchParams);
+
+  if (!type) {
+    return [];
   }
 
-  return type as EmailOtpType;
+  if (type === "email") {
+    return ["email", "magiclink"] satisfies EmailOtpType[];
+  }
+
+  if (type === "magiclink") {
+    return ["magiclink", "email"] satisfies EmailOtpType[];
+  }
+
+  return [type];
 }
 
 export function getAuthRedirectOrigin(
