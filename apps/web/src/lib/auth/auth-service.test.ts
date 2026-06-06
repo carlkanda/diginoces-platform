@@ -3,6 +3,7 @@ import {
   buildImplicitAuthCallbackPage,
   buildLoginErrorRedirectPath,
   buildLoginRedirectPath,
+  getAuthRedirectOrigin,
   getAuthCallbackNextPath,
   getAuthCallbackTokenHash,
   getMagicLinkRequestErrorMessage,
@@ -114,6 +115,30 @@ describe("auth redirect helpers", () => {
         }),
       ),
     ).toBe("hash-from-confirmation-url-shape");
+  });
+
+  it("uses the current loopback origin for magic-link callbacks", () => {
+    expect(
+      getAuthRedirectOrigin("http://127.0.0.1:3000", "http://localhost:3000"),
+    ).toBe("http://127.0.0.1:3000");
+    expect(
+      getAuthRedirectOrigin("http://localhost:3002", "http://localhost:3000"),
+    ).toBe("http://localhost:3002");
+  });
+
+  it("falls back to the configured app origin for unsafe callback origins", () => {
+    expect(
+      getAuthRedirectOrigin(
+        "https://attacker.test",
+        "https://app.diginoces.test",
+      ),
+    ).toBe("https://app.diginoces.test");
+    expect(getAuthRedirectOrigin("not a url", "http://localhost:3000")).toBe(
+      "http://localhost:3000",
+    );
+    expect(getAuthRedirectOrigin(null, "http://localhost:3000")).toBe(
+      "http://localhost:3000",
+    );
   });
 
   it("derives callback next paths from safe redirect_to values", () => {

@@ -77,6 +77,9 @@ export async function getAuthContext(): Promise<AuthContext> {
 export async function requestMagicLink(
   email: string,
   nextPath = "/platform",
+  options: {
+    requestOrigin?: string | null;
+  } = {},
 ): Promise<MagicLinkResult> {
   const trimmedEmail = email.trim().toLowerCase();
   const env = getPublicEnvironment();
@@ -96,7 +99,10 @@ export async function requestMagicLink(
   }
 
   const supabase = await createSupabaseServerClient();
-  const redirectTo = new URL("/auth/callback", env.appUrl);
+  const redirectTo = new URL(
+    "/auth/callback",
+    getAuthRedirectOrigin(options.requestOrigin, env.appUrl),
+  );
   redirectTo.searchParams.set("next", normalizeInternalPath(nextPath));
 
   const { error } = await supabase.auth.signInWithOtp({
@@ -177,6 +183,32 @@ export function buildLoginErrorRedirectPath(nextPath: string, error: string) {
 
 export function getAuthCallbackTokenHash(searchParams: URLSearchParams) {
   return searchParams.get("token_hash") ?? searchParams.get("token");
+}
+
+export function getAuthRedirectOrigin(
+  requestOrigin: string | null | undefined,
+  configuredAppUrl: string,
+) {
+  const configuredOrigin = parseUrlOrigin(configuredAppUrl);
+  const currentOrigin = parseUrlOrigin(requestOrigin);
+
+  if (!configuredOrigin) {
+    return currentOrigin ?? configuredAppUrl;
+  }
+
+  if (!currentOrigin) {
+    return configuredOrigin;
+  }
+
+  if (currentOrigin === configuredOrigin) {
+    return currentOrigin;
+  }
+
+  if (areEquivalentLocalOrigins(currentOrigin, configuredOrigin)) {
+    return currentOrigin;
+  }
+
+  return configuredOrigin;
 }
 
 export function getAuthCallbackNextPath(
@@ -337,4 +369,35 @@ function getBoundedCallbackToken(value: unknown) {
   }
 
   return trimmed;
+}
+
+function parseUrlOrigin(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function areEquivalentLocalOrigins(origin: string, configuredOrigin: string) {
+  const currentUrl = new URL(origin);
+  const configuredUrl = new URL(configuredOrigin);
+
+  return (
+    isLoopbackHost(currentUrl.hostname) &&
+    isLoopbackHost(configuredUrl.hostname)
+  );
+}
+
+function isLoopbackHost(hostname: string) {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname === "[::1]"
+  );
 }

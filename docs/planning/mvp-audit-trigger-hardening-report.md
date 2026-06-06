@@ -2,9 +2,9 @@
 
 ## Summary
 
-This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior, Supabase email rate-limit messaging, and implicit magic-link callback compatibility after auth issues blocked protected-route inspection.
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, and local loopback callback origin handling after auth issues blocked protected-route inspection.
 
-No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, implicit callback compatibility, and regression tests for already-implemented MVP flows.
+No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, and regression tests for already-implemented MVP flows.
 
 ## Findings And Fixes
 
@@ -32,10 +32,14 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 8. Supabase default implicit-flow magic links can redirect to `/auth/callback#access_token=...`, but URL fragments are unavailable to server route handlers.
    - Fixed by adding a no-store implicit callback bridge that clears the fragment from browser history, posts tokens to a same-origin server route, validates the session with Supabase, and sets SSR cookies.
 
+9. Local magic-link requests submitted from `127.0.0.1` could still receive callbacks on configured `localhost`, leaving Supabase PKCE verifier cookies on the wrong loopback host.
+   - Fixed by deriving the magic-link callback origin from the current request origin when both the request and configured app origins are loopback hosts, while falling back to the configured app origin for untrusted external origins.
+
 ## Files Changed
 
 - `apps/web/src/app/auth/callback/implicit/route.ts`
 - `apps/web/src/app/auth/callback/route.ts`
+- `apps/web/src/app/login/actions.ts`
 - `apps/web/src/lib/auth/auth-service.ts`
 - `apps/web/src/lib/auth/auth-service.test.ts`
 - `docs/setup/local-development.md`
@@ -64,6 +68,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify login error redirects preserve safe protected `next` paths without broadening query parameters.
 - Verify magic-link rate-limit messages cover both Supabase `over_email_send_rate_limit` codes and HTTP `429` statuses independently.
 - Verify the implicit magic-link callback bridge preserves safe internal next paths, strips unsafe next paths, avoids embedding token values, and rejects malformed callback payloads.
+- Verify magic-link callback origin selection preserves safe loopback origins such as `127.0.0.1` and rejects untrusted external origins.
 
 ## Linked Dev Verification
 
@@ -76,6 +81,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Auth callback failure was verified locally to redirect to `/login`, preserve `next=/platform/audit-logs`, and show a retryable expired-link message without exposing tokens.
 - Supabase Auth magic-link request failure was verified as status `429`, code `over_email_send_rate_limit`; the login UI now surfaces a retry-delay message.
 - Supabase SSR magic-link guidance was refreshed against the current [Supabase passwordless email login docs](https://supabase.com/docs/guides/auth/auth-email-passwordless); local setup now documents the preferred `token_hash` email-template link and the app's implicit-flow compatibility bridge.
+- Local auth callback origin handling was hardened so requesting a magic link from `127.0.0.1` keeps the callback on the same loopback host instead of forcing the configured `localhost` origin.
 
 ## UI And API QA Evidence
 
@@ -110,6 +116,14 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npm --workspace @diginoces/web run test -- src/lib/auth/auth-service.test.ts` - passed, 12 auth helper tests after implicit-callback bridge coverage.
 - `npm --workspace @diginoces/web run lint -- src/app/auth/callback/route.ts src/lib/auth/auth-service.ts src/lib/auth/auth-service.test.ts` - passed.
 - `npm --workspace @diginoces/web run typecheck` - passed.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - passed, 17 auth helper tests after loopback callback-origin coverage.
+- `npm run format:check` - passed after loopback callback-origin hardening.
+- `npm run lint` - passed after loopback callback-origin hardening.
+- `npm run typecheck` - passed after loopback callback-origin hardening.
+- `npm run test` - passed, 18 files and 201 tests after loopback callback-origin hardening.
+- `npm run build` - passed after loopback callback-origin hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after loopback callback-origin hardening.
+- `npm run secrets:scan` - passed after loopback callback-origin hardening.
 - `npm run format:check` - passed after implicit-callback bridge changes.
 - `npm run lint` - passed after implicit-callback bridge changes.
 - `npm run typecheck` - passed after implicit-callback bridge changes.

@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   buildLoginRedirectPath,
@@ -12,7 +13,10 @@ export async function signInWithMagicLink(formData: FormData) {
   const next = normalizeInternalPath(
     String(formData.get("next") ?? "/platform"),
   );
-  const result = await requestMagicLink(email, next);
+  const requestHeaders = await headers();
+  const result = await requestMagicLink(email, next, {
+    requestOrigin: requestHeaders.get("origin"),
+  });
 
   if (result.status === "sent") {
     redirect(
