@@ -16,6 +16,7 @@ import {
   canPerformPartnerAction,
   createPartnerProjectDraft,
   createPartnerProfileFoundation,
+  getPartnerIndexActionVisibility,
   isPartnerRestrictedField,
   linkPartnerUserFoundation,
   PartnerValidationError,
@@ -315,6 +316,41 @@ describe("Sprint 13 partner foundation", () => {
     expect(isPartnerRestrictedField("paymentExceptionReason")).toBe(true);
     expect(isPartnerRestrictedField("internalNotes")).toBe(true);
     expect(isPartnerRestrictedField("auditLogs")).toBe(true);
+  });
+
+  it("keeps partner index actions aligned with server-side permissions", () => {
+    expect(
+      getPartnerIndexActionVisibility({
+        canManagePartners: false,
+        canOpenPartnerDashboard: false,
+        canReviewPartnerProjects: false,
+      }),
+    ).toEqual({
+      showCreatePartner: false,
+      showPartnerDashboard: false,
+      showReviewQueue: false,
+    });
+    expect(
+      getPartnerIndexActionVisibility({
+        canManagePartners: false,
+        canOpenPartnerDashboard: true,
+        canReviewPartnerProjects: false,
+      }),
+    ).toMatchObject({
+      showPartnerDashboard: true,
+      showReviewQueue: false,
+    });
+    expect(
+      getPartnerIndexActionVisibility({
+        canManagePartners: true,
+        canOpenPartnerDashboard: true,
+        canReviewPartnerProjects: true,
+      }),
+    ).toEqual({
+      showCreatePartner: true,
+      showPartnerDashboard: true,
+      showReviewQueue: true,
+    });
   });
 
   it("builds a restricted partner dashboard without revenue, payment, internal note, or audit fields", () => {

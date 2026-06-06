@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { requireGuestListContractGateOpen } from "@/lib/contracts/contract-gates";
 import {
   getProjectApiContext,
   handleProjectApiError,
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const input = parseCreateGuestPayload(await readJson(request));
 
     await requireGuestCreatePermission(apiContext, projectId, input.guestSide);
+    await requireGuestListContractGateOpen(apiContext, projectId);
 
     const guest = await createGuest(
       apiContext.supabase,

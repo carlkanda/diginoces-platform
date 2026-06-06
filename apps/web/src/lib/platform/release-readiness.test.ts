@@ -10,6 +10,10 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import {
+  sanitizeTesterId,
+  validateArtifactFilename,
+} from "@/lib/platform/qa-artifact-filenames";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 // REPO_ROOT can be set in CI or non-standard runners; use an absolute repo path.
@@ -636,6 +640,56 @@ describe("Sprint 15 release readiness", () => {
     ]) {
       expect(existsSync(join(repoRoot, path)), `${path} exists`).toBe(true);
     }
+  });
+
+  it("validates QA artifact filenames with parser-safe tester and scenario metadata", () => {
+    expect(
+      validateArtifactFilename(
+        "20260603T123000Z__tester=qa_tester=west__scenario=QA-001.png",
+      ),
+    ).toEqual({
+      error: null,
+      parsed: {
+        extension: "png",
+        scenario: "QA-001",
+        tester: "qa_tester=west",
+        timestamp: "20260603T123000Z",
+      },
+      valid: true,
+    });
+    expect(
+      validateArtifactFilename(
+        "20260603T123000Z__tester=qa_west__scenario=QA-025__artifact=checksum=pre.sha256",
+      ).parsed,
+    ).toMatchObject({
+      artifact: "checksum=pre",
+      extension: "sha256",
+      scenario: "QA-025",
+      tester: "qa_west",
+    });
+    expect(
+      validateArtifactFilename(
+        "20260603T123000Z__tester=qa__west__scenario=QA-001.png",
+      ),
+    ).toMatchObject({
+      error: "missing key/value",
+      valid: false,
+    });
+    expect(
+      validateArtifactFilename("20260603T123000Z__tester=qa_west.png"),
+    ).toMatchObject({
+      error: "missing segments",
+      valid: false,
+    });
+    expect(
+      validateArtifactFilename(
+        "20260603T123000Z__tester=qa_west__artifact=log.txt",
+      ),
+    ).toMatchObject({
+      error: "missing required keys",
+      valid: false,
+    });
+    expect(sanitizeTesterId(" QA  tester__west ")).toBe("QA_tester_west");
   });
 
   it("keeps Sprint 15 launch classification counts aligned with the canonical coverage ledger", () => {

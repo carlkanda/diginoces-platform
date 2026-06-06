@@ -81,6 +81,8 @@ Filename validation for upload tooling:
 - Required keys are `tester` and `scenario`.
 - Values may contain single underscores or `=`, but must not contain `__`; reject unsafe filenames with a clear validation error.
 - `sanitizeTesterId(testerId)` should normalize spaces and reserved `__` before forming filenames.
+- Local parser reference: `apps/web/src/lib/platform/qa-artifact-filenames.ts`.
+- Local parser regression coverage: `npm --workspace apps/web run test -- --run src/lib/platform/release-readiness.test.ts`.
 
 Reference parser pseudocode:
 

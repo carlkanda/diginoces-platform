@@ -11,6 +11,7 @@ import {
   calculateArrivalState,
   calculateCheckInDashboardMetrics,
   canPerformCheckInAction,
+  canUseCheckInSupervisorOverride,
   detectOfflineSyncConflicts,
   generateCheckInToken,
   getSprint9CheckInStatus,
@@ -181,6 +182,12 @@ describe("Sprint 9 check-in foundation", () => {
         "unexpected_guests.review",
       ),
     ).toBe(false);
+    expect(
+      canUseCheckInSupervisorOverride(assignedStaff, projectId, eventId),
+    ).toBe(false);
+    expect(
+      canUseCheckInSupervisorOverride(supervisor, projectId, eventId),
+    ).toBe(true);
   });
 
   it("supports manual search by invitation id, name, phone, side, table, and printed-only guests", () => {

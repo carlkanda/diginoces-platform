@@ -215,6 +215,15 @@ export async function performManualCheckInAction(
 ) {
   try {
     const context = await getActionContext(eventId, "check_in.perform");
+    const supervisorOverride = booleanValue(formData, "supervisorOverride");
+
+    if (supervisorOverride) {
+      await requireEventPermission(
+        context,
+        eventId,
+        "check_in.unexpected_guests.review",
+      );
+    }
 
     await performGuestCheckIn(context.supabase, eventId, {
       arrivalCount: numberValue(formData, "arrivalCount") ?? 1,
@@ -223,7 +232,7 @@ export async function performManualCheckInAction(
       invitationId: formValue(formData, "invitationId"),
       method: formValue(formData, "method") ?? "manual_name_search",
       notes: formValue(formData, "notes"),
-      supervisorOverride: booleanValue(formData, "supervisorOverride"),
+      supervisorOverride,
     });
   } catch (error) {
     redirect(

@@ -2,9 +2,9 @@
 
 ## Summary
 
-This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. Later MVP UI QA also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, public guest file-download storage signing, storage-signing key selection, long filename wrapping, guided-manual message queue/status synchronization, seating assignment helper grants, and partner audit trigger runtime safety after auth, storage, and workflow issues blocked protected-route, public-download, communications, seating, and partner-flow inspection.
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. Later MVP UI QA also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, public guest file-download storage signing, storage-signing key selection, long filename wrapping, guided-manual message queue/status synchronization, seating assignment helper grants, partner audit trigger runtime safety, guest API contract-gate parity, partner index authorization visibility, and check-in supervisor override enforcement after auth, storage, and workflow issues blocked protected-route, public-download, communications, seating, partner-flow, and low-privilege role-boundary inspection.
 
-No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, storage key compatibility checks, tokenized public-route response hardening, generated filename wrapping, guided-manual queue/status consistency, authenticated seating helper grants, partner audit trigger field-safety, and regression tests for already-implemented MVP flows.
+No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, storage key compatibility checks, tokenized public-route response hardening, generated filename wrapping, guided-manual queue/status consistency, authenticated seating helper grants, partner audit trigger field-safety, server/UI permission parity, and regression tests for already-implemented MVP flows.
 
 ## Findings And Fixes
 
@@ -59,27 +59,48 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 17. Partner profile creation failed during MVP browser QA because `app_private.audit_partner_change()` referenced table-specific columns such as `project_id` through `new`/`old` records while auditing `public.partners`, which does not have those fields.
    - Fixed in `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql` by deriving audit snapshots from JSON and reading table-specific fields through `new_snapshot`/`old_snapshot` keys.
 
+18. Guest create/update API routes allowed side-authorized users to mutate guests while the guest-list contract gate was locked, even though the matching server-rendered forms were blocked.
+   - Fixed by adding `requireGuestListContractGateOpen` to guest create and update API mutations, with regression coverage confirming permission checks and contract-gate checks stay in order.
+
+19. The partners index displayed Review queue and Partner dashboard links for a restricted partner session even when the destination routes returned 404.
+   - Fixed by rendering partner index actions from server-side permission checks that match the destination pages, including reporting permissions for Partner dashboard.
+
+20. The event check-in manual form exposed and accepted `supervisorOverride` under normal `check_in.perform`, allowing event staff to bypass duplicate/arrival-count guards.
+   - Fixed by requiring `check_in.unexpected_guests.review` before accepting supervisor override, hiding the checkbox for event staff, and normalizing checkbox-label layout to avoid overflow.
+
 ## Files Changed
 
 - `apps/web/src/app/auth/callback/implicit/route.ts`
 - `apps/web/src/app/auth/callback/route.ts`
 - `apps/web/src/app/api/public/guest/[guestToken]/files/[fileId]/download/route.ts`
+- `apps/web/src/app/api/projects/[projectId]/guests/route.ts`
+- `apps/web/src/app/api/guests/[guestId]/route.ts`
 - `.env.example`
 - `apps/web/src/app/login/actions.ts`
 - `apps/web/src/app/login/page.tsx`
 - `apps/web/src/app/globals.css`
+- `apps/web/src/app/platform/events/[eventId]/check-in/actions.ts`
+- `apps/web/src/app/platform/events/[eventId]/check-in/page.tsx`
+- `apps/web/src/app/platform/partners/page.tsx`
 - `apps/web/src/app/platform/projects/[projectId]/commercial/page.tsx`
 - `apps/web/next.config.ts`
 - `apps/web/src/proxy.ts`
 - `apps/web/src/proxy.test.ts`
 - `apps/web/src/lib/auth/auth-service.ts`
 - `apps/web/src/lib/auth/auth-service.test.ts`
+- `apps/web/src/lib/check-in/check-in-foundation.test.ts`
+- `apps/web/src/lib/check-in/check-in-service.ts`
 - `apps/web/src/lib/files/file-foundation.test.ts`
+- `apps/web/src/lib/guests/guest-foundation.test.ts`
 - `apps/web/src/lib/messages/message-foundation.test.ts`
 - `apps/web/src/lib/partners/partner-foundation.test.ts`
+- `apps/web/src/lib/partners/partner-service.ts`
+- `apps/web/src/lib/platform/qa-artifact-filenames.ts`
+- `apps/web/src/lib/platform/release-readiness.test.ts`
 - `apps/web/src/lib/storage/storage-provider.ts`
 - `apps/web/src/lib/storage/storage-provider.test.ts`
 - `docs/qa/mvp-ui-qa-progress-report.md`
+- `docs/setup/qa-artifact-store.md`
 - `docs/setup/deployment-readiness.md`
 - `docs/setup/local-development.md`
 - `supabase/config.toml`
@@ -120,6 +141,10 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify the message queue status-sync migration updates guided-manual queue rows when message history changes and backfills already-stale queue rows.
 - Verify the seating invitation regeneration helper keeps explicit authenticated/service-role execute grants and no public/anon grant after Sprint 15 release security hardening.
 - Verify the partner audit trigger hardening migration uses JSON snapshots for table-specific fields and does not directly read `new.project_id`, `old.project_id`, status, actor, source-note, review-reason, or delete-marker fields from incompatible trigger record shapes.
+- Verify guest API create/update mutations call the guest-list contract gate after side permission checks.
+- Verify partner index action visibility follows server-side create, review, and dashboard permissions.
+- Verify event staff cannot use supervisor override while check-in supervisors can.
+- Verify QA artifact filenames parse tester/scenario metadata safely and reject malformed delimiter/key shapes.
 
 ## Linked Dev Verification
 
@@ -142,6 +167,9 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Applied `20260606151731_mvp_seating_invitation_helper_grant.sql` to linked dev. The seating assignment API then succeeded for the AAL2 admin/operations browser session after previously failing with `permission denied for function mark_guest_invitation_needs_regeneration_for_seating`.
 - Applied `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql` to linked dev. A rollback insert into `public.partners` then succeeded after previously failing with `record "new" has no field "project_id"`.
 - Partner profile, partner-user linkage, partner project draft creation, submit-for-review, Diginoces approval, source tracking, and audit action verification all passed through Chrome/CDP with the AAL2 `diginoces@gmail.com` admin/operations session. Disposable partner, partner-user, role-assignment, project, submission, and source rows were cleaned from linked dev; immutable audit evidence remained.
+- Low-privilege guest role-boundary QA used the authenticated `carlkanda@gmail.com` Chrome session. Locked guest-list API create/patch returned `403`; after a temporary `contract_approved` gate, bride/groom own-side create/update succeeded, cross-side update and edit pages were denied, and side filters handled `bride`, `groom`, `both`, and invalid values correctly. Cleanup removed the temporary role assignments and disposable guests, and restored the gate to `locked`.
+- Partner exact-role negative QA used a disposable active partner, active partner-user link, and custom `partner_admin` assignment for `carlkanda@gmail.com`. The partner profile was visible without internal notes, audit, commercial, or payment data; partner review, audit logs, and reports were denied. The stale partner index links were hidden after switching to destination-matching permission checks. Cleanup removed the disposable partner fixture and temporary role assignment.
+- Check-in staff exact-role QA used only an `event_staff` assignment on `QA Civil Ceremony` for `carlkanda@gmail.com`. Assigned event check-in and scan pages loaded; unrelated event check-in/seating, audit, and reports returned 404. After supervisor-override hardening, the event-staff page rendered no override checkbox, no settings controls, and no horizontal overflow. Cleanup removed the temporary event role.
 
 ## UI And API QA Evidence
 
@@ -161,6 +189,9 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Project file Chrome/CDP QA rendered the file library and file detail pages with the AAL2 admin/operations session, registered a disposable internal file, created a v2 version, uploaded private object content, verified authenticated signed download `307` then object fetch `200`, archived v2 through the UI, registered a disposable guest-visible invitation file, created a guest public token, rendered the public guest page with no body token leakage, verified public guest signed download `307` then object fetch `200`, and confirmed `files.archived`, `files.registered`, `files.version_created`, `guest_public_pages.accessed`, and `guest_public_tokens.created` audit evidence before cleanup. Final rerun after generated filename wrapping had no horizontal overflow on file detail or public guest pages and cleanup returned zero temporary files, guests, tokens, and storage objects.
 - Project retention lifecycle Chrome/CDP QA rendered the file-library retention panel with the authenticated `diginoces@gmail.com` session on `localhost`, verified all lifecycle actions were visible, and submitted extend-retention, mark-pending-deletion, and cancel-pending-deletion through the actual server-action form. Linked-dev verification found the expected `project_archive_events` transition sequence from `active` to `retention_extended`, then `pending_deletion`, then `retention_active`. Desktop and mobile renders had no login redirect, no visible app/config errors, no unlabeled visible controls, and no horizontal overflow. Cleanup restored the fake project to its original active/no-retention-date state and removed the temporary retention policy/archive-event rows.
 - Partner Chrome/CDP QA rendered `/platform/partners`, `/platform/partners/:partnerId`, `/platform/partner-dashboard?partnerId=...`, and `/platform/partners/review` with the authenticated AAL2 admin/operations session. The browser created a disposable partner, linked the current QA user as partner admin, created and submitted a partner-originated project draft, approved it in the Diginoces review queue, and verified mobile partner dashboard/detail renders with no login redirect, visible app/config errors, horizontal overflow, or unlabeled visible controls.
+- Low-privilege guest Chrome/CDP QA used `carlkanda@gmail.com` with temporary bride/groom roles. The browser-side API calls and rendered guest forms verified locked contract-gate denial, own-side mutation allowance after temporary gate approval, cross-side denial, fail-closed invalid side filtering, and no cross-side form leakage.
+- Low-privilege partner Chrome/CDP QA used `carlkanda@gmail.com` with a disposable partner-admin setup. Partner list/profile rendered only partner-visible fields; review, audit, and reports were denied; after the UI fix, the partners index no longer showed links to denied review/dashboard destinations.
+- Low-privilege check-in Chrome/CDP QA used `carlkanda@gmail.com` with only `event_staff` on the civil event. Assigned check-in and scan pages rendered, unrelated event/admin/report routes were denied, and the final rerun hid supervisor override and settings controls with no horizontal overflow.
 
 ## Commands Run
 
@@ -346,6 +377,24 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npx supabase@latest db push --linked --dry-run` - passed after applying `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql`; remote database is up to date.
 - `npm run secrets:scan` - passed after partner audit trigger hardening.
 - `git diff --check` - passed with informational CRLF warnings on touched markdown files only after partner audit trigger hardening.
+- `npm --workspace apps/web run test -- --run src/lib/guests/guest-foundation.test.ts` - passed after guest API contract-gate coverage.
+- `npm --workspace apps/web run test -- --run src/lib/partners/partner-foundation.test.ts` - passed, 13 partner foundation tests after partner index visibility coverage.
+- `npm --workspace apps/web run test -- --run src/lib/check-in/check-in-foundation.test.ts` - passed, 11 check-in foundation tests after supervisor-override permission coverage.
+- `npm --workspace apps/web run test -- --run src/lib/platform/release-readiness.test.ts` - passed after QA artifact filename parser coverage.
+- Chrome/CDP low-privilege guest role-boundary QA - passed with `carlkanda@gmail.com`; locked guest-list API mutations returned `403`, temporary open-gate own-side mutations succeeded, cross-side mutations/pages were denied, side filtering remained correct, and cleanup restored zero temporary roles/guests plus `guest_list_access_status=locked`.
+- Chrome/CDP low-privilege partner negative QA - passed with a disposable partner and `partner_admin` custom role; partner-visible list/profile rendered, internal/review/audit/report destinations were denied, stale index links were hidden after the fix, and cleanup returned zero temporary partner rows/roles.
+- Chrome/CDP low-privilege check-in staff QA - passed with only `event_staff` on the civil event; assigned check-in/scan pages rendered, unrelated event/admin/report pages were denied, supervisor override/settings controls were hidden after the fix, and cleanup removed the temporary role.
+- `npm run format` - passed after low-privilege role-boundary hardening.
+- `npm run format:check` - passed after low-privilege role-boundary hardening.
+- `npm run lint` - passed after low-privilege role-boundary hardening.
+- `npm run typecheck` - passed after low-privilege role-boundary hardening.
+- `npm run test` - passed, 20 files and 219 tests after low-privilege role-boundary hardening.
+- `npm run build` - passed after low-privilege role-boundary hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after low-privilege role-boundary hardening.
+- `npm run db:lint` - passed, no schema errors after low-privilege role-boundary hardening.
+- `npx supabase@latest db push --linked --dry-run` - passed, remote database is up to date.
+- `npm run secrets:scan` - passed after low-privilege role-boundary hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched markdown files only.
 
 ## Security Review
 
@@ -362,6 +411,10 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - The seating helper-grant migration does not expose the private helper to `public` or `anon`; it grants only the roles needed by authenticated seating RPCs and service-role maintenance.
 - The partner audit trigger now derives table-specific values from JSON snapshots, preserving existing redaction and action names while preventing cross-table trigger record field leakage or runtime crashes.
 - Partner QA used fake linked-dev data only. Disposable partner, linked-user, custom role-assignment, project, submission, and source rows were removed after verification; audit rows remained immutable by design.
+- Guest API mutations now enforce the same contract gate as server-rendered guest forms, so side-authorized users cannot bypass commercial/contract controls through API routes.
+- Partner index links now follow the same server-side permission checks as partner review/dashboard destination pages, reducing misleading or stale entry points for restricted partner users.
+- Check-in supervisor override now requires `check_in.unexpected_guests.review` on the server action and is hidden from `event_staff`; regular check-in staff retain normal `check_in.perform`.
+- Low-privilege QA used fake `MVP_QA_*` rows and temporary role assignments only; cleanup returned zero temporary roles, guests, partners, and partner-user rows, and restored the fake project guest-list gate to `locked`.
 
 ## Assumptions
 

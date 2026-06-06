@@ -1030,6 +1030,19 @@ export function canPerformCheckInAction(
   });
 }
 
+export function canUseCheckInSupervisorOverride(
+  assignments: RoleAssignment[],
+  projectId: string,
+  eventId: string,
+) {
+  return canPerformCheckInAction(
+    assignments,
+    projectId,
+    eventId,
+    "unexpected_guests.review",
+  );
+}
+
 export function getSprint9CheckInStatus() {
   return {
     epic: "EPIC-CHK",

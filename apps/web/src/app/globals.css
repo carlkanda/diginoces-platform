@@ -475,6 +475,18 @@ textarea {
   outline: 3px solid rgba(0, 107, 95, 0.15);
 }
 
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+:is(.form-grid, .stacked-form) .checkbox-label input[type="checkbox"] {
+  width: auto;
+  min-height: auto;
+}
+
 /* .form-panel is a lightweight form container: it keeps padding directly and
    skips the standard .panel shadow/.panel-body split used by larger panels. */
 .form-panel {
