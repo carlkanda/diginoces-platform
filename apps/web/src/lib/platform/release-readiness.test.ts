@@ -10,6 +10,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import nextConfig from "../../../next.config";
 import {
   sanitizeTesterId,
   validateArtifactFilename,
@@ -690,6 +691,10 @@ describe("Sprint 15 release readiness", () => {
       valid: false,
     });
     expect(sanitizeTesterId(" QA  tester__west ")).toBe("QA_tester_west");
+  });
+
+  it("allows the loopback host used by local browser QA in Next dev mode", () => {
+    expect(nextConfig.allowedDevOrigins).toContain("127.0.0.1");
   });
 
   it("keeps Sprint 15 launch classification counts aligned with the canonical coverage ledger", () => {

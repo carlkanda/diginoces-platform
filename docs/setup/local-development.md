@@ -72,6 +72,13 @@ Default local URL:
 http://localhost:3000
 ```
 
+Local browser QA may also open the app at `http://127.0.0.1:3000`, especially
+when Chrome/CDP or the in-app browser uses the numeric loopback host. The Next.js
+dev server explicitly allows `127.0.0.1` as a development origin so client
+chunks and HMR resources load instead of returning 403. Browser cookies remain
+host-scoped, so signing in on `localhost` does not automatically authenticate a
+separate `127.0.0.1` tab; use one host consistently for authenticated QA flows.
+
 Useful checks:
 
 ```bash
