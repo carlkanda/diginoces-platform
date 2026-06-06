@@ -71,7 +71,7 @@ Token-scoped public guest RPCs remain explicitly granted to `anon`:
 
 ## Advisor Refresh
 
-On June 5, 2026, the linked-dev Supabase advisor refresh returned:
+On June 6, 2026, the linked-dev Supabase advisor refresh returned:
 
 - Security: 34 `authenticated_security_definer_function_executable` warnings, 3 `anon_security_definer_function_executable` warnings, and 1 `auth_leaked_password_protection` warning.
 - Performance: 246 `unindexed_foreign_keys` info items, 38 `multiple_permissive_policies` warnings, and 29 `unused_index` info items.
@@ -79,6 +79,25 @@ On June 5, 2026, the linked-dev Supabase advisor refresh returned:
 The security-definer warnings align with the documented permission-gated authenticated RPCs and the token-scoped public guest RPC allow-list above. The leaked-password protection warning remains an external Supabase Auth configuration decision before production; it is lower impact while the app exposes magic-link sign-in only, but it should be enabled or formally accepted before any password-based auth surface is exposed.
 
 The performance advisor items are launch-risk inputs for staging load testing and post-MVP database tuning, not current app security blockers.
+
+## Low-Privilege Role Boundary Refresh
+
+On PR `#48`, Chrome/CDP QA used the authenticated `carlkanda@gmail.com`
+session with temporary linked-dev role assignments to verify exact low-privilege
+boundaries:
+
+- `bride` and `groom` roles can mutate only own-side guests when the guest-list
+  gate is open, cannot bypass the locked guest-list contract gate through API
+  routes, and cannot load cross-side edit forms.
+- `partner_admin` can see partner-visible list/profile data only; internal
+  notes, review queue, audit logs, reports, commercial, and payment data remain
+  denied.
+- `event_staff` can load assigned event check-in and scan pages, cannot access
+  unrelated event/admin/report routes, and cannot use supervisor override.
+
+Temporary role assignments and disposable linked-dev rows were removed after
+verification. Production launch still requires the external QA artifact-store
+evidence package for QA-001 through QA-036.
 
 ## Seed And Demo Data
 

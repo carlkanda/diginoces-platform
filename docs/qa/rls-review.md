@@ -21,6 +21,8 @@ This review covers Supabase/Postgres security posture for public business tables
 - Added a Sprint 15 migration to narrow function execute grants flagged by security advisors.
 - Applied the Sprint 15 migration to the linked dev project on June 4, 2026.
 - Re-ran linked migration list, linked dry-run, `npm run db:lint`, security advisors, performance advisors, and RPC grant verification after apply.
+- Re-ran linked-dev security advisors and RPC grant verification on June 6, 2026 after PR `#48` low-privilege QA hardening.
+- Verified exact low-privilege browser boundaries for bride, groom, partner admin, and event staff in Chrome/CDP using temporary linked-dev roles and fake disposable rows.
 
 ## Security Advisor Findings
 
@@ -31,6 +33,13 @@ Sprint 15 classifies anonymous execute access on authenticated application RPCs 
 Post-apply verification owner: engineering lead, with operations lead sign-off recorded in `docs/planning/mvp-launch-checklist.md` or the external release runbook. After applying the migration, query function privileges for the authenticated RPC set and confirm no authenticated application RPC remains executable by `anon` or inherited `PUBLIC`. The token-scoped functions listed below remain intentionally granted to `anon`.
 
 Linked dev result on June 4, 2026: passed. The corrected query below returned zero non-allowlisted `PUBLIC`/`anon` execute grants.
+
+Linked dev refresh on June 6, 2026: passed. The same corrected query returned
+zero non-allowlisted `PUBLIC`/`anon` execute grants after PR `#48` role-boundary
+hardening. The security advisor still reports the expected explicit
+security-definer warnings for permission-gated authenticated RPCs and
+token-scoped public guest RPCs, plus the production Auth leaked-password
+configuration warning tracked in `docs/planning/mvp-launch-checklist.md`.
 
 Run this verification against the target linked project:
 
@@ -106,7 +115,7 @@ Supabase performance advisors reported informational and warning-level items, in
 | Service role | Used only as database role grants/server-side concept; no key committed | acceptable_mvp_risk |
 | Audit logs | Audit tables/triggers/RPCs exist across modules; audit entries are append-oriented | acceptable_mvp_risk |
 | File access | Signed download routes and RPCs enforce project/guest access before URL creation | acceptable_mvp_risk |
-| Partner/couple restrictions | Enforced by project/event membership, permission helpers, and RLS/RPC checks | acceptable_mvp_risk |
+| Partner/couple restrictions | Enforced by project/event membership, permission helpers, and RLS/RPC checks; PR `#48` exact-role Chrome/CDP QA verified bride/groom side boundaries, partner visible-only access, and check-in staff event scope | acceptable_mvp_risk |
 
 ## Remaining Work
 
