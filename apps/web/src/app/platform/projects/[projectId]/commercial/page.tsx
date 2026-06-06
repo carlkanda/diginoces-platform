@@ -418,23 +418,25 @@ export default async function ProjectCommercialPage({
               action={applyCommercialGestureAction.bind(null, projectId)}
               className="inline-form"
             >
-              <select name="gestureType" defaultValue="fixed_amount">
-                <option value="fixed_amount">Fixed</option>
-                <option value="percentage">Percentage</option>
-              </select>
-              <input
-                min="1"
-                name="amountCents"
-                placeholder="Amount cents"
-                type="number"
-              />
-              <input
-                min="1"
-                name="percentageBps"
-                placeholder="Basis points"
-                type="number"
-              />
-              <input name="reason" placeholder="Reason" required />
+              <label className="inline-field">
+                Gesture type
+                <select name="gestureType" defaultValue="fixed_amount">
+                  <option value="fixed_amount">Fixed</option>
+                  <option value="percentage">Percentage</option>
+                </select>
+              </label>
+              <label className="inline-field">
+                Amount cents
+                <input min="1" name="amountCents" type="number" />
+              </label>
+              <label className="inline-field">
+                Basis points
+                <input min="1" name="percentageBps" type="number" />
+              </label>
+              <label className="inline-field">
+                Reason
+                <input name="reason" required />
+              </label>
               <button className="button secondary" type="submit">
                 Apply gesture
               </button>
@@ -491,11 +493,10 @@ export default async function ProjectCommercialPage({
                   <input name="approvalChecked" required type="checkbox" />I
                   have reviewed this contract and approve it in-app.
                 </label>
-                <input
-                  name="confirmationText"
-                  placeholder="Type approval confirmation"
-                  required
-                />
+                <label>
+                  Approval confirmation
+                  <input name="confirmationText" required />
+                </label>
                 <button className="button" type="submit">
                   Approve contract
                 </button>
@@ -638,14 +639,19 @@ export default async function ProjectCommercialPage({
               type="hidden"
               value={overview.project.project_code}
             />
-            <input
-              min="1"
-              name="additionalAmountCents"
-              placeholder="Additional cents"
-              required
-              type="number"
-            />
-            <input name="reason" placeholder="Reason for addendum" required />
+            <label>
+              Additional cents
+              <input
+                min="1"
+                name="additionalAmountCents"
+                required
+                type="number"
+              />
+            </label>
+            <label>
+              Reason
+              <input name="reason" required />
+            </label>
             <button className="button secondary" type="submit">
               Create addendum
             </button>

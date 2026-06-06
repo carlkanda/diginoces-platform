@@ -54,6 +54,8 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `apps/web/src/app/api/public/guest/[guestToken]/files/[fileId]/download/route.ts`
 - `apps/web/src/app/login/actions.ts`
 - `apps/web/src/app/login/page.tsx`
+- `apps/web/src/app/globals.css`
+- `apps/web/src/app/platform/projects/[projectId]/commercial/page.tsx`
 - `apps/web/next.config.ts`
 - `apps/web/src/proxy.ts`
 - `apps/web/src/proxy.test.ts`
@@ -126,6 +128,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Production-mode smoke test on port 3001 returned 200 for `/` and `/login`, 404 for an invalid public guest route, and 307 for `/platform`; `X-Powered-By` was absent.
 - Public guest file-link Chrome/CDP QA rendered a disposable guest-visible file row without token-in-body leakage or mobile overflow, found the anonymous-storage-signing `502`, and verified fixture cleanup. A follow-up linked-dev service-level signed-download check verified invalid token status `invalid`, valid file resolution `ok`, private object fetch `200`, `download` filename parameter present, and no public guest token in the signed URL. Browser-route positive download still needs rerun on a server process started with `SUPABASE_SECRET_KEY`.
 - Guest-import admin Chrome/CDP QA rendered upload, mapping, preview/detail, review, and applied detail pages with no visible app error, no 404, no horizontal overflow, and no unlabeled controls on the final detail page. The test used a disposable CSV fixture and verified partial approval applied only the approved row while held rows did not create guests.
+- Commercial Chrome/CDP QA rendered package/add-on creation, event selection, pricing, commercial gesture, generated contract, contract approval, confirmed payment, payment exception, and mobile final states. The pass found and fixed unlabeled commercial gesture, approval confirmation, and addendum controls, then reran with zero unlabeled visible controls, no horizontal overflow, no 404, and no visible app errors.
 
 ## Commands Run
 
@@ -241,6 +244,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after MFA bridge and commercial label hardening.
 - `git diff --check` - passed with informational CRLF warnings on touched files only after MFA bridge and commercial label hardening.
 - Guest-import admin review/apply Chrome/CDP QA - passed on linked dev with the AAL2 `diginoces@gmail.com` session; one row was approved/applied, one row was held, expected import audit actions were present, and disposable data cleanup verification returned zero remaining rows in import, guest, assignment, RSVP, token, invitation, message, check-in, seating, and file reference tables.
+- Commercial Chrome/CDP QA - initially failed on unlabeled commercial gesture, approval confirmation, and addendum controls; passed after label fixes. The disposable flow created a package, add-on, event package selection, pricing snapshots, commercial gesture, generated/approved contract, confirmed manual payment, and active payment exception. Linked-dev verification found the expected commercial audit actions and cleanup returned zero disposable commercial rows while preserving the permanent fake-project payment exception.
 
 ## Security Review
 

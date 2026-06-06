@@ -509,6 +509,14 @@ textarea {
   font-weight: 650;
 }
 
+.inline-field {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .checkbox-grid input,
 .stacked-form input[type="checkbox"] {
   width: 18px;
