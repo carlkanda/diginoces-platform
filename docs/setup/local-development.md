@@ -32,9 +32,29 @@ Required web variables:
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_SECRET_KEY=
 ```
 
-The web app intentionally uses the Supabase publishable key. Do not expose a service-role key through any `NEXT_PUBLIC_` variable.
+The web app intentionally uses the Supabase publishable key for browser and SSR user-session access. `SUPABASE_SERVICE_ROLE_KEY` is server-only and is used only after backend authorization checks for private Supabase Storage signed URLs, including public-token-scoped guest file downloads. Keep `SUPABASE_SECRET_KEY` empty unless it contains a JWT-compatible legacy key; opaque `sb_secret_...` keys are not accepted by the current Supabase Storage signed URL path. Do not expose a Supabase secret or legacy service-role key through any `NEXT_PUBLIC_` variable.
+
+## Supabase Auth Magic Links
+
+For SSR cookie-based auth, configure Supabase Auth email templates to send token-hash links to the app callback route. In the Supabase Dashboard, update the Magic Link template to use this link shape:
+
+```text
+{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email
+```
+
+`{{ .RedirectTo }}` preserves the app-generated callback origin and `next` path, and the Diginoces sign-in action always includes a query string, so the token parameters are appended with `&`. Keep `NEXT_PUBLIC_APP_URL` and the Supabase Auth Site URL aligned with the local app origin, usually `http://localhost:3000`. Add the same origin to Supabase Auth redirect URLs. For local browser QA, also allow the loopback origins you actually open in Chrome, such as `http://127.0.0.1:3000/**` and `http://localhost:3000/**` or exact callback entries if your Supabase project does not use wildcard redirect rules. The app preserves safe loopback origins when requesting magic links so PKCE verifier cookies stay on the same host as the callback.
+
+The app also includes a local compatibility bridge for older implicit-flow magic links that redirect to `/auth/callback#access_token=...`. The bridge clears the URL fragment from browser history, posts the tokens to a same-origin callback endpoint, validates the session with Supabase, and sets SSR cookies. Prefer the token-hash email-template configuration for production readiness. The callback also accepts Supabase's `token=` query alias. `token_hash=` and `type=email` are the preferred template parameters, and the callback will try the paired `email`/`magiclink` verification fallback if Supabase rejects the received type.
+
+If a local sign-in ends at an authentication callback error:
+
+- make sure the app is running at the same origin configured in `NEXT_PUBLIC_APP_URL`;
+- make sure the linked Supabase Auth Site URL and redirect allow-list include the callback origin shown in the magic-link URL, including `localhost` versus `127.0.0.1`;
+- request a fresh magic link after any rate-limit window, because Supabase magic links are single-use and expire quickly.
 
 ## Web App
 
@@ -49,7 +69,7 @@ The root `dev` script loads root `.env` and `.env.local` values before starting 
 Default local URL:
 
 ```text
-http://127.0.0.1:3000
+http://localhost:3000
 ```
 
 Useful checks:
@@ -336,5 +356,6 @@ http://127.0.0.1:3000/api/public/guest/{guestPublicToken}/files/{fileId}/downloa
 - Sprint 14 registers file metadata for project, event, guest, invitation, report/export, contract, payment, partner, and archive files. The UI records file metadata and storage paths; production object upload UX remains provider-backed and private.
 - The Sprint 14 migration creates private Supabase Storage buckets for `project-files`, `invitation-files`, and `archive-files`, plus RLS-backed file registry, access-event, retention-policy, archive-event, and download-token tables.
 - Authenticated app downloads require file read/download permissions and issue short-lived Supabase signed URLs through the server route. Public guest downloads remain guest-token scoped and can only resolve latest active guest-facing files bound to that guest.
+- Public guest file downloads require `SUPABASE_SERVICE_ROLE_KEY` on the server so the route can sign private `project-files` objects only after the token-scoped download RPC authorizes the exact latest active guest-facing file. If this key is absent, the route fails closed with a generic storage error instead of exposing direct object access.
 - Retention and archive workflows are foundation controls only. They support review dates, retention extension metadata, project archive events, file archive events, soft-delete/revoke states, and audit logging; automated destructive deletion is intentionally out of scope.
 - A historical PR `#17` WSL CodeRabbit full-diff review failed with `TRPCClientError` even when `coderabbit doctor` passed; a later PR `#18` full-diff review completed successfully. If the `TRPCClientError` recurs, use scoped directory reviews such as `coderabbit review --agent --base main --dir apps/web/src/lib/auth -c AGENTS.md`, then rely on the hosted CodeRabbit PR review as the full-diff backstop.

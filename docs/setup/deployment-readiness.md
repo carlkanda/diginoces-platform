@@ -14,6 +14,8 @@ Use real values only in local `.env.local`, the staging host, or the production 
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser/server Supabase project URL | Public value, still environment-specific |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key | Public browser key, not service role |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side private Storage signed URL generation | Server-only legacy JWT; required for guest file downloads after token-scoped backend authorization |
+| `SUPABASE_SECRET_KEY` | Optional backward-compatible Storage signing key | Server-only; leave empty unless it is JWT-compatible because opaque `sb_secret_...` keys are rejected by the current Storage signed URL path |
 | `DATABASE_URL` | Local tooling database connection | Placeholder only in `.env.example`; do not commit real password |
 | `WHATSAPP_MODE` | `manual` or future adapter mode | MVP should use `manual` unless approved provider credentials exist |
 
@@ -39,7 +41,7 @@ Use real values only in local `.env.local`, the staging host, or the production 
 2. Confirm CI runs the same core checks on the PR.
 3. Deploy the branch to staging.
 4. Configure environment variables in the hosting provider.
-5. Confirm no service-role key is exposed as `NEXT_PUBLIC_*`; CI also runs `npm run env:check-public` to block public variable names or values containing service-role/private-key markers.
+5. Confirm no Supabase secret or legacy service-role key is exposed as `NEXT_PUBLIC_*`; CI also runs `npm run env:check-public` to block public variable names or values containing service-role/private-key markers.
 6. Run the smoke checklist in `docs/planning/mvp-launch-checklist.md`.
 7. Run Supabase/database checks when linked project access is available: `npm run db:lint`, `npx supabase@2.104.0 db push --linked --dry-run`, and Supabase advisors.
 
@@ -49,6 +51,7 @@ Use the pinned Supabase CLI version above for deployment-readiness evidence. Spr
 
 - Buckets for project, invitation, and archive files must stay private.
 - Signed download URLs must be created only through server routes/RPCs after permission checks.
+- Public guest file downloads require `SUPABASE_SERVICE_ROLE_KEY` on the server because the anonymous public guest page session cannot sign private `project-files` objects directly.
 - Zero-byte placeholder file metadata must follow the provider-backed registration policy in `docs/architecture/file-management-policy.md`.
 - Do not enable direct public object access for generated invitations, guest files, contracts, payment proofs, archives, or reports.
 

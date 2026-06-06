@@ -12,18 +12,18 @@ The MVP can proceed to controlled staging QA after Sprint 15 changes for issue `
 | --- | --- | --- | --- |
 | Product scope | Sprints 1-15 MVP foundations present | Ready for staging QA | Confirm no Sprint 16+ scope is required |
 | Requirements coverage | MVP coverage review exists | Added in Sprint 15 | Review `docs/planning/mvp-requirements-coverage.md` with Diginoces owner |
-| CI | `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run env:check-public`, `npm run build`; Supabase/database checks where linked access exists | Green on PR `#42` before merge | Green CI on target release branch |
-| Dependencies | `npm audit --omit=dev` | Passed before merge with 0 vulnerabilities | 0 vulnerabilities or documented exception |
+| CI | `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run env:check-public`, `npm run build`; Supabase/database checks where linked access exists | Green on PR `#48` after MVP role-boundary hardening; Verify and CodeRabbit passed | Green CI on target release branch |
+| Dependencies | `npm audit --omit=dev` | Passed on PR `#48` with 0 vulnerabilities | 0 vulnerabilities or documented exception |
 | TD-001 | Next.js canary reviewed | Accepted MVP risk / still open | Recheck stable Next.js before production readiness; see `docs/planning/mvp-known-limitations.md` and `docs/planning/mvp-requirements-coverage.md` |
-| Supabase migrations | Sprint 15 grant migration added | Applied to linked dev on June 4, 2026; dry-run now reports remote database is up to date | Apply and verify every target project that differs from linked dev |
-| RLS/security | Advisors reviewed | Linked dev post-apply RPC grant verification passed with zero non-allowlisted `PUBLIC`/`anon` execute grants | Re-run advisors and `docs/qa/rls-review.md` verification in the target environment |
+| Supabase migrations | Sprint 15 grant migration added | Applied to linked dev on June 4, 2026; dry-run on June 6, 2026 reported remote database is up to date | Apply and verify every target project that differs from linked dev |
+| RLS/security | Advisors reviewed | Linked dev June 6, 2026 security advisor refresh returned 34 authenticated security-definer warnings, 3 token-scoped anon security-definer warnings, and 1 leaked-password warning; RPC grant verification returned zero non-allowlisted `PUBLIC`/`anon` execute grants | Re-run advisors and `docs/qa/rls-review.md` verification in the target environment |
 | Secrets | No committed real secrets/private data | Maintained scan passed before merge | Clean targeted scan |
-| Permissions | Role boundary review exists | Added in Sprint 15 | Run manual role QA |
-| MFA | Sensitive roles require MFA metadata | Risk remains | Follow MFA decision flow below; enforce/configure MFA or restrict launch with accepted risk |
+| Permissions | Role boundary review exists | Exact linked-dev role QA passed on PR `#48` for bride, groom, partner, and check-in staff boundaries; full external QA evidence package still required | Run full QA-026 through QA-036 evidence capture in the target QA artifact store |
+| MFA | Sensitive roles require MFA metadata | AAL2 browser QA passed through `/login/mfa`; production MFA decision evidence remains pending | Follow MFA decision flow below; enforce/configure MFA or restrict launch with accepted risk |
 | Storage | Private buckets and signed URLs documented | Ready for verification | Confirm bucket policies in target project |
 | Public guest access | Token-scoped flows documented | Ready for verification | Manual token isolation QA |
 | Manual workflows | WhatsApp/payments/Canva fallbacks documented | Ready | Operations accepts manual workflow |
-| Staging smoke | Scenario checklist exists | Added in Sprint 15 | Run all scenarios in `docs/qa/mvp-manual-qa-scenarios.md` and record results in the secure QA artifact store from `docs/setup/qa-artifact-store.md` |
+| Staging smoke | Scenario checklist exists | Local/linked-dev Chrome/CDP QA has covered the major MVP flows and exact low-privilege boundaries; external QA-001 through QA-036 evidence package remains pending | Run all scenarios in `docs/qa/mvp-manual-qa-scenarios.md` and record results in the secure QA artifact store from `docs/setup/qa-artifact-store.md` |
 | Rollback | Rollback plan exists | Added in Sprint 15 | Owner acknowledges fallback process in `docs/planning/mvp-rollback-plan.md` |
 | Monitoring | Post-launch plan exists | Added in Sprint 15 | Assign owners and response paths in `docs/qa/post-launch-monitoring.md` |
 
@@ -34,6 +34,7 @@ Record post-apply RLS/RPC grant verification sign-off here before production pro
 | Signer name | Role | Date | Evidence ID / Reference |
 | --- | --- | --- | --- |
 | Linked dev RPC grant verification | Engineering lead | 2026-06-04 | Query result: zero non-allowlisted `PUBLIC`/`anon` execute grants; opaque runbook reference to be stored externally |
+| Linked dev PR #48 role-boundary and advisor refresh | Engineering lead | 2026-06-06 | PR `#48`; Verify and CodeRabbit passed; RPC grant verification returned zero rows; external evidence package still pending |
 | Pending | Operations lead | Pending | Runbook Ref ID: RBR-pending - URL stored in secured runbook |
 
 ## QA Infrastructure Readiness
@@ -46,6 +47,7 @@ Record QA artifact-store verification here before manual staging QA begins:
 | QA access ticketing flow or approved temporary fallback documented | Engineering lead | Pending | Ticket ID: QA-pending - URL stored in secured runbook or vault |
 | Upload/read authorization and unauthorized denial verified | QA lead | Pending | Artifact ID: QAART-pending - URL stored in secured runbook |
 | Retention, encryption, and audit logging verified | Engineering lead | Pending | Artifact ID: QAART-pending - URL stored in secured runbook |
+| Local filename parser and regression coverage | Engineering lead | 2026-06-06 | `validateArtifactFilename` / `sanitizeTesterId`; `npm --workspace apps/web run test -- --run src/lib/platform/release-readiness.test.ts`; external endpoint verification still pending |
 
 Store real evidence endpoints only in the external runbook, ticket system, or vault described by `docs/setup/qa-artifact-store.md`; this checklist records opaque references only.
 

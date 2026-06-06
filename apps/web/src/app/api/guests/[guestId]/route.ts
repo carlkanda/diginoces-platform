@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { requireGuestListContractGateOpen } from "@/lib/contracts/contract-gates";
 import {
   getProjectApiContext,
   handleProjectApiError,
@@ -104,6 +105,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       apiContext,
       details.guest.project_id,
       details.guest.guest_side,
+    );
+    await requireGuestListContractGateOpen(
+      apiContext,
+      details.guest.project_id,
     );
 
     const input = parseUpdateGuestPayload(await readJson(request));

@@ -44,21 +44,24 @@ function findMigrationRoot(startDirectory: string) {
 const migrationRoot = findMigrationRoot(here);
 const repoRoot = dirname(dirname(migrationRoot));
 
-function sprint12Migration() {
+function migrationByNameFragment(fragment: string) {
   const migrationMatches = readdirSync(migrationRoot).filter(
-    (name) =>
-      name.includes("sprint_12_guest_wishes_feedback") && name.endsWith(".sql"),
+    (name) => name.includes(fragment) && name.endsWith(".sql"),
   );
 
   if (migrationMatches.length === 0) {
-    throw new Error("Sprint 12 migration was not found.");
+    throw new Error(`Migration containing ${fragment} was not found.`);
   }
 
   if (migrationMatches.length > 1) {
-    throw new Error("Multiple Sprint 12 migrations were found.");
+    throw new Error(`Multiple migrations containing ${fragment} were found.`);
   }
 
   return readFileSync(join(migrationRoot, migrationMatches[0]!), "utf8");
+}
+
+function sprint12Migration() {
+  return migrationByNameFragment("sprint_12_guest_wishes_feedback");
 }
 
 function guestMessage(
@@ -373,6 +376,42 @@ describe("Sprint 12 guest wishes, guest-book export, and feedback foundation", (
       canReadMessages: false,
       canSubmitFeedback: false,
     });
+  });
+
+  it("keeps guest-message public inserts away from review-only audit fields", () => {
+    const migration = migrationByNameFragment(
+      "mvp_guest_wishes_audit_trigger_fix",
+    );
+    const guestMessagesBranchIndex = migration.indexOf(
+      "if tg_table_name = 'guest_messages' then",
+    );
+    const reviewBranchIndex = migration.indexOf(
+      "elsif tg_table_name = 'guest_message_reviews' then",
+    );
+
+    expect(migration).toContain(
+      "app_private.audit_guest_wishes_feedback_change",
+    );
+    expect(guestMessagesBranchIndex).toBeGreaterThanOrEqual(0);
+    expect(reviewBranchIndex).toBeGreaterThan(guestMessagesBranchIndex);
+
+    const guestMessagesBranch = migration.slice(
+      guestMessagesBranchIndex,
+      reviewBranchIndex,
+    );
+    const reviewBranch = migration.slice(reviewBranchIndex);
+
+    expect(guestMessagesBranch).toContain("guest_messages.submitted");
+    expect(guestMessagesBranch).not.toContain("new.reviewer_user_id");
+    expect(guestMessagesBranch).not.toContain("new.actor_type");
+    expect(reviewBranch).toContain("new.reviewer_user_id");
+    expect(reviewBranch).toContain("new.actor_type");
+    expect(migration).toContain(
+      "return case when tg_op = 'DELETE' then old else new end;",
+    );
+    expect(migration).toContain("if tg_op = 'DELETE' then");
+    expect(migration).toContain("changed_object_id := old.id;");
+    expect(migration).toContain("when tg_op in ('UPDATE', 'DELETE')");
   });
 
   it("documents Sprint 12 database, permission, audit, public-page, and route foundations", () => {

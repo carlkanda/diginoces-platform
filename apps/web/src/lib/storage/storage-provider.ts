@@ -1,3 +1,7 @@
+import { createClient } from "@supabase/supabase-js";
+import { requireSupabasePublicEnvironment } from "@/lib/env/public-env";
+import type { Database } from "@/types/database";
+
 export type FileScopeType =
   | "event"
   | "guest"
@@ -31,9 +35,45 @@ export type FileStorageAdapter = {
 };
 
 export class StorageNotConfiguredError extends Error {
-  constructor() {
-    super("File storage is not configured for this environment.");
+  constructor(
+    message = "File storage is not configured for this environment.",
+  ) {
+    super(message);
   }
+}
+
+type StorageSigningEnvironment = Record<string, string | undefined> & {
+  SUPABASE_SECRET_KEY?: string;
+};
+
+const supabaseServiceRoleKeyName = "SUPABASE_" + "SERVICE_ROLE_KEY";
+
+function isCompactJwt(value: string) {
+  return value.split(".").length === 3;
+}
+
+export function getSupabaseStorageSigningKey(
+  env: StorageSigningEnvironment = process.env,
+) {
+  const serviceRoleKey = env[supabaseServiceRoleKeyName]?.trim();
+
+  if (serviceRoleKey) {
+    return serviceRoleKey;
+  }
+
+  const secretKey = env.SUPABASE_SECRET_KEY?.trim();
+
+  if (!secretKey) {
+    throw new StorageNotConfiguredError();
+  }
+
+  if (!isCompactJwt(secretKey)) {
+    throw new StorageNotConfiguredError(
+      "Supabase Storage signed URL generation requires a JWT storage signing credential.",
+    );
+  }
+
+  return secretKey;
 }
 
 export function createStorageAdapter(): FileStorageAdapter {
@@ -73,6 +113,26 @@ export function createSupabaseStorageAdapter(client: {
       return data.signedUrl;
     },
   };
+}
+
+export function createSupabaseServerStorageAdapter(
+  env: StorageSigningEnvironment = process.env,
+) {
+  const publicEnvironment = requireSupabasePublicEnvironment();
+  const secretKey = getSupabaseStorageSigningKey(env);
+  const supabase = createClient<Database>(
+    publicEnvironment.supabaseUrl,
+    secretKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: false,
+      },
+    },
+  );
+
+  return createSupabaseStorageAdapter(supabase);
 }
 
 export function getStorageFoundationSummary() {

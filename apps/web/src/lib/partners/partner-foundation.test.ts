@@ -16,6 +16,7 @@ import {
   canPerformPartnerAction,
   createPartnerProjectDraft,
   createPartnerProfileFoundation,
+  getPartnerIndexActionVisibility,
   isPartnerRestrictedField,
   linkPartnerUserFoundation,
   PartnerValidationError,
@@ -317,6 +318,41 @@ describe("Sprint 13 partner foundation", () => {
     expect(isPartnerRestrictedField("auditLogs")).toBe(true);
   });
 
+  it("keeps partner index actions aligned with server-side permissions", () => {
+    expect(
+      getPartnerIndexActionVisibility({
+        canManagePartners: false,
+        canOpenPartnerDashboard: false,
+        canReviewPartnerProjects: false,
+      }),
+    ).toEqual({
+      showCreatePartner: false,
+      showPartnerDashboard: false,
+      showReviewQueue: false,
+    });
+    expect(
+      getPartnerIndexActionVisibility({
+        canManagePartners: false,
+        canOpenPartnerDashboard: true,
+        canReviewPartnerProjects: false,
+      }),
+    ).toMatchObject({
+      showPartnerDashboard: true,
+      showReviewQueue: false,
+    });
+    expect(
+      getPartnerIndexActionVisibility({
+        canManagePartners: true,
+        canOpenPartnerDashboard: true,
+        canReviewPartnerProjects: true,
+      }),
+    ).toEqual({
+      showCreatePartner: true,
+      showPartnerDashboard: true,
+      showReviewQueue: true,
+    });
+  });
+
   it("builds a restricted partner dashboard without revenue, payment, internal note, or audit fields", () => {
     const dashboard = buildPartnerDashboardView({
       now,
@@ -465,6 +501,13 @@ describe("Sprint 13 partner foundation", () => {
       ),
       "utf8",
     );
+    const partnerAuditHardeningMigration = readFileSync(
+      join(
+        repoRoot,
+        "supabase/migrations/20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql",
+      ),
+      "utf8",
+    );
     const healthRoute = readFileSync(
       join(repoRoot, "apps/web/src/app/api/health/route.ts"),
       "utf8",
@@ -527,6 +570,24 @@ describe("Sprint 13 partner foundation", () => {
     // Prevent review reasons from overwriting partner-provided source notes.
     expect(migration).not.toMatch(
       /source_notes\s*=\s*trim\s*\(\s*p_reason\s*\)/i,
+    );
+    expect(partnerAuditHardeningMigration).toContain(
+      "create or replace function app_private.audit_partner_change()",
+    );
+    expect(partnerAuditHardeningMigration).toContain(
+      "new_snapshot ->> 'project_id'",
+    );
+    expect(partnerAuditHardeningMigration).toContain(
+      "old_snapshot ->> 'project_id'",
+    );
+    expect(partnerAuditHardeningMigration).toContain(
+      "new_snapshot ->> 'status'",
+    );
+    expect(partnerAuditHardeningMigration).not.toMatch(
+      /\bnew\.(project_id|review_reason|source_notes|status|deleted_at|updated_by|created_by|invited_by|approved_by|submitted_by|reviewed_by|removed_by|assigned_by|author_user_id)\b/i,
+    );
+    expect(partnerAuditHardeningMigration).not.toMatch(
+      /\bold\.(project_id|review_reason|source_notes|status|deleted_at|updated_by|created_by|invited_by|approved_by|submitted_by|reviewed_by|removed_by|assigned_by|author_user_id)\b/i,
     );
     expect(partnerDashboardPage).toContain("searchParams");
     expect(partnerDashboardPage).not.toMatch(/partners\s*\[\s*0\s*\]/);

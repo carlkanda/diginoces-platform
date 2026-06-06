@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   canCreateGuestSide,
   canManageGuestSide,
@@ -16,6 +18,7 @@ import type { RoleAssignment } from "@/lib/security/permissions";
 
 const projectId = "11111111-1111-4111-8111-111111111111";
 const eventId = "22222222-2222-4222-8222-222222222222";
+const webRoot = process.cwd();
 
 const guestTitleType = {
   defaultGuestCount: 1,
@@ -264,6 +267,26 @@ describe("Sprint 3 guest-management foundation", () => {
         { isActive: true },
       ),
     ).toBe(false);
+  });
+
+  it("keeps guest API mutations behind the same contract gate as server-rendered forms", () => {
+    const projectGuestRoute = readFileSync(
+      join(webRoot, "src/app/api/projects/[projectId]/guests/route.ts"),
+      "utf8",
+    );
+    const guestRoute = readFileSync(
+      join(webRoot, "src/app/api/guests/[guestId]/route.ts"),
+      "utf8",
+    );
+
+    expect(projectGuestRoute).toContain("requireGuestListContractGateOpen");
+    expect(projectGuestRoute).toMatch(
+      /await requireGuestCreatePermission[\s\S]*await requireGuestListContractGateOpen/,
+    );
+    expect(guestRoute).toContain("requireGuestListContractGateOpen");
+    expect(guestRoute).toMatch(
+      /await requireGuestSidePermission[\s\S]*await requireGuestListContractGateOpen/,
+    );
   });
 
   it("validates records for later invitation workflows without implementing invitations", () => {

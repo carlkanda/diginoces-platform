@@ -130,6 +130,7 @@ textarea {
   font-size: clamp(2.2rem, 5vw, 4.4rem);
   line-height: 0.98;
   letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .hero p,
@@ -474,6 +475,18 @@ textarea {
   outline: 3px solid rgba(0, 107, 95, 0.15);
 }
 
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+:is(.form-grid, .stacked-form) .checkbox-label input[type="checkbox"] {
+  width: auto;
+  min-height: auto;
+}
+
 /* .form-panel is a lightweight form container: it keeps padding directly and
    skips the standard .panel shadow/.panel-body split used by larger panels. */
 .form-panel {
@@ -507,6 +520,14 @@ textarea {
   gap: 8px;
   font-size: 0.9rem;
   font-weight: 650;
+}
+
+.inline-field {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .checkbox-grid input,
@@ -640,6 +661,7 @@ textarea {
 .record-row strong,
 .task-row strong {
   display: block;
+  overflow-wrap: anywhere;
 }
 
 .record-row small,
@@ -647,6 +669,7 @@ textarea {
   display: block;
   margin-top: 3px;
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .tag {
@@ -719,6 +742,7 @@ body:has(.public-route) .main {
   font-size: clamp(2.4rem, 6vw, 5.2rem);
   line-height: 0.96;
   letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .public-hero p,

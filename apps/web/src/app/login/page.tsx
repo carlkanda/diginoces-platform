@@ -1,4 +1,4 @@
-import { signInWithMagicLink } from "./actions";
+import { signInWithEmailCode, signInWithMagicLink } from "./actions";
 import { normalizeInternalPath } from "@/lib/auth/auth-service";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 
@@ -49,6 +49,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 name="email"
                 type="email"
                 autoComplete="email"
+                defaultValue={params.email ?? ""}
                 placeholder="name@example.com"
                 required
               />
@@ -64,6 +65,42 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Sensitive roles are designed to require MFA once Supabase MFA
               policy is configured.
             </p>
+          </form>
+          <form className="form" action={signInWithEmailCode}>
+            <input type="hidden" name="next" value={next} />
+            <div className="field">
+              <label htmlFor="code-email">Email address</label>
+              <input
+                id="code-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                defaultValue={params.email ?? ""}
+                placeholder="name@example.com"
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="token">Email code</label>
+              <input
+                id="token"
+                name="token"
+                type="text"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                maxLength={6}
+                pattern="[0-9]{6}"
+                placeholder="123456"
+                required
+              />
+            </div>
+            <button
+              className="button secondary"
+              type="submit"
+              disabled={!env.supabaseConfigured}
+            >
+              Verify email code
+            </button>
           </form>
         </div>
       </aside>

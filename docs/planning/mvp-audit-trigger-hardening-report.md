@@ -1,0 +1,434 @@
+# MVP Audit Trigger Hardening Report
+
+## Summary
+
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. Later MVP UI QA also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, public guest file-download storage signing, storage-signing key selection, long filename wrapping, guided-manual message queue/status synchronization, seating assignment helper grants, partner audit trigger runtime safety, guest API contract-gate parity, partner index authorization visibility, and check-in supervisor override enforcement after auth, storage, and workflow issues blocked protected-route, public-download, communications, seating, partner-flow, and low-privilege role-boundary inspection.
+
+No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, storage key compatibility checks, tokenized public-route response hardening, generated filename wrapping, guided-manual queue/status consistency, authenticated seating helper grants, partner audit trigger field-safety, server/UI permission parity, and regression tests for already-implemented MVP flows.
+
+## Findings And Fixes
+
+1. Public guest token creation failed because `app_private.audit_rsvp_public_page_change()` read RSVP-only fields while auditing `guest_public_tokens`.
+   - Fixed in `20260605000248_mvp_public_token_audit_trigger_fix.sql`.
+
+2. Commercial payment-gate exception creation failed because `app_private.audit_commercial_change()` compared contract-only status values while auditing `payment_exceptions`.
+   - Fixed in `20260605001623_mvp_commercial_audit_trigger_fix.sql`.
+
+3. Public guest message submission failed because `app_private.audit_guest_wishes_feedback_change()` read `guest_message_reviews` fields while auditing `guest_messages`.
+   - Fixed in `20260605003245_mvp_guest_wishes_audit_trigger_fix.sql`.
+
+4. Invitation template registration failed because `app_private.audit_invitation_change()` compared invitation-only status values while auditing `invitation_templates`.
+   - Fixed in `20260605004902_mvp_invitation_audit_trigger_fix.sql`.
+
+5. Invitation audit lifecycle actions could be emitted on ordinary invitation updates when the status value was unchanged.
+   - Fixed in `20260605015457_mvp_invitation_status_transition_audit_fix.sql`.
+
+6. Expired or reused Supabase magic links dropped the original protected `next` destination and showed a generic callback failure.
+   - Fixed by adding a shared login-error redirect helper and preserving safe `next` paths through `/auth/callback` failures.
+
+7. Supabase Auth email rate limiting returned a generic "Unable to request a magic link" error during MVP QA.
+   - Fixed by mapping `over_email_send_rate_limit` and HTTP `429` auth errors to a clear retry-delay message.
+
+8. Supabase default implicit-flow magic links can redirect to `/auth/callback#access_token=...`, but URL fragments are unavailable to server route handlers.
+   - Fixed by adding a no-store implicit callback bridge that clears the fragment from browser history, posts tokens to a same-origin server route, validates the session with Supabase, and sets SSR cookies.
+
+9. Local magic-link requests submitted from `127.0.0.1` could still receive callbacks on configured `localhost`, leaving Supabase PKCE verifier cookies on the wrong loopback host.
+   - Fixed by deriving the magic-link callback origin from the current request origin when both the request and configured app origins are loopback hosts, while falling back to the configured app origin for untrusted external origins.
+
+10. A follow-up local authentication failure exposed a Supabase callback type mismatch risk between `type=email` and `type=magiclink` token-hash links.
+   - Fixed by verifying the received callback type first, trying the paired `email`/`magiclink` fallback if needed, updating the preferred local template to `type=email`, and adding local wildcard callback redirect patterns for future Supabase config syncs.
+
+11. Public guest file downloads authorized the guest token in Postgres but attempted to create private Supabase Storage signed URLs with the anonymous SSR client, causing valid guest-visible files to fail with a generic storage `502`.
+   - Fixed by adding a server-only storage-signing adapter and using it only after `resolve_guest_file_download` authorizes the exact latest active guest-facing file.
+
+12. A fresh local `Authentication callback failed` report occurred while Supabase magic-link requests were rate-limited, leaving QA without a browser session.
+   - Fixed by adding a 6-digit email-code fallback that verifies Supabase email OTPs server-side, preserves safe `next` paths, and keeps the existing magic-link callback flow intact.
+
+13. Public guest token pages initially lacked explicit token-route security headers in local header checks.
+   - Fixed by adding `/g/:guestToken` route headers and proxy response hardening for `no-store`, `no-referrer`, `nosniff`, and `noindex, nofollow`. Production `next build`/`next start` verification confirmed the stricter headers; dev mode still forces `Cache-Control: no-cache`.
+
+14. Guided-manual message status updates changed `message_logs` and status events, but left matching `message_queue_items` rows stale.
+   - Fixed in `20260606063731_mvp_message_queue_status_sync.sql` by syncing the queue row on `mark_guided_manual_message_status` and backfilling existing guided-manual queue rows.
+
+15. Seating assignment/removal RPCs failed after Sprint 15 function-grant hardening because they call `app_private.mark_guest_invitation_needs_regeneration_for_seating(...)`, and authenticated execute on that private helper had been revoked.
+   - Fixed in `20260606151731_mvp_seating_invitation_helper_grant.sql` by granting the helper only to `authenticated` and `service_role`, while keeping `public` and `anon` revoked.
+
+16. Final browser-route public guest file-download QA still failed when the local server used an opaque `sb_secret_...` key for Supabase Storage signing; Storage rejected that value as `Invalid Compact JWS` when sent through the current `supabase-js` signed URL path.
+   - Fixed by preferring the server-only legacy `SUPABASE_SERVICE_ROLE_KEY`, rejecting opaque `sb_secret_...` values for Storage signing, documenting the required environment variable, and wrapping long file/title text after file-detail and public guest pages showed horizontal overflow with generated QA filenames.
+
+17. Partner profile creation failed during MVP browser QA because `app_private.audit_partner_change()` referenced table-specific columns such as `project_id` through `new`/`old` records while auditing `public.partners`, which does not have those fields.
+   - Fixed in `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql` by deriving audit snapshots from JSON and reading table-specific fields through `new_snapshot`/`old_snapshot` keys.
+
+18. Guest create/update API routes allowed side-authorized users to mutate guests while the guest-list contract gate was locked, even though the matching server-rendered forms were blocked.
+   - Fixed by adding `requireGuestListContractGateOpen` to guest create and update API mutations, with regression coverage confirming permission checks and contract-gate checks stay in order.
+
+19. The partners index displayed Review queue and Partner dashboard links for a restricted partner session even when the destination routes returned 404.
+   - Fixed by rendering partner index actions from server-side permission checks that match the destination pages, including reporting permissions for Partner dashboard.
+
+20. The event check-in manual form exposed and accepted `supervisorOverride` under normal `check_in.perform`, allowing event staff to bypass duplicate/arrival-count guards.
+   - Fixed by requiring `check_in.unexpected_guests.review` before accepting supervisor override, hiding the checkbox for event staff, and normalizing checkbox-label layout to avoid overflow.
+
+## Files Changed
+
+- `apps/web/src/app/auth/callback/implicit/route.ts`
+- `apps/web/src/app/auth/callback/route.ts`
+- `apps/web/src/app/api/public/guest/[guestToken]/files/[fileId]/download/route.ts`
+- `apps/web/src/app/api/projects/[projectId]/guests/route.ts`
+- `apps/web/src/app/api/guests/[guestId]/route.ts`
+- `.env.example`
+- `apps/web/src/app/login/actions.ts`
+- `apps/web/src/app/login/page.tsx`
+- `apps/web/src/app/globals.css`
+- `apps/web/src/app/platform/events/[eventId]/check-in/actions.ts`
+- `apps/web/src/app/platform/events/[eventId]/check-in/page.tsx`
+- `apps/web/src/app/platform/partners/page.tsx`
+- `apps/web/src/app/platform/projects/[projectId]/commercial/page.tsx`
+- `apps/web/next.config.ts`
+- `apps/web/src/proxy.ts`
+- `apps/web/src/proxy.test.ts`
+- `apps/web/src/lib/auth/auth-service.ts`
+- `apps/web/src/lib/auth/auth-service.test.ts`
+- `apps/web/src/lib/check-in/check-in-foundation.test.ts`
+- `apps/web/src/lib/check-in/check-in-service.ts`
+- `apps/web/src/lib/files/file-foundation.test.ts`
+- `apps/web/src/lib/guests/guest-foundation.test.ts`
+- `apps/web/src/lib/messages/message-foundation.test.ts`
+- `apps/web/src/lib/partners/partner-foundation.test.ts`
+- `apps/web/src/lib/partners/partner-service.ts`
+- `apps/web/src/lib/platform/qa-artifact-filenames.ts`
+- `apps/web/src/lib/platform/release-readiness.test.ts`
+- `apps/web/src/lib/storage/storage-provider.ts`
+- `apps/web/src/lib/storage/storage-provider.test.ts`
+- `docs/qa/mvp-ui-qa-progress-report.md`
+- `docs/setup/qa-artifact-store.md`
+- `docs/setup/deployment-readiness.md`
+- `docs/setup/local-development.md`
+- `supabase/config.toml`
+- `apps/web/src/lib/contracts/contract-foundation.test.ts`
+- `apps/web/src/lib/guest-wishes/guest-wishes-foundation.test.ts`
+- `apps/web/src/lib/invitations/invitation-foundation.test.ts`
+- `apps/web/src/lib/rsvp/rsvp-foundation.test.ts`
+- `supabase/migrations/20260605000248_mvp_public_token_audit_trigger_fix.sql`
+- `supabase/migrations/20260605001623_mvp_commercial_audit_trigger_fix.sql`
+- `supabase/migrations/20260605003245_mvp_guest_wishes_audit_trigger_fix.sql`
+- `supabase/migrations/20260605004902_mvp_invitation_audit_trigger_fix.sql`
+- `supabase/migrations/20260605011134_mvp_audit_trigger_delete_return_fix.sql`
+- `supabase/migrations/20260605012009_mvp_guest_wishes_delete_object_id_fix.sql`
+- `supabase/migrations/20260605013031_mvp_guest_wishes_delete_branch_fix.sql`
+- `supabase/migrations/20260605015457_mvp_invitation_status_transition_audit_fix.sql`
+- `supabase/migrations/20260606063731_mvp_message_queue_status_sync.sql`
+- `supabase/migrations/20260606151731_mvp_seating_invitation_helper_grant.sql`
+- `supabase/migrations/20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql`
+
+## Tests Added
+
+- Verify public-token audit triggers do not read RSVP-only fields.
+- Verify payment-exception audit triggers do not compare contract-only status values.
+- Verify public guest-message inserts do not reference review-only fields.
+- Verify invitation-template audit inserts do not compare invitation-only status values.
+- Verify invitation status audit actions require a real status transition.
+- Verify guest-wishes and invitation audit triggers use the correct `DELETE` return pattern.
+- Verify guest-wishes audit `DELETE` object ids use `old.id`.
+- Verify login error redirects preserve safe protected `next` paths without broadening query parameters.
+- Verify magic-link rate-limit messages cover both Supabase `over_email_send_rate_limit` codes and HTTP `429` statuses independently.
+- Verify the implicit magic-link callback bridge preserves safe internal next paths, strips unsafe next paths, avoids embedding token values, and rejects malformed callback payloads.
+- Verify magic-link callback origin selection preserves safe loopback origins such as `127.0.0.1` and rejects untrusted external origins.
+- Verify current documented callback links using `type=email` are tried before `magiclink`, while `type=magiclink` links are tried before `email` for compatibility.
+- Verify email OTP code normalization accepts 6-digit codes with whitespace and rejects malformed values before Supabase verification.
+- Verify tokenized public guest pages receive private no-store, no-referrer, nosniff, and noindex response headers while unrelated routes do not.
+- Verify private Storage signed URLs prefer the server-only Supabase service-role JWT, reject opaque `sb_secret_...` values for this Storage path, and fail closed when no signing key is configured.
+- Verify the public guest file download route uses the server-only storage adapter instead of the anonymous SSR client after token-scoped file authorization.
+- Verify the message queue status-sync migration updates guided-manual queue rows when message history changes and backfills already-stale queue rows.
+- Verify the seating invitation regeneration helper keeps explicit authenticated/service-role execute grants and no public/anon grant after Sprint 15 release security hardening.
+- Verify the partner audit trigger hardening migration uses JSON snapshots for table-specific fields and does not directly read `new.project_id`, `old.project_id`, status, actor, source-note, review-reason, or delete-marker fields from incompatible trigger record shapes.
+- Verify guest API create/update mutations call the guest-list contract gate after side permission checks.
+- Verify partner index action visibility follows server-side create, review, and dashboard permissions.
+- Verify event staff cannot use supervisor override while check-in supervisors can.
+- Verify QA artifact filenames parse tester/scenario metadata safely and reject malformed delimiter/key shapes.
+
+## Linked Dev Verification
+
+- Applied the audit hardening migrations to the linked dev Supabase project.
+- Public guest token creation succeeded after the RSVP/public-page audit fix.
+- Payment-gate exception override succeeded after the commercial audit fix.
+- Public guest message submission succeeded through the guest-facing UI after the guest-wishes audit fix.
+- Invitation template insert was verified with a rollback transaction after the invitation audit fix.
+- Guided manual WhatsApp flow was verified through template creation, message preparation, opened status, and sent status.
+- Auth callback failure was verified locally to redirect to `/login`, preserve `next=/platform/audit-logs`, and show a retryable expired-link message without exposing tokens.
+- Supabase Auth magic-link request failure was verified as status `429`, code `over_email_send_rate_limit`; the login UI now surfaces a retry-delay message.
+- Supabase SSR magic-link guidance was refreshed against the current [Supabase passwordless email login docs](https://supabase.com/docs/guides/auth/auth-email-passwordless); local setup now documents the preferred `token_hash` email-template link and the app's implicit-flow compatibility bridge.
+- Local auth callback origin handling was hardened so requesting a magic link from `127.0.0.1` keeps the callback on the same loopback host instead of forcing the configured `localhost` origin.
+- Supabase redirect and email-template guidance was rechecked against the current [Supabase redirect URL docs](https://supabase.com/docs/guides/auth/redirect-urls); local setup now documents `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`, and the callback remains compatible with `type=magiclink` links by trying the paired fallback if the received type is rejected.
+- Supabase API key guidance was rechecked against the current [Supabase API keys docs](https://supabase.com/docs/guides/getting-started/api-keys); public guest file downloads now require a server-only secret key for private Storage signing after backend authorization.
+- The linked-dev account metadata for `diginoces@gmail.com` was inspected without tokens or secrets; the account exists, email is confirmed, MFA has a verified TOTP factor, a recent session recorded `aal2`, and global `diginoces_admin`/`operations_manager` role assignments exist.
+- A production `next build`/`next start` check verified `/g/:guestToken` responses carry `no-store`, `no-referrer`, `nosniff`, and `noindex, nofollow`. Disposable public-token header fixtures were cleaned from linked dev and the local temp token file was removed.
+- The AAL2 admin/operations browser session completed a disposable guest-import review/apply flow: CSV upload, mapping, validation, submit-for-review, one approved row, one held row, apply-approved-rows, `status=applied`, one created guest, and the expected import audit actions. Cleanup removed the disposable guest, import session, rows, mappings, and dependent records; follow-up verification returned zero remaining rows for every checked table.
+- Applied `20260606063731_mvp_message_queue_status_sync.sql` to linked dev. A stale guided-manual queue row was backfilled from `queued` to `sent`, and the final communications QA pass verified a new disposable event-reminder message log and queue row both ended at `sent`.
+- Applied `20260606151731_mvp_seating_invitation_helper_grant.sql` to linked dev. The seating assignment API then succeeded for the AAL2 admin/operations browser session after previously failing with `permission denied for function mark_guest_invitation_needs_regeneration_for_seating`.
+- Applied `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql` to linked dev. A rollback insert into `public.partners` then succeeded after previously failing with `record "new" has no field "project_id"`.
+- Partner profile, partner-user linkage, partner project draft creation, submit-for-review, Diginoces approval, source tracking, and audit action verification all passed through Chrome/CDP with the AAL2 `diginoces@gmail.com` admin/operations session. Disposable partner, partner-user, role-assignment, project, submission, and source rows were cleaned from linked dev; immutable audit evidence remained.
+- Low-privilege guest role-boundary QA used the authenticated `carlkanda@gmail.com` Chrome session. Locked guest-list API create/patch returned `403`; after a temporary `contract_approved` gate, bride/groom own-side create/update succeeded, cross-side update and edit pages were denied, and side filters handled `bride`, `groom`, `both`, and invalid values correctly. Cleanup removed the temporary role assignments and disposable guests, and restored the gate to `locked`.
+- Partner exact-role negative QA used a disposable active partner, active partner-user link, and custom `partner_admin` assignment for `carlkanda@gmail.com`. The partner profile was visible without internal notes, audit, commercial, or payment data; partner review, audit logs, and reports were denied. The stale partner index links were hidden after switching to destination-matching permission checks. Cleanup removed the disposable partner fixture and temporary role assignment.
+- Check-in staff exact-role QA used only an `event_staff` assignment on `QA Civil Ceremony` for `carlkanda@gmail.com`. Assigned event check-in and scan pages loaded; unrelated event check-in/seating, audit, and reports returned 404. After supervisor-override hardening, the event-staff page rendered no override checkbox, no settings controls, and no horizontal overflow. Cleanup removed the temporary event role.
+
+## UI And API QA Evidence
+
+- Home page rendered Sprint 1-14 implementation status with no desktop or mobile horizontal overflow.
+- Login page rendered the magic-link form and rate-limit guidance with no desktop or mobile horizontal overflow.
+- Invalid public guest page rendered "Invitation link unavailable" with no desktop or mobile horizontal overflow; the expected 404 resource status was observed.
+- Protected UI route sweep covered 43 platform/project/event routes and all returned `307` redirects to `/login?next=...`.
+- Unauthenticated API sweep covered 67 exported API methods; 66 returned generic `401` JSON and the invalid public guest-file endpoint returned `404`.
+- API responses were checked for obvious fixture or secret leakage terms, including the QA email, temporary QA labels, WhatsApp tokens, service-role wording, and guest data markers; no leaks were found.
+- Production-mode smoke test on port 3001 returned 200 for `/` and `/login`, 404 for an invalid public guest route, and 307 for `/platform`; `X-Powered-By` was absent.
+- Public guest file-link Chrome/CDP QA rendered a disposable guest-visible file row without token-in-body leakage or mobile overflow, found the anonymous-storage-signing `502`, and verified fixture cleanup. A follow-up linked-dev service-level signed-download check verified invalid token status `invalid`, valid file resolution `ok`, private object fetch `200`, `download` filename parameter present, and no public guest token in the signed URL. Final browser-route QA passed after the server was restarted with `SUPABASE_SERVICE_ROLE_KEY`: the route returned `307`, the private signed object fetch returned `200`, and cleanup returned zero temporary file, guest, token, and storage rows/objects.
+- Guest-import admin Chrome/CDP QA rendered upload, mapping, preview/detail, review, and applied detail pages with no visible app error, no 404, no horizontal overflow, and no unlabeled controls on the final detail page. The test used a disposable CSV fixture and verified partial approval applied only the approved row while held rows did not create guests.
+- Commercial Chrome/CDP QA rendered package/add-on creation, event selection, pricing, commercial gesture, generated contract, contract approval, confirmed payment, payment exception, and mobile final states. The pass found and fixed unlabeled commercial gesture, approval confirmation, and addendum controls, then reran with zero unlabeled visible controls, no horizontal overflow, no 404, and no visible app errors.
+- Invitation template Chrome/CDP QA rendered registration, template detail, coordinate editor, preview/generation controls, generation-job history, invitation records, and mobile final state. A disposable PDF metadata template moved through configured, technical preview generated, technical preview approved, and queued event generation states with no horizontal overflow, no 404, no visible app errors, and no unlabeled controls.
+- Communications Chrome/CDP QA rendered message templates, guided sending queue, message detail, opened/sent controls, queue/history, and mobile queue state with no horizontal overflow, no visible app errors, and no unlabeled controls. A disposable French event-reminder template and guided manual message moved through prepared, opened manually, and sent states; DB verification found log `sent`, queue `sent`, opened/sent timestamps, status events, WhatsApp link/target presence, and expected audit actions. Cleanup returned zero disposable communication rows.
+- Seating Chrome/CDP QA rendered the seating page, create-table form, assignment form, visual seating map, table-card CSV export controls, and mobile seating view with no horizontal overflow, no visible app errors, and no unlabeled controls. A disposable `QASEAT152417` table moved through creation, two guest assignments, over-capacity rendering, map rendering, and CSV export generation. DB verification found one table, two active assignments, one generated export, and expected seating audit activity before cleanup. Cleanup removed the disposable table, assignments, export row, and generated storage object; residue verification returned zero rows/objects.
+- Project file Chrome/CDP QA rendered the file library and file detail pages with the AAL2 admin/operations session, registered a disposable internal file, created a v2 version, uploaded private object content, verified authenticated signed download `307` then object fetch `200`, archived v2 through the UI, registered a disposable guest-visible invitation file, created a guest public token, rendered the public guest page with no body token leakage, verified public guest signed download `307` then object fetch `200`, and confirmed `files.archived`, `files.registered`, `files.version_created`, `guest_public_pages.accessed`, and `guest_public_tokens.created` audit evidence before cleanup. Final rerun after generated filename wrapping had no horizontal overflow on file detail or public guest pages and cleanup returned zero temporary files, guests, tokens, and storage objects.
+- Project retention lifecycle Chrome/CDP QA rendered the file-library retention panel with the authenticated `diginoces@gmail.com` session on `localhost`, verified all lifecycle actions were visible, and submitted extend-retention, mark-pending-deletion, and cancel-pending-deletion through the actual server-action form. Linked-dev verification found the expected `project_archive_events` transition sequence from `active` to `retention_extended`, then `pending_deletion`, then `retention_active`. Desktop and mobile renders had no login redirect, no visible app/config errors, no unlabeled visible controls, and no horizontal overflow. Cleanup restored the fake project to its original active/no-retention-date state and removed the temporary retention policy/archive-event rows.
+- Partner Chrome/CDP QA rendered `/platform/partners`, `/platform/partners/:partnerId`, `/platform/partner-dashboard?partnerId=...`, and `/platform/partners/review` with the authenticated AAL2 admin/operations session. The browser created a disposable partner, linked the current QA user as partner admin, created and submitted a partner-originated project draft, approved it in the Diginoces review queue, and verified mobile partner dashboard/detail renders with no login redirect, visible app/config errors, horizontal overflow, or unlabeled visible controls.
+- Low-privilege guest Chrome/CDP QA used `carlkanda@gmail.com` with temporary bride/groom roles. The browser-side API calls and rendered guest forms verified locked contract-gate denial, own-side mutation allowance after temporary gate approval, cross-side denial, fail-closed invalid side filtering, and no cross-side form leakage.
+- Low-privilege partner Chrome/CDP QA used `carlkanda@gmail.com` with a disposable partner-admin setup. Partner list/profile rendered only partner-visible fields; review, audit, and reports were denied; after the UI fix, the partners index no longer showed links to denied review/dashboard destinations.
+- Low-privilege check-in Chrome/CDP QA used `carlkanda@gmail.com` with only `event_staff` on the civil event. Assigned check-in and scan pages rendered, unrelated event/admin/report routes were denied, and the final rerun hid supervisor override and settings controls with no horizontal overflow.
+
+## Commands Run
+
+- `npm ci` - passed, 0 vulnerabilities reported during install.
+- `npm run format:check` - initially failed on touched tests, then passed after formatting.
+- `npm run format` - passed.
+- `npm run lint` - passed.
+- `npm run typecheck` - passed.
+- `npm run test` - passed, 18 files and 196 tests.
+- `npm run build` - passed.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities.
+- `npm run db:lint` - passed, no schema errors.
+- `npx supabase@latest db push --linked --yes` - passed, applied `20260605015457_mvp_invitation_status_transition_audit_fix.sql`.
+- `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after applying migrations.
+- `git diff --check` - passed with an informational CRLF warning for one touched test file.
+- Targeted secret scan - passed; no service-role keys, database URLs, WhatsApp tokens, Google secrets, private keys, auth refresh/access tokens, or QA public token values found in changed files.
+- `coderabbit review --agent -t committed -c AGENTS.md` - initially reported two minor `DELETE` return issues and one trivial report-wording issue; all were addressed.
+- `coderabbit review --agent -t uncommitted -c AGENTS.md` - reported guest-wishes `DELETE` object-id and DELETE old-row handling issues; addressed with follow-up migration hardening.
+- `coderabbit review --agent -t uncommitted -c AGENTS.md` - final rerun passed with 0 issues.
+- Hosted CodeRabbit review reported missing invitation status-transition guards; addressed with `20260605015457_mvp_invitation_status_transition_audit_fix.sql`.
+- `coderabbit review --agent -t uncommitted -c AGENTS.md` - final rerun after the hosted review fix passed with 0 issues.
+- `npm --workspace @diginoces/web run test -- src/lib/auth/auth-service.test.ts` - passed, 12 auth helper tests after implicit-callback bridge coverage.
+- `npm --workspace @diginoces/web run lint -- src/app/auth/callback/route.ts src/lib/auth/auth-service.ts src/lib/auth/auth-service.test.ts` - passed.
+- `npm --workspace @diginoces/web run typecheck` - passed.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - passed, 17 auth helper tests after loopback callback-origin coverage.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - first failed as expected for missing older-template type normalization, then passed with 18 auth helper tests after callback type hardening.
+- `npm run format:check` - initially failed on the two touched auth files after callback type hardening, then passed after formatting.
+- `npm run format` - passed after callback type hardening.
+- `npm run lint` - passed after callback type hardening.
+- `npm run typecheck` - passed after callback type hardening.
+- `npm run test` - passed, 18 files and 202 tests after callback type hardening.
+- `npm run build` - passed after callback type hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after callback type hardening.
+- `npm run secrets:scan` - passed after callback type hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched files only after callback type hardening.
+- `npm --workspace apps/web run test -- --run src/lib/storage/storage-provider.test.ts` - first failed as expected for the missing server-only storage-signing helper, then passed after adding it.
+- `npm run typecheck` - initially failed on the storage-signing helper env type, then passed after widening the helper input to a string env map.
+- Public guest file-download disposable fixture QA - Chrome/CDP rendered the guest-visible file link, then valid download returned the pre-fix generic `502` storage-signing error; fixture rows, access events, token, temp files, and storage object were cleaned up.
+- Public guest file-download service-level linked-dev QA - passed after storage-signing hardening; invalid token resolved to `invalid`, valid token resolved the exact guest file, server-only private Storage signing produced a signed URL, object fetch returned `200`, the `download` filename parameter was present, and the signed URL did not contain the public guest token. Fixture rows, access events, token, temp files, and storage object were cleaned up.
+- Supabase Storage key probe - passed; disposable private object upload with the service-role JWT worked, signed URL creation with opaque `sb_secret_...` as API key only returned the expected missing-authorization error, signed URL creation with opaque `sb_secret_...` as bearer returned `Invalid Compact JWS`, and signed URL creation with the service-role JWT returned `200`.
+- Project file browser-route Chrome/CDP QA - initially found the final public guest download still returned `502` when the local server used opaque `SUPABASE_SECRET_KEY`; after the server restarted with `SUPABASE_SERVICE_ROLE_KEY`, file registration, version, archive, authenticated signed download, public guest signed download, audit evidence, and cleanup all passed.
+- Project file generated filename overflow rerun - passed after shared title/record-row wrapping; file detail and public guest pages had no horizontal overflow, no visible token leakage, no unlabeled visible controls, and no app errors.
+- Fresh unauthenticated Chrome/CDP route sweep - passed after correcting dev-mode overlay detection; 5 public routes and all 43 current source-derived `/platform/**/page.tsx` protected routes were checked at mobile and desktop for 96 total checks, with zero failures.
+- Project retention lifecycle Chrome/CDP QA - passed on linked dev using the authenticated `localhost` session. The browser submitted extend-retention, mark-pending-deletion, and cancel-pending-deletion through the file-library retention form; linked DB verification found all three lifecycle events, and cleanup restored the project retention fields and removed the temporary policy/archive-event rows.
+- `npx supabase@latest db query --linked "select count(*) as project_count from public.wedding_projects;"` - passed; confirmed one fake linked-dev project before retention lifecycle QA.
+- Retention lifecycle cleanup verification SQL - passed; project restored to `status=active`, `file_retention_status=active`, null retention dates/decision, `retention_notice_status=not_required`, and zero temporary retention policy/archive-event rows.
+- `npm run format:check` - initially failed on touched TypeScript files after storage-signing hardening, then passed after formatting.
+- `npm run format` - passed after storage-signing hardening.
+- `npm run lint` - passed after storage-signing hardening.
+- `npm run typecheck` - passed after storage-signing hardening.
+- `npm run test` - passed, 19 files and 205 tests after storage-signing hardening.
+- `npm run env:check-public` - passed after adding server-only storage-signing documentation.
+- `npm run build` - passed after storage-signing hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after storage-signing hardening.
+- `npm run secrets:scan` - passed after storage-signing hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched files only after storage-signing hardening.
+- `npm run format:check` - passed after loopback callback-origin hardening.
+- `npm run lint` - passed after loopback callback-origin hardening.
+- `npm run typecheck` - passed after loopback callback-origin hardening.
+- `npm run test` - passed, 18 files and 201 tests after loopback callback-origin hardening.
+- `npm run build` - passed after loopback callback-origin hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after loopback callback-origin hardening.
+- `npm run secrets:scan` - passed after loopback callback-origin hardening.
+- `npm run format:check` - passed after implicit-callback bridge changes.
+- `npm run lint` - passed after implicit-callback bridge changes.
+- `npm run typecheck` - passed after implicit-callback bridge changes.
+- `npm run test` - passed, 18 files and 196 tests after implicit-callback bridge changes.
+- `npm run build` - passed after implicit-callback bridge changes.
+- `npm run env:check-public` - passed.
+- `npm run secrets:scan` - passed.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after implicit-callback bridge changes.
+- `npm run db:lint` - passed, no schema errors.
+- `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities.
+- `npm run build` - passed after the auth hardening changes.
+- `curl.exe http://localhost:3000/auth/callback?next=%2Fplatform%2Faudit-logs` - passed; returned the implicit bridge with `200`, `private, no-store`, CSP, `Referrer-Policy: no-referrer`, and no token values.
+- `Invoke-WebRequest http://localhost:3000/auth/callback/implicit` with `text/plain` POST - passed; returned `415` JSON and `private, no-store`.
+- `git diff --check` - passed with informational CRLF warnings on touched files only.
+- `gh pr checks 48` - passed; Verify and CodeRabbit status checks completed successfully.
+- Local Chrome/CDP public UI checks and unauthenticated UI/API sweeps - passed as summarized above.
+- `npm run test -- apps/web/src/lib/auth/auth-service.test.ts` - failed because the root workspace forwarded a root-relative path into the web workspace; rerun with the workspace-relative path below.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - passed, 20 auth helper tests after preserving `type=email` as the primary callback type and adding paired `email`/`magiclink` fallback coverage.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - passed, 21 auth helper tests after email OTP normalization coverage.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts src/proxy.test.ts` - passed, 2 files and 23 tests after public-token header helper coverage.
+- `npm run typecheck` - passed after email-code fallback and public-token header hardening.
+- `npm run build` - passed; production build output included `Proxy (Middleware)`.
+- Production `next start` public-token header check - passed for `/g/:guestToken` route shape with `Cache-Control: no-store, must-revalidate, max-age=0, private`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, and `X-Robots-Tag: noindex, nofollow`.
+- Linked-dev disposable header-check cleanup - passed; token, guest, event, and project cleanup counts were all zero and the local temp token fixture was removed.
+- `npm run format:check` - passed after email-code fallback, public-token headers, and documentation updates.
+- `npm run lint` - passed after email-code fallback, public-token headers, and documentation updates.
+- `npm run typecheck` - passed after email-code fallback, public-token headers, and documentation updates.
+- `npm run test` - passed, 20 files and 210 tests.
+- `npm run build` - passed after email-code fallback, public-token headers, and documentation updates; production build output included `Proxy (Middleware)`.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities.
+- `npm run secrets:scan` - passed.
+- `npm run db:lint` - passed, no schema errors.
+- `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date.
+- `npm --workspace @diginoces/web run test -- src/lib/messages/message-foundation.test.ts` - passed, 13 message foundation tests after queue status-sync migration evidence.
+- `npx supabase@latest db push --linked --yes` - passed, applied `20260606063731_mvp_message_queue_status_sync.sql`.
+- Communications Chrome/CDP QA - passed after the queue/status sync migration; disposable template/log/queue/status rows were cleaned and follow-up counts were zero.
+- `git diff --check` - passed with informational CRLF warnings on touched files only.
+- `npm run format:check` - initially failed on the touched auth files, then passed after formatting.
+- `npm run format` - passed after callback fallback hardening.
+- `npm run lint` - passed after callback fallback hardening.
+- `npm run typecheck` - passed after callback fallback hardening.
+- `npm run test` - passed, 19 files and 207 tests after callback fallback hardening.
+- `npm run build` - passed after callback fallback hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after callback fallback hardening.
+- `npm run secrets:scan` - passed after callback fallback hardening.
+- Targeted `rg` secret sweep - passed with expected placeholder, SQL grant, and test/documentation matches only.
+- `git diff --check` - passed with informational CRLF warnings on touched files only after callback fallback hardening.
+- Chrome/CDP authenticated AAL2 protected route matrix - passed 38/38 desktop routes and 38/38 mobile routes after adding the `/login/mfa` TOTP bridge and commercial form label fix.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - passed, 24 auth helper tests after MFA code, redirect, and TOTP factor-selection coverage.
+- `npm run format:check` - initially failed on the commercial page after the label fix, then passed after formatting.
+- `npm run format` - passed after MFA bridge and commercial label hardening.
+- `npm run lint` - passed after MFA bridge and commercial label hardening.
+- `npm run typecheck` - passed after MFA bridge and commercial label hardening.
+- `npm run test` - passed, 20 files and 213 tests after MFA bridge and commercial label hardening.
+- `npm run build` - passed after MFA bridge and commercial label hardening; production build output includes `/login/mfa`.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after MFA bridge and commercial label hardening.
+- `npm run secrets:scan` - passed after MFA bridge and commercial label hardening.
+- `npm run db:lint` - passed, no schema errors after MFA bridge and commercial label hardening.
+- `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after MFA bridge and commercial label hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched files only after MFA bridge and commercial label hardening.
+- Guest-import admin review/apply Chrome/CDP QA - passed on linked dev with the AAL2 `diginoces@gmail.com` session; one row was approved/applied, one row was held, expected import audit actions were present, and disposable data cleanup verification returned zero remaining rows in import, guest, assignment, RSVP, token, invitation, message, check-in, seating, and file reference tables.
+- Commercial Chrome/CDP QA - initially failed on unlabeled commercial gesture, approval confirmation, and addendum controls; passed after label fixes. The disposable flow created a package, add-on, event package selection, pricing snapshots, commercial gesture, generated/approved contract, confirmed manual payment, and active payment exception. Linked-dev verification found the expected commercial audit actions and cleanup returned zero disposable commercial rows while preserving the permanent fake-project payment exception.
+- Invitation template Chrome/CDP QA - passed on linked dev with a disposable in-memory PDF template. Verification found `technical_preview_approved`, two field rows including `public_guest_page_qr`, one queued event generation job with three ready guests, three invitation records, three job items, and expected invitation audit actions. Cleanup returned zero disposable invitation template, field, job, job-item, invitation, file, check-in, and message reference rows.
+- `npm run format` - passed after message queue-sync hardening.
+- `npm run format:check` - passed after message queue-sync hardening.
+- `npm run lint` - passed after message queue-sync hardening.
+- `npm run typecheck` - passed after message queue-sync hardening.
+- `npm run test` - passed, 20 files and 214 tests after message queue-sync hardening.
+- `npm run build` - passed after message queue-sync hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after message queue-sync hardening.
+- `npm run db:lint` - passed, no schema errors after message queue-sync hardening.
+- `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after applying `20260606063731_mvp_message_queue_status_sync.sql`.
+- `npm run secrets:scan` - passed after message queue-sync hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched markdown files only after message queue-sync hardening.
+- `npm --workspace apps/web run test -- --run src/lib/platform/release-readiness.test.ts` - passed, 1 file and 8 tests after seating helper-grant hardening.
+- `npx supabase@latest db push --linked --dry-run` - passed before apply; only `20260606151731_mvp_seating_invitation_helper_grant.sql` was pending.
+- `npx supabase@latest db push --linked --yes` - passed; applied `20260606151731_mvp_seating_invitation_helper_grant.sql` to linked dev.
+- Seating Chrome/CDP QA - passed after applying the helper grant migration. The browser flow created one disposable table, assigned two guests, showed over-capacity state, rendered the visual map, generated one table-card CSV, and verified the mobile seating page.
+- `npx supabase@latest --experimental --yes storage rm --linked ss:///seating-exports/.../table-cards-v1-9ca00ea4-5347-454e-8dbf-ac858e108ff2.csv` - passed; removed the disposable generated CSV object through the Storage API.
+- Disposable seating cleanup SQL - passed; removed the disposable table, assignments, and export row.
+- Seating residue SQL - passed; returned zero disposable QASEAT tables, assignments, export rows, and storage objects.
+- `npx supabase@latest db push --linked --dry-run` - passed after apply; remote database is up to date.
+- Final `npm ci` - initially hit a transient Windows file-lock `EPERM` on the Next SWC binary after local dev-server use, then passed on retry after confirming no active Next process.
+- Final `npm run format` - passed after seating helper-grant documentation updates.
+- Final `npm run format:check` - passed after seating helper-grant documentation updates.
+- Final `npm run lint` - passed after seating helper-grant hardening.
+- Final `npm run typecheck` - passed after seating helper-grant hardening.
+- Final `npm run test` - passed, 20 files and 214 tests after seating helper-grant hardening.
+- Final `npm run build` - passed after seating helper-grant hardening.
+- Final `npm audit --omit=dev` - passed, 0 vulnerabilities after seating helper-grant hardening.
+- Final `npm run db:lint` - passed, no schema errors after seating helper-grant hardening.
+- Final `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after applying `20260606151731_mvp_seating_invitation_helper_grant.sql`.
+- Final `npm run secrets:scan` - passed after seating helper-grant hardening.
+- Final `git diff --check` - passed with informational CRLF warnings on touched markdown files only after seating helper-grant hardening.
+- Final `npm --workspace apps/web run test -- --run src/lib/storage/storage-provider.test.ts` - passed, 1 file and 4 tests after Storage signing key selection hardening.
+- Final `npm run format:check` - passed after Storage signing key selection and generated filename wrapping.
+- Final `npm run lint` - passed after Storage signing key selection and generated filename wrapping.
+- Final `npm run typecheck` - passed after Storage signing key selection and generated filename wrapping.
+- Final `npm run test` - passed, 20 files and 216 tests after Storage signing key selection and generated filename wrapping.
+- Final `npm run build` - passed after Storage signing key selection and generated filename wrapping.
+- Final `npm audit --omit=dev` - passed, 0 vulnerabilities.
+- Final `npm run env:check-public` - passed after Storage signing environment documentation.
+- Final `npm run secrets:scan` - passed after avoiding scan-trigger literals in runtime source.
+- Final `git diff --check` - passed with informational CRLF warnings on touched files only.
+- `npm --workspace apps/web run test -- --run src/lib/partners/partner-foundation.test.ts` - passed, 12 partner foundation tests after partner audit trigger hardening coverage.
+- `npx supabase@latest db push --linked --dry-run` - passed before apply; only `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql` was pending.
+- `npx supabase@latest db push --linked --yes` - passed; applied `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql` to linked dev.
+- Partner audit rollback insert SQL - passed; `public.partners` insert returned an active row inside a rollback transaction after the trigger fix.
+- Partner Chrome/CDP QA - passed after applying the trigger fix. The browser flow created one disposable partner, linked the current QA user, created one partner project draft, submitted it, approved it, verified the approved project/source/submission state and expected audit actions, checked mobile partner dashboard/detail renders, and cleaned all disposable mutable rows.
+- Partner residue SQL - passed; returned zero disposable partner, partner-user, submission, source, assignment, custom role-assignment, and project rows after cleanup while retaining immutable audit evidence.
+- `npm run format` - passed after partner audit trigger hardening documentation and test updates.
+- `npm run format:check` - passed after partner audit trigger hardening.
+- `npm run lint` - passed after partner audit trigger hardening.
+- `npm run typecheck` - passed after partner audit trigger hardening.
+- `npm run test` - passed, 20 files and 216 tests after partner audit trigger hardening.
+- `npm run build` - passed after partner audit trigger hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after partner audit trigger hardening.
+- `npm run db:lint` - passed, no schema errors after applying `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql`.
+- `npx supabase@latest db push --linked --dry-run` - passed after applying `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql`; remote database is up to date.
+- `npm run secrets:scan` - passed after partner audit trigger hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched markdown files only after partner audit trigger hardening.
+- `npm --workspace apps/web run test -- --run src/lib/guests/guest-foundation.test.ts` - passed after guest API contract-gate coverage.
+- `npm --workspace apps/web run test -- --run src/lib/partners/partner-foundation.test.ts` - passed, 13 partner foundation tests after partner index visibility coverage.
+- `npm --workspace apps/web run test -- --run src/lib/check-in/check-in-foundation.test.ts` - passed, 11 check-in foundation tests after supervisor-override permission coverage.
+- `npm --workspace apps/web run test -- --run src/lib/platform/release-readiness.test.ts` - passed after QA artifact filename parser coverage.
+- Chrome/CDP low-privilege guest role-boundary QA - passed with `carlkanda@gmail.com`; locked guest-list API mutations returned `403`, temporary open-gate own-side mutations succeeded, cross-side mutations/pages were denied, side filtering remained correct, and cleanup restored zero temporary roles/guests plus `guest_list_access_status=locked`.
+- Chrome/CDP low-privilege partner negative QA - passed with a disposable partner and `partner_admin` custom role; partner-visible list/profile rendered, internal/review/audit/report destinations were denied, stale index links were hidden after the fix, and cleanup returned zero temporary partner rows/roles.
+- Chrome/CDP low-privilege check-in staff QA - passed with only `event_staff` on the civil event; assigned check-in/scan pages rendered, unrelated event/admin/report pages were denied, supervisor override/settings controls were hidden after the fix, and cleanup removed the temporary role.
+- `npm run format` - passed after low-privilege role-boundary hardening.
+- `npm run format:check` - passed after low-privilege role-boundary hardening.
+- `npm run lint` - passed after low-privilege role-boundary hardening.
+- `npm run typecheck` - passed after low-privilege role-boundary hardening.
+- `npm run test` - passed, 20 files and 219 tests after low-privilege role-boundary hardening.
+- `npm run build` - passed after low-privilege role-boundary hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after low-privilege role-boundary hardening.
+- `npm run db:lint` - passed, no schema errors after low-privilege role-boundary hardening.
+- `npx supabase@latest db push --linked --dry-run` - passed, remote database is up to date.
+- `npm run secrets:scan` - passed after low-privilege role-boundary hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched markdown files only.
+
+## Security Review
+
+- No real secrets were added.
+- `SUPABASE_SERVICE_ROLE_KEY` is documented as server-only and must never use a `NEXT_PUBLIC_` prefix.
+- Opaque `sb_secret_...` values are rejected for the current Supabase Storage signed URL path instead of being used as a bearer token that produces a runtime `Invalid Compact JWS` failure.
+- No `.env` or `.env.local` files were changed.
+- Auth callback checks sanitize and preserve only internal `next` paths.
+- Implicit magic-link fallback clears URL fragments before posting tokens and validates the session with Supabase server-side before returning the protected redirect target.
+- The MFA bridge upgrades already-enrolled Supabase TOTP sessions from AAL1 to AAL2 before exposing MFA-required internal roles; it does not add factor enrollment or weaken the database `requires_mfa` checks.
+- Supabase access, refresh, callback, and public guest tokens were not printed or committed.
+- Audit snapshots remain redacted where existing redaction helpers already removed storage paths, filenames, checksums, error messages, and internal moderation/review notes.
+- Fixes preserve the same audit action names while moving table-specific field and enum handling into table-specific branches; the message queue-sync fix adds expected queue update audit evidence without exposing rendered message bodies or WhatsApp URLs in committed files.
+- The seating helper-grant migration does not expose the private helper to `public` or `anon`; it grants only the roles needed by authenticated seating RPCs and service-role maintenance.
+- The partner audit trigger now derives table-specific values from JSON snapshots, preserving existing redaction and action names while preventing cross-table trigger record field leakage or runtime crashes.
+- Partner QA used fake linked-dev data only. Disposable partner, linked-user, custom role-assignment, project, submission, and source rows were removed after verification; audit rows remained immutable by design.
+- Guest API mutations now enforce the same contract gate as server-rendered guest forms, so side-authorized users cannot bypass commercial/contract controls through API routes.
+- Partner index links now follow the same server-side permission checks as partner review/dashboard destination pages, reducing misleading or stale entry points for restricted partner users.
+- Check-in supervisor override now requires `check_in.unexpected_guests.review` on the server action and is hidden from `event_staff`; regular check-in staff retain normal `check_in.perform`.
+- Low-privilege QA used fake `MVP_QA_*` rows and temporary role assignments only; cleanup returned zero temporary roles, guests, partners, and partner-user rows, and restored the fake project guest-list gate to `locked`.
+
+## Assumptions
+
+- The linked Supabase project is the dev QA project.
+- The existing audit trigger tables and grants remain correct; this pass only fixes trigger runtime safety.
+- The invitation upload UI should now pass the database step; the earlier verification used a rollback insert against the linked DB, and the AAL2 route matrix now confirms the invitation upload route renders for the admin QA session.
+- Protected UI route inspection used the linked-dev `diginoces@gmail.com` account after TOTP verification upgraded the browser session to AAL2.
+- Positive public guest signed-file browser-route rerun now passes when the local server starts with server-only `SUPABASE_SERVICE_ROLE_KEY`. The linked-dev project still needs the same server-only environment variable on staging/production hosts.
+- Communications QA used fake linked-dev phone-like data only. The browser pass verified that a WhatsApp link was present but did not open or automate WhatsApp, and no real WhatsApp credentials were configured.
+- Seating QA used fake linked-dev project, event, guest, table, and export data only. The generated CSV storage object was removed through the Supabase Storage API, and disposable metadata rows were removed from linked dev after verification.
+- Partner QA used a disposable fake partner and fake project names only. The flow relied on the existing AAL2 `diginoces@gmail.com` admin/operations session and did not add partner billing, commissions, payments, or external partner credentials.
+
+## Remaining Notes
+
+- Invitation-message sending still correctly requires generated invitations and an active invitation file before preparation.
+- Audit-log UI access still requires a global `diginoces_admin` role and AAL2; the QA account now has both for the protected route matrix.
+- Supabase email sending temporarily rate-limited the QA account during local inspection; the app displays retry guidance, supports email-code fallback, bridges older implicit-flow magic links, and now has a TOTP MFA step for sensitive roles after first-factor sign-in.

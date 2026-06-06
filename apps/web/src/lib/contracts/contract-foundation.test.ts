@@ -133,6 +133,19 @@ function readSprint10Migration() {
   return readFileSync(join(migrationDir, match), "utf8");
 }
 
+function readMigrationBySuffix(suffix: string) {
+  const migrationDir = join(repoRootFromCwd(), "supabase", "migrations");
+  const match = readdirSync(migrationDir).find((entry) =>
+    entry.endsWith(suffix),
+  );
+
+  if (!match) {
+    throw new Error(`Migration ending with ${suffix} was not found.`);
+  }
+
+  return readFileSync(join(migrationDir, match), "utf8");
+}
+
 function approvedContract(): ProjectContract {
   const pricing = calculateProjectPricing({
     eventSelections: [eventSelection],
@@ -358,5 +371,33 @@ describe("Sprint 10 commercial foundation", () => {
     expect(normalizedMigration).toContain("status <> 'confirmed'");
     expect(normalizedMigration).toContain("p_snapshot - 'rendered_contract'");
     expect(normalizedMigration).toContain("auth.jwt() ->> 'aal'");
+  });
+
+  it("keeps the commercial audit trigger from comparing table-specific status enums across tables", () => {
+    const migration = readMigrationBySuffix(
+      "_mvp_commercial_audit_trigger_fix.sql",
+    );
+    const contractBranchIndex = migration.indexOf(
+      "elsif tg_table_name = 'contracts' then",
+    );
+    const paymentExceptionBranchIndex = migration.indexOf(
+      "elsif tg_table_name = 'payment_exceptions' then",
+    );
+    const contractApprovedIndex = migration.indexOf(
+      "new.status = 'approved'",
+      contractBranchIndex,
+    );
+    const paymentExceptionRevokedIndex = migration.indexOf(
+      "new.status = 'revoked'",
+      paymentExceptionBranchIndex,
+    );
+
+    expect(contractBranchIndex).toBeGreaterThanOrEqual(0);
+    expect(paymentExceptionBranchIndex).toBeGreaterThan(contractBranchIndex);
+    expect(contractApprovedIndex).toBeGreaterThan(contractBranchIndex);
+    expect(contractApprovedIndex).toBeLessThan(paymentExceptionBranchIndex);
+    expect(paymentExceptionRevokedIndex).toBeGreaterThan(
+      paymentExceptionBranchIndex,
+    );
   });
 });

@@ -520,10 +520,12 @@ export default async function EventCheckInPage({
                           Notes
                           <input name="notes" />
                         </label>
-                        <label className="checkbox-label">
-                          <input name="supervisorOverride" type="checkbox" />
-                          Supervisor override
-                        </label>
+                        {canReviewUnexpected ? (
+                          <label className="checkbox-label">
+                            <input name="supervisorOverride" type="checkbox" />
+                            Supervisor override
+                          </label>
+                        ) : null}
                         <button className="button" type="submit">
                           Check in
                         </button>

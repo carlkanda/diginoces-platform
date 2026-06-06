@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   buildGuestPublicToken,
@@ -311,5 +312,33 @@ describe("Sprint 5 RSVP and public guest page foundation", () => {
         "payments",
       ]),
     );
+  });
+
+  it("keeps the public token audit trigger from reading RSVP-only fields on tokens", () => {
+    const migrationPath = new URL(
+      "../../../../../supabase/migrations/20260605000248_mvp_public_token_audit_trigger_fix.sql",
+      import.meta.url,
+    );
+
+    expect(
+      existsSync(migrationPath),
+      "Expected MVP public token audit trigger fix migration to exist at its generated path.",
+    ).toBe(true);
+
+    const migration = readFileSync(migrationPath, "utf8");
+    const tokenBranchIndex = migration.indexOf(
+      "if tg_table_name = 'guest_public_tokens' then",
+    );
+    const rsvpBranchIndex = migration.indexOf(
+      "elsif tg_table_name = 'rsvp_records' then",
+    );
+    const firstRsvpSourceIndex = migration.indexOf(
+      "new.source",
+      rsvpBranchIndex,
+    );
+
+    expect(tokenBranchIndex).toBeGreaterThanOrEqual(0);
+    expect(rsvpBranchIndex).toBeGreaterThan(tokenBranchIndex);
+    expect(firstRsvpSourceIndex).toBeGreaterThan(rsvpBranchIndex);
   });
 });

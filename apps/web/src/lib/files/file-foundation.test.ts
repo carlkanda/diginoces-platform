@@ -40,6 +40,27 @@ function readPostMergeDbLintFixMigration() {
   return readMigrationBySuffix("_sprint_14_post_merge_db_lint_fix.sql");
 }
 
+function readPublicGuestFileDownloadRoute() {
+  return readFileSync(
+    join(
+      repoRoot,
+      "apps",
+      "web",
+      "src",
+      "app",
+      "api",
+      "public",
+      "guest",
+      "[guestToken]",
+      "files",
+      "[fileId]",
+      "download",
+      "route.ts",
+    ),
+    "utf8",
+  );
+}
+
 function readMigrationBySuffix(suffix: string) {
   const matches = readdirSync(migrationDir).filter((entry) =>
     entry.endsWith(suffix),
@@ -360,6 +381,13 @@ describe("Sprint 14 file foundation", () => {
         projectGateOpen: true,
       }),
     ).toMatchObject({ allowed: false, reason: "inactive_or_not_latest" });
+  });
+
+  it("signs public guest file downloads with the server-only storage adapter", () => {
+    const route = readPublicGuestFileDownloadRoute();
+
+    expect(route).toContain("createSupabaseServerStorageAdapter");
+    expect(route).not.toContain("createSupabaseStorageAdapter(supabase)");
   });
 
   it("keeps internal, couple, partner, and archive permissions distinct", () => {

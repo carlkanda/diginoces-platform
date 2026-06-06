@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveGuestFileDownload } from "@/lib/files/file-db";
 import { serverLogger } from "@/lib/logging";
-import { createSupabaseStorageAdapter } from "@/lib/storage/storage-provider";
+import { createSupabaseServerStorageAdapter } from "@/lib/storage/storage-provider";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +56,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   let signedUrl: string;
 
   try {
-    signedUrl = await createSupabaseStorageAdapter(supabase).getSignedReadUrl({
+    signedUrl = await createSupabaseServerStorageAdapter().getSignedReadUrl({
       bucket,
       expiresInSeconds,
       path,

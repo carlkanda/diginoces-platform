@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildImplicitAuthCallbackPage,
+  buildLoginErrorRedirectPath,
   buildLoginRedirectPath,
+  buildMfaRedirectPath,
+  getAuthRedirectOrigin,
+  getAuthCallbackNextPath,
+  getAuthCallbackOtpType,
+  getAuthCallbackOtpTypeCandidates,
+  getAuthCallbackTokenHash,
+  getMagicLinkRequestErrorMessage,
+  normalizeEmailOtpToken,
+  normalizeMfaCode,
+  parseImplicitAuthCallbackPayload,
   normalizeInternalPath,
+  selectVerifiedTotpFactor,
 } from "@/lib/auth/auth-service";
 
 describe("auth redirect helpers", () => {
@@ -52,6 +65,23 @@ describe("auth redirect helpers", () => {
     expect(parsed.searchParams.get("eventId")).toBeNull();
   });
 
+  it("preserves safe next paths when building login error redirects", () => {
+    const loginPath = buildLoginErrorRedirectPath(
+      "/platform/audit-logs?actor=diginoces",
+      "Authentication link is invalid or expired. Request a fresh magic link.",
+    );
+    const parsed = new URL(loginPath, "https://diginoces.test");
+
+    expect(parsed.pathname).toBe("/login");
+    expect(parsed.searchParams.get("next")).toBe(
+      "/platform/audit-logs?actor=diginoces",
+    );
+    expect(parsed.searchParams.get("error")).toBe(
+      "Authentication link is invalid or expired. Request a fresh magic link.",
+    );
+    expect(parsed.searchParams.get("actor")).toBeNull();
+  });
+
   it("defaults unsafe encoded next paths without leaking their query params", () => {
     const loginPath = buildLoginRedirectPath(
       "/platform%0A/guests?side=bride&eventId=event-1",
@@ -74,5 +104,311 @@ describe("auth redirect helpers", () => {
     expect(parsed.searchParams.get("next")).toBe("/platform");
     expect(parsed.searchParams.get("side")).toBeNull();
     expect(parsed.searchParams.get("eventId")).toBeNull();
+  });
+
+  it("accepts token_hash and token callback aliases", () => {
+    expect(
+      getAuthCallbackTokenHash(
+        new URLSearchParams({
+          token_hash: "hash-from-custom-template",
+        }),
+      ),
+    ).toBe("hash-from-custom-template");
+    expect(
+      getAuthCallbackTokenHash(
+        new URLSearchParams({
+          token: "hash-from-confirmation-url-shape",
+        }),
+      ),
+    ).toBe("hash-from-confirmation-url-shape");
+  });
+
+  it("accepts the current documented type=email callback links", () => {
+    expect(
+      getAuthCallbackOtpType(
+        new URLSearchParams({
+          type: "email",
+        }),
+      ),
+    ).toBe("email");
+  });
+
+  it("keeps magiclink callback links supported for compatibility", () => {
+    expect(
+      getAuthCallbackOtpType(
+        new URLSearchParams({
+          type: "magiclink",
+        }),
+      ),
+    ).toBe("magiclink");
+  });
+
+  it("tries email and magiclink token-hash callback candidates in a stable order", () => {
+    expect(
+      getAuthCallbackOtpTypeCandidates(
+        new URLSearchParams({
+          type: "email",
+        }),
+      ),
+    ).toEqual(["email", "magiclink"]);
+    expect(
+      getAuthCallbackOtpTypeCandidates(
+        new URLSearchParams({
+          type: "magiclink",
+        }),
+      ),
+    ).toEqual(["magiclink", "email"]);
+    expect(
+      getAuthCallbackOtpTypeCandidates(
+        new URLSearchParams({
+          type: "invite",
+        }),
+      ),
+    ).toEqual(["invite"]);
+  });
+
+  it("uses the current loopback origin for magic-link callbacks", () => {
+    expect(
+      getAuthRedirectOrigin("http://127.0.0.1:3000", "http://localhost:3000"),
+    ).toBe("http://127.0.0.1:3000");
+    expect(
+      getAuthRedirectOrigin("http://localhost:3002", "http://localhost:3000"),
+    ).toBe("http://localhost:3002");
+  });
+
+  it("falls back to the configured app origin for unsafe callback origins", () => {
+    expect(
+      getAuthRedirectOrigin(
+        "https://attacker.test",
+        "https://app.diginoces.test",
+      ),
+    ).toBe("https://app.diginoces.test");
+    expect(getAuthRedirectOrigin("not a url", "http://localhost:3000")).toBe(
+      "http://localhost:3000",
+    );
+    expect(getAuthRedirectOrigin(null, "http://localhost:3000")).toBe(
+      "http://localhost:3000",
+    );
+  });
+
+  it("derives callback next paths from safe redirect_to values", () => {
+    expect(
+      getAuthCallbackNextPath(
+        new URLSearchParams({
+          redirect_to:
+            "http://localhost:3000/auth/callback?next=%2Fplatform%2Faudit-logs",
+        }),
+        ["http://localhost:3000"],
+      ),
+    ).toBe("/platform/audit-logs");
+    expect(
+      getAuthCallbackNextPath(
+        new URLSearchParams({
+          redirect_to: "http://127.0.0.1:3000/platform/projects?tab=active",
+        }),
+        ["http://localhost:3000", "http://127.0.0.1:3000"],
+      ),
+    ).toBe("/platform/projects?tab=active");
+  });
+
+  it("rejects unsafe callback redirect_to values", () => {
+    expect(
+      getAuthCallbackNextPath(
+        new URLSearchParams({
+          redirect_to:
+            "https://attacker.test/auth/callback?next=%2Fplatform%2Faudit-logs",
+        }),
+        ["http://localhost:3000"],
+      ),
+    ).toBe("/platform");
+    expect(
+      getAuthCallbackNextPath(
+        new URLSearchParams({
+          redirect_to:
+            "http://localhost:3000/auth/callback?next=%2Fplatform%2F..%2Fadmin",
+        }),
+        ["http://localhost:3000"],
+      ),
+    ).toBe("/platform");
+  });
+
+  it("surfaces a retry delay when Supabase rate limits magic links", () => {
+    expect(
+      getMagicLinkRequestErrorMessage({
+        code: "over_email_send_rate_limit",
+        status: 429,
+      }),
+    ).toBe(
+      "Too many magic links requested. Wait a few minutes, then request a fresh link.",
+    );
+    expect(
+      getMagicLinkRequestErrorMessage({
+        code: "unexpected_failure",
+        status: 500,
+      }),
+    ).toBe("Unable to request a magic link.");
+  });
+
+  it("surfaces a retry delay when Supabase sends the rate-limit error code", () => {
+    expect(
+      getMagicLinkRequestErrorMessage({
+        code: "over_email_send_rate_limit",
+        status: 400,
+      }),
+    ).toBe(
+      "Too many magic links requested. Wait a few minutes, then request a fresh link.",
+    );
+  });
+
+  it("surfaces a retry delay when Supabase sends a 429 status", () => {
+    expect(
+      getMagicLinkRequestErrorMessage({
+        code: "unexpected_failure",
+        status: 429,
+      }),
+    ).toBe(
+      "Too many magic links requested. Wait a few minutes, then request a fresh link.",
+    );
+  });
+
+  it("normalizes email OTP codes without accepting malformed tokens", () => {
+    expect(normalizeEmailOtpToken("625846")).toBe("625846");
+    expect(normalizeEmailOtpToken("625 846")).toBe("625846");
+    expect(normalizeEmailOtpToken(" 625846 ")).toBe("625846");
+    expect(normalizeEmailOtpToken("62584")).toBeNull();
+    expect(normalizeEmailOtpToken("6258467")).toBeNull();
+    expect(normalizeEmailOtpToken("62584a")).toBeNull();
+  });
+
+  it("normalizes MFA authenticator codes without accepting malformed tokens", () => {
+    expect(normalizeMfaCode("286837")).toBe("286837");
+    expect(normalizeMfaCode("286 837")).toBe("286837");
+    expect(normalizeMfaCode(" 286837 ")).toBe("286837");
+    expect(normalizeMfaCode("28683")).toBeNull();
+    expect(normalizeMfaCode("2868370")).toBeNull();
+    expect(normalizeMfaCode("28683x")).toBeNull();
+  });
+
+  it("encodes MFA return paths without broadening query params", () => {
+    const mfaPath = buildMfaRedirectPath(
+      "/platform/dashboard?view=global",
+      "Enter the current 6-digit authenticator code.",
+    );
+    const parsed = new URL(mfaPath, "https://diginoces.test");
+
+    expect(parsed.pathname).toBe("/login/mfa");
+    expect(parsed.searchParams.get("next")).toBe(
+      "/platform/dashboard?view=global",
+    );
+    expect(parsed.searchParams.get("view")).toBeNull();
+    expect(parsed.searchParams.get("error")).toBe(
+      "Enter the current 6-digit authenticator code.",
+    );
+  });
+
+  it("selects a verified TOTP factor without accepting unverified factors", () => {
+    expect(
+      selectVerifiedTotpFactor({
+        all: [
+          {
+            factor_type: "totp",
+            id: "unverified-factor",
+            status: "unverified",
+          },
+        ],
+        totp: [
+          {
+            id: "verified-factor",
+            status: "verified",
+          },
+        ],
+      }),
+    ).toEqual({ id: "verified-factor" });
+
+    expect(
+      selectVerifiedTotpFactor({
+        all: [
+          {
+            factor_type: "totp",
+            id: "fallback-factor",
+            status: "verified",
+          },
+        ],
+      }),
+    ).toEqual({ id: "fallback-factor" });
+
+    expect(
+      selectVerifiedTotpFactor({
+        all: [
+          {
+            factor_type: "phone",
+            id: "phone-factor",
+            status: "verified",
+          },
+        ],
+        totp: [
+          {
+            id: "pending-factor",
+            status: "unverified",
+          },
+        ],
+      }),
+    ).toBeNull();
+  });
+
+  it("builds an implicit callback bridge without embedding auth tokens", () => {
+    const html = buildImplicitAuthCallbackPage(
+      "/platform/audit-logs?actor=diginoces",
+    );
+
+    expect(html).toContain("Completing sign-in");
+    expect(html).toContain('"/platform/audit-logs?actor=diginoces"');
+    expect(html).toContain("window.history.replaceState");
+    expect(html).toContain('params.get("access_token")');
+    expect(html).toContain('params.get("refresh_token")');
+    expect(html).toContain('fetch("/auth/callback/implicit"');
+    expect(html).not.toContain("example-access-token");
+    expect(html).not.toContain("example-refresh-token");
+  });
+
+  it("defaults unsafe implicit callback next paths", () => {
+    const html = buildImplicitAuthCallbackPage(
+      "https://attacker.test/platform",
+    );
+
+    expect(html).toContain('"/platform"');
+    expect(html).not.toContain("attacker.test");
+  });
+
+  it("parses implicit callback payloads with safe internal next paths", () => {
+    expect(
+      parseImplicitAuthCallbackPayload({
+        accessToken: " access-token ",
+        next: "/platform/projects?tab=active",
+        refreshToken: " refresh-token ",
+      }),
+    ).toEqual({
+      accessToken: "access-token",
+      nextPath: "/platform/projects?tab=active",
+      refreshToken: "refresh-token",
+    });
+  });
+
+  it("rejects malformed implicit callback payloads", () => {
+    expect(() => parseImplicitAuthCallbackPayload(null)).toThrow(
+      "Authentication callback payload is invalid.",
+    );
+    expect(() =>
+      parseImplicitAuthCallbackPayload({
+        accessToken: "",
+        refreshToken: "refresh-token",
+      }),
+    ).toThrow("Authentication callback payload is missing tokens.");
+    expect(() =>
+      parseImplicitAuthCallbackPayload({
+        accessToken: "access-token",
+        refreshToken: "x".repeat(8193),
+      }),
+    ).toThrow("Authentication callback payload is missing tokens.");
   });
 });

@@ -157,6 +157,12 @@ export type PartnerDashboardView = {
   requirementIds: string[];
 };
 
+export type PartnerIndexActionVisibility = {
+  showCreatePartner: boolean;
+  showPartnerDashboard: boolean;
+  showReviewQueue: boolean;
+};
+
 export type PartnerAction =
   | "comments.create"
   | "comments.internal.read"
@@ -322,6 +328,18 @@ export function canPartnerCreateProject(
     activePartnerStatuses.has(partner.status) &&
     partnerUser.status === "active"
   );
+}
+
+export function getPartnerIndexActionVisibility(input: {
+  canManagePartners: boolean;
+  canOpenPartnerDashboard: boolean;
+  canReviewPartnerProjects: boolean;
+}): PartnerIndexActionVisibility {
+  return {
+    showCreatePartner: input.canManagePartners,
+    showPartnerDashboard: input.canOpenPartnerDashboard,
+    showReviewQueue: input.canReviewPartnerProjects,
+  };
 }
 
 export function createPartnerProjectDraft(input: {
