@@ -2,9 +2,9 @@
 
 ## Summary
 
-This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, and public guest file-download storage signing after auth/storage issues blocked protected-route and public-download inspection.
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, and public guest file-download storage signing after auth/storage issues blocked protected-route and public-download inspection.
 
-No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, and regression tests for already-implemented MVP flows.
+No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, tokenized public-route response hardening, and regression tests for already-implemented MVP flows.
 
 ## Findings And Fixes
 
@@ -41,12 +41,22 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 11. Public guest file downloads authorized the guest token in Postgres but attempted to create private Supabase Storage signed URLs with the anonymous SSR client, causing valid guest-visible files to fail with a generic storage `502`.
    - Fixed by adding a server-only `SUPABASE_SECRET_KEY` storage-signing adapter and using it only after `resolve_guest_file_download` authorizes the exact latest active guest-facing file.
 
+12. A fresh local `Authentication callback failed` report occurred while Supabase magic-link requests were rate-limited, leaving QA without a browser session.
+   - Fixed by adding a 6-digit email-code fallback that verifies Supabase email OTPs server-side, preserves safe `next` paths, and keeps the existing magic-link callback flow intact.
+
+13. Public guest token pages initially lacked explicit token-route security headers in local header checks.
+   - Fixed by adding `/g/:guestToken` route headers and proxy response hardening for `no-store`, `no-referrer`, `nosniff`, and `noindex, nofollow`. Production `next build`/`next start` verification confirmed the stricter headers; dev mode still forces `Cache-Control: no-cache`.
+
 ## Files Changed
 
 - `apps/web/src/app/auth/callback/implicit/route.ts`
 - `apps/web/src/app/auth/callback/route.ts`
 - `apps/web/src/app/api/public/guest/[guestToken]/files/[fileId]/download/route.ts`
 - `apps/web/src/app/login/actions.ts`
+- `apps/web/src/app/login/page.tsx`
+- `apps/web/next.config.ts`
+- `apps/web/src/proxy.ts`
+- `apps/web/src/proxy.test.ts`
 - `apps/web/src/lib/auth/auth-service.ts`
 - `apps/web/src/lib/auth/auth-service.test.ts`
 - `apps/web/src/lib/files/file-foundation.test.ts`
@@ -82,6 +92,8 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify the implicit magic-link callback bridge preserves safe internal next paths, strips unsafe next paths, avoids embedding token values, and rejects malformed callback payloads.
 - Verify magic-link callback origin selection preserves safe loopback origins such as `127.0.0.1` and rejects untrusted external origins.
 - Verify current documented callback links using `type=email` are tried before `magiclink`, while `type=magiclink` links are tried before `email` for compatibility.
+- Verify email OTP code normalization accepts 6-digit codes with whitespace and rejects malformed values before Supabase verification.
+- Verify tokenized public guest pages receive private no-store, no-referrer, nosniff, and noindex response headers while unrelated routes do not.
 - Verify private Storage signed URLs use a server-only Supabase secret key and fail closed when it is not configured.
 - Verify the public guest file download route uses the server-only storage adapter instead of the anonymous SSR client after token-scoped file authorization.
 
@@ -99,6 +111,8 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Local auth callback origin handling was hardened so requesting a magic link from `127.0.0.1` keeps the callback on the same loopback host instead of forcing the configured `localhost` origin.
 - Supabase redirect and email-template guidance was rechecked against the current [Supabase redirect URL docs](https://supabase.com/docs/guides/auth/redirect-urls); local setup now documents `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`, and the callback remains compatible with `type=magiclink` links by trying the paired fallback if the received type is rejected.
 - Supabase API key guidance was rechecked against the current [Supabase API keys docs](https://supabase.com/docs/guides/getting-started/api-keys); public guest file downloads now require a server-only secret key for private Storage signing after backend authorization.
+- The linked-dev account metadata for `diginoces@gmail.com` was inspected without tokens or secrets; the account exists, email is confirmed, MFA has a verified TOTP factor, a recent session recorded `aal2`, and global `diginoces_admin`/`operations_manager` role assignments exist.
+- A production `next build`/`next start` check verified `/g/:guestToken` responses carry `no-store`, `no-referrer`, `nosniff`, and `noindex, nofollow`. Disposable public-token header fixtures were cleaned from linked dev and the local temp token file was removed.
 
 ## UI And API QA Evidence
 
@@ -185,6 +199,22 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Local Chrome/CDP public UI checks and unauthenticated UI/API sweeps - passed as summarized above.
 - `npm run test -- apps/web/src/lib/auth/auth-service.test.ts` - failed because the root workspace forwarded a root-relative path into the web workspace; rerun with the workspace-relative path below.
 - `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - passed, 20 auth helper tests after preserving `type=email` as the primary callback type and adding paired `email`/`magiclink` fallback coverage.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - passed, 21 auth helper tests after email OTP normalization coverage.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts src/proxy.test.ts` - passed, 2 files and 23 tests after public-token header helper coverage.
+- `npm run typecheck` - passed after email-code fallback and public-token header hardening.
+- `npm run build` - passed; production build output included `Proxy (Middleware)`.
+- Production `next start` public-token header check - passed for `/g/:guestToken` route shape with `Cache-Control: no-store, must-revalidate, max-age=0, private`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, and `X-Robots-Tag: noindex, nofollow`.
+- Linked-dev disposable header-check cleanup - passed; token, guest, event, and project cleanup counts were all zero and the local temp token fixture was removed.
+- `npm run format:check` - passed after email-code fallback, public-token headers, and documentation updates.
+- `npm run lint` - passed after email-code fallback, public-token headers, and documentation updates.
+- `npm run typecheck` - passed after email-code fallback, public-token headers, and documentation updates.
+- `npm run test` - passed, 20 files and 210 tests.
+- `npm run build` - passed after email-code fallback, public-token headers, and documentation updates; production build output included `Proxy (Middleware)`.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities.
+- `npm run secrets:scan` - passed.
+- `npm run db:lint` - passed, no schema errors.
+- `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date.
+- `git diff --check` - passed with informational CRLF warnings on touched files only.
 - `npm run format:check` - initially failed on the touched auth files, then passed after formatting.
 - `npm run format` - passed after callback fallback hardening.
 - `npm run lint` - passed after callback fallback hardening.

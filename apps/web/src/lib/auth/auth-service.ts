@@ -26,6 +26,15 @@ export type MagicLinkResult =
       status: "failed";
     };
 
+export type EmailOtpVerificationResult =
+  | {
+      status: "authenticated";
+    }
+  | {
+      message: string;
+      status: "failed";
+    };
+
 export type ImplicitCallbackPayload = {
   accessToken: string;
   nextPath: string;
@@ -34,7 +43,10 @@ export type ImplicitCallbackPayload = {
 
 const invalidOrExpiredMagicLinkMessage =
   "Authentication link is invalid or expired. Request a fresh magic link.";
+const invalidOrExpiredEmailCodeMessage =
+  "Authentication code is invalid or expired. Request a fresh email.";
 const maxImplicitCallbackTokenLength = 8192;
+const emailOtpTokenPattern = /^[0-9]{6}$/;
 
 export async function getAuthContext(): Promise<AuthContext> {
   const env = getPublicEnvironment();
@@ -121,6 +133,54 @@ export async function requestMagicLink(
 
   return {
     status: "sent",
+  };
+}
+
+export async function verifyEmailOtp(
+  email: string,
+  token: string,
+): Promise<EmailOtpVerificationResult> {
+  const trimmedEmail = email.trim().toLowerCase();
+  const normalizedToken = normalizeEmailOtpToken(token);
+  const env = getPublicEnvironment();
+
+  if (!trimmedEmail || !trimmedEmail.includes("@")) {
+    return {
+      message: "Enter a valid email address.",
+      status: "failed",
+    };
+  }
+
+  if (!normalizedToken) {
+    return {
+      message: "Enter the 6-digit code from the email.",
+      status: "failed",
+    };
+  }
+
+  if (!env.supabaseConfigured) {
+    return {
+      message: `Missing Supabase configuration: ${env.missingSupabaseVariables.join(", ")}`,
+      status: "failed",
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email: trimmedEmail,
+    token: normalizedToken,
+    type: "email",
+  });
+
+  if (error) {
+    return {
+      message: invalidOrExpiredEmailCodeMessage,
+      status: "failed",
+    };
+  }
+
+  return {
+    status: "authenticated",
   };
 }
 
@@ -294,6 +354,16 @@ export function getAuthCallbackNextPath(
 
 export function getInvalidOrExpiredMagicLinkMessage() {
   return invalidOrExpiredMagicLinkMessage;
+}
+
+export function normalizeEmailOtpToken(token: string) {
+  const normalized = token.replace(/\s+/g, "");
+
+  if (!emailOtpTokenPattern.test(normalized)) {
+    return null;
+  }
+
+  return normalized;
 }
 
 export function buildImplicitAuthCallbackPage(nextPath: string) {

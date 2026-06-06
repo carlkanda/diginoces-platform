@@ -9,6 +9,7 @@ import {
   getAuthCallbackOtpTypeCandidates,
   getAuthCallbackTokenHash,
   getMagicLinkRequestErrorMessage,
+  normalizeEmailOtpToken,
   parseImplicitAuthCallbackPayload,
   normalizeInternalPath,
 } from "@/lib/auth/auth-service";
@@ -265,6 +266,15 @@ describe("auth redirect helpers", () => {
     ).toBe(
       "Too many magic links requested. Wait a few minutes, then request a fresh link.",
     );
+  });
+
+  it("normalizes email OTP codes without accepting malformed tokens", () => {
+    expect(normalizeEmailOtpToken("625846")).toBe("625846");
+    expect(normalizeEmailOtpToken("625 846")).toBe("625846");
+    expect(normalizeEmailOtpToken(" 625846 ")).toBe("625846");
+    expect(normalizeEmailOtpToken("62584")).toBeNull();
+    expect(normalizeEmailOtpToken("6258467")).toBeNull();
+    expect(normalizeEmailOtpToken("62584a")).toBeNull();
   });
 
   it("builds an implicit callback bridge without embedding auth tokens", () => {

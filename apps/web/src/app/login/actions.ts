@@ -6,6 +6,7 @@ import {
   buildLoginRedirectPath,
   normalizeInternalPath,
   requestMagicLink,
+  verifyEmailOtp,
 } from "@/lib/auth/auth-service";
 
 export async function signInWithMagicLink(formData: FormData) {
@@ -22,6 +23,7 @@ export async function signInWithMagicLink(formData: FormData) {
     redirect(
       `/login?${new URLSearchParams({
         email,
+        next,
         sent: "1",
       }).toString()}`,
     );
@@ -30,6 +32,27 @@ export async function signInWithMagicLink(formData: FormData) {
   redirect(
     `${buildLoginRedirectPath(next)}&${new URLSearchParams({
       error: result.message,
+    }).toString()}`,
+  );
+}
+
+export async function signInWithEmailCode(formData: FormData) {
+  const email = String(formData.get("email") ?? "");
+  const token = String(formData.get("token") ?? "");
+  const next = normalizeInternalPath(
+    String(formData.get("next") ?? "/platform"),
+  );
+  const result = await verifyEmailOtp(email, token);
+
+  if (result.status === "authenticated") {
+    redirect(next);
+  }
+
+  redirect(
+    `/login?${new URLSearchParams({
+      email,
+      error: result.message,
+      next,
     }).toString()}`,
   );
 }
