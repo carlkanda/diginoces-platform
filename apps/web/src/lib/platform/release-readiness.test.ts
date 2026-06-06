@@ -773,6 +773,7 @@ describe("Sprint 15 release readiness", () => {
       buildEffectiveFunctionPrivilegeStates(readMigrationHistory());
     const requiredHelperSignatures = [
       "app_private.check_in_settings_permit_method(uuid, uuid, public.check_in_method)",
+      "app_private.mark_guest_invitation_needs_regeneration_for_seating(uuid, uuid, uuid, uuid)",
       "app_private.user_can_access_check_in_event(uuid, uuid, uuid, text)",
       "app_private.user_can_access_check_in_event_any(uuid, uuid, uuid, text[])",
       "app_private.user_can_access_file(uuid, uuid, text)",

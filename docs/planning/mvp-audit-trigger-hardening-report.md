@@ -2,9 +2,9 @@
 
 ## Summary
 
-This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. Later MVP UI QA also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, public guest file-download storage signing, and guided-manual message queue/status synchronization after auth, storage, and workflow issues blocked protected-route and public-download inspection.
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. Later MVP UI QA also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, public guest file-download storage signing, guided-manual message queue/status synchronization, and seating assignment helper grants after auth, storage, and workflow issues blocked protected-route, public-download, communications, and seating inspection.
 
-No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, tokenized public-route response hardening, guided-manual queue/status consistency, and regression tests for already-implemented MVP flows.
+No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, tokenized public-route response hardening, guided-manual queue/status consistency, authenticated seating helper grants, and regression tests for already-implemented MVP flows.
 
 ## Findings And Fixes
 
@@ -50,6 +50,9 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 14. Guided-manual message status updates changed `message_logs` and status events, but left matching `message_queue_items` rows stale.
    - Fixed in `20260606063731_mvp_message_queue_status_sync.sql` by syncing the queue row on `mark_guided_manual_message_status` and backfilling existing guided-manual queue rows.
 
+15. Seating assignment/removal RPCs failed after Sprint 15 function-grant hardening because they call `app_private.mark_guest_invitation_needs_regeneration_for_seating(...)`, and authenticated execute on that private helper had been revoked.
+   - Fixed in `20260606151731_mvp_seating_invitation_helper_grant.sql` by granting the helper only to `authenticated` and `service_role`, while keeping `public` and `anon` revoked.
+
 ## Files Changed
 
 - `apps/web/src/app/auth/callback/implicit/route.ts`
@@ -85,6 +88,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `supabase/migrations/20260605013031_mvp_guest_wishes_delete_branch_fix.sql`
 - `supabase/migrations/20260605015457_mvp_invitation_status_transition_audit_fix.sql`
 - `supabase/migrations/20260606063731_mvp_message_queue_status_sync.sql`
+- `supabase/migrations/20260606151731_mvp_seating_invitation_helper_grant.sql`
 
 ## Tests Added
 
@@ -105,6 +109,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify private Storage signed URLs use a server-only Supabase secret key and fail closed when it is not configured.
 - Verify the public guest file download route uses the server-only storage adapter instead of the anonymous SSR client after token-scoped file authorization.
 - Verify the message queue status-sync migration updates guided-manual queue rows when message history changes and backfills already-stale queue rows.
+- Verify the seating invitation regeneration helper keeps explicit authenticated/service-role execute grants and no public/anon grant after Sprint 15 release security hardening.
 
 ## Linked Dev Verification
 
@@ -124,6 +129,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - A production `next build`/`next start` check verified `/g/:guestToken` responses carry `no-store`, `no-referrer`, `nosniff`, and `noindex, nofollow`. Disposable public-token header fixtures were cleaned from linked dev and the local temp token file was removed.
 - The AAL2 admin/operations browser session completed a disposable guest-import review/apply flow: CSV upload, mapping, validation, submit-for-review, one approved row, one held row, apply-approved-rows, `status=applied`, one created guest, and the expected import audit actions. Cleanup removed the disposable guest, import session, rows, mappings, and dependent records; follow-up verification returned zero remaining rows for every checked table.
 - Applied `20260606063731_mvp_message_queue_status_sync.sql` to linked dev. A stale guided-manual queue row was backfilled from `queued` to `sent`, and the final communications QA pass verified a new disposable event-reminder message log and queue row both ended at `sent`.
+- Applied `20260606151731_mvp_seating_invitation_helper_grant.sql` to linked dev. The seating assignment API then succeeded for the AAL2 admin/operations browser session after previously failing with `permission denied for function mark_guest_invitation_needs_regeneration_for_seating`.
 
 ## UI And API QA Evidence
 
@@ -139,6 +145,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Commercial Chrome/CDP QA rendered package/add-on creation, event selection, pricing, commercial gesture, generated contract, contract approval, confirmed payment, payment exception, and mobile final states. The pass found and fixed unlabeled commercial gesture, approval confirmation, and addendum controls, then reran with zero unlabeled visible controls, no horizontal overflow, no 404, and no visible app errors.
 - Invitation template Chrome/CDP QA rendered registration, template detail, coordinate editor, preview/generation controls, generation-job history, invitation records, and mobile final state. A disposable PDF metadata template moved through configured, technical preview generated, technical preview approved, and queued event generation states with no horizontal overflow, no 404, no visible app errors, and no unlabeled controls.
 - Communications Chrome/CDP QA rendered message templates, guided sending queue, message detail, opened/sent controls, queue/history, and mobile queue state with no horizontal overflow, no visible app errors, and no unlabeled controls. A disposable French event-reminder template and guided manual message moved through prepared, opened manually, and sent states; DB verification found log `sent`, queue `sent`, opened/sent timestamps, status events, WhatsApp link/target presence, and expected audit actions. Cleanup returned zero disposable communication rows.
+- Seating Chrome/CDP QA rendered the seating page, create-table form, assignment form, visual seating map, table-card CSV export controls, and mobile seating view with no horizontal overflow, no visible app errors, and no unlabeled controls. A disposable `QASEAT152417` table moved through creation, two guest assignments, over-capacity rendering, map rendering, and CSV export generation. DB verification found one table, two active assignments, one generated export, and expected seating audit activity before cleanup. Cleanup removed the disposable table, assignments, export row, and generated storage object; residue verification returned zero rows/objects.
 
 ## Commands Run
 
@@ -270,6 +277,26 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after applying `20260606063731_mvp_message_queue_status_sync.sql`.
 - `npm run secrets:scan` - passed after message queue-sync hardening.
 - `git diff --check` - passed with informational CRLF warnings on touched markdown files only after message queue-sync hardening.
+- `npm --workspace apps/web run test -- --run src/lib/platform/release-readiness.test.ts` - passed, 1 file and 8 tests after seating helper-grant hardening.
+- `npx supabase@latest db push --linked --dry-run` - passed before apply; only `20260606151731_mvp_seating_invitation_helper_grant.sql` was pending.
+- `npx supabase@latest db push --linked --yes` - passed; applied `20260606151731_mvp_seating_invitation_helper_grant.sql` to linked dev.
+- Seating Chrome/CDP QA - passed after applying the helper grant migration. The browser flow created one disposable table, assigned two guests, showed over-capacity state, rendered the visual map, generated one table-card CSV, and verified the mobile seating page.
+- `npx supabase@latest --experimental --yes storage rm --linked ss:///seating-exports/.../table-cards-v1-9ca00ea4-5347-454e-8dbf-ac858e108ff2.csv` - passed; removed the disposable generated CSV object through the Storage API.
+- Disposable seating cleanup SQL - passed; removed the disposable table, assignments, and export row.
+- Seating residue SQL - passed; returned zero disposable QASEAT tables, assignments, export rows, and storage objects.
+- `npx supabase@latest db push --linked --dry-run` - passed after apply; remote database is up to date.
+- Final `npm ci` - initially hit a transient Windows file-lock `EPERM` on the Next SWC binary after local dev-server use, then passed on retry after confirming no active Next process.
+- Final `npm run format` - passed after seating helper-grant documentation updates.
+- Final `npm run format:check` - passed after seating helper-grant documentation updates.
+- Final `npm run lint` - passed after seating helper-grant hardening.
+- Final `npm run typecheck` - passed after seating helper-grant hardening.
+- Final `npm run test` - passed, 20 files and 214 tests after seating helper-grant hardening.
+- Final `npm run build` - passed after seating helper-grant hardening.
+- Final `npm audit --omit=dev` - passed, 0 vulnerabilities after seating helper-grant hardening.
+- Final `npm run db:lint` - passed, no schema errors after seating helper-grant hardening.
+- Final `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after applying `20260606151731_mvp_seating_invitation_helper_grant.sql`.
+- Final `npm run secrets:scan` - passed after seating helper-grant hardening.
+- Final `git diff --check` - passed with informational CRLF warnings on touched markdown files only after seating helper-grant hardening.
 
 ## Security Review
 
@@ -282,6 +309,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Supabase access, refresh, callback, and public guest tokens were not printed or committed.
 - Audit snapshots remain redacted where existing redaction helpers already removed storage paths, filenames, checksums, error messages, and internal moderation/review notes.
 - Fixes preserve the same audit action names while moving table-specific field and enum handling into table-specific branches; the message queue-sync fix adds expected queue update audit evidence without exposing rendered message bodies or WhatsApp URLs in committed files.
+- The seating helper-grant migration does not expose the private helper to `public` or `anon`; it grants only the roles needed by authenticated seating RPCs and service-role maintenance.
 
 ## Assumptions
 
@@ -291,6 +319,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Protected UI route inspection used the linked-dev `diginoces@gmail.com` account after TOTP verification upgraded the browser session to AAL2.
 - Positive public guest signed-file browser-route rerun depends on starting the app with server-only `SUPABASE_SECRET_KEY`; the current long-running local dev server on port `3000` was started without that variable. The same DB authorization and private Storage signing path passed in linked-dev service-level QA.
 - Communications QA used fake linked-dev phone-like data only. The browser pass verified that a WhatsApp link was present but did not open or automate WhatsApp, and no real WhatsApp credentials were configured.
+- Seating QA used fake linked-dev project, event, guest, table, and export data only. The generated CSV storage object was removed through the Supabase Storage API, and disposable metadata rows were removed from linked dev after verification.
 
 ## Remaining Notes
 
