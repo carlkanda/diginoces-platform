@@ -28,7 +28,29 @@ export type MagicLinkResult =
 
 export type EmailOtpVerificationResult =
   | {
+      requiresMfa: boolean;
       status: "authenticated";
+    }
+  | {
+      message: string;
+      status: "failed";
+    };
+
+export type MfaAssuranceResult =
+  | {
+      currentLevel: string | null;
+      nextLevel: string | null;
+      requiresMfa: boolean;
+      status: "ready";
+    }
+  | {
+      message: string;
+      status: "failed";
+    };
+
+export type MfaVerificationResult =
+  | {
+      status: "verified";
     }
   | {
       message: string;
@@ -45,8 +67,22 @@ const invalidOrExpiredMagicLinkMessage =
   "Authentication link is invalid or expired. Request a fresh magic link.";
 const invalidOrExpiredEmailCodeMessage =
   "Authentication code is invalid or expired. Request a fresh email.";
+const invalidMfaCodeMessage =
+  "MFA code is invalid or expired. Enter the current 6-digit authenticator code.";
 const maxImplicitCallbackTokenLength = 8192;
 const emailOtpTokenPattern = /^[0-9]{6}$/;
+const mfaCodePattern = /^[0-9]{6}$/;
+
+type SupabaseServerClient = Awaited<
+  ReturnType<typeof createSupabaseServerClient>
+>;
+
+type MfaFactorCandidate = {
+  factor_type?: string | null;
+  factorType?: string | null;
+  id?: string | null;
+  status?: string | null;
+};
 
 export async function getAuthContext(): Promise<AuthContext> {
   const env = getPublicEnvironment();
@@ -179,8 +215,118 @@ export async function verifyEmailOtp(
     };
   }
 
+  const assurance = await getMfaAssuranceLevelForClient(supabase);
+
   return {
+    requiresMfa: assurance.status === "ready" && assurance.requiresMfa,
     status: "authenticated",
+  };
+}
+
+export async function getMfaAssuranceLevelForClient(
+  supabase: SupabaseServerClient,
+): Promise<MfaAssuranceResult> {
+  const { data, error } =
+    await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+  if (error) {
+    return {
+      message: "Unable to inspect MFA status.",
+      status: "failed",
+    };
+  }
+
+  const currentLevel = data.currentLevel ?? null;
+  const nextLevel = data.nextLevel ?? null;
+
+  return {
+    currentLevel,
+    nextLevel,
+    requiresMfa: currentLevel === "aal1" && nextLevel === "aal2",
+    status: "ready",
+  };
+}
+
+export async function getCurrentMfaAssuranceLevel() {
+  const env = getPublicEnvironment();
+
+  if (!env.supabaseConfigured) {
+    return {
+      message: `Missing Supabase configuration: ${env.missingSupabaseVariables.join(", ")}`,
+      status: "failed" as const,
+    };
+  }
+
+  return getMfaAssuranceLevelForClient(await createSupabaseServerClient());
+}
+
+export async function verifyMfaCode(
+  code: string,
+): Promise<MfaVerificationResult> {
+  const normalizedCode = normalizeMfaCode(code);
+  const env = getPublicEnvironment();
+
+  if (!normalizedCode) {
+    return {
+      message: "Enter the 6-digit authenticator code.",
+      status: "failed",
+    };
+  }
+
+  if (!env.supabaseConfigured) {
+    return {
+      message: `Missing Supabase configuration: ${env.missingSupabaseVariables.join(", ")}`,
+      status: "failed",
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: factors, error: factorsError } =
+    await supabase.auth.mfa.listFactors();
+
+  if (factorsError) {
+    return {
+      message: "Unable to list verified MFA factors.",
+      status: "failed",
+    };
+  }
+
+  const factor = selectVerifiedTotpFactor(factors);
+
+  if (!factor) {
+    return {
+      message: "No verified TOTP factor is available for this account.",
+      status: "failed",
+    };
+  }
+
+  const { data: challenge, error: challengeError } =
+    await supabase.auth.mfa.challenge({
+      factorId: factor.id,
+    });
+
+  if (challengeError) {
+    return {
+      message: "Unable to start MFA verification.",
+      status: "failed",
+    };
+  }
+
+  const { error: verifyError } = await supabase.auth.mfa.verify({
+    challengeId: challenge.id,
+    code: normalizedCode,
+    factorId: factor.id,
+  });
+
+  if (verifyError) {
+    return {
+      message: invalidMfaCodeMessage,
+      status: "failed",
+    };
+  }
+
+  return {
+    status: "verified",
   };
 }
 
@@ -232,6 +378,18 @@ export function buildLoginRedirectPath(nextPath: string) {
   return `/login?${new URLSearchParams({
     next: normalizeInternalPath(nextPath),
   }).toString()}`;
+}
+
+export function buildMfaRedirectPath(nextPath: string, error?: string) {
+  const params = new URLSearchParams({
+    next: normalizeInternalPath(nextPath),
+  });
+
+  if (error) {
+    params.set("error", error);
+  }
+
+  return `/login/mfa?${params.toString()}`;
 }
 
 export function buildLoginErrorRedirectPath(nextPath: string, error: string) {
@@ -364,6 +522,47 @@ export function normalizeEmailOtpToken(token: string) {
   }
 
   return normalized;
+}
+
+export function normalizeMfaCode(code: string) {
+  const normalized = code.replace(/\s+/g, "");
+
+  if (!mfaCodePattern.test(normalized)) {
+    return null;
+  }
+
+  return normalized;
+}
+
+export function selectVerifiedTotpFactor(
+  factors: {
+    all?: MfaFactorCandidate[];
+    totp?: MfaFactorCandidate[];
+  } | null,
+) {
+  const totpFactor = (factors?.totp ?? []).find(
+    (factor) => factor.id && factor.status === "verified",
+  );
+
+  if (totpFactor?.id) {
+    return {
+      id: totpFactor.id,
+    };
+  }
+
+  const fallbackFactor = (factors?.all ?? []).find((factor) => {
+    const factorType = factor.factor_type ?? factor.factorType;
+
+    return factor.id && factor.status === "verified" && factorType === "totp";
+  });
+
+  if (!fallbackFactor?.id) {
+    return null;
+  }
+
+  return {
+    id: fallbackFactor.id,
+  };
 }
 
 export function buildImplicitAuthCallbackPage(nextPath: string) {

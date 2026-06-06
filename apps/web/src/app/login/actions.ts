@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
+  buildMfaRedirectPath,
   buildLoginRedirectPath,
   normalizeInternalPath,
   requestMagicLink,
@@ -45,6 +46,10 @@ export async function signInWithEmailCode(formData: FormData) {
   const result = await verifyEmailOtp(email, token);
 
   if (result.status === "authenticated") {
+    if (result.requiresMfa) {
+      redirect(buildMfaRedirectPath(next));
+    }
+
     redirect(next);
   }
 

@@ -3,6 +3,7 @@ import {
   buildImplicitAuthCallbackPage,
   buildLoginErrorRedirectPath,
   buildLoginRedirectPath,
+  buildMfaRedirectPath,
   getAuthRedirectOrigin,
   getAuthCallbackNextPath,
   getAuthCallbackOtpType,
@@ -10,8 +11,10 @@ import {
   getAuthCallbackTokenHash,
   getMagicLinkRequestErrorMessage,
   normalizeEmailOtpToken,
+  normalizeMfaCode,
   parseImplicitAuthCallbackPayload,
   normalizeInternalPath,
+  selectVerifiedTotpFactor,
 } from "@/lib/auth/auth-service";
 
 describe("auth redirect helpers", () => {
@@ -275,6 +278,82 @@ describe("auth redirect helpers", () => {
     expect(normalizeEmailOtpToken("62584")).toBeNull();
     expect(normalizeEmailOtpToken("6258467")).toBeNull();
     expect(normalizeEmailOtpToken("62584a")).toBeNull();
+  });
+
+  it("normalizes MFA authenticator codes without accepting malformed tokens", () => {
+    expect(normalizeMfaCode("286837")).toBe("286837");
+    expect(normalizeMfaCode("286 837")).toBe("286837");
+    expect(normalizeMfaCode(" 286837 ")).toBe("286837");
+    expect(normalizeMfaCode("28683")).toBeNull();
+    expect(normalizeMfaCode("2868370")).toBeNull();
+    expect(normalizeMfaCode("28683x")).toBeNull();
+  });
+
+  it("encodes MFA return paths without broadening query params", () => {
+    const mfaPath = buildMfaRedirectPath(
+      "/platform/dashboard?view=global",
+      "Enter the current 6-digit authenticator code.",
+    );
+    const parsed = new URL(mfaPath, "https://diginoces.test");
+
+    expect(parsed.pathname).toBe("/login/mfa");
+    expect(parsed.searchParams.get("next")).toBe(
+      "/platform/dashboard?view=global",
+    );
+    expect(parsed.searchParams.get("view")).toBeNull();
+    expect(parsed.searchParams.get("error")).toBe(
+      "Enter the current 6-digit authenticator code.",
+    );
+  });
+
+  it("selects a verified TOTP factor without accepting unverified factors", () => {
+    expect(
+      selectVerifiedTotpFactor({
+        all: [
+          {
+            factor_type: "totp",
+            id: "unverified-factor",
+            status: "unverified",
+          },
+        ],
+        totp: [
+          {
+            id: "verified-factor",
+            status: "verified",
+          },
+        ],
+      }),
+    ).toEqual({ id: "verified-factor" });
+
+    expect(
+      selectVerifiedTotpFactor({
+        all: [
+          {
+            factor_type: "totp",
+            id: "fallback-factor",
+            status: "verified",
+          },
+        ],
+      }),
+    ).toEqual({ id: "fallback-factor" });
+
+    expect(
+      selectVerifiedTotpFactor({
+        all: [
+          {
+            factor_type: "phone",
+            id: "phone-factor",
+            status: "verified",
+          },
+        ],
+        totp: [
+          {
+            id: "pending-factor",
+            status: "unverified",
+          },
+        ],
+      }),
+    ).toBeNull();
   });
 
   it("builds an implicit callback bridge without embedding auth tokens", () => {

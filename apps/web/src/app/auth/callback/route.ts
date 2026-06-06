@@ -5,6 +5,8 @@ import {
   getAuthCallbackOtpTypeCandidates,
   getAuthCallbackTokenHash,
   buildLoginErrorRedirectPath,
+  buildMfaRedirectPath,
+  getMfaAssuranceLevelForClient,
   getInvalidOrExpiredMagicLinkMessage,
 } from "@/lib/auth/auth-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -42,7 +44,9 @@ export async function GET(request: Request) {
       });
 
       if (!error) {
-        return NextResponse.redirect(new URL(next, requestUrl));
+        return NextResponse.redirect(
+          new URL(await getPostAuthRedirectPath(supabase, next), requestUrl),
+        );
       }
     }
   }
@@ -51,7 +55,9 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(new URL(next, requestUrl));
+      return NextResponse.redirect(
+        new URL(await getPostAuthRedirectPath(supabase, next), requestUrl),
+      );
     }
   }
 
@@ -74,4 +80,17 @@ export async function GET(request: Request) {
       requestUrl,
     ),
   );
+}
+
+async function getPostAuthRedirectPath(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  next: string,
+) {
+  const assurance = await getMfaAssuranceLevelForClient(supabase);
+
+  if (assurance.status === "ready" && assurance.requiresMfa) {
+    return buildMfaRedirectPath(next);
+  }
+
+  return next;
 }

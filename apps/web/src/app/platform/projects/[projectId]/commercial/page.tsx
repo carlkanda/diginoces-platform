@@ -603,9 +603,18 @@ export default async function ProjectCommercialPage({
             action={createPaymentExceptionAction.bind(null, projectId)}
             className="stacked-form"
           >
-            <input name="reason" placeholder="Required reason" required />
-            <input name="conditions" placeholder="Conditions" />
-            <input name="expiresAt" type="datetime-local" />
+            <label>
+              Reason
+              <input name="reason" placeholder="Required reason" required />
+            </label>
+            <label>
+              Conditions
+              <input name="conditions" placeholder="Conditions" />
+            </label>
+            <label>
+              Expires at
+              <input name="expiresAt" type="datetime-local" />
+            </label>
             <button className="button" type="submit">
               Approve exception
             </button>

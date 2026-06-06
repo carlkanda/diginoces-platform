@@ -225,6 +225,19 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npm run secrets:scan` - passed after callback fallback hardening.
 - Targeted `rg` secret sweep - passed with expected placeholder, SQL grant, and test/documentation matches only.
 - `git diff --check` - passed with informational CRLF warnings on touched files only after callback fallback hardening.
+- Chrome/CDP authenticated AAL2 protected route matrix - passed 38/38 desktop routes and 38/38 mobile routes after adding the `/login/mfa` TOTP bridge and commercial form label fix.
+- `npm --workspace apps/web run test -- --run src/lib/auth/auth-service.test.ts` - passed, 24 auth helper tests after MFA code, redirect, and TOTP factor-selection coverage.
+- `npm run format:check` - initially failed on the commercial page after the label fix, then passed after formatting.
+- `npm run format` - passed after MFA bridge and commercial label hardening.
+- `npm run lint` - passed after MFA bridge and commercial label hardening.
+- `npm run typecheck` - passed after MFA bridge and commercial label hardening.
+- `npm run test` - passed, 20 files and 213 tests after MFA bridge and commercial label hardening.
+- `npm run build` - passed after MFA bridge and commercial label hardening; production build output includes `/login/mfa`.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after MFA bridge and commercial label hardening.
+- `npm run secrets:scan` - passed after MFA bridge and commercial label hardening.
+- `npm run db:lint` - passed, no schema errors after MFA bridge and commercial label hardening.
+- `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after MFA bridge and commercial label hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched files only after MFA bridge and commercial label hardening.
 
 ## Security Review
 
@@ -233,6 +246,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - No `.env` or `.env.local` files were changed.
 - Auth callback checks sanitize and preserve only internal `next` paths.
 - Implicit magic-link fallback clears URL fragments before posting tokens and validates the session with Supabase server-side before returning the protected redirect target.
+- The MFA bridge upgrades already-enrolled Supabase TOTP sessions from AAL1 to AAL2 before exposing MFA-required internal roles; it does not add factor enrollment or weaken the database `requires_mfa` checks.
 - Supabase access, refresh, callback, and public guest tokens were not printed or committed.
 - Audit snapshots remain redacted where existing redaction helpers already removed storage paths, filenames, checksums, error messages, and internal moderation/review notes.
 - Fixes preserve the same audit action names while moving table-specific field and enum handling into table-specific branches.
@@ -241,12 +255,12 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 
 - The linked Supabase project is the dev QA project.
 - The existing audit trigger tables and grants remain correct; this pass only fixes trigger runtime safety.
-- The invitation upload UI should now pass the database step; the authenticated Chrome session dropped before the full upload UI could be rerun, so the final verification used a rollback insert against the linked DB.
-- Protected UI role-by-role inspection still depends on a fresh `diginoces@gmail.com` magic-link login after Supabase email rate limiting clears and after the linked Supabase Magic Link template/redirect allow-list match the documented `type=email` callback URL.
+- The invitation upload UI should now pass the database step; the earlier verification used a rollback insert against the linked DB, and the AAL2 route matrix now confirms the invitation upload route renders for the admin QA session.
+- Protected UI route inspection used the linked-dev `diginoces@gmail.com` account after TOTP verification upgraded the browser session to AAL2.
 - Positive public guest signed-file browser-route rerun depends on starting the app with server-only `SUPABASE_SECRET_KEY`; the current long-running local dev server on port `3000` was started without that variable. The same DB authorization and private Storage signing path passed in linked-dev service-level QA.
 
 ## Remaining Notes
 
 - Invitation-message sending still correctly requires generated invitations and an active invitation file before preparation.
-- Audit-log UI access still requires a global `diginoces_admin` role; the QA account currently has operations-manager coverage.
-- Supabase email sending temporarily rate-limited the QA account during local inspection; the app now displays retry guidance and can bridge older implicit-flow magic links, but full authenticated browser QA should continue after a fresh magic link succeeds.
+- Audit-log UI access still requires a global `diginoces_admin` role and AAL2; the QA account now has both for the protected route matrix.
+- Supabase email sending temporarily rate-limited the QA account during local inspection; the app displays retry guidance, supports email-code fallback, bridges older implicit-flow magic links, and now has a TOTP MFA step for sensitive roles after first-factor sign-in.

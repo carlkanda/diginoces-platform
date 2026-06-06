@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import {
+  buildMfaRedirectPath,
+  getMfaAssuranceLevelForClient,
   getInvalidOrExpiredMagicLinkMessage,
   parseImplicitAuthCallbackPayload,
 } from "@/lib/auth/auth-service";
@@ -73,9 +75,15 @@ export async function POST(request: Request) {
     return jsonError(401, getInvalidOrExpiredMagicLinkMessage());
   }
 
+  const assurance = await getMfaAssuranceLevelForClient(supabase);
+  const next =
+    assurance.status === "ready" && assurance.requiresMfa
+      ? buildMfaRedirectPath(callbackPayload.nextPath)
+      : callbackPayload.nextPath;
+
   return NextResponse.json(
     {
-      next: callbackPayload.nextPath,
+      next,
     },
     {
       headers: noStoreHeaders,
