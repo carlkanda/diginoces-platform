@@ -109,7 +109,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Unauthenticated API sweep covered 67 exported API methods; 66 returned generic `401` JSON and the invalid public guest-file endpoint returned `404`.
 - API responses were checked for obvious fixture or secret leakage terms, including the QA email, temporary QA labels, WhatsApp tokens, service-role wording, and guest data markers; no leaks were found.
 - Production-mode smoke test on port 3001 returned 200 for `/` and `/login`, 404 for an invalid public guest route, and 307 for `/platform`; `X-Powered-By` was absent.
-- Public guest file-link Chrome/CDP QA rendered a disposable guest-visible file row without token-in-body leakage or mobile overflow, found the anonymous-storage-signing `502`, and verified fixture cleanup. Positive signed-object download still needs rerun on a server started with `SUPABASE_SECRET_KEY`.
+- Public guest file-link Chrome/CDP QA rendered a disposable guest-visible file row without token-in-body leakage or mobile overflow, found the anonymous-storage-signing `502`, and verified fixture cleanup. A follow-up linked-dev service-level signed-download check verified invalid token status `invalid`, valid file resolution `ok`, private object fetch `200`, `download` filename parameter present, and no public guest token in the signed URL. Browser-route positive download still needs rerun on a server process started with `SUPABASE_SECRET_KEY`.
 
 ## Commands Run
 
@@ -148,6 +148,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npm --workspace apps/web run test -- --run src/lib/storage/storage-provider.test.ts` - first failed as expected for the missing server-only storage-signing helper, then passed after adding it.
 - `npm run typecheck` - initially failed on the storage-signing helper env type, then passed after widening the helper input to a string env map.
 - Public guest file-download disposable fixture QA - Chrome/CDP rendered the guest-visible file link, then valid download returned the pre-fix generic `502` storage-signing error; fixture rows, access events, token, temp files, and storage object were cleaned up.
+- Public guest file-download service-level linked-dev QA - passed after storage-signing hardening; invalid token resolved to `invalid`, valid token resolved the exact guest file, server-only private Storage signing produced a signed URL, object fetch returned `200`, the `download` filename parameter was present, and the signed URL did not contain the public guest token. Fixture rows, access events, token, temp files, and storage object were cleaned up.
 - `npm run format:check` - initially failed on touched TypeScript files after storage-signing hardening, then passed after formatting.
 - `npm run format` - passed after storage-signing hardening.
 - `npm run lint` - passed after storage-signing hardening.
@@ -200,7 +201,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - The existing audit trigger tables and grants remain correct; this pass only fixes trigger runtime safety.
 - The invitation upload UI should now pass the database step; the authenticated Chrome session dropped before the full upload UI could be rerun, so the final verification used a rollback insert against the linked DB.
 - Protected UI role-by-role inspection still depends on a fresh `diginoces@gmail.com` magic-link login after Supabase email rate limiting clears and after the linked Supabase Magic Link template/redirect allow-list match the documented `type=magiclink` callback URL.
-- Positive public guest signed-file download rerun depends on starting the app with server-only `SUPABASE_SECRET_KEY`; the current long-running local dev server on port `3000` was started without that variable.
+- Positive public guest signed-file browser-route rerun depends on starting the app with server-only `SUPABASE_SECRET_KEY`; the current long-running local dev server on port `3000` was started without that variable. The same DB authorization and private Storage signing path passed in linked-dev service-level QA.
 
 ## Remaining Notes
 
