@@ -1,3 +1,7 @@
+import { createClient } from "@supabase/supabase-js";
+import { requireSupabasePublicEnvironment } from "@/lib/env/public-env";
+import type { Database } from "@/types/database";
+
 export type FileScopeType =
   | "event"
   | "guest"
@@ -34,6 +38,22 @@ export class StorageNotConfiguredError extends Error {
   constructor() {
     super("File storage is not configured for this environment.");
   }
+}
+
+type StorageSigningEnvironment = Record<string, string | undefined> & {
+  SUPABASE_SECRET_KEY?: string;
+};
+
+export function getSupabaseStorageSigningKey(
+  env: StorageSigningEnvironment = process.env,
+) {
+  const secretKey = env.SUPABASE_SECRET_KEY?.trim();
+
+  if (!secretKey) {
+    throw new StorageNotConfiguredError();
+  }
+
+  return secretKey;
 }
 
 export function createStorageAdapter(): FileStorageAdapter {
@@ -73,6 +93,26 @@ export function createSupabaseStorageAdapter(client: {
       return data.signedUrl;
     },
   };
+}
+
+export function createSupabaseServerStorageAdapter(
+  env: StorageSigningEnvironment = process.env,
+) {
+  const publicEnvironment = requireSupabasePublicEnvironment();
+  const secretKey = getSupabaseStorageSigningKey(env);
+  const supabase = createClient<Database>(
+    publicEnvironment.supabaseUrl,
+    secretKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: false,
+      },
+    },
+  );
+
+  return createSupabaseStorageAdapter(supabase);
 }
 
 export function getStorageFoundationSummary() {
