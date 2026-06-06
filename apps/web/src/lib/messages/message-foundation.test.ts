@@ -131,20 +131,26 @@ function readRepoFile(pathFromRoot: string) {
   return readFileSync(fullPath, "utf8");
 }
 
-function readSprint7Migration() {
+function readMigrationBySuffix(suffix: string) {
   const repoRoot = repoRootFromCwd();
   const migrationDir = join(repoRoot, "supabase", "migrations");
   const matches = readdirSync(migrationDir).filter((entry) =>
-    entry.endsWith("_sprint_7_whatsapp_communication_workflows.sql"),
+    entry.endsWith(suffix),
   );
 
   if (matches.length !== 1) {
     throw new Error(
-      `Expected exactly one Sprint 7 communication workflow migration file, found ${matches.length}.`,
+      `Expected exactly one migration ending with ${suffix}, found ${matches.length}.`,
     );
   }
 
   return readFileSync(join(migrationDir, matches[0]), "utf8");
+}
+
+function readSprint7Migration() {
+  return readMigrationBySuffix(
+    "_sprint_7_whatsapp_communication_workflows.sql",
+  );
 }
 
 describe("Sprint 7 WhatsApp communication workflow foundation", () => {
@@ -545,5 +551,18 @@ describe("Sprint 7 WhatsApp communication workflow foundation", () => {
     expect(
       readRepoFile("docs/planning/sprint-7-completion-report.md"),
     ).toContain("Sprint 7");
+  });
+
+  it("keeps guided manual queue status synchronized with message history", () => {
+    const migration = readMigrationBySuffix(
+      "_mvp_message_queue_status_sync.sql",
+    );
+
+    expect(migration).toContain("update public.message_queue_items");
+    expect(migration).toContain("message_log_id = v_log.id");
+    expect(migration).toContain("status = p_status");
+    expect(migration).toContain(
+      "log.status in ('opened_manually', 'sent', 'failed', 'skipped', 'resent')",
+    );
   });
 });

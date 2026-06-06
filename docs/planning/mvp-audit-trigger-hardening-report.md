@@ -2,9 +2,9 @@
 
 ## Summary
 
-This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. A later MVP UI QA pass also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, and public guest file-download storage signing after auth/storage issues blocked protected-route and public-download inspection.
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. Later MVP UI QA also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, public guest file-download storage signing, and guided-manual message queue/status synchronization after auth, storage, and workflow issues blocked protected-route and public-download inspection.
 
-No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, tokenized public-route response hardening, and regression tests for already-implemented MVP flows.
+No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, tokenized public-route response hardening, guided-manual queue/status consistency, and regression tests for already-implemented MVP flows.
 
 ## Findings And Fixes
 
@@ -47,6 +47,9 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 13. Public guest token pages initially lacked explicit token-route security headers in local header checks.
    - Fixed by adding `/g/:guestToken` route headers and proxy response hardening for `no-store`, `no-referrer`, `nosniff`, and `noindex, nofollow`. Production `next build`/`next start` verification confirmed the stricter headers; dev mode still forces `Cache-Control: no-cache`.
 
+14. Guided-manual message status updates changed `message_logs` and status events, but left matching `message_queue_items` rows stale.
+   - Fixed in `20260606063731_mvp_message_queue_status_sync.sql` by syncing the queue row on `mark_guided_manual_message_status` and backfilling existing guided-manual queue rows.
+
 ## Files Changed
 
 - `apps/web/src/app/auth/callback/implicit/route.ts`
@@ -62,8 +65,10 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `apps/web/src/lib/auth/auth-service.ts`
 - `apps/web/src/lib/auth/auth-service.test.ts`
 - `apps/web/src/lib/files/file-foundation.test.ts`
+- `apps/web/src/lib/messages/message-foundation.test.ts`
 - `apps/web/src/lib/storage/storage-provider.ts`
 - `apps/web/src/lib/storage/storage-provider.test.ts`
+- `docs/qa/mvp-ui-qa-progress-report.md`
 - `docs/setup/deployment-readiness.md`
 - `docs/setup/local-development.md`
 - `supabase/config.toml`
@@ -79,6 +84,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `supabase/migrations/20260605012009_mvp_guest_wishes_delete_object_id_fix.sql`
 - `supabase/migrations/20260605013031_mvp_guest_wishes_delete_branch_fix.sql`
 - `supabase/migrations/20260605015457_mvp_invitation_status_transition_audit_fix.sql`
+- `supabase/migrations/20260606063731_mvp_message_queue_status_sync.sql`
 
 ## Tests Added
 
@@ -98,10 +104,11 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify tokenized public guest pages receive private no-store, no-referrer, nosniff, and noindex response headers while unrelated routes do not.
 - Verify private Storage signed URLs use a server-only Supabase secret key and fail closed when it is not configured.
 - Verify the public guest file download route uses the server-only storage adapter instead of the anonymous SSR client after token-scoped file authorization.
+- Verify the message queue status-sync migration updates guided-manual queue rows when message history changes and backfills already-stale queue rows.
 
 ## Linked Dev Verification
 
-- Applied all eight migrations to the linked dev Supabase project.
+- Applied the audit hardening migrations to the linked dev Supabase project.
 - Public guest token creation succeeded after the RSVP/public-page audit fix.
 - Payment-gate exception override succeeded after the commercial audit fix.
 - Public guest message submission succeeded through the guest-facing UI after the guest-wishes audit fix.
@@ -116,6 +123,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - The linked-dev account metadata for `diginoces@gmail.com` was inspected without tokens or secrets; the account exists, email is confirmed, MFA has a verified TOTP factor, a recent session recorded `aal2`, and global `diginoces_admin`/`operations_manager` role assignments exist.
 - A production `next build`/`next start` check verified `/g/:guestToken` responses carry `no-store`, `no-referrer`, `nosniff`, and `noindex, nofollow`. Disposable public-token header fixtures were cleaned from linked dev and the local temp token file was removed.
 - The AAL2 admin/operations browser session completed a disposable guest-import review/apply flow: CSV upload, mapping, validation, submit-for-review, one approved row, one held row, apply-approved-rows, `status=applied`, one created guest, and the expected import audit actions. Cleanup removed the disposable guest, import session, rows, mappings, and dependent records; follow-up verification returned zero remaining rows for every checked table.
+- Applied `20260606063731_mvp_message_queue_status_sync.sql` to linked dev. A stale guided-manual queue row was backfilled from `queued` to `sent`, and the final communications QA pass verified a new disposable event-reminder message log and queue row both ended at `sent`.
 
 ## UI And API QA Evidence
 
@@ -130,6 +138,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Guest-import admin Chrome/CDP QA rendered upload, mapping, preview/detail, review, and applied detail pages with no visible app error, no 404, no horizontal overflow, and no unlabeled controls on the final detail page. The test used a disposable CSV fixture and verified partial approval applied only the approved row while held rows did not create guests.
 - Commercial Chrome/CDP QA rendered package/add-on creation, event selection, pricing, commercial gesture, generated contract, contract approval, confirmed payment, payment exception, and mobile final states. The pass found and fixed unlabeled commercial gesture, approval confirmation, and addendum controls, then reran with zero unlabeled visible controls, no horizontal overflow, no 404, and no visible app errors.
 - Invitation template Chrome/CDP QA rendered registration, template detail, coordinate editor, preview/generation controls, generation-job history, invitation records, and mobile final state. A disposable PDF metadata template moved through configured, technical preview generated, technical preview approved, and queued event generation states with no horizontal overflow, no 404, no visible app errors, and no unlabeled controls.
+- Communications Chrome/CDP QA rendered message templates, guided sending queue, message detail, opened/sent controls, queue/history, and mobile queue state with no horizontal overflow, no visible app errors, and no unlabeled controls. A disposable French event-reminder template and guided manual message moved through prepared, opened manually, and sent states; DB verification found log `sent`, queue `sent`, opened/sent timestamps, status events, WhatsApp link/target presence, and expected audit actions. Cleanup returned zero disposable communication rows.
 
 ## Commands Run
 
@@ -220,6 +229,9 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npm run secrets:scan` - passed.
 - `npm run db:lint` - passed, no schema errors.
 - `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date.
+- `npm --workspace @diginoces/web run test -- src/lib/messages/message-foundation.test.ts` - passed, 13 message foundation tests after queue status-sync migration evidence.
+- `npx supabase@latest db push --linked --yes` - passed, applied `20260606063731_mvp_message_queue_status_sync.sql`.
+- Communications Chrome/CDP QA - passed after the queue/status sync migration; disposable template/log/queue/status rows were cleaned and follow-up counts were zero.
 - `git diff --check` - passed with informational CRLF warnings on touched files only.
 - `npm run format:check` - initially failed on the touched auth files, then passed after formatting.
 - `npm run format` - passed after callback fallback hardening.
@@ -247,6 +259,17 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Guest-import admin review/apply Chrome/CDP QA - passed on linked dev with the AAL2 `diginoces@gmail.com` session; one row was approved/applied, one row was held, expected import audit actions were present, and disposable data cleanup verification returned zero remaining rows in import, guest, assignment, RSVP, token, invitation, message, check-in, seating, and file reference tables.
 - Commercial Chrome/CDP QA - initially failed on unlabeled commercial gesture, approval confirmation, and addendum controls; passed after label fixes. The disposable flow created a package, add-on, event package selection, pricing snapshots, commercial gesture, generated/approved contract, confirmed manual payment, and active payment exception. Linked-dev verification found the expected commercial audit actions and cleanup returned zero disposable commercial rows while preserving the permanent fake-project payment exception.
 - Invitation template Chrome/CDP QA - passed on linked dev with a disposable in-memory PDF template. Verification found `technical_preview_approved`, two field rows including `public_guest_page_qr`, one queued event generation job with three ready guests, three invitation records, three job items, and expected invitation audit actions. Cleanup returned zero disposable invitation template, field, job, job-item, invitation, file, check-in, and message reference rows.
+- `npm run format` - passed after message queue-sync hardening.
+- `npm run format:check` - passed after message queue-sync hardening.
+- `npm run lint` - passed after message queue-sync hardening.
+- `npm run typecheck` - passed after message queue-sync hardening.
+- `npm run test` - passed, 20 files and 214 tests after message queue-sync hardening.
+- `npm run build` - passed after message queue-sync hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after message queue-sync hardening.
+- `npm run db:lint` - passed, no schema errors after message queue-sync hardening.
+- `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after applying `20260606063731_mvp_message_queue_status_sync.sql`.
+- `npm run secrets:scan` - passed after message queue-sync hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched markdown files only after message queue-sync hardening.
 
 ## Security Review
 
@@ -258,7 +281,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - The MFA bridge upgrades already-enrolled Supabase TOTP sessions from AAL1 to AAL2 before exposing MFA-required internal roles; it does not add factor enrollment or weaken the database `requires_mfa` checks.
 - Supabase access, refresh, callback, and public guest tokens were not printed or committed.
 - Audit snapshots remain redacted where existing redaction helpers already removed storage paths, filenames, checksums, error messages, and internal moderation/review notes.
-- Fixes preserve the same audit action names while moving table-specific field and enum handling into table-specific branches.
+- Fixes preserve the same audit action names while moving table-specific field and enum handling into table-specific branches; the message queue-sync fix adds expected queue update audit evidence without exposing rendered message bodies or WhatsApp URLs in committed files.
 
 ## Assumptions
 
@@ -267,6 +290,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - The invitation upload UI should now pass the database step; the earlier verification used a rollback insert against the linked DB, and the AAL2 route matrix now confirms the invitation upload route renders for the admin QA session.
 - Protected UI route inspection used the linked-dev `diginoces@gmail.com` account after TOTP verification upgraded the browser session to AAL2.
 - Positive public guest signed-file browser-route rerun depends on starting the app with server-only `SUPABASE_SECRET_KEY`; the current long-running local dev server on port `3000` was started without that variable. The same DB authorization and private Storage signing path passed in linked-dev service-level QA.
+- Communications QA used fake linked-dev phone-like data only. The browser pass verified that a WhatsApp link was present but did not open or automate WhatsApp, and no real WhatsApp credentials were configured.
 
 ## Remaining Notes
 
