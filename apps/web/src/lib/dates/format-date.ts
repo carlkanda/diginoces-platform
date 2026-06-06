@@ -3,6 +3,7 @@ function format(
   options: Intl.DateTimeFormatOptions,
   locale?: string,
   fallback = "Not set",
+  timeZone = "UTC",
 ) {
   if (!value) {
     return fallback;
@@ -16,7 +17,7 @@ function format(
 
   return new Intl.DateTimeFormat(locale, {
     ...options,
-    timeZone: "UTC",
+    timeZone,
   }).format(date);
 }
 
@@ -49,4 +50,35 @@ export function formatDateTime(
     locale,
     fallback,
   );
+}
+
+export function formatDateTimeInTimeZone(
+  value: string | null | undefined,
+  timeZone = "UTC",
+  locale?: string,
+  fallback?: string,
+) {
+  try {
+    return format(
+      value,
+      {
+        dateStyle: "medium",
+        timeStyle: "short",
+      },
+      locale,
+      fallback,
+      timeZone,
+    );
+  } catch {
+    return format(
+      value,
+      {
+        dateStyle: "medium",
+        timeStyle: "short",
+      },
+      locale,
+      fallback,
+      "UTC",
+    );
+  }
 }
