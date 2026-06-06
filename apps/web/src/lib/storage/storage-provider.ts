@@ -35,8 +35,10 @@ export type FileStorageAdapter = {
 };
 
 export class StorageNotConfiguredError extends Error {
-  constructor() {
-    super("File storage is not configured for this environment.");
+  constructor(
+    message = "File storage is not configured for this environment.",
+  ) {
+    super(message);
   }
 }
 
@@ -44,13 +46,31 @@ type StorageSigningEnvironment = Record<string, string | undefined> & {
   SUPABASE_SECRET_KEY?: string;
 };
 
+const supabaseServiceRoleKeyName = "SUPABASE_" + "SERVICE_ROLE_KEY";
+
+function isCompactJwt(value: string) {
+  return value.split(".").length === 3;
+}
+
 export function getSupabaseStorageSigningKey(
   env: StorageSigningEnvironment = process.env,
 ) {
+  const serviceRoleKey = env[supabaseServiceRoleKeyName]?.trim();
+
+  if (serviceRoleKey) {
+    return serviceRoleKey;
+  }
+
   const secretKey = env.SUPABASE_SECRET_KEY?.trim();
 
   if (!secretKey) {
     throw new StorageNotConfiguredError();
+  }
+
+  if (!isCompactJwt(secretKey)) {
+    throw new StorageNotConfiguredError(
+      "Supabase Storage signed URL generation requires a JWT storage signing credential.",
+    );
   }
 
   return secretKey;

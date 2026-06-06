@@ -14,7 +14,8 @@ Use real values only in local `.env.local`, the staging host, or the production 
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser/server Supabase project URL | Public value, still environment-specific |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key | Public browser key, not service role |
-| `SUPABASE_SECRET_KEY` | Server-side private Storage signed URL generation | Server-only; required for guest file downloads after token-scoped backend authorization |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side private Storage signed URL generation | Server-only legacy JWT; required for guest file downloads after token-scoped backend authorization |
+| `SUPABASE_SECRET_KEY` | Optional backward-compatible Storage signing key | Server-only; leave empty unless it is JWT-compatible because opaque `sb_secret_...` keys are rejected by the current Storage signed URL path |
 | `DATABASE_URL` | Local tooling database connection | Placeholder only in `.env.example`; do not commit real password |
 | `WHATSAPP_MODE` | `manual` or future adapter mode | MVP should use `manual` unless approved provider credentials exist |
 
@@ -50,7 +51,7 @@ Use the pinned Supabase CLI version above for deployment-readiness evidence. Spr
 
 - Buckets for project, invitation, and archive files must stay private.
 - Signed download URLs must be created only through server routes/RPCs after permission checks.
-- Public guest file downloads require `SUPABASE_SECRET_KEY` on the server because the anonymous public guest page session cannot sign private `project-files` objects directly.
+- Public guest file downloads require `SUPABASE_SERVICE_ROLE_KEY` on the server because the anonymous public guest page session cannot sign private `project-files` objects directly.
 - Zero-byte placeholder file metadata must follow the provider-backed registration policy in `docs/architecture/file-management-policy.md`.
 - Do not enable direct public object access for generated invitations, guest files, contracts, payment proofs, archives, or reports.
 

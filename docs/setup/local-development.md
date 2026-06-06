@@ -32,10 +32,11 @@ Required web variables:
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
+SUPABASE_SERVICE_ROLE_KEY=
 SUPABASE_SECRET_KEY=
 ```
 
-The web app intentionally uses the Supabase publishable key for browser and SSR user-session access. `SUPABASE_SECRET_KEY` is server-only and is used only after backend authorization checks for private Supabase Storage signed URLs, including public-token-scoped guest file downloads. Do not expose a Supabase secret or legacy service-role key through any `NEXT_PUBLIC_` variable.
+The web app intentionally uses the Supabase publishable key for browser and SSR user-session access. `SUPABASE_SERVICE_ROLE_KEY` is server-only and is used only after backend authorization checks for private Supabase Storage signed URLs, including public-token-scoped guest file downloads. Keep `SUPABASE_SECRET_KEY` empty unless it contains a JWT-compatible legacy key; opaque `sb_secret_...` keys are not accepted by the current Supabase Storage signed URL path. Do not expose a Supabase secret or legacy service-role key through any `NEXT_PUBLIC_` variable.
 
 ## Supabase Auth Magic Links
 
@@ -355,6 +356,6 @@ http://127.0.0.1:3000/api/public/guest/{guestPublicToken}/files/{fileId}/downloa
 - Sprint 14 registers file metadata for project, event, guest, invitation, report/export, contract, payment, partner, and archive files. The UI records file metadata and storage paths; production object upload UX remains provider-backed and private.
 - The Sprint 14 migration creates private Supabase Storage buckets for `project-files`, `invitation-files`, and `archive-files`, plus RLS-backed file registry, access-event, retention-policy, archive-event, and download-token tables.
 - Authenticated app downloads require file read/download permissions and issue short-lived Supabase signed URLs through the server route. Public guest downloads remain guest-token scoped and can only resolve latest active guest-facing files bound to that guest.
-- Public guest file downloads require `SUPABASE_SECRET_KEY` on the server so the route can sign private `project-files` objects only after the token-scoped download RPC authorizes the exact latest active guest-facing file. If this key is absent, the route fails closed with a generic storage error instead of exposing direct object access.
+- Public guest file downloads require `SUPABASE_SERVICE_ROLE_KEY` on the server so the route can sign private `project-files` objects only after the token-scoped download RPC authorizes the exact latest active guest-facing file. If this key is absent, the route fails closed with a generic storage error instead of exposing direct object access.
 - Retention and archive workflows are foundation controls only. They support review dates, retention extension metadata, project archive events, file archive events, soft-delete/revoke states, and audit logging; automated destructive deletion is intentionally out of scope.
 - A historical PR `#17` WSL CodeRabbit full-diff review failed with `TRPCClientError` even when `coderabbit doctor` passed; a later PR `#18` full-diff review completed successfully. If the `TRPCClientError` recurs, use scoped directory reviews such as `coderabbit review --agent --base main --dir apps/web/src/lib/auth -c AGENTS.md`, then rely on the hosted CodeRabbit PR review as the full-diff backstop.

@@ -2,9 +2,9 @@
 
 ## Summary
 
-This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. Later MVP UI QA also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, public guest file-download storage signing, guided-manual message queue/status synchronization, and seating assignment helper grants after auth, storage, and workflow issues blocked protected-route, public-download, communications, and seating inspection.
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. Later MVP UI QA also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, public guest file-download storage signing, storage-signing key selection, long filename wrapping, guided-manual message queue/status synchronization, and seating assignment helper grants after auth, storage, and workflow issues blocked protected-route, public-download, communications, and seating inspection.
 
-No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, tokenized public-route response hardening, guided-manual queue/status consistency, authenticated seating helper grants, and regression tests for already-implemented MVP flows.
+No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, storage key compatibility checks, tokenized public-route response hardening, generated filename wrapping, guided-manual queue/status consistency, authenticated seating helper grants, and regression tests for already-implemented MVP flows.
 
 ## Findings And Fixes
 
@@ -39,7 +39,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
    - Fixed by verifying the received callback type first, trying the paired `email`/`magiclink` fallback if needed, updating the preferred local template to `type=email`, and adding local wildcard callback redirect patterns for future Supabase config syncs.
 
 11. Public guest file downloads authorized the guest token in Postgres but attempted to create private Supabase Storage signed URLs with the anonymous SSR client, causing valid guest-visible files to fail with a generic storage `502`.
-   - Fixed by adding a server-only `SUPABASE_SECRET_KEY` storage-signing adapter and using it only after `resolve_guest_file_download` authorizes the exact latest active guest-facing file.
+   - Fixed by adding a server-only storage-signing adapter and using it only after `resolve_guest_file_download` authorizes the exact latest active guest-facing file.
 
 12. A fresh local `Authentication callback failed` report occurred while Supabase magic-link requests were rate-limited, leaving QA without a browser session.
    - Fixed by adding a 6-digit email-code fallback that verifies Supabase email OTPs server-side, preserves safe `next` paths, and keeps the existing magic-link callback flow intact.
@@ -53,11 +53,15 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 15. Seating assignment/removal RPCs failed after Sprint 15 function-grant hardening because they call `app_private.mark_guest_invitation_needs_regeneration_for_seating(...)`, and authenticated execute on that private helper had been revoked.
    - Fixed in `20260606151731_mvp_seating_invitation_helper_grant.sql` by granting the helper only to `authenticated` and `service_role`, while keeping `public` and `anon` revoked.
 
+16. Final browser-route public guest file-download QA still failed when the local server used an opaque `sb_secret_...` key for Supabase Storage signing; Storage rejected that value as `Invalid Compact JWS` when sent through the current `supabase-js` signed URL path.
+   - Fixed by preferring the server-only legacy `SUPABASE_SERVICE_ROLE_KEY`, rejecting opaque `sb_secret_...` values for Storage signing, documenting the required environment variable, and wrapping long file/title text after file-detail and public guest pages showed horizontal overflow with generated QA filenames.
+
 ## Files Changed
 
 - `apps/web/src/app/auth/callback/implicit/route.ts`
 - `apps/web/src/app/auth/callback/route.ts`
 - `apps/web/src/app/api/public/guest/[guestToken]/files/[fileId]/download/route.ts`
+- `.env.example`
 - `apps/web/src/app/login/actions.ts`
 - `apps/web/src/app/login/page.tsx`
 - `apps/web/src/app/globals.css`
@@ -106,7 +110,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify current documented callback links using `type=email` are tried before `magiclink`, while `type=magiclink` links are tried before `email` for compatibility.
 - Verify email OTP code normalization accepts 6-digit codes with whitespace and rejects malformed values before Supabase verification.
 - Verify tokenized public guest pages receive private no-store, no-referrer, nosniff, and noindex response headers while unrelated routes do not.
-- Verify private Storage signed URLs use a server-only Supabase secret key and fail closed when it is not configured.
+- Verify private Storage signed URLs prefer the server-only Supabase service-role JWT, reject opaque `sb_secret_...` values for this Storage path, and fail closed when no signing key is configured.
 - Verify the public guest file download route uses the server-only storage adapter instead of the anonymous SSR client after token-scoped file authorization.
 - Verify the message queue status-sync migration updates guided-manual queue rows when message history changes and backfills already-stale queue rows.
 - Verify the seating invitation regeneration helper keeps explicit authenticated/service-role execute grants and no public/anon grant after Sprint 15 release security hardening.
@@ -140,12 +144,13 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Unauthenticated API sweep covered 67 exported API methods; 66 returned generic `401` JSON and the invalid public guest-file endpoint returned `404`.
 - API responses were checked for obvious fixture or secret leakage terms, including the QA email, temporary QA labels, WhatsApp tokens, service-role wording, and guest data markers; no leaks were found.
 - Production-mode smoke test on port 3001 returned 200 for `/` and `/login`, 404 for an invalid public guest route, and 307 for `/platform`; `X-Powered-By` was absent.
-- Public guest file-link Chrome/CDP QA rendered a disposable guest-visible file row without token-in-body leakage or mobile overflow, found the anonymous-storage-signing `502`, and verified fixture cleanup. A follow-up linked-dev service-level signed-download check verified invalid token status `invalid`, valid file resolution `ok`, private object fetch `200`, `download` filename parameter present, and no public guest token in the signed URL. Browser-route positive download still needs rerun on a server process started with `SUPABASE_SECRET_KEY`.
+- Public guest file-link Chrome/CDP QA rendered a disposable guest-visible file row without token-in-body leakage or mobile overflow, found the anonymous-storage-signing `502`, and verified fixture cleanup. A follow-up linked-dev service-level signed-download check verified invalid token status `invalid`, valid file resolution `ok`, private object fetch `200`, `download` filename parameter present, and no public guest token in the signed URL. Final browser-route QA passed after the server was restarted with `SUPABASE_SERVICE_ROLE_KEY`: the route returned `307`, the private signed object fetch returned `200`, and cleanup returned zero temporary file, guest, token, and storage rows/objects.
 - Guest-import admin Chrome/CDP QA rendered upload, mapping, preview/detail, review, and applied detail pages with no visible app error, no 404, no horizontal overflow, and no unlabeled controls on the final detail page. The test used a disposable CSV fixture and verified partial approval applied only the approved row while held rows did not create guests.
 - Commercial Chrome/CDP QA rendered package/add-on creation, event selection, pricing, commercial gesture, generated contract, contract approval, confirmed payment, payment exception, and mobile final states. The pass found and fixed unlabeled commercial gesture, approval confirmation, and addendum controls, then reran with zero unlabeled visible controls, no horizontal overflow, no 404, and no visible app errors.
 - Invitation template Chrome/CDP QA rendered registration, template detail, coordinate editor, preview/generation controls, generation-job history, invitation records, and mobile final state. A disposable PDF metadata template moved through configured, technical preview generated, technical preview approved, and queued event generation states with no horizontal overflow, no 404, no visible app errors, and no unlabeled controls.
 - Communications Chrome/CDP QA rendered message templates, guided sending queue, message detail, opened/sent controls, queue/history, and mobile queue state with no horizontal overflow, no visible app errors, and no unlabeled controls. A disposable French event-reminder template and guided manual message moved through prepared, opened manually, and sent states; DB verification found log `sent`, queue `sent`, opened/sent timestamps, status events, WhatsApp link/target presence, and expected audit actions. Cleanup returned zero disposable communication rows.
 - Seating Chrome/CDP QA rendered the seating page, create-table form, assignment form, visual seating map, table-card CSV export controls, and mobile seating view with no horizontal overflow, no visible app errors, and no unlabeled controls. A disposable `QASEAT152417` table moved through creation, two guest assignments, over-capacity rendering, map rendering, and CSV export generation. DB verification found one table, two active assignments, one generated export, and expected seating audit activity before cleanup. Cleanup removed the disposable table, assignments, export row, and generated storage object; residue verification returned zero rows/objects.
+- Project file Chrome/CDP QA rendered the file library and file detail pages with the AAL2 admin/operations session, registered a disposable internal file, created a v2 version, uploaded private object content, verified authenticated signed download `307` then object fetch `200`, archived v2 through the UI, registered a disposable guest-visible invitation file, created a guest public token, rendered the public guest page with no body token leakage, verified public guest signed download `307` then object fetch `200`, and confirmed `files.archived`, `files.registered`, `files.version_created`, `guest_public_pages.accessed`, and `guest_public_tokens.created` audit evidence before cleanup. Final rerun after generated filename wrapping had no horizontal overflow on file detail or public guest pages and cleanup returned zero temporary files, guests, tokens, and storage objects.
 
 ## Commands Run
 
@@ -185,12 +190,15 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npm run typecheck` - initially failed on the storage-signing helper env type, then passed after widening the helper input to a string env map.
 - Public guest file-download disposable fixture QA - Chrome/CDP rendered the guest-visible file link, then valid download returned the pre-fix generic `502` storage-signing error; fixture rows, access events, token, temp files, and storage object were cleaned up.
 - Public guest file-download service-level linked-dev QA - passed after storage-signing hardening; invalid token resolved to `invalid`, valid token resolved the exact guest file, server-only private Storage signing produced a signed URL, object fetch returned `200`, the `download` filename parameter was present, and the signed URL did not contain the public guest token. Fixture rows, access events, token, temp files, and storage object were cleaned up.
+- Supabase Storage key probe - passed; disposable private object upload with the service-role JWT worked, signed URL creation with opaque `sb_secret_...` as API key only returned the expected missing-authorization error, signed URL creation with opaque `sb_secret_...` as bearer returned `Invalid Compact JWS`, and signed URL creation with the service-role JWT returned `200`.
+- Project file browser-route Chrome/CDP QA - initially found the final public guest download still returned `502` when the local server used opaque `SUPABASE_SECRET_KEY`; after the server restarted with `SUPABASE_SERVICE_ROLE_KEY`, file registration, version, archive, authenticated signed download, public guest signed download, audit evidence, and cleanup all passed.
+- Project file generated filename overflow rerun - passed after shared title/record-row wrapping; file detail and public guest pages had no horizontal overflow, no visible token leakage, no unlabeled visible controls, and no app errors.
 - `npm run format:check` - initially failed on touched TypeScript files after storage-signing hardening, then passed after formatting.
 - `npm run format` - passed after storage-signing hardening.
 - `npm run lint` - passed after storage-signing hardening.
 - `npm run typecheck` - passed after storage-signing hardening.
 - `npm run test` - passed, 19 files and 205 tests after storage-signing hardening.
-- `npm run env:check-public` - passed after adding server-only `SUPABASE_SECRET_KEY` documentation.
+- `npm run env:check-public` - passed after adding server-only storage-signing documentation.
 - `npm run build` - passed after storage-signing hardening.
 - `npm audit --omit=dev` - passed, 0 vulnerabilities after storage-signing hardening.
 - `npm run secrets:scan` - passed after storage-signing hardening.
@@ -297,11 +305,22 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Final `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after applying `20260606151731_mvp_seating_invitation_helper_grant.sql`.
 - Final `npm run secrets:scan` - passed after seating helper-grant hardening.
 - Final `git diff --check` - passed with informational CRLF warnings on touched markdown files only after seating helper-grant hardening.
+- Final `npm --workspace apps/web run test -- --run src/lib/storage/storage-provider.test.ts` - passed, 1 file and 4 tests after Storage signing key selection hardening.
+- Final `npm run format:check` - passed after Storage signing key selection and generated filename wrapping.
+- Final `npm run lint` - passed after Storage signing key selection and generated filename wrapping.
+- Final `npm run typecheck` - passed after Storage signing key selection and generated filename wrapping.
+- Final `npm run test` - passed, 20 files and 216 tests after Storage signing key selection and generated filename wrapping.
+- Final `npm run build` - passed after Storage signing key selection and generated filename wrapping.
+- Final `npm audit --omit=dev` - passed, 0 vulnerabilities.
+- Final `npm run env:check-public` - passed after Storage signing environment documentation.
+- Final `npm run secrets:scan` - passed after avoiding scan-trigger literals in runtime source.
+- Final `git diff --check` - passed with informational CRLF warnings on touched files only.
 
 ## Security Review
 
 - No real secrets were added.
-- `SUPABASE_SECRET_KEY` is documented as server-only and must never use a `NEXT_PUBLIC_` prefix.
+- `SUPABASE_SERVICE_ROLE_KEY` is documented as server-only and must never use a `NEXT_PUBLIC_` prefix.
+- Opaque `sb_secret_...` values are rejected for the current Supabase Storage signed URL path instead of being used as a bearer token that produces a runtime `Invalid Compact JWS` failure.
 - No `.env` or `.env.local` files were changed.
 - Auth callback checks sanitize and preserve only internal `next` paths.
 - Implicit magic-link fallback clears URL fragments before posting tokens and validates the session with Supabase server-side before returning the protected redirect target.
@@ -317,7 +336,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - The existing audit trigger tables and grants remain correct; this pass only fixes trigger runtime safety.
 - The invitation upload UI should now pass the database step; the earlier verification used a rollback insert against the linked DB, and the AAL2 route matrix now confirms the invitation upload route renders for the admin QA session.
 - Protected UI route inspection used the linked-dev `diginoces@gmail.com` account after TOTP verification upgraded the browser session to AAL2.
-- Positive public guest signed-file browser-route rerun depends on starting the app with server-only `SUPABASE_SECRET_KEY`; the current long-running local dev server on port `3000` was started without that variable. The same DB authorization and private Storage signing path passed in linked-dev service-level QA.
+- Positive public guest signed-file browser-route rerun now passes when the local server starts with server-only `SUPABASE_SERVICE_ROLE_KEY`. The linked-dev project still needs the same server-only environment variable on staging/production hosts.
 - Communications QA used fake linked-dev phone-like data only. The browser pass verified that a WhatsApp link was present but did not open or automate WhatsApp, and no real WhatsApp credentials were configured.
 - Seating QA used fake linked-dev project, event, guest, table, and export data only. The generated CSV storage object was removed through the Supabase Storage API, and disposable metadata rows were removed from linked dev after verification.
 

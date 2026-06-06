@@ -130,6 +130,7 @@ textarea {
   font-size: clamp(2.2rem, 5vw, 4.4rem);
   line-height: 0.98;
   letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .hero p,
@@ -648,6 +649,7 @@ textarea {
 .record-row strong,
 .task-row strong {
   display: block;
+  overflow-wrap: anywhere;
 }
 
 .record-row small,
@@ -655,6 +657,7 @@ textarea {
   display: block;
   margin-top: 3px;
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .tag {
@@ -727,6 +730,7 @@ body:has(.public-route) .main {
   font-size: clamp(2.4rem, 6vw, 5.2rem);
   line-height: 0.96;
   letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .public-hero p,
