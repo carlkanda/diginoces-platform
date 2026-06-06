@@ -113,6 +113,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Supabase API key guidance was rechecked against the current [Supabase API keys docs](https://supabase.com/docs/guides/getting-started/api-keys); public guest file downloads now require a server-only secret key for private Storage signing after backend authorization.
 - The linked-dev account metadata for `diginoces@gmail.com` was inspected without tokens or secrets; the account exists, email is confirmed, MFA has a verified TOTP factor, a recent session recorded `aal2`, and global `diginoces_admin`/`operations_manager` role assignments exist.
 - A production `next build`/`next start` check verified `/g/:guestToken` responses carry `no-store`, `no-referrer`, `nosniff`, and `noindex, nofollow`. Disposable public-token header fixtures were cleaned from linked dev and the local temp token file was removed.
+- The AAL2 admin/operations browser session completed a disposable guest-import review/apply flow: CSV upload, mapping, validation, submit-for-review, one approved row, one held row, apply-approved-rows, `status=applied`, one created guest, and the expected import audit actions. Cleanup removed the disposable guest, import session, rows, mappings, and dependent records; follow-up verification returned zero remaining rows for every checked table.
 
 ## UI And API QA Evidence
 
@@ -124,6 +125,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - API responses were checked for obvious fixture or secret leakage terms, including the QA email, temporary QA labels, WhatsApp tokens, service-role wording, and guest data markers; no leaks were found.
 - Production-mode smoke test on port 3001 returned 200 for `/` and `/login`, 404 for an invalid public guest route, and 307 for `/platform`; `X-Powered-By` was absent.
 - Public guest file-link Chrome/CDP QA rendered a disposable guest-visible file row without token-in-body leakage or mobile overflow, found the anonymous-storage-signing `502`, and verified fixture cleanup. A follow-up linked-dev service-level signed-download check verified invalid token status `invalid`, valid file resolution `ok`, private object fetch `200`, `download` filename parameter present, and no public guest token in the signed URL. Browser-route positive download still needs rerun on a server process started with `SUPABASE_SECRET_KEY`.
+- Guest-import admin Chrome/CDP QA rendered upload, mapping, preview/detail, review, and applied detail pages with no visible app error, no 404, no horizontal overflow, and no unlabeled controls on the final detail page. The test used a disposable CSV fixture and verified partial approval applied only the approved row while held rows did not create guests.
 
 ## Commands Run
 
@@ -238,6 +240,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `npm run db:lint` - passed, no schema errors after MFA bridge and commercial label hardening.
 - `npx supabase@latest db push --linked --dry-run` - passed, remote database up to date after MFA bridge and commercial label hardening.
 - `git diff --check` - passed with informational CRLF warnings on touched files only after MFA bridge and commercial label hardening.
+- Guest-import admin review/apply Chrome/CDP QA - passed on linked dev with the AAL2 `diginoces@gmail.com` session; one row was approved/applied, one row was held, expected import audit actions were present, and disposable data cleanup verification returned zero remaining rows in import, guest, assignment, RSVP, token, invitation, message, check-in, seating, and file reference tables.
 
 ## Security Review
 

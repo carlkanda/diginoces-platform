@@ -39,7 +39,7 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 | Health and app shell           | `/api/health` returned `status: ok` and `supabaseConfigured: true`; home page rendered Sprint 1-14 progress.                                                                                                            |
 | Authenticated route matrix     | 42 local routes were opened in Chrome with the current session; every route rendered non-empty content with no Next.js error overlay and no horizontal overflow.                                                        |
 | Expected permission boundaries | Admin/MFA, import-review, guest-detail, invitation, communications, event-files, dashboard, reports, audit, and partner-review routes returned expected 404/permission-gated behavior for the current AAL1 role set.    |
-| Guest import workflow          | CSV import upload, mapping, preview, and submit-for-review succeeded in earlier QA; the current import detail page renders `ready for review`; submit/apply controls are disabled for the current non-reviewer session. |
+| Guest import workflow          | CSV import upload, mapping, preview, submit-for-review, admin review, partial approval, and apply-approved-rows have now been exercised through Chrome/CDP. The disposable applied import was cleaned from linked dev after verification. |
 | Check-in manual flow           | Manual check-in recorded attendance and redirected with `checkInStatus=guest_checked_in`; no overlay or overflow.                                                                                                       |
 | Unexpected guest flow          | Browser form created pending request `01ac3204-6fc2-4164-922e-24793ecaa4c3`; audit logged `unexpected_guest_requests.created`.                                                                                          |
 | Check-in fallback flow         | Browser created preload snapshot `75a9ca51-463b-4bb0-9faa-c2e900258a97` with `guest_count = 2`.                                                                                                                         |
@@ -99,6 +99,7 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 | MFA bridge hardening                  | The app now adds a minimal `/login/mfa` TOTP verification bridge for already-enrolled Supabase factors. Email-code, magic-link token-hash, OAuth-code, and implicit callback paths redirect to `/login/mfa?next=...` when Supabase reports `currentLevel=aal1` and `nextLevel=aal2`; successful verification upgrades the browser session to AAL2 and returns to the protected route. Focused auth tests cover MFA code normalization, safe MFA redirect encoding, and verified TOTP factor selection. |
 | Authenticated AAL2 route matrix       | After `diginoces@gmail.com` completed TOTP verification, Chrome/CDP checked 38 protected platform, dashboard, report, audit, project, guest, guest import, RSVP, communications, commercial, file, guest-book, feedback, comment, event, check-in, seating, invitation, partner, and partner-dashboard routes at desktop `1440x900` and mobile `390x844`. Both matrices passed 38/38 routes: no login redirects, missing pages, visible Next.js error overlays, Supabase-not-configured text, app-error text, horizontal overflow, missing `h1`, or unlabeled visible controls. |
 | Commercial form accessibility fix     | The first desktop AAL2 matrix found one unlabeled `expiresAt` `datetime-local` control in the payment exception form. The field and neighboring placeholder-only inputs are now wrapped in explicit labels; targeted desktop/mobile rerun of the commercial page returned zero unlabeled visible controls. |
+| Guest import admin review/apply       | With the AAL2 `diginoces@gmail.com` admin/operations session, Chrome/CDP created disposable import session `27bf65cb-a728-4552-943c-493664a80195`, mapped French/English CSV headers, validated preview, submitted for review, approved one row, held one row, and applied approved rows. DB verification showed `status=applied`, 2 rows, 1 applied guest, 1 held row, zero still-approved rows, and audit actions `guest_imports.created`, `guest_imports.validation_completed`, `guest_imports.submitted`, `guest_imports.reviewed`, and `guest_imports.applied`. Cleanup removed the disposable guest, import session, import rows, mappings, assignments, RSVP/token/invitation/message/check-in/file references; follow-up counts for every checked table were zero. |
 
 ## Current Fixture Coverage
 
@@ -107,7 +108,7 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 | Projects                     | Present: 1 fake project                                                            |
 | Events                       | Present: 2 fake events                                                             |
 | Guests                       | Observed 2026-06-06: 4 active guest rows                                           |
-| Guest import                 | Present: 1 staged/submitted import                                                 |
+| Guest import                 | Present: 1 original staged/submitted fixture import; disposable admin review/apply import cleaned after verification |
 | Check-in                     | Present: settings, manual records, preload snapshot, sync batch, conflict evidence |
 | RSVP records                 | Observed 2026-06-06: 2 RSVP rows                                                   |
 | Public guest tokens          | Observed 2026-06-06: 1 active public token; 0 public-file-route QA token residue    |
@@ -122,7 +123,6 @@ This report records the current linked-dev/local-browser MVP UI QA pass after th
 
 The MVP is not yet fully proven for production. The following gates still need evidence:
 
-- Admin/operations review/apply of the guest import session.
 - Contract/payment gate configuration and approval flow.
 - Invitation template upload/field config/preview/generation result flow.
 - Message template, guided manual WhatsApp send, queue/history status flow.
