@@ -16,6 +16,7 @@ import {
   type CheckInMethod,
   type CheckInGuest,
 } from "@/lib/check-in/check-in-service";
+import { formatDateTimeInTimeZone } from "@/lib/dates/format-date";
 import {
   hasEventPermission,
   ProjectAccessError,
@@ -64,26 +65,6 @@ function statusMessage(status: string | undefined) {
       return "Unexpected guest request reviewed.";
     default:
       return null;
-  }
-}
-
-function formatDateTime(value: string | null, timeZone = "UTC") {
-  if (!value) {
-    return "Not set";
-  }
-
-  try {
-    return new Intl.DateTimeFormat("en", {
-      dateStyle: "medium",
-      timeStyle: "short",
-      timeZone,
-    }).format(new Date(value));
-  } catch {
-    return new Intl.DateTimeFormat("en", {
-      dateStyle: "medium",
-      timeStyle: "short",
-      timeZone: "UTC",
-    }).format(new Date(value));
   }
 }
 
@@ -302,7 +283,7 @@ export default async function EventCheckInPage({
           <div className="section-heading">
             <h2>Arrival dashboard</h2>
             <span className="meta-list">
-              {formatDateTime(
+              {formatDateTimeInTimeZone(
                 overview.event.starts_at,
                 overview.settings?.timezone ?? "UTC",
               )}
