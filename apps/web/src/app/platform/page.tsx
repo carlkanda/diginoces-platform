@@ -35,21 +35,31 @@ async function getAuthenticatedPlatformActionVisibility(
 ) {
   const supabase = authContext.supabase;
   const context = { supabase, user: authContext.user };
-  const [permissions, partners] = await Promise.all([
-    getReportingPermissionSet(context).catch((error: unknown) => {
+
+  const permissions = await getReportingPermissionSet(context).catch(
+    (error: unknown) => {
       serverLogger.error("Platform reporting permission check failed.", {
         error,
       });
 
       return new Set<PermissionSlug>();
-    }),
-    listPartners(supabase).catch((error: unknown) => {
-      serverLogger.error("Platform partner list check failed.", { error });
-
-      return [];
-    }),
-  ]);
+    },
+  );
   const dashboardVisibility = getDashboardVisibility(permissions);
+
+  if (dashboardVisibility.canReadPartnerDashboard) {
+    return getPlatformEntryActionVisibility({
+      canOpenPartnerDashboard: true,
+      canReadGlobalDashboard: dashboardVisibility.canReadGlobalDashboard,
+      canReadReports: dashboardVisibility.canReadReports,
+    });
+  }
+
+  const partners = await listPartners(supabase).catch((error: unknown) => {
+    serverLogger.error("Platform partner list check failed.", { error });
+
+    return [];
+  });
   const partnerDashboardAccess = await Promise.all(
     partners.map(async (partner) => {
       try {
