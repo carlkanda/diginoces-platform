@@ -53,18 +53,31 @@ function parseFileSizeBytes(value: string) {
   return parsed;
 }
 
+function hasSelectedFile(value: FormDataEntryValue | null): value is File {
+  const emptyBrowserFilePlaceholder =
+    value instanceof File &&
+    value.size === 0 &&
+    (value.name.trim().length === 0 || value.name.trim() === "blob") &&
+    (value.type.length === 0 || value.type === "application/octet-stream");
+
+  return (
+    value instanceof File &&
+    !emptyBrowserFilePlaceholder &&
+    (value.name.trim().length > 0 || value.size > 0)
+  );
+}
+
 export function fileMetadataFromForm(formData: FormData) {
   const upload = formData.get("file");
   // Sprint 14 / FILE-001 / FILE-009 / Issue #30: file metadata is stored
   // before source-file persistence, so 0-byte placeholders are valid here.
-  const file =
-    upload instanceof File
-      ? {
-          fileSizeBytes: upload.size,
-          filename: upload.name.trim() || undefined,
-          mimeType: upload.type || undefined,
-        }
-      : null;
+  const file = hasSelectedFile(upload)
+    ? {
+        fileSizeBytes: upload.size,
+        filename: upload.name.trim() || undefined,
+        mimeType: upload.type || undefined,
+      }
+    : null;
 
   return {
     category: requiredFormValue(formData, "category"),

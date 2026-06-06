@@ -226,6 +226,31 @@ function auditLogSearchPattern(search: string) {
   return quotePostgrestOrValue(escapedPattern);
 }
 
+const auditSources = ["api", "auth", "storage", "system"] as const;
+
+export function auditLogSearchOrFilters(search: string) {
+  const pattern = auditLogSearchPattern(search);
+  const searchLower = search.toLowerCase();
+  const textFilters = [
+    `action.ilike.${pattern}`,
+    `object_type.ilike.${pattern}`,
+    `reason.ilike.${pattern}`,
+    ...auditSources
+      .filter((source) => source.includes(searchLower))
+      .map((source) => `source.eq.${source}`),
+  ];
+
+  if (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      search,
+    )
+  ) {
+    textFilters.push(`actor_user_id.eq.${search}`, `object_id.eq.${search}`);
+  }
+
+  return textFilters;
+}
+
 export async function getGlobalDashboardOverview(
   supabase: AnySupabase,
   visibility: DashboardVisibility,
@@ -822,21 +847,7 @@ export async function listAuditLogs(
   }
 
   if (search) {
-    const pattern = auditLogSearchPattern(search);
-    const textFilters = [
-      `action.ilike.${pattern}`,
-      `object_type.ilike.${pattern}`,
-      `source.ilike.${pattern}`,
-      `reason.ilike.${pattern}`,
-    ];
-
-    if (
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        search,
-      )
-    ) {
-      textFilters.push(`actor_user_id.eq.${search}`, `object_id.eq.${search}`);
-    }
+    const textFilters = auditLogSearchOrFilters(search);
 
     query = query.or(textFilters.join(","));
   }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { auditLogSearchOrFilters } from "@/lib/reports/report-db";
 import {
   buildCsv,
   filterAuditLogRows,
@@ -291,6 +292,39 @@ describe("Sprint 11 reporting and dashboard foundation", () => {
       reason: "name correction",
       source: "api",
     });
+  });
+
+  it("builds audit-log search filters without applying ilike to enum sources", () => {
+    const filters = auditLogSearchOrFilters("ap");
+
+    expect(filters).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("action.ilike."),
+        expect.stringContaining("object_type.ilike."),
+        expect.stringContaining("reason.ilike."),
+        "source.eq.api",
+      ]),
+    );
+    expect(filters).not.toEqual(
+      expect.arrayContaining([expect.stringContaining("source.ilike.")]),
+    );
+  });
+
+  it("adds audit-log UUID exact-match filters only for UUID searches", () => {
+    const uuid = "11111111-1111-4111-8111-111111111111";
+
+    expect(auditLogSearchOrFilters(uuid)).toEqual(
+      expect.arrayContaining([
+        `actor_user_id.eq.${uuid}`,
+        `object_id.eq.${uuid}`,
+      ]),
+    );
+    expect(auditLogSearchOrFilters("not-a-uuid")).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("actor_user_id.eq."),
+        expect.stringContaining("object_id.eq."),
+      ]),
+    );
   });
 
   it("documents Sprint 11 report definitions and database foundations", () => {

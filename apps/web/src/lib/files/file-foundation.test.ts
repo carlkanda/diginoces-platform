@@ -227,6 +227,40 @@ describe("Sprint 14 file foundation", () => {
     });
   });
 
+  it("uses fallback metadata when the browser posts an untouched file input", () => {
+    const formData = new FormData();
+    formData.set("category", "report_export");
+    formData.set(
+      "file",
+      new File([], "", { type: "application/octet-stream" }),
+    );
+    formData.set("filename", "report.csv");
+    formData.set("fileSizeBytes", "42");
+    formData.set("mimeType", "text/csv");
+    formData.set("visibility", "internal");
+
+    expect(fileMetadataFromForm(formData)).toMatchObject({
+      category: "report_export",
+      fileSizeBytes: 42,
+      filename: "report.csv",
+      mimeType: "text/csv",
+      visibility: "internal",
+    });
+
+    formData.set(
+      "file",
+      new File([], "blob", { type: "application/octet-stream" }),
+    );
+
+    expect(fileMetadataFromForm(formData)).toMatchObject({
+      category: "report_export",
+      fileSizeBytes: 42,
+      filename: "report.csv",
+      mimeType: "text/csv",
+      visibility: "internal",
+    });
+  });
+
   it("fails fast when a file registration RPC returns a malformed row", async () => {
     const supabase = {
       rpc: async () => ({ data: null, error: null }),
