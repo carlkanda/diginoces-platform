@@ -2,9 +2,9 @@
 
 ## Summary
 
-This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. Later MVP UI QA also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, public guest file-download storage signing, storage-signing key selection, long filename wrapping, guided-manual message queue/status synchronization, and seating assignment helper grants after auth, storage, and workflow issues blocked protected-route, public-download, communications, and seating inspection.
+This post-sprint MVP QA hardening pass fixed four linked-dev blockers caused by shared PostgreSQL audit triggers reading or comparing fields from sibling tables with incompatible row types or enum types. Later MVP UI QA also hardened login retry behavior, Supabase email rate-limit messaging, implicit magic-link callback compatibility, local loopback callback origin handling, Supabase token-hash magic-link callback type handling, email-code sign-in fallback behavior, public guest page security headers, public guest file-download storage signing, storage-signing key selection, long filename wrapping, guided-manual message queue/status synchronization, seating assignment helper grants, and partner audit trigger runtime safety after auth, storage, and workflow issues blocked protected-route, public-download, communications, seating, and partner-flow inspection.
 
-No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, storage key compatibility checks, tokenized public-route response hardening, generated filename wrapping, guided-manual queue/status consistency, authenticated seating helper grants, and regression tests for already-implemented MVP flows.
+No product scope was added. The fixes are limited to audit trigger implementations, auth retry/error handling, callback compatibility, safe local auth redirect handling, Supabase local Auth config guidance, server-only private Storage signing after backend authorization, storage key compatibility checks, tokenized public-route response hardening, generated filename wrapping, guided-manual queue/status consistency, authenticated seating helper grants, partner audit trigger field-safety, and regression tests for already-implemented MVP flows.
 
 ## Findings And Fixes
 
@@ -56,6 +56,9 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 16. Final browser-route public guest file-download QA still failed when the local server used an opaque `sb_secret_...` key for Supabase Storage signing; Storage rejected that value as `Invalid Compact JWS` when sent through the current `supabase-js` signed URL path.
    - Fixed by preferring the server-only legacy `SUPABASE_SERVICE_ROLE_KEY`, rejecting opaque `sb_secret_...` values for Storage signing, documenting the required environment variable, and wrapping long file/title text after file-detail and public guest pages showed horizontal overflow with generated QA filenames.
 
+17. Partner profile creation failed during MVP browser QA because `app_private.audit_partner_change()` referenced table-specific columns such as `project_id` through `new`/`old` records while auditing `public.partners`, which does not have those fields.
+   - Fixed in `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql` by deriving audit snapshots from JSON and reading table-specific fields through `new_snapshot`/`old_snapshot` keys.
+
 ## Files Changed
 
 - `apps/web/src/app/auth/callback/implicit/route.ts`
@@ -73,6 +76,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `apps/web/src/lib/auth/auth-service.test.ts`
 - `apps/web/src/lib/files/file-foundation.test.ts`
 - `apps/web/src/lib/messages/message-foundation.test.ts`
+- `apps/web/src/lib/partners/partner-foundation.test.ts`
 - `apps/web/src/lib/storage/storage-provider.ts`
 - `apps/web/src/lib/storage/storage-provider.test.ts`
 - `docs/qa/mvp-ui-qa-progress-report.md`
@@ -93,6 +97,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - `supabase/migrations/20260605015457_mvp_invitation_status_transition_audit_fix.sql`
 - `supabase/migrations/20260606063731_mvp_message_queue_status_sync.sql`
 - `supabase/migrations/20260606151731_mvp_seating_invitation_helper_grant.sql`
+- `supabase/migrations/20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql`
 
 ## Tests Added
 
@@ -114,6 +119,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Verify the public guest file download route uses the server-only storage adapter instead of the anonymous SSR client after token-scoped file authorization.
 - Verify the message queue status-sync migration updates guided-manual queue rows when message history changes and backfills already-stale queue rows.
 - Verify the seating invitation regeneration helper keeps explicit authenticated/service-role execute grants and no public/anon grant after Sprint 15 release security hardening.
+- Verify the partner audit trigger hardening migration uses JSON snapshots for table-specific fields and does not directly read `new.project_id`, `old.project_id`, status, actor, source-note, review-reason, or delete-marker fields from incompatible trigger record shapes.
 
 ## Linked Dev Verification
 
@@ -134,6 +140,8 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - The AAL2 admin/operations browser session completed a disposable guest-import review/apply flow: CSV upload, mapping, validation, submit-for-review, one approved row, one held row, apply-approved-rows, `status=applied`, one created guest, and the expected import audit actions. Cleanup removed the disposable guest, import session, rows, mappings, and dependent records; follow-up verification returned zero remaining rows for every checked table.
 - Applied `20260606063731_mvp_message_queue_status_sync.sql` to linked dev. A stale guided-manual queue row was backfilled from `queued` to `sent`, and the final communications QA pass verified a new disposable event-reminder message log and queue row both ended at `sent`.
 - Applied `20260606151731_mvp_seating_invitation_helper_grant.sql` to linked dev. The seating assignment API then succeeded for the AAL2 admin/operations browser session after previously failing with `permission denied for function mark_guest_invitation_needs_regeneration_for_seating`.
+- Applied `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql` to linked dev. A rollback insert into `public.partners` then succeeded after previously failing with `record "new" has no field "project_id"`.
+- Partner profile, partner-user linkage, partner project draft creation, submit-for-review, Diginoces approval, source tracking, and audit action verification all passed through Chrome/CDP with the AAL2 `diginoces@gmail.com` admin/operations session. Disposable partner, partner-user, role-assignment, project, submission, and source rows were cleaned from linked dev; immutable audit evidence remained.
 
 ## UI And API QA Evidence
 
@@ -152,6 +160,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Seating Chrome/CDP QA rendered the seating page, create-table form, assignment form, visual seating map, table-card CSV export controls, and mobile seating view with no horizontal overflow, no visible app errors, and no unlabeled controls. A disposable `QASEAT152417` table moved through creation, two guest assignments, over-capacity rendering, map rendering, and CSV export generation. DB verification found one table, two active assignments, one generated export, and expected seating audit activity before cleanup. Cleanup removed the disposable table, assignments, export row, and generated storage object; residue verification returned zero rows/objects.
 - Project file Chrome/CDP QA rendered the file library and file detail pages with the AAL2 admin/operations session, registered a disposable internal file, created a v2 version, uploaded private object content, verified authenticated signed download `307` then object fetch `200`, archived v2 through the UI, registered a disposable guest-visible invitation file, created a guest public token, rendered the public guest page with no body token leakage, verified public guest signed download `307` then object fetch `200`, and confirmed `files.archived`, `files.registered`, `files.version_created`, `guest_public_pages.accessed`, and `guest_public_tokens.created` audit evidence before cleanup. Final rerun after generated filename wrapping had no horizontal overflow on file detail or public guest pages and cleanup returned zero temporary files, guests, tokens, and storage objects.
 - Project retention lifecycle Chrome/CDP QA rendered the file-library retention panel with the authenticated `diginoces@gmail.com` session on `localhost`, verified all lifecycle actions were visible, and submitted extend-retention, mark-pending-deletion, and cancel-pending-deletion through the actual server-action form. Linked-dev verification found the expected `project_archive_events` transition sequence from `active` to `retention_extended`, then `pending_deletion`, then `retention_active`. Desktop and mobile renders had no login redirect, no visible app/config errors, no unlabeled visible controls, and no horizontal overflow. Cleanup restored the fake project to its original active/no-retention-date state and removed the temporary retention policy/archive-event rows.
+- Partner Chrome/CDP QA rendered `/platform/partners`, `/platform/partners/:partnerId`, `/platform/partner-dashboard?partnerId=...`, and `/platform/partners/review` with the authenticated AAL2 admin/operations session. The browser created a disposable partner, linked the current QA user as partner admin, created and submitted a partner-originated project draft, approved it in the Diginoces review queue, and verified mobile partner dashboard/detail renders with no login redirect, visible app/config errors, horizontal overflow, or unlabeled visible controls.
 
 ## Commands Run
 
@@ -320,6 +329,23 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Final `npm run env:check-public` - passed after Storage signing environment documentation.
 - Final `npm run secrets:scan` - passed after avoiding scan-trigger literals in runtime source.
 - Final `git diff --check` - passed with informational CRLF warnings on touched files only.
+- `npm --workspace apps/web run test -- --run src/lib/partners/partner-foundation.test.ts` - passed, 12 partner foundation tests after partner audit trigger hardening coverage.
+- `npx supabase@latest db push --linked --dry-run` - passed before apply; only `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql` was pending.
+- `npx supabase@latest db push --linked --yes` - passed; applied `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql` to linked dev.
+- Partner audit rollback insert SQL - passed; `public.partners` insert returned an active row inside a rollback transaction after the trigger fix.
+- Partner Chrome/CDP QA - passed after applying the trigger fix. The browser flow created one disposable partner, linked the current QA user, created one partner project draft, submitted it, approved it, verified the approved project/source/submission state and expected audit actions, checked mobile partner dashboard/detail renders, and cleaned all disposable mutable rows.
+- Partner residue SQL - passed; returned zero disposable partner, partner-user, submission, source, assignment, custom role-assignment, and project rows after cleanup while retaining immutable audit evidence.
+- `npm run format` - passed after partner audit trigger hardening documentation and test updates.
+- `npm run format:check` - passed after partner audit trigger hardening.
+- `npm run lint` - passed after partner audit trigger hardening.
+- `npm run typecheck` - passed after partner audit trigger hardening.
+- `npm run test` - passed, 20 files and 216 tests after partner audit trigger hardening.
+- `npm run build` - passed after partner audit trigger hardening.
+- `npm audit --omit=dev` - passed, 0 vulnerabilities after partner audit trigger hardening.
+- `npm run db:lint` - passed, no schema errors after applying `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql`.
+- `npx supabase@latest db push --linked --dry-run` - passed after applying `20260606172422_mvp_partner_audit_trigger_project_scope_fix.sql`; remote database is up to date.
+- `npm run secrets:scan` - passed after partner audit trigger hardening.
+- `git diff --check` - passed with informational CRLF warnings on touched markdown files only after partner audit trigger hardening.
 
 ## Security Review
 
@@ -334,6 +360,8 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Audit snapshots remain redacted where existing redaction helpers already removed storage paths, filenames, checksums, error messages, and internal moderation/review notes.
 - Fixes preserve the same audit action names while moving table-specific field and enum handling into table-specific branches; the message queue-sync fix adds expected queue update audit evidence without exposing rendered message bodies or WhatsApp URLs in committed files.
 - The seating helper-grant migration does not expose the private helper to `public` or `anon`; it grants only the roles needed by authenticated seating RPCs and service-role maintenance.
+- The partner audit trigger now derives table-specific values from JSON snapshots, preserving existing redaction and action names while preventing cross-table trigger record field leakage or runtime crashes.
+- Partner QA used fake linked-dev data only. Disposable partner, linked-user, custom role-assignment, project, submission, and source rows were removed after verification; audit rows remained immutable by design.
 
 ## Assumptions
 
@@ -344,6 +372,7 @@ No product scope was added. The fixes are limited to audit trigger implementatio
 - Positive public guest signed-file browser-route rerun now passes when the local server starts with server-only `SUPABASE_SERVICE_ROLE_KEY`. The linked-dev project still needs the same server-only environment variable on staging/production hosts.
 - Communications QA used fake linked-dev phone-like data only. The browser pass verified that a WhatsApp link was present but did not open or automate WhatsApp, and no real WhatsApp credentials were configured.
 - Seating QA used fake linked-dev project, event, guest, table, and export data only. The generated CSV storage object was removed through the Supabase Storage API, and disposable metadata rows were removed from linked dev after verification.
+- Partner QA used a disposable fake partner and fake project names only. The flow relied on the existing AAL2 `diginoces@gmail.com` admin/operations session and did not add partner billing, commissions, payments, or external partner credentials.
 
 ## Remaining Notes
 
