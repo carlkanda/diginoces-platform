@@ -147,6 +147,7 @@ At minimum:
 Production launch remains unproven until:
 
 - QA-001 through QA-036 in `docs/qa/mvp-manual-qa-scenarios.md` have pass/fail evidence;
+- the execution handoff in `docs/qa/mvp-qa-execution-handoff.md` has been followed for run order, artifact capture, ledger updates, and sign-off routing;
 - any failure is classified as `launch_blocker`, `launch_risk`, `acceptable_mvp_risk`, or `post_launch_follow_up`;
 - sensitive-role MFA is enforced, configured, or formally accepted through the decision flow in `docs/planning/mvp-launch-checklist.md`;
 - no real data or secrets appear in the repository or committed QA artifacts.

@@ -683,6 +683,7 @@ describe("Sprint 15 release readiness", () => {
       "docs/architecture/file-management-policy.md",
       "docs/setup/qa-artifact-store.md",
       "docs/setup/security-risk-acceptance-template.md",
+      "docs/qa/mvp-qa-execution-handoff.md",
       "docs/qa/mvp-manual-qa-scenarios.md",
       "docs/qa/mvp-qa-evidence-ledger.md",
       "docs/qa/mvp-ui-qa-setup.md",
@@ -748,6 +749,9 @@ describe("Sprint 15 release readiness", () => {
   it("keeps the MVP QA evidence ledger aligned with all manual QA scenarios", () => {
     const manualScenarios = readRepoFile("docs/qa/mvp-manual-qa-scenarios.md");
     const evidenceLedger = readRepoFile("docs/qa/mvp-qa-evidence-ledger.md");
+    const executionHandoff = readRepoFile(
+      "docs/qa/mvp-qa-execution-handoff.md",
+    );
     const manualCoreScenarios = readMarkdownSection(
       manualScenarios,
       "## Core Scenarios",
@@ -770,6 +774,9 @@ describe("Sprint 15 release readiness", () => {
       ),
     ).toEqual(expectedScenarioIds);
     expect(ledgerScenarioIds).toEqual(expectedScenarioIds);
+    for (const scenarioId of expectedScenarioIds) {
+      expect(executionHandoff).toContain(scenarioId);
+    }
     expect(
       (
         evidenceLedger.match(
