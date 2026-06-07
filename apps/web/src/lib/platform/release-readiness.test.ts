@@ -56,6 +56,84 @@ function parseQaScenarioTableIds(markdown: string) {
     .sort();
 }
 
+const qaLedgerStatuses = [
+  "pending_external_artifact",
+  "pass",
+  "fail",
+  "blocked",
+  "waived",
+] as const;
+
+type QaLedgerStatus = (typeof qaLedgerStatuses)[number];
+
+type QaLedgerRow = {
+  classification: string;
+  evidenceId: string;
+  id: string;
+  status: QaLedgerStatus;
+};
+
+function stripMarkdownCode(value: string) {
+  return value.trim().replace(/^`/, "").replace(/`$/, "");
+}
+
+function isQaLedgerStatus(value: string): value is QaLedgerStatus {
+  return qaLedgerStatuses.includes(value as QaLedgerStatus);
+}
+
+function parseQaLedgerRows(markdown: string) {
+  return markdown
+    .split(/\r?\n/)
+    .filter((line) => /^\|\s*QA-\d{3}\s*\|/.test(line))
+    .map((line) => {
+      const cells = line
+        .split("|")
+        .slice(1, -1)
+        .map((cell) => cell.trim());
+
+      if (cells.length !== 8) {
+        throw new Error(
+          `Unexpected QA ledger row shape: expected 8 cells, got ${cells.length} - ${line}`,
+        );
+      }
+
+      const status = stripMarkdownCode(cells[3]!);
+
+      if (!isQaLedgerStatus(status)) {
+        throw new Error(`Unexpected QA ledger status "${status}" in ${line}`);
+      }
+
+      return {
+        classification: stripMarkdownCode(cells[4]!),
+        evidenceId: stripMarkdownCode(cells[5]!),
+        id: cells[0]!,
+        status,
+      } satisfies QaLedgerRow;
+    });
+}
+
+function parseQaLedgerStatusCounts(markdown: string) {
+  const counts = new Map<QaLedgerStatus, number>();
+
+  for (const match of markdown.matchAll(
+    /^\|\s*`([^`]+)`\s*\|\s*(\d+)\s*\|/gm,
+  )) {
+    const status = match[1]!;
+
+    if (isQaLedgerStatus(status)) {
+      counts.set(status, Number(match[2]));
+    }
+  }
+
+  return counts;
+}
+
+function parseQaLedgerProductionDecision(markdown: string) {
+  return markdown.match(
+    /Production decision from this ledger:\s*`([^`]+)`/,
+  )?.[1];
+}
+
 function findMarkdownHeadingIndex(
   markdown: string,
   heading: string,
@@ -767,6 +845,14 @@ describe("Sprint 15 release readiness", () => {
       (_, index) => `QA-${String(index + 1).padStart(3, "0")}`,
     );
     const ledgerScenarioIds = parseQaScenarioTableIds(evidenceLedger);
+    const ledgerRows = parseQaLedgerRows(evidenceLedger);
+    const ledgerStatusCounts = parseQaLedgerStatusCounts(evidenceLedger);
+    const actualStatusCounts = new Map<QaLedgerStatus, number>(
+      qaLedgerStatuses.map((status) => [
+        status,
+        ledgerRows.filter((row) => row.status === status).length,
+      ]),
+    );
 
     expect(
       parseQaScenarioTableIds(
@@ -774,20 +860,40 @@ describe("Sprint 15 release readiness", () => {
       ),
     ).toEqual(expectedScenarioIds);
     expect(ledgerScenarioIds).toEqual(expectedScenarioIds);
+    expect(ledgerRows.map((row) => row.id).sort()).toEqual(expectedScenarioIds);
     for (const scenarioId of expectedScenarioIds) {
       expect(executionHandoff).toContain(scenarioId);
     }
+    for (const status of qaLedgerStatuses) {
+      expect(ledgerStatusCounts.get(status), `${status} count`).toBe(
+        actualStatusCounts.get(status),
+      );
+    }
     expect(
-      (
-        evidenceLedger.match(
-          /^\|\s*QA-\d{3}\s*\|[^\n]*\|\s*`pending_external_artifact`\s*\|/gm,
-        ) ?? []
-      ).length,
+      [...actualStatusCounts.values()].reduce((sum, count) => sum + count, 0),
     ).toBe(36);
+    for (const row of ledgerRows) {
+      if (row.status === "pending_external_artifact") {
+        expect(row.classification, `${row.id} classification`).toBe(
+          "not_classified",
+        );
+        expect(row.evidenceId, `${row.id} evidence`).toBe("QAART-pending");
+      } else if (row.status === "pass") {
+        expect(row.classification, `${row.id} classification`).toBe(
+          "not_classified",
+        );
+        expect(row.evidenceId, `${row.id} evidence`).not.toBe("QAART-pending");
+      } else {
+        expect(row.classification, `${row.id} classification`).not.toBe(
+          "not_classified",
+        );
+        expect(row.evidenceId, `${row.id} evidence`).not.toBe("QAART-pending");
+      }
+    }
+    if ((actualStatusCounts.get("pending_external_artifact") ?? 0) > 0) {
+      expect(parseQaLedgerProductionDecision(evidenceLedger)).toBe("no_go");
+    }
     expect(evidenceLedger).not.toMatch(/https?:\/\//i);
-    expect(evidenceLedger).toContain(
-      "Production decision from this ledger: `no_go`",
-    );
   });
 
   it("allows the loopback host used by local browser QA in Next dev mode", () => {
