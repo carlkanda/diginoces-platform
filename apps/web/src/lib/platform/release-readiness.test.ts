@@ -50,6 +50,16 @@ function expectRepoFileExists(path: string) {
   expect(existsSync(join(repoRoot, path)), `${path} exists`).toBe(true);
 }
 
+function parseQaScenarioTableIds(markdown: string) {
+  return [
+    ...new Set(
+      [...markdown.matchAll(/^\|\s*(QA-\d{3})\s*\|/gm)].map(
+        (match) => match[1]!,
+      ),
+    ),
+  ].sort();
+}
+
 function readMigrationBySuffix(suffix: string) {
   const matches = readdirSync(migrationDir).filter((entry) =>
     entry.endsWith(suffix),
@@ -633,6 +643,7 @@ describe("Sprint 15 release readiness", () => {
       "docs/setup/qa-artifact-store.md",
       "docs/setup/security-risk-acceptance-template.md",
       "docs/qa/mvp-manual-qa-scenarios.md",
+      "docs/qa/mvp-qa-evidence-ledger.md",
       "docs/qa/mvp-ui-qa-setup.md",
       "docs/qa/security-review.md",
       "docs/qa/permissions-review.md",
@@ -691,6 +702,32 @@ describe("Sprint 15 release readiness", () => {
       valid: false,
     });
     expect(sanitizeTesterId(" QA  tester__west ")).toBe("QA_tester_west");
+  });
+
+  it("keeps the MVP QA evidence ledger aligned with all manual QA scenarios", () => {
+    const manualScenarios = readRepoFile("docs/qa/mvp-manual-qa-scenarios.md");
+    const evidenceLedger = readRepoFile("docs/qa/mvp-qa-evidence-ledger.md");
+    const expectedScenarioIds = Array.from(
+      { length: 36 },
+      (_, index) => `QA-${String(index + 1).padStart(3, "0")}`,
+    );
+    const ledgerScenarioIds = parseQaScenarioTableIds(evidenceLedger);
+
+    expect(parseQaScenarioTableIds(manualScenarios)).toEqual(
+      expectedScenarioIds,
+    );
+    expect(ledgerScenarioIds).toEqual(expectedScenarioIds);
+    expect(
+      (
+        evidenceLedger.match(
+          /^\|\s*QA-\d{3}\s*\|[^\n]*\|\s*`pending_external_artifact`\s*\|/gm,
+        ) ?? []
+      ).length,
+    ).toBe(36);
+    expect(evidenceLedger).not.toMatch(/https?:\/\//i);
+    expect(evidenceLedger).toContain(
+      "Production decision from this ledger: `no_go`",
+    );
   });
 
   it("allows the loopback host used by local browser QA in Next dev mode", () => {

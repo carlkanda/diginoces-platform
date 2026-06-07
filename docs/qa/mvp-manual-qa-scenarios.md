@@ -174,4 +174,4 @@ For QA-026 through QA-036, attach the exact request ID to the request where the 
 
 ## Result Recording
 
-For MVP launch, record each scenario with: tester initials, environment, date, data IDs, screenshot/log links, pass/fail, classification, and related requirement/backlog/issue/PR link. The Sprint 15 completion report must include an aggregated summary table with counts by classification and an explicit launch-decision flag.
+For MVP launch, record each scenario with: tester initials, environment, date, data IDs, screenshot/log links, pass/fail, classification, and related requirement/backlog/issue/PR link. Store real artifact URLs outside git and update `docs/qa/mvp-qa-evidence-ledger.md` with opaque evidence IDs only. The Sprint 15 completion report must include an aggregated summary table with counts by classification and an explicit launch-decision flag.
