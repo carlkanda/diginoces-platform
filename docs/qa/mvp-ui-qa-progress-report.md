@@ -165,6 +165,28 @@ scenarios `QA-001`, `QA-002`, `QA-026`, `QA-034`, and `QA-036`; requirements
 | Local artifact | The redacted route-check JSON was written only to `%TEMP%\diginoces-mvp-ui-qa-artifacts\prod-cdp-route-check-1780808604948.json`. It is a local inspection artifact only and does not replace the external QA artifact package required by `docs/setup/qa-artifact-store.md`. |
 | Production sign-off impact | This post-merge production-mode pass strengthens linked-dev/local evidence after PR `#59`, but the formal ledger remains `no_go` until all `QA-001` through `QA-036` rows have external evidence IDs, target-environment owner sign-off, and any failures classified in `docs/qa/mvp-qa-evidence-ledger.md`. |
 
+## 2026-06-07 Playwright/CDP MVP Route And Public Guest QA
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-001`, `QA-009`, `QA-010`, `QA-026`, `QA-034`,
+`QA-035`, and `QA-036`; requirements `ROLE-*`, `PROJ-*`, `GM-*`, `RSVP-*`,
+`MSG-*`, `SEAT-*`, `CHK-*`, `PAY-*`, `WISH-*`, `PART-*`, `REP-*`, `FILE-*`,
+and `TECH-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Tooling | Chrome/CDP QA used a temporary local Playwright installation after package-wrapper attempts failed. `package.json` and `package-lock.json` remain unchanged by this evidence update; Playwright is not a committed dependency and does not change production runtime behavior. |
+| Environment | Local dev server ran at `http://127.0.0.1:3000`; Chrome DevTools Protocol ran on port `9223`; authenticated session was `diginoces@gmail.com` with AAL2-sensitive routes accessible after MFA. The official in-app Browser bridge was retried first and still failed with the known Windows sandbox setup issue, so Chrome/CDP remained the fallback. |
+| Health and checks | `/api/health` returned `status: ok` and `supabaseConfigured: true`. `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test` (22 files, 240 tests), `npm run build`, `npm audit --omit=dev`, `npm run secrets:scan`, `npm run db:lint`, `npx supabase@latest db push --linked --dry-run`, and `git diff --check` all passed. |
+| Authenticated route sweep | Chrome/CDP opened 47 discovered MVP routes across platform entry, projects, partners, dashboards, reports, audit logs, project detail, guest list/detail filters, import history/detail, communications queue/detail/templates, files, commercial, guest-book, feedback, and report routes. Result: 47/47 rendered with status 200, no navigation errors, no runtime overlays, no page errors, and no console errors. |
+| Project/event matrix | A targeted 43-route project/event matrix covered the QA demo project, two events, dashboards, invitations, seating, check-in, scan, files, guest import, guest create, communications, commercial, guest-book, feedback, reports, and RSVP summary routes. Result: all rendered expected headings with no page errors, console errors, runtime overlays, unexpected 404s, or unexpected redirects. |
+| Responsive route check | Representative pages (`/`, `/platform`, project detail, guest list, commercial controls, seating, and check-in) were checked at desktop `1440x1000` and mobile `390x844`. Result: no horizontal overflow and no offscreen element offenders. |
+| Public guest page | Admin preview for the QA bride guest and a live `/g/<token>` public page both rendered the French RSVP flow, invitation download placeholder, file empty state, and guest-message form without runtime errors. CSS computed `display: none` for the internal topbar on the public route, confirming the public guest page does not visually expose internal navigation. |
+| RSVP action | The public page showed final `Yes` RSVP controls disabled for the first event and enabled Maybe-change controls for the second event. Submitting `Maybe` again on the second event returned the saved state without changing the fixture's operational answer. |
+| Public-token state | The public-token API returned a 64-character token object with separate `guest_public_page` token metadata. Linked-dev aggregate query for the QA bride guest showed 1 active public guest-page token and 3 revoked historical guest-page tokens; no raw token value was recorded in git. |
+| Production sign-off impact | This pass adds current local linked-dev evidence and validates the Playwright/CDP path, but it does not close the production gate. The ledger remains `no_go` until all `QA-001` through `QA-036` rows have external artifact IDs, owner sign-off, and target-environment evidence. |
+
 ## Current Fixture Coverage
 
 | Data area                    | Current linked-dev state                                                           |
