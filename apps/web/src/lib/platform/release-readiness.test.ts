@@ -51,13 +51,29 @@ function expectRepoFileExists(path: string) {
 }
 
 function parseQaScenarioTableIds(markdown: string) {
-  return [
-    ...new Set(
-      [...markdown.matchAll(/^\|\s*(QA-\d{3})\s*\|/gm)].map(
-        (match) => match[1]!,
-      ),
-    ),
-  ].sort();
+  return [...markdown.matchAll(/^\|\s*(QA-\d{3})\s*\|/gm)]
+    .map((match) => match[1]!)
+    .sort();
+}
+
+function readMarkdownSection(
+  markdown: string,
+  startHeading: string,
+  endHeading?: string,
+) {
+  const startIndex = markdown.indexOf(startHeading);
+
+  if (startIndex < 0) {
+    throw new Error(`Missing markdown section: ${startHeading}`);
+  }
+
+  const nextHeadingIndex = endHeading
+    ? markdown.indexOf(endHeading, startIndex + startHeading.length)
+    : markdown.indexOf("\n## ", startIndex + 1);
+
+  return nextHeadingIndex < 0
+    ? markdown.slice(startIndex)
+    : markdown.slice(startIndex, nextHeadingIndex);
 }
 
 function readMigrationBySuffix(suffix: string) {
@@ -707,15 +723,27 @@ describe("Sprint 15 release readiness", () => {
   it("keeps the MVP QA evidence ledger aligned with all manual QA scenarios", () => {
     const manualScenarios = readRepoFile("docs/qa/mvp-manual-qa-scenarios.md");
     const evidenceLedger = readRepoFile("docs/qa/mvp-qa-evidence-ledger.md");
+    const manualCoreScenarios = readMarkdownSection(
+      manualScenarios,
+      "## Core Scenarios",
+      "\n## QA-025 Rollback Rehearsal Evidence",
+    );
+    const manualNegativeScenarios = readMarkdownSection(
+      manualScenarios,
+      "## Negative Permission Checks",
+      "\n### Required Negative-Case Assertions",
+    );
     const expectedScenarioIds = Array.from(
       { length: 36 },
       (_, index) => `QA-${String(index + 1).padStart(3, "0")}`,
     );
     const ledgerScenarioIds = parseQaScenarioTableIds(evidenceLedger);
 
-    expect(parseQaScenarioTableIds(manualScenarios)).toEqual(
-      expectedScenarioIds,
-    );
+    expect(
+      parseQaScenarioTableIds(
+        `${manualCoreScenarios}\n${manualNegativeScenarios}`,
+      ),
+    ).toEqual(expectedScenarioIds);
     expect(ledgerScenarioIds).toEqual(expectedScenarioIds);
     expect(
       (
