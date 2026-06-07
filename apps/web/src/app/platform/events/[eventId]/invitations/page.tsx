@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { listEventInvitationTemplates } from "@/lib/invitations/invitation-db";
 import {
   ProjectAccessError,
@@ -56,6 +57,15 @@ export default async function EventInvitationTemplatesPage({
     await requireEventPermission(context, eventId, "invitation_templates.read");
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(
+        context,
+        `/platform/events/${eventId}/invitations`,
+        {
+          permission: "invitation_templates.read",
+          scope: "event",
+          scopeId: eventId,
+        },
+      );
       notFound();
     }
 

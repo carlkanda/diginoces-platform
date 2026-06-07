@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { getReportingPermissionSet } from "@/lib/reports/report-api";
 import { exportReportAction } from "@/app/platform/reports/actions";
 import { listReportExports } from "@/lib/reports/report-db";
@@ -67,8 +68,37 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
     eventId,
     projectId,
   });
+  const reportCatalogCapabilities = [
+    {
+      permission: "reports.catalog.read",
+      scope: "global",
+    },
+    ...(projectId
+      ? [
+          {
+            permission: "reports.catalog.read" as const,
+            scope: "project" as const,
+            scopeId: projectId,
+          },
+        ]
+      : []),
+    ...(eventId
+      ? [
+          {
+            permission: "reports.catalog.read" as const,
+            scope: "event" as const,
+            scopeId: eventId,
+          },
+        ]
+      : []),
+  ] as const;
 
   if (!permissions.has("reports.catalog.read")) {
+    await redirectToMfaIfStepUpRequired(
+      context,
+      "/platform/reports",
+      reportCatalogCapabilities,
+    );
     notFound();
   }
 

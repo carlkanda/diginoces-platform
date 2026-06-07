@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { requireGuestListContractGateOpen } from "@/lib/contracts/contract-gates";
 import { requireAnyGuestCreatePermission } from "@/lib/guests/guest-api";
 import { listGuestTags, listGuestTitleTypes } from "@/lib/guests/guest-service";
@@ -56,6 +57,32 @@ export default async function NewGuestPage({ params }: NewGuestPageProps) {
     await requireGuestListContractGateOpen(permissionContext, projectId);
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(
+        permissionContext,
+        `/platform/projects/${projectId}/guests/new`,
+        [
+          {
+            permission: "guests.create",
+            scope: "project",
+            scopeId: projectId,
+          },
+          {
+            permission: "guests.update",
+            scope: "project",
+            scopeId: projectId,
+          },
+          {
+            permission: "guests.manage_bride_side",
+            scope: "project",
+            scopeId: projectId,
+          },
+          {
+            permission: "guests.manage_groom_side",
+            scope: "project",
+            scopeId: projectId,
+          },
+        ],
+      );
       notFound();
     }
 

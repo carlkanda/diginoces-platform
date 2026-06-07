@@ -260,6 +260,19 @@ export async function getCurrentMfaAssuranceLevel() {
   return getMfaAssuranceLevelForClient(await createSupabaseServerClient());
 }
 
+export async function buildMfaStepUpRedirectPathForClient(
+  supabase: SupabaseServerClient,
+  nextPath: string,
+): Promise<string | null> {
+  const assurance = await getMfaAssuranceLevelForClient(supabase);
+
+  if (assurance.status === "ready" && assurance.requiresMfa) {
+    return buildMfaRedirectPath(nextPath);
+  }
+
+  return null;
+}
+
 export async function verifyMfaCode(
   code: string,
 ): Promise<MfaVerificationResult> {
