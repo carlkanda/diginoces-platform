@@ -10,6 +10,7 @@ import {
   getProjectApiContext,
   handleProjectApiError,
   isProjectApiContext,
+  methodNotAllowed,
 } from "@/lib/projects/project-api";
 
 type PaymentsRouteProps = {
@@ -17,6 +18,10 @@ type PaymentsRouteProps = {
     projectId: string;
   }>;
 };
+
+export function GET() {
+  return methodNotAllowed("POST");
+}
 
 export async function POST(
   request: NextRequest,

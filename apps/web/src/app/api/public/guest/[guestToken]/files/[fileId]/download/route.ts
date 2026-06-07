@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveGuestFileDownload } from "@/lib/files/file-db";
 import { serverLogger } from "@/lib/logging";
+import { jsonError } from "@/lib/projects/project-api";
 import { createSupabaseServerStorageAdapter } from "@/lib/storage/storage-provider";
+import { isUuid } from "@/lib/validation/uuid";
 
 export const dynamic = "force-dynamic";
 
@@ -20,18 +22,29 @@ function stringField(record: Record<string, unknown>, key: string) {
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { fileId, guestToken } = await context.params;
-  const supabase = await createSupabaseServerClient();
-  const result = await resolveGuestFileDownload(supabase, guestToken, fileId);
+
+  if (!isUuid(fileId)) {
+    return jsonError(404, "file_not_found", "Guest file is not available.");
+  }
+
+  let result: Awaited<ReturnType<typeof resolveGuestFileDownload>>;
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    result = await resolveGuestFileDownload(supabase, guestToken, fileId);
+  } catch (error) {
+    serverLogger.error("Guest file download resolution failed.", {
+      error,
+      fileId,
+    });
+    return jsonError(500, "server_error", "Guest file is not available.");
+  }
 
   if (result.status !== "ok") {
-    return NextResponse.json(
-      {
-        error: {
-          code: String(result.status),
-          message: "Guest file is not available.",
-        },
-      },
-      { status: result.status === "payment_gate_locked" ? 402 : 404 },
+    return jsonError(
+      result.status === "payment_gate_locked" ? 402 : 404,
+      String(result.status),
+      "Guest file is not available.",
     );
   }
 
@@ -42,15 +55,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     typeof result.expiresInSeconds === "number" ? result.expiresInSeconds : 300;
 
   if (!bucket || !path) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "invalid_file",
-          message: "Guest file metadata is incomplete.",
-        },
-      },
-      { status: 500 },
-    );
+    return jsonError(500, "invalid_file", "Guest file metadata is incomplete.");
   }
 
   let signedUrl: string;
@@ -66,14 +71,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       error,
       fileId,
     });
-    return NextResponse.json(
-      {
-        error: {
-          code: "storage_error",
-          message: "Guest file download link could not be generated.",
-        },
-      },
-      { status: 502 },
+    return jsonError(
+      500,
+      "storage_error",
+      "Guest file download link could not be generated.",
     );
   }
 

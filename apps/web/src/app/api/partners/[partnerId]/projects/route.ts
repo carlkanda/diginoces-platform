@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { methodNotAllowed } from "@/lib/projects/project-api";
 import {
   getPartnerApiContext,
   handlePartnerApiError,
@@ -15,6 +16,10 @@ type RouteContext = {
     partnerId: string;
   }>;
 };
+
+export function GET() {
+  return methodNotAllowed("POST");
+}
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const { partnerId } = await params;
