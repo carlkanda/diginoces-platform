@@ -30,6 +30,13 @@ export class ProjectAccessError extends Error {
   }
 }
 
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string) {
+  return uuidPattern.test(value);
+}
+
 export function jsonError(status: number, code: string, message: string) {
   return NextResponse.json(
     {
@@ -104,6 +111,10 @@ export async function hasProjectPermission(
   projectId: string,
   permission: PermissionSlug,
 ) {
+  if (!isUuid(projectId)) {
+    return false;
+  }
+
   const { data, error } = await context.supabase.rpc(
     "current_user_can_access_project",
     {
@@ -124,6 +135,10 @@ export async function hasProjectPermissions(
   projectId: string,
   permissions: PermissionSlug[],
 ) {
+  if (!isUuid(projectId)) {
+    return new Map(permissions.map((permission) => [permission, false]));
+  }
+
   const { data, error } = await (
     context.supabase as unknown as UntypedRpcClient
   ).rpc("current_user_can_access_project_permissions", {
@@ -170,6 +185,10 @@ export async function hasEventPermission(
   eventId: string,
   permission: PermissionSlug,
 ) {
+  if (!isUuid(eventId)) {
+    return false;
+  }
+
   const { data, error } = await context.supabase.rpc(
     "current_user_can_access_event",
     {
