@@ -4,6 +4,7 @@ import {
 } from "@/lib/projects/project-permissions";
 import type { RoleAssignment } from "@/lib/security/permissions";
 import type { Database } from "@/types/database";
+import { isUuid } from "@/lib/validation/uuid";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export class GuestValidationError extends Error {
@@ -632,6 +633,10 @@ export async function getGuestDetails(
   supabase: SupabaseClient<Database>,
   guestId: string,
 ) {
+  if (!isUuid(guestId)) {
+    return null;
+  }
+
   const { data: guest, error: guestError } = await supabase
     .from("guests")
     .select("*")

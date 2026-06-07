@@ -4,6 +4,7 @@ import {
   getProjectApiContext,
   handleProjectApiError,
   isProjectApiContext,
+  jsonError,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
 import {
@@ -47,15 +48,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const details = await getGuestDetails(apiContext.supabase, guestId);
 
     if (!details) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "not_found",
-            message: "Guest was not found.",
-          },
-        },
-        { status: 404 },
-      );
+      return jsonError(404, "guest_not_found", "Guest was not found.");
     }
 
     await requireProjectPermission(
@@ -90,15 +83,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const details = await getGuestDetails(apiContext.supabase, guestId);
 
     if (!details) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "not_found",
-            message: "Guest was not found.",
-          },
-        },
-        { status: 404 },
-      );
+      return jsonError(404, "guest_not_found", "Guest was not found.");
     }
 
     await requireGuestSidePermission(

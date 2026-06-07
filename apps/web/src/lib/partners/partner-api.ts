@@ -14,6 +14,7 @@ import {
   type PartnerStatus,
 } from "@/lib/partners/partner-service";
 import type { PermissionSlug } from "@/lib/security/permissions";
+import { isUuid } from "@/lib/validation/uuid";
 
 export async function getPartnerApiContext() {
   return getProjectApiContext();
@@ -89,6 +90,10 @@ export async function hasPartnerPermission(
   partnerId: string,
   permission: PermissionSlug,
 ) {
+  if (!isUuid(partnerId)) {
+    return false;
+  }
+
   const supabase = context.supabase as SupabaseClient;
   const { data, error } = await supabase.rpc(
     "current_user_can_access_partner",

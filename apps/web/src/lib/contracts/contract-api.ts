@@ -8,12 +8,17 @@ import {
 } from "@/lib/projects/project-api";
 import { CommercialValidationError } from "@/lib/contracts/contract-service";
 import type { PermissionSlug } from "@/lib/security/permissions";
+import { isUuid } from "@/lib/validation/uuid";
 
 export async function hasCommercialProjectPermission(
   context: ProjectApiContext,
   projectId: string,
   permission: PermissionSlug,
 ) {
+  if (!isUuid(projectId)) {
+    return false;
+  }
+
   const { data, error } = await context.supabase.rpc(
     "current_user_can_access_project",
     {
@@ -76,6 +81,10 @@ export async function hasAnyCommercialReadPermission(
   context: ProjectApiContext,
   projectId: string,
 ) {
+  if (!isUuid(projectId)) {
+    return false;
+  }
+
   const { data, error } = await (context.supabase as SupabaseClient).rpc(
     "current_user_has_any_commercial_read",
     {
@@ -105,6 +114,27 @@ export async function getCommercialActionCapabilities(
   context: ProjectApiContext,
   projectId: string,
 ) {
+  if (!isUuid(projectId)) {
+    return {
+      canApproveContracts: false,
+      canCalculatePricing: false,
+      canConfirmPayments: false,
+      canGenerateContracts: false,
+      canManageAddendums: false,
+      canManageExceptions: false,
+      canManageGestures: false,
+      canManagePackages: false,
+      canManagePricing: false,
+      canReadContracts: false,
+      canReadPackages: false,
+      canReadPayments: false,
+      canReadPaymentSummary: false,
+      canReadPricing: false,
+      canReadRevenue: false,
+      canRecordPayments: false,
+    };
+  }
+
   const [
     canManagePackages,
     canReadPackagesGlobal,

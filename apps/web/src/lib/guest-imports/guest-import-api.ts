@@ -7,6 +7,7 @@ import {
 import { GuestImportValidationError } from "@/lib/guest-imports/guest-import-service";
 import type { GuestSide } from "@/lib/guests/guest-service";
 import type { PermissionSlug } from "@/lib/security/permissions";
+import { isUuid } from "@/lib/validation/uuid";
 
 const importSides = [
   "bride",
@@ -19,6 +20,10 @@ async function hasProjectPermission(
   projectId: string,
   permission: PermissionSlug,
 ) {
+  if (!isUuid(projectId)) {
+    return false;
+  }
+
   const { data, error } = await context.supabase.rpc(
     "current_user_can_access_project",
     {
@@ -39,6 +44,10 @@ async function canManageImportSide(
   projectId: string,
   side: GuestSide,
 ) {
+  if (!isUuid(projectId)) {
+    return false;
+  }
+
   const { data, error } = await context.supabase.rpc(
     "current_user_can_manage_guest_side",
     {

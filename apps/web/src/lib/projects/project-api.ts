@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth/auth-service";
 import { ProjectValidationError } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/validation/uuid";
 import type { PermissionSlug } from "@/lib/security/permissions";
 
 export type ProjectApiContext = {
@@ -28,13 +29,6 @@ export class ProjectAccessError extends Error {
     super(message);
     this.name = "ProjectAccessError";
   }
-}
-
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function isUuid(value: string) {
-  return uuidPattern.test(value);
 }
 
 export function jsonError(status: number, code: string, message: string) {
