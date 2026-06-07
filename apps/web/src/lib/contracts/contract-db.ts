@@ -269,6 +269,22 @@ function normalizeOverviewAccess(
     : fullCommercialOverviewAccess;
 }
 
+export function redactCommercialGesturePricing(
+  pricing: ProjectPricingCalculation | null,
+  canReadCommercialGestures: boolean,
+): ProjectPricingCalculation | null {
+  if (!pricing || canReadCommercialGestures) {
+    return pricing;
+  }
+
+  return {
+    ...pricing,
+    discountAmountCents: 0,
+    eventBreakdown: [],
+    subtotalAmountCents: pricing.totalAmountCents,
+  };
+}
+
 function toServicePackage(row: ServicePackageRow): ServicePackage {
   return {
     basePriceCents: row.base_price_cents,
@@ -1311,6 +1327,7 @@ export async function getProjectCommercialOverview(
       pricing = storedPricing;
     }
   }
+  pricing = redactCommercialGesturePricing(pricing, canReadGestures);
 
   return {
     addendums,
