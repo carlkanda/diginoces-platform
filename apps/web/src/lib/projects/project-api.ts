@@ -38,7 +38,12 @@ export function jsonError(status: number, code: string, message: string) {
         message,
       },
     },
-    { status },
+    {
+      headers: {
+        "Cache-Control": "no-store",
+      },
+      status,
+    },
   );
 }
 
