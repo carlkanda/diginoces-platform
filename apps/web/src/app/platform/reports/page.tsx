@@ -43,9 +43,23 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const params = await searchParams;
   const projectId = params.projectId;
   const eventId = params.eventId;
+  const reportReturnPathParams = new URLSearchParams();
+
+  if (projectId) {
+    reportReturnPathParams.set("projectId", projectId);
+  }
+
+  if (eventId) {
+    reportReturnPathParams.set("eventId", eventId);
+  }
+
+  const reportReturnPathQuery = reportReturnPathParams.toString();
+  const reportReturnPath = reportReturnPathQuery
+    ? `/platform/reports?${reportReturnPathQuery}`
+    : "/platform/reports";
 
   if (authContext.status === "anonymous") {
-    redirect(buildLoginRedirectPath("/platform/reports"));
+    redirect(buildLoginRedirectPath(reportReturnPath));
   }
 
   if (authContext.status === "not_configured") {
@@ -96,7 +110,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   if (!permissions.has("reports.catalog.read")) {
     await redirectToMfaIfStepUpRequired(
       context,
-      "/platform/reports",
+      reportReturnPath,
       reportCatalogCapabilities,
     );
     notFound();

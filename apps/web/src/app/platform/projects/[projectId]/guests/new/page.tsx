@@ -54,7 +54,6 @@ export default async function NewGuestPage({ params }: NewGuestPageProps) {
 
   try {
     await requireAnyGuestCreatePermission(permissionContext, projectId);
-    await requireGuestListContractGateOpen(permissionContext, projectId);
   } catch (error) {
     if (error instanceof ProjectAccessError) {
       await redirectToMfaIfStepUpRequired(
@@ -83,6 +82,16 @@ export default async function NewGuestPage({ params }: NewGuestPageProps) {
           },
         ],
       );
+      notFound();
+    }
+
+    throw error;
+  }
+
+  try {
+    await requireGuestListContractGateOpen(permissionContext, projectId);
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
       notFound();
     }
 

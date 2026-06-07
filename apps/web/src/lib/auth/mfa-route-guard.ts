@@ -49,7 +49,10 @@ async function hasPotentialPermissionAfterMfa(
   assignments: MfaRoleAssignment[],
   capability: MfaStepUpCapability,
 ): Promise<boolean> {
-  if (capability.scopeId === "") {
+  if (
+    capability.scopeId === "" ||
+    (capability.scope !== "global" && capability.scopeId === undefined)
+  ) {
     throw new Error("MFA step-up scopeId cannot be empty.");
   }
 
@@ -101,12 +104,40 @@ export async function redirectToMfaIfStepUpRequired(
     return;
   }
 
-  const assignments = await listActiveRoleAssignmentsForMfaStepUp(context);
+  let assignments: MfaRoleAssignment[];
+
+  try {
+    assignments = await listActiveRoleAssignmentsForMfaStepUp(context);
+  } catch (error) {
+    console.error(
+      "redirectToMfaIfStepUpRequired failed in listActiveRoleAssignmentsForMfaStepUp.",
+      error,
+    );
+    return;
+  }
+
   const canPotentiallyAccess = (
     await Promise.all(
-      capabilityList.map((capability) =>
-        hasPotentialPermissionAfterMfa(context, assignments, capability),
-      ),
+      capabilityList.map(async (capability) => {
+        try {
+          return await hasPotentialPermissionAfterMfa(
+            context,
+            assignments,
+            capability,
+          );
+        } catch (error) {
+          console.error(
+            "redirectToMfaIfStepUpRequired failed in hasPotentialPermissionAfterMfa.",
+            {
+              error,
+              permission: capability.permission,
+              scope: capability.scope,
+              scopeId: capability.scopeId,
+            },
+          );
+          return false;
+        }
+      }),
     )
   ).some(Boolean);
 

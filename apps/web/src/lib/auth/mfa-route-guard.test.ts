@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 
 const { buildMfaStepUpRedirectPathForClientMock, redirectMock } = vi.hoisted(
@@ -119,9 +119,18 @@ function createSupabaseMock({
 }
 
 describe("redirectToMfaIfStepUpRequired", () => {
+  let consoleErrorMock: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     buildMfaStepUpRedirectPathForClientMock.mockReset();
     redirectMock.mockClear();
+    consoleErrorMock = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    consoleErrorMock.mockRestore();
   });
 
   it("redirects to MFA when an active matching permission can be unlocked by AAL2", async () => {
@@ -324,7 +333,7 @@ describe("redirectToMfaIfStepUpRequired", () => {
     expect(redirectMock).not.toHaveBeenCalled();
   });
 
-  it("propagates assignment and grant lookup failures", async () => {
+  it("fails closed when assignment or grant lookup fails", async () => {
     const assignmentError = new Error("assignment lookup failed");
     const grantError = new Error("grant lookup failed");
 
@@ -344,7 +353,7 @@ describe("redirectToMfaIfStepUpRequired", () => {
           scope: "global",
         },
       ),
-    ).rejects.toThrow(assignmentError);
+    ).resolves.toBeUndefined();
 
     await expect(
       redirectToMfaIfStepUpRequired(
@@ -368,7 +377,11 @@ describe("redirectToMfaIfStepUpRequired", () => {
           scope: "global",
         },
       ),
-    ).rejects.toThrow(grantError);
+    ).resolves.toBeUndefined();
+
+    expect(buildMfaStepUpRedirectPathForClientMock).not.toHaveBeenCalled();
+    expect(redirectMock).not.toHaveBeenCalled();
+    expect(consoleErrorMock).toHaveBeenCalledTimes(2);
   });
 
   it("redirects when multiple grants are returned and at least one matches", async () => {
@@ -481,37 +494,46 @@ describe("redirectToMfaIfStepUpRequired", () => {
     expect(redirectMock).not.toHaveBeenCalled();
   });
 
-  it("rejects malformed empty scope IDs", async () => {
-    await expect(
-      redirectToMfaIfStepUpRequired(
-        {
-          supabase: createSupabaseMock({
-            assignments: [
-              {
-                role_id: "role-files",
-                scope: "project",
-                scope_id: "project-a",
-              },
-            ],
-            grants: [
-              {
-                permission_slug: "files.read",
-                role_id: "role-files",
-              },
-            ],
-          }) as never,
-          user: { id: "user-1" },
-        },
-        "/platform/projects/project-a/files",
-        {
-          permission: "files.read",
-          scope: "project",
-          scopeId: "",
-        },
-      ),
-    ).rejects.toThrow("MFA step-up scopeId cannot be empty.");
+  it("fails closed on malformed scoped capabilities", async () => {
+    for (const capability of [
+      {
+        permission: "files.read" as const,
+        scope: "project" as const,
+        scopeId: "",
+      },
+      {
+        permission: "files.read" as const,
+        scope: "project" as const,
+      },
+    ]) {
+      await expect(
+        redirectToMfaIfStepUpRequired(
+          {
+            supabase: createSupabaseMock({
+              assignments: [
+                {
+                  role_id: "role-files",
+                  scope: "project",
+                  scope_id: "project-a",
+                },
+              ],
+              grants: [
+                {
+                  permission_slug: "files.read",
+                  role_id: "role-files",
+                },
+              ],
+            }) as never,
+            user: { id: "user-1" },
+          },
+          "/platform/projects/project-a/files",
+          capability,
+        ),
+      ).resolves.toBeUndefined();
+    }
 
     expect(buildMfaStepUpRedirectPathForClientMock).not.toHaveBeenCalled();
     expect(redirectMock).not.toHaveBeenCalled();
+    expect(consoleErrorMock).toHaveBeenCalledTimes(2);
   });
 });
