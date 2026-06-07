@@ -7,6 +7,7 @@ import {
   getProjectApiContext,
   handleProjectApiError,
   isProjectApiContext,
+  methodNotAllowed,
 } from "@/lib/projects/project-api";
 
 type ContractsRouteProps = {
@@ -14,6 +15,10 @@ type ContractsRouteProps = {
     projectId: string;
   }>;
 };
+
+export function GET() {
+  return methodNotAllowed("POST");
+}
 
 export async function POST(_request: Request, { params }: ContractsRouteProps) {
   const context = await getProjectApiContext();

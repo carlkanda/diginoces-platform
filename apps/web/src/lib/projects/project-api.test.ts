@@ -4,6 +4,7 @@ import {
   hasProjectPermission,
   hasProjectPermissions,
   jsonError,
+  methodNotAllowed,
   ProjectAccessError,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
@@ -41,6 +42,34 @@ describe("project API responses", () => {
       },
     });
     expect(response.status).toBe(401);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("marks method-not-allowed responses as non-cacheable and declares allowed methods", async () => {
+    const response = methodNotAllowed(["POST", "PATCH"]);
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "method_not_allowed",
+        message: "Method is not allowed.",
+      },
+    });
+    expect(response.status).toBe(405);
+    expect(response.headers.get("Allow")).toBe("POST, PATCH");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("marks single-method method-not-allowed responses with the exact allowed method", async () => {
+    const response = methodNotAllowed("POST");
+
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "method_not_allowed",
+        message: "Method is not allowed.",
+      },
+    });
+    expect(response.status).toBe(405);
+    expect(response.headers.get("Allow")).toBe("POST");
     expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 

@@ -6,6 +6,7 @@ import {
   handleProjectApiError,
   isProjectApiContext,
   jsonError,
+  methodNotAllowed,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
 import { createGuestPublicToken } from "@/lib/rsvp/rsvp-db";
@@ -18,6 +19,10 @@ type RouteContext = {
     projectId: string;
   }>;
 };
+
+export function GET() {
+  return methodNotAllowed("POST");
+}
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const apiContext = await getProjectApiContext();

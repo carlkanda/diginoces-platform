@@ -424,6 +424,22 @@ describe("Sprint 14 file foundation", () => {
     expect(route).not.toContain("createSupabaseStorageAdapter(supabase)");
   });
 
+  it("rejects malformed public guest file ids before resolving downloads", () => {
+    const route = readPublicGuestFileDownloadRoute();
+
+    expect(route).toContain("if (!isUuid(fileId))");
+    expect(route.indexOf("if (!isUuid(fileId))")).toBeLessThan(
+      route.indexOf("const supabase = await createSupabaseServerClient"),
+    );
+    expect(route.indexOf("try {")).toBeLessThan(
+      route.indexOf("const supabase = await createSupabaseServerClient"),
+    );
+    expect(route.indexOf("if (!isUuid(fileId))")).toBeLessThan(
+      route.indexOf("result = await resolveGuestFileDownload"),
+    );
+    expect(route).toContain('jsonError(404, "file_not_found"');
+  });
+
   it("keeps internal, couple, partner, and archive permissions distinct", () => {
     expect(
       canPerformFileAction(

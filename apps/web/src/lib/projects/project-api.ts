@@ -48,6 +48,20 @@ export function jsonError(status: number, code: string, message: string) {
   );
 }
 
+export function methodNotAllowed(allowedMethods: string | string[]) {
+  const response = jsonError(
+    405,
+    "method_not_allowed",
+    "Method is not allowed.",
+  );
+  response.headers.set(
+    "Allow",
+    Array.isArray(allowedMethods) ? allowedMethods.join(", ") : allowedMethods,
+  );
+
+  return response;
+}
+
 export async function getProjectApiContext() {
   const authContext = await getAuthContext();
 

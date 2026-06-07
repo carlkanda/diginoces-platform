@@ -6,6 +6,7 @@ import { parseManualStatusUpdatePayload } from "@/lib/messages/message-service";
 import {
   getProjectApiContext,
   isProjectApiContext,
+  methodNotAllowed,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
 
@@ -17,6 +18,10 @@ type RouteContext = {
     projectId: string;
   }>;
 };
+
+export function GET() {
+  return methodNotAllowed("PATCH");
+}
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const apiContext = await getProjectApiContext();

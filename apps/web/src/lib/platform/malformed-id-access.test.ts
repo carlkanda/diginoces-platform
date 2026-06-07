@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   getCommercialActionCapabilities,
@@ -19,10 +22,20 @@ import { isUuid } from "@/lib/validation/uuid";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
+const here = fileURLToPath(new URL(".", import.meta.url));
+const repoRoot = join(here, "..", "..", "..", "..", "..");
+
 type RpcCall = {
   args?: Record<string, unknown>;
   fn: string;
 };
+
+function readRoute(...parts: string[]) {
+  return readFileSync(
+    join(repoRoot, "apps", "web", "src", "app", "api", ...parts, "route.ts"),
+    "utf8",
+  );
+}
 
 function createContext() {
   const calls: RpcCall[] = [];
@@ -134,5 +147,64 @@ describe("malformed dynamic route access guards", () => {
       ),
     ).resolves.toBe(null);
     expect(fromCalls).toBe(0);
+  });
+
+  it("returns explicit no-store 405 responses for method-only malformed API probes", () => {
+    const methodOnlyRouteParts: Array<{
+      allowedMethod: "PATCH" | "POST";
+      parts: string[];
+    }> = [
+      {
+        allowedMethod: "POST",
+        parts: ["projects", "[projectId]", "commercial", "contracts"],
+      },
+      {
+        allowedMethod: "POST",
+        parts: ["projects", "[projectId]", "commercial", "payments"],
+      },
+      {
+        allowedMethod: "POST",
+        parts: ["projects", "[projectId]", "files", "[fileId]", "archive"],
+      },
+      {
+        allowedMethod: "POST",
+        parts: [
+          "projects",
+          "[projectId]",
+          "guests",
+          "[guestId]",
+          "public-token",
+        ],
+      },
+      {
+        allowedMethod: "PATCH",
+        parts: [
+          "projects",
+          "[projectId]",
+          "messages",
+          "[messageLogId]",
+          "status",
+        ],
+      },
+      {
+        allowedMethod: "POST",
+        parts: ["partners", "[partnerId]", "projects"],
+      },
+      {
+        allowedMethod: "POST",
+        parts: ["partners", "[partnerId]", "users"],
+      },
+    ];
+
+    for (const { allowedMethod, parts } of methodOnlyRouteParts) {
+      const route = readRoute(...parts);
+
+      expect(route).toMatch(/export\s+function\s+GET\s*\(/);
+      const methodPattern =
+        allowedMethod === "PATCH"
+          ? /methodNotAllowed\s*\(\s*"PATCH"\s*\)/
+          : /methodNotAllowed\s*\(\s*"POST"\s*\)/;
+      expect(route).toMatch(methodPattern);
+    }
   });
 });
