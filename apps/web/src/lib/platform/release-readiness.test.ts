@@ -92,7 +92,9 @@ function parseQaLedgerRows(markdown: string) {
         .map((cell) => cell.trim());
 
       if (cells.length !== 8) {
-        throw new Error(`Unexpected QA ledger row shape: ${line}`);
+        throw new Error(
+          `Unexpected QA ledger row shape: expected 8 cells, got ${cells.length} - ${line}`,
+        );
       }
 
       const status = stripMarkdownCode(cells[3]!);
