@@ -79,7 +79,8 @@ export default async function GuestPublicPreviewPage({
       <div className="page-heading">
         <div>
           <p className="eyebrow">Admin preview</p>
-          <h1 className="page-title">Public guest page</h1>
+          {/* RSVP-003 / FEAT-RSVP-001: keep preview chrome separate from the guest-facing page h1. */}
+          <p className="page-title">Public guest page preview</p>
           <p className="page-summary">
             Permission-gated internal preview before guest-page payment unlock.
           </p>
