@@ -28,6 +28,10 @@ npm run env:check-public
 npm run secrets:scan
 ```
 
+Local browser automation may use Playwright for Chrome/CDP route sweeps when
+the in-app Browser bridge is unavailable. Keep Playwright as local QA tooling
+unless a future sprint explicitly adds committed browser-test infrastructure.
+
 Check whether the target QA user has active roles:
 
 ```sql
