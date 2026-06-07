@@ -26,6 +26,12 @@ cp .env.example .env.local
 
 Never commit `.env`, `.env.local`, Supabase service-role keys, database passwords, WhatsApp tokens, Google secrets, or private client data.
 
+Do not add `NODE_ENV` to `.env.local`. Next.js and npm set it for `dev`,
+`build`, and `start`; putting `NODE_ENV=development` in `.env.local` can make a
+production-mode smoke run inherit a non-standard runtime mode. If a local
+production smoke test needs an explicit process override, set it only in the
+shell running that command, not in a committed or copied env file.
+
 Required web variables:
 
 ```bash

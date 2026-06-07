@@ -787,6 +787,24 @@ describe("Sprint 15 release readiness", () => {
     expect(nextConfig.allowedDevOrigins).toContain("127.0.0.1");
   });
 
+  it("keeps NODE_ENV out of copyable env templates", () => {
+    const rootExampleEnv = readRepoFile(".env.example");
+    const localDevelopmentDoc = readRepoFile(
+      "docs/setup/local-development.md",
+    ).replace(/\s+/g, " ");
+    const deploymentReadinessDoc = readRepoFile(
+      "docs/setup/deployment-readiness.md",
+    ).replace(/\s+/g, " ");
+
+    expect(rootExampleEnv).not.toMatch(/^\s*NODE_ENV\s*=/m);
+    expect(localDevelopmentDoc).toContain(
+      "Do not add `NODE_ENV` to `.env.local`.",
+    );
+    expect(deploymentReadinessDoc).toContain(
+      "Do not configure `NODE_ENV` through `.env.local`, `.env`, or hosting-provider env settings.",
+    );
+  });
+
   it("keeps the internal public guest preview wrapper from adding a second h1", () => {
     const previewPage = readRepoFile(
       "apps/web/src/app/platform/projects/[projectId]/guests/[guestId]/public-preview/page.tsx",
