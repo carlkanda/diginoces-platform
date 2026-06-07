@@ -787,6 +787,25 @@ describe("Sprint 15 release readiness", () => {
     expect(nextConfig.allowedDevOrigins).toContain("127.0.0.1");
   });
 
+  it("keeps the internal public guest preview wrapper from adding a second h1", () => {
+    const previewPage = readRepoFile(
+      "apps/web/src/app/platform/projects/[projectId]/guests/[guestId]/public-preview/page.tsx",
+    );
+    const authenticatedPreviewMarkup = previewPage.slice(
+      previewPage.lastIndexOf("return ("),
+    );
+
+    expect(authenticatedPreviewMarkup).toMatch(
+      /<PublicGuestPageView\s+payload=\{payload\}\s*\/>/,
+    );
+    expect(authenticatedPreviewMarkup).toMatch(
+      /<p\s+className="page-title">\s*Public guest page preview\s*<\/p>/,
+    );
+    expect(authenticatedPreviewMarkup).not.toMatch(
+      /<h1\s+className="page-title">/,
+    );
+  });
+
   it("keeps Sprint 15 launch classification counts aligned with the canonical coverage ledger", () => {
     expect(parseCompletionReportLaunchClassificationCounts()).toEqual(
       parseCanonicalLaunchClassificationCounts(),
