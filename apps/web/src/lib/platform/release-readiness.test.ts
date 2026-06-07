@@ -56,19 +56,44 @@ function parseQaScenarioTableIds(markdown: string) {
     .sort();
 }
 
+function findMarkdownHeadingIndex(
+  markdown: string,
+  heading: string,
+  searchFrom = 0,
+) {
+  const normalizedHeading = heading.startsWith("\n")
+    ? heading.slice(1)
+    : heading;
+
+  if (searchFrom <= 0 && markdown.startsWith(normalizedHeading)) {
+    return 0;
+  }
+
+  const newlineHeadingIndex = markdown.indexOf(
+    `\n${normalizedHeading}`,
+    Math.max(0, searchFrom - 1),
+  );
+
+  return newlineHeadingIndex < 0 ? -1 : newlineHeadingIndex + 1;
+}
+
 function readMarkdownSection(
   markdown: string,
   startHeading: string,
   endHeading?: string,
 ) {
-  const startIndex = markdown.indexOf(startHeading);
+  const startIndex = findMarkdownHeadingIndex(markdown, startHeading);
 
   if (startIndex < 0) {
     throw new Error(`Missing markdown section: ${startHeading}`);
   }
 
   const nextHeadingIndex = endHeading
-    ? markdown.indexOf(endHeading, startIndex + startHeading.length)
+    ? findMarkdownHeadingIndex(
+        markdown,
+        endHeading,
+        startIndex + startHeading.length,
+      )
     : markdown.indexOf("\n## ", startIndex + 1);
 
   return nextHeadingIndex < 0
