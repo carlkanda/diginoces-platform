@@ -1,6 +1,9 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { PricingPreview } from "@/app/platform/projects/[projectId]/commercial/pricing-preview";
 import {
   approveProjectContract,
   buildCommercialAuditActions,
@@ -19,6 +22,7 @@ import {
   type ServicePackage,
   type ServicePackageAddon,
 } from "@/lib/contracts/contract-service";
+import { redactCommercialGesturePricing } from "@/lib/contracts/contract-db";
 import type { RoleAssignment } from "@/lib/security/permissions";
 
 const projectId = "11111111-1111-4111-8111-111111111111";
@@ -308,6 +312,76 @@ describe("Sprint 10 commercial foundation", () => {
         reason: "",
       }),
     ).toThrow(CommercialValidationError);
+  });
+
+  it("keeps commercial gesture totals hidden from couple-facing summaries", () => {
+    const pricing = calculateProjectPricing({
+      eventSelections: [eventSelection],
+      gestures: [
+        {
+          amountCents: 10_000,
+          gestureType: "fixed_amount",
+          id: "gesture-1",
+          reason: "Commercial gesture approved by Diginoces",
+          status: "active",
+        },
+      ],
+    });
+
+    const coupleSummary = renderToStaticMarkup(
+      createElement(PricingPreview, {
+        canReadCommercialGestures: false,
+        pricing: redactCommercialGesturePricing(pricing, false),
+      }),
+    );
+    const internalSummary = renderToStaticMarkup(
+      createElement(PricingPreview, {
+        canReadCommercialGestures: true,
+        pricing: redactCommercialGesturePricing(pricing, true),
+      }),
+    );
+
+    expect(coupleSummary).not.toContain("Commercial gesture");
+    expect(coupleSummary).not.toContain("$100.00");
+    expect(coupleSummary).toContain("$1,650.00");
+    expect(internalSummary).toContain("Commercial gesture");
+    expect(internalSummary).toContain("$100.00");
+  });
+
+  it("renders an explicit placeholder before pricing is calculated", () => {
+    const pendingSummary = renderToStaticMarkup(
+      createElement(PricingPreview, {
+        canReadCommercialGestures: true,
+        pricing: null,
+      }),
+    );
+
+    expect(pendingSummary).toContain("Commercial gesture");
+    expect(pendingSummary).toContain("Not calculated");
+    expect(pendingSummary).not.toContain("$0.00");
+  });
+
+  it("redacts commercial gesture pricing values unless gesture or revenue access is granted", () => {
+    const pricing = calculateProjectPricing({
+      eventSelections: [eventSelection],
+      gestures: [
+        {
+          amountCents: 10_000,
+          gestureType: "fixed_amount",
+          id: "gesture-1",
+          reason: "Commercial gesture approved by Diginoces",
+          status: "active",
+        },
+      ],
+    });
+
+    expect(redactCommercialGesturePricing(pricing, true)).toEqual(pricing);
+    expect(redactCommercialGesturePricing(pricing, false)).toMatchObject({
+      discountAmountCents: 0,
+      eventBreakdown: [],
+      subtotalAmountCents: pricing.totalAmountCents,
+      totalAmountCents: pricing.totalAmountCents,
+    });
   });
 
   it("tracks manual payments, balance, full payment gate, unpaid lock, and exception override", () => {

@@ -12,6 +12,7 @@ import { getProjectCommercialOverview } from "@/lib/contracts/contract-db";
 import { formatUsd } from "@/lib/contracts/contract-service";
 import { ProjectAccessError } from "@/lib/projects/project-api";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { PricingPreview } from "./pricing-preview";
 import {
   applyCommercialGestureAction,
   approveContractAction,
@@ -133,6 +134,8 @@ export default async function ProjectCommercialPage({
     projectId,
     capabilities,
   );
+  const canReadCommercialGestures =
+    capabilities.canManageGestures || capabilities.canReadRevenue;
   const latestContract = overview.contracts[0] ?? null;
   const activeSelectionByEventId = new Map(
     overview.selections.map((selection) => [selection.event_id, selection]),
@@ -381,30 +384,10 @@ export default async function ProjectCommercialPage({
           <h2>Pricing preview</h2>
           <span className="meta-list">PAY-008 / PAY-009 / PAY-012</span>
         </div>
-        <div className="detail-grid">
-          <div>
-            <span>Subtotal</span>
-            <strong>
-              {formatUsd(overview.pricing?.subtotalAmountCents ?? 0)}
-            </strong>
-          </div>
-          <div>
-            <span>Commercial gesture</span>
-            <strong>
-              {formatUsd(overview.pricing?.discountAmountCents ?? 0)}
-            </strong>
-          </div>
-          <div>
-            <span>Total</span>
-            <strong>
-              {formatUsd(overview.pricing?.totalAmountCents ?? 0)}
-            </strong>
-          </div>
-          <div>
-            <span>Planned guests</span>
-            <strong>{overview.pricing?.plannedGuestCountSnapshot ?? 0}</strong>
-          </div>
-        </div>
+        <PricingPreview
+          canReadCommercialGestures={canReadCommercialGestures}
+          pricing={overview.pricing}
+        />
         <div className="button-group">
           {capabilities.canCalculatePricing ? (
             <form action={calculatePricingAction.bind(null, projectId)}>
