@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { getMessageLogDetails } from "@/lib/messages/message-db";
 import {
   formatStatus,
@@ -85,6 +86,15 @@ export default async function MessageLogDetailPage({
     await requireProjectPermission(context, projectId, "messages.read");
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(
+        context,
+        `/platform/projects/${projectId}/communications/${messageLogId}`,
+        {
+          permission: "messages.read",
+          scope: "project",
+          scopeId: projectId,
+        },
+      );
       notFound();
     }
 

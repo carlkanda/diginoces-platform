@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { reviewPartnerProjectAction } from "@/app/platform/partners/actions";
 import { listPartnerReviewQueue } from "@/lib/partners/partner-db";
 import {
@@ -56,6 +57,14 @@ export default async function PartnerReviewPage() {
     await requireGlobalPermission(context, "partner_projects.review");
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(
+        context,
+        "/platform/partners/review",
+        {
+          permission: "partner_projects.review",
+          scope: "global",
+        },
+      );
       notFound();
     }
 

@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { ProjectAccessError } from "@/lib/projects/project-api";
 import {
   getReportingPermissionSet,
@@ -43,6 +44,10 @@ export default async function GlobalDashboardPage() {
     await requireGlobalDashboardPermission(context);
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(context, "/platform/dashboard", {
+        permission: "dashboards.global.read",
+        scope: "global",
+      });
       notFound();
     }
 

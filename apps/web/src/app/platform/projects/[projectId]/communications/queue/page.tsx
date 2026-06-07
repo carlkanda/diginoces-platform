@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import {
   listProjectMessageInvitationOptions,
   listProjectMessageLogs,
@@ -101,6 +102,15 @@ export default async function MessageQueuePage({
     await requireProjectPermission(context, projectId, "messages.prepare");
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(
+        context,
+        `/platform/projects/${projectId}/communications/queue`,
+        {
+          permission: "messages.prepare",
+          scope: "project",
+          scopeId: projectId,
+        },
+      );
       notFound();
     }
 

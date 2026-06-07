@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { ProjectAccessError } from "@/lib/projects/project-api";
 import {
   requireAuditExportPermission,
@@ -68,6 +69,10 @@ export default async function AuditLogsPage({
       });
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(context, "/platform/audit-logs", {
+        permission: "audit.read",
+        scope: "global",
+      });
       notFound();
     }
 

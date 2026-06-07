@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { formatDate } from "@/lib/dates/format-date";
 import {
   getProjectFileCapabilities,
@@ -78,6 +79,22 @@ export default async function ProjectFilesPage({
     await requireProjectFileReadPermission(context, projectId);
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(
+        context,
+        `/platform/projects/${projectId}/files`,
+        [
+          {
+            permission: "files.read",
+            scope: "project",
+            scopeId: projectId,
+          },
+          {
+            permission: "files.download",
+            scope: "project",
+            scopeId: projectId,
+          },
+        ],
+      );
       notFound();
     }
 

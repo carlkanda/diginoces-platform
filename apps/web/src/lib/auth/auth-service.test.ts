@@ -3,6 +3,7 @@ import {
   buildImplicitAuthCallbackPage,
   buildLoginErrorRedirectPath,
   buildLoginRedirectPath,
+  buildMfaStepUpRedirectPathForClient,
   buildMfaRedirectPath,
   getAuthRedirectOrigin,
   getAuthCallbackNextPath,
@@ -304,6 +305,79 @@ describe("auth redirect helpers", () => {
     expect(parsed.searchParams.get("error")).toBe(
       "Enter the current 6-digit authenticator code.",
     );
+  });
+
+  it("builds MFA step-up redirects only when the current session can verify aal2", async () => {
+    const mfaReadyClient = {
+      auth: {
+        mfa: {
+          async getAuthenticatorAssuranceLevel() {
+            return {
+              data: {
+                currentLevel: "aal1",
+                nextLevel: "aal2",
+              },
+              error: null,
+            };
+          },
+        },
+      },
+    };
+    const alreadyVerifiedClient = {
+      auth: {
+        mfa: {
+          async getAuthenticatorAssuranceLevel() {
+            return {
+              data: {
+                currentLevel: "aal2",
+                nextLevel: "aal2",
+              },
+              error: null,
+            };
+          },
+        },
+      },
+    };
+    const mfaUnavailableClient = {
+      auth: {
+        mfa: {
+          async getAuthenticatorAssuranceLevel() {
+            return {
+              data: {
+                currentLevel: "aal1",
+                nextLevel: "aal1",
+              },
+              error: null,
+            };
+          },
+        },
+      },
+    };
+
+    expect(
+      await buildMfaStepUpRedirectPathForClient(
+        mfaReadyClient as never,
+        "/platform/dashboard?tab=global",
+      ),
+    ).toBe("/login/mfa?next=%2Fplatform%2Fdashboard%3Ftab%3Dglobal");
+    expect(
+      await buildMfaStepUpRedirectPathForClient(
+        mfaReadyClient as never,
+        "https://attacker.test/platform",
+      ),
+    ).toBe("/login/mfa?next=%2Fplatform");
+    expect(
+      await buildMfaStepUpRedirectPathForClient(
+        alreadyVerifiedClient as never,
+        "/platform/dashboard",
+      ),
+    ).toBeNull();
+    expect(
+      await buildMfaStepUpRedirectPathForClient(
+        mfaUnavailableClient as never,
+        "/platform/dashboard",
+      ),
+    ).toBeNull();
   });
 
   it("selects a verified TOTP factor without accepting unverified factors", () => {

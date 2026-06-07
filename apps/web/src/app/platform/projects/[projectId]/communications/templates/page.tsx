@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { listProjectMessageTemplates } from "@/lib/messages/message-db";
 import {
   formatStatus,
@@ -80,6 +81,15 @@ export default async function MessageTemplatesPage({
     );
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(
+        context,
+        `/platform/projects/${projectId}/communications/templates`,
+        {
+          permission: "message_templates.read",
+          scope: "project",
+          scopeId: projectId,
+        },
+      );
       notFound();
     }
 

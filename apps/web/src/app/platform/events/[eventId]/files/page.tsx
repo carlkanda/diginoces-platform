@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { getEventDetails } from "@/lib/projects/project-service";
 import {
   ProjectAccessError,
@@ -48,6 +49,15 @@ export default async function EventFilesPage({ params }: PageProps) {
     await requireEventPermission(context, eventId, "files.read");
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(
+        context,
+        `/platform/events/${eventId}/files`,
+        {
+          permission: "files.read",
+          scope: "event",
+          scopeId: eventId,
+        },
+      );
       notFound();
     }
 

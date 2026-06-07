@@ -4,6 +4,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import {
   requireEventPermission,
   ProjectAccessError,
@@ -47,15 +48,25 @@ export default async function NewInvitationTemplatePage({
   }
 
   const supabase = await createSupabaseServerClient();
+  const context = { supabase, user: authContext.user };
 
   try {
     await requireEventPermission(
-      { supabase, user: authContext.user },
+      context,
       eventId,
       "invitation_templates.create",
     );
   } catch (error) {
     if (error instanceof ProjectAccessError) {
+      await redirectToMfaIfStepUpRequired(
+        context,
+        `/platform/events/${eventId}/invitations/new`,
+        {
+          permission: "invitation_templates.create",
+          scope: "event",
+          scopeId: eventId,
+        },
+      );
       notFound();
     }
 
