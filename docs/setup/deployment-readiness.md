@@ -10,6 +10,11 @@ This document covers MVP deployment readiness after Sprint 15 release hardening.
 
 Use real values only in local `.env.local`, the staging host, or the production host. Do not commit them.
 
+Do not configure `NODE_ENV` through `.env.local`, `.env`, or hosting-provider
+env settings. Next.js and npm set `NODE_ENV` for `dev`, `build`, and `start`;
+an env-file override can make production smoke tests run with an unintended
+mode.
+
 | Variable | Purpose | Notes |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser/server Supabase project URL | Public value, still environment-specific |
