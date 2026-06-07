@@ -146,6 +146,25 @@ Traceability: post-sprint backfill for Sprint 15 release hardening evidence afte
 | Code changes | No app code changes were required by this run. The public preview heading regression from the previous run remained fixed on merged `main`. |
 | Local artifacts | Transient route-sweep and interaction screenshots were written only under `%TEMP%\diginoces-mvp-ui-qa-artifacts\...` for local inspection if a finding appeared. They are not committed and do not replace the external QA artifact package required by `docs/setup/qa-artifact-store.md`. |
 
+## 2026-06-07 Production-Mode Post-Merge Route Matrix QA
+
+Traceability: post-merge release-hardening evidence after PR `#59`; issue
+[#58](https://github.com/carlkanda/diginoces-platform/issues/58); manual QA
+scenarios `QA-001`, `QA-002`, `QA-026`, `QA-034`, and `QA-036`; requirements
+`PV-*`, `ROLE-*`, `TECH-*`, `PROJ-*`, `GM-*`, `RSVP-*`, `INV-*`, `MSG-*`,
+`SEAT-*`, `CHK-*`, `PAY-*`, `WISH-*`, `PART-*`, `REP-*`, and `FILE-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Repository state | Local `main` was clean and aligned with `origin/main` at commit `60a4af7`, including the merged `NODE_ENV` env-template hardening from PR `#59`. |
+| Production startup | `npm.cmd run build` passed. A clean `next start -p 3002` run through `scripts/run-web-script-with-root-env.mjs` served `http://127.0.0.1:3002`; `/api/health` returned `status: ok` and `supabaseConfigured: true`. Server logs contained no `NODE_ENV`, non-standard mode, warning, error, `500`, `RangeError`, `TypeError`, or `ReferenceError` lines. |
+| Browser automation path | The official in-app Browser bridge was retried first and still failed during setup with the Windows sandbox `spawn setup refresh` error. Chrome DevTools Protocol on port `9222` remained available and was used as the fallback against the real Chrome session. |
+| Public route matrix | Chrome/CDP opened `/`, `/login`, `/login/mfa`, `/g/not-a-real-token`, and a fake `/auth/callback?...token=fake...` path at desktop `1440x900` and mobile `390x844`. All rendered non-empty content with exactly one `main`, exactly one `h1`, no horizontal overflow, no unlabeled visible buttons, no duplicate IDs, no missing image `alt`, no runtime markers, and no secret-shaped markers. The invalid public token rendered the expected unavailable-link page; Chrome reported the document `404` as a resource log, which was classified as expected denial rather than an app failure. Direct header verification for `/g/not-a-real-token` returned `404`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, `X-Robots-Tag: noindex, nofollow`, and no protected markers. |
+| No-cookie protected route matrix | Chrome/CDP created an isolated browser context and opened 43 protected platform/project/event routes at desktop and mobile, for 86 total no-cookie checks. Routes redirected to login or rendered safe denied/not-found states without exposing fake project labels, guest labels, authenticated emails, internal notes, service-role markers, database URLs, WhatsApp markers, Google-secret markers, private-key markers, or horizontal overflow. |
+| Authenticated route matrix | The default Chrome session was still authenticated on `localhost` as the linked-dev admin/operations QA account. Chrome/CDP opened the same 43 protected platform/project/event routes at desktop and mobile, for 86 total authenticated checks. All rendered non-empty content without login redirects, runtime markers, horizontal overflow, unlabeled visible buttons, duplicate IDs, missing image `alt`, secret-shaped markers, or unexpected document `5xx`. The intentionally invalid guest side filter returned the expected safe 404 page and produced the same expected document-404 resource log. |
+| Local artifact | The redacted route-check JSON was written only to `%TEMP%\diginoces-mvp-ui-qa-artifacts\prod-cdp-route-check-1780808604948.json`. It is a local inspection artifact only and does not replace the external QA artifact package required by `docs/setup/qa-artifact-store.md`. |
+| Production sign-off impact | This post-merge production-mode pass strengthens linked-dev/local evidence after PR `#59`, but the formal ledger remains `no_go` until all `QA-001` through `QA-036` rows have external evidence IDs, target-environment owner sign-off, and any failures classified in `docs/qa/mvp-qa-evidence-ledger.md`. |
+
 ## Current Fixture Coverage
 
 | Data area                    | Current linked-dev state                                                           |
