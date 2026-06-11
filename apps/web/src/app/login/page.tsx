@@ -1,4 +1,5 @@
 import { signInWithEmailCode, signInWithMagicLink } from "./actions";
+import { LoginSubmitButton } from "./submit-button";
 import { normalizeInternalPath } from "@/lib/auth/auth-service";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 
@@ -54,13 +55,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 required
               />
             </div>
-            <button
+            <LoginSubmitButton
               className="button"
-              type="submit"
               disabled={!env.supabaseConfigured}
+              pendingLabel="Sending..."
             >
               Send magic link
-            </button>
+            </LoginSubmitButton>
             <p className="form-note">
               Sensitive roles are designed to require MFA once Supabase MFA
               policy is configured.
@@ -94,13 +95,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 required
               />
             </div>
-            <button
+            <LoginSubmitButton
               className="button secondary"
-              type="submit"
               disabled={!env.supabaseConfigured}
+              pendingLabel="Verifying..."
             >
               Verify email code
-            </button>
+            </LoginSubmitButton>
           </form>
         </div>
       </aside>
