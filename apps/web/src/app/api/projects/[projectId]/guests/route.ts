@@ -9,6 +9,7 @@ import {
 import {
   handleGuestApiError,
   requireGuestCreatePermission,
+  resolveReadableGuestFilters,
 } from "@/lib/guests/guest-api";
 import {
   createGuest,
@@ -52,11 +53,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params;
     await requireProjectPermission(apiContext, projectId, "guests.read");
+    const filters = await resolveReadableGuestFilters(
+      apiContext,
+      projectId,
+      parseGuestFilters(request),
+    );
 
     const guests = await listProjectGuests(
       apiContext.supabase,
       projectId,
-      parseGuestFilters(request),
+      filters,
     );
 
     return NextResponse.json(

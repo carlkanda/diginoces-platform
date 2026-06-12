@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { resolveReadableGuestFilters } from "@/lib/guests/guest-api";
 import {
   canCreateGuestSide,
   canManageGuestSide,
@@ -14,11 +15,31 @@ import {
   parseUpdateGuestPayload,
   validateGuestForFoundation,
 } from "@/lib/guests/guest-service";
+import {
+  ProjectAccessError,
+  type ProjectApiContext,
+} from "@/lib/projects/project-api";
 import type { RoleAssignment } from "@/lib/security/permissions";
 
 const projectId = "11111111-1111-4111-8111-111111111111";
 const eventId = "22222222-2222-4222-8222-222222222222";
 const webRoot = process.cwd();
+
+function guestApiContextWithPermissions(
+  permissions: readonly string[],
+): ProjectApiContext {
+  const granted = new Set(permissions);
+
+  return {
+    supabase: {
+      rpc: async (_functionName: string, args: Record<string, unknown>) => ({
+        data: granted.has(String(args.p_permission)),
+        error: null,
+      }),
+    },
+    user: { id: "user-1" },
+  } as unknown as ProjectApiContext;
+}
 
 const guestTitleType = {
   defaultGuestCount: 1,
@@ -173,6 +194,56 @@ describe("Sprint 3 guest-management foundation", () => {
     expect(() => parseGuestListSideFilter("unsupported")).toThrow(
       /side must be one of: bride, groom, both, all/,
     );
+  });
+
+  it("resolves readable guest filters to the actor's own side", async () => {
+    const brideContext = guestApiContextWithPermissions([
+      "guests.manage_bride_side",
+    ]);
+    const groomContext = guestApiContextWithPermissions([
+      "guests.manage_groom_side",
+    ]);
+    const adminContext = guestApiContextWithPermissions(["guests.update"]);
+    const readOnlyContext = guestApiContextWithPermissions(["guests.read"]);
+
+    await expect(
+      resolveReadableGuestFilters(brideContext, projectId, { side: "all" }),
+    ).resolves.toMatchObject({ side: "bride" });
+    await expect(
+      resolveReadableGuestFilters(brideContext, projectId, { side: "both" }),
+    ).resolves.toMatchObject({ side: "both" });
+    await expect(
+      resolveReadableGuestFilters(brideContext, projectId, { side: "groom" }),
+    ).rejects.toBeInstanceOf(ProjectAccessError);
+
+    await expect(
+      resolveReadableGuestFilters(groomContext, projectId, { side: "all" }),
+    ).resolves.toMatchObject({ side: "groom" });
+    await expect(
+      resolveReadableGuestFilters(groomContext, projectId, { side: "bride" }),
+    ).rejects.toBeInstanceOf(ProjectAccessError);
+
+    await expect(
+      resolveReadableGuestFilters(adminContext, projectId, { side: "all" }),
+    ).resolves.toMatchObject({ side: "all" });
+    await expect(
+      resolveReadableGuestFilters(readOnlyContext, projectId, { side: "all" }),
+    ).resolves.toMatchObject({ side: "all" });
+    await expect(
+      resolveReadableGuestFilters(readOnlyContext, projectId, {
+        side: "bride",
+      }),
+    ).resolves.toMatchObject({ side: "bride" });
+    await expect(
+      resolveReadableGuestFilters(readOnlyContext, projectId, {
+        side: "groom",
+      }),
+    ).resolves.toMatchObject({ side: "groom" });
+    await expect(
+      resolveReadableGuestFilters(readOnlyContext, projectId, {
+        side: "both",
+      }),
+    ).resolves.toMatchObject({ side: "both" });
   });
 
   it("detects duplicate candidates by normalized name and WhatsApp within one project", () => {

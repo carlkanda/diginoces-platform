@@ -5,6 +5,7 @@ import {
 } from "@/lib/projects/project-api";
 import {
   GuestValidationError,
+  type GuestListFilters,
   type GuestSide,
 } from "@/lib/guests/guest-service";
 import type { PermissionSlug } from "@/lib/security/permissions";
@@ -70,6 +71,51 @@ export async function requireGuestSidePermission(
   }
 
   throw new ProjectAccessError("Guest side access denied.", 403);
+}
+
+export async function resolveReadableGuestFilters(
+  context: ProjectApiContext,
+  projectId: string,
+  filters: GuestListFilters,
+): Promise<GuestListFilters> {
+  const [canReadAnyGuestSide, canManageBrideSide, canManageGroomSide] =
+    await Promise.all([
+      Promise.all([
+        hasProjectPermission(context, projectId, "guests.create"),
+        hasProjectPermission(context, projectId, "guests.update"),
+        hasProjectPermission(context, projectId, "guests.deactivate"),
+      ]).then((results) => results.some(Boolean)),
+      hasProjectPermission(context, projectId, "guests.manage_bride_side"),
+      hasProjectPermission(context, projectId, "guests.manage_groom_side"),
+    ]);
+
+  if (
+    canReadAnyGuestSide ||
+    (canManageBrideSide && canManageGroomSide) ||
+    (!canManageBrideSide && !canManageGroomSide)
+  ) {
+    return filters;
+  }
+
+  if (canManageBrideSide) {
+    if (filters.side === "groom") {
+      throw new ProjectAccessError("Guest side access denied.", 403);
+    }
+
+    return {
+      ...filters,
+      side: filters.side === "both" ? "both" : "bride",
+    };
+  }
+
+  if (filters.side === "bride") {
+    throw new ProjectAccessError("Guest side access denied.", 403);
+  }
+
+  return {
+    ...filters,
+    side: filters.side === "both" ? "both" : "groom",
+  };
 }
 
 export async function requireGuestCreatePermission(
