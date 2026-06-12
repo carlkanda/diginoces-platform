@@ -202,6 +202,26 @@ manual QA scenarios `QA-027`, `QA-028`, `QA-032`, and `QA-036`; requirements
 | Automated checks | `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test` (25 files, 266 tests), `npm run build`, `git diff --check`, and `npm run secrets:scan` passed on the hardening branch before recording this note. |
 | Production sign-off impact | This closes a linked-dev launch-readiness API redaction defect for the checked surfaces, but it does not replace the external target-environment evidence package. Production remains blocked until the QA ledger has opaque evidence IDs and owner sign-off for every scenario. |
 
+## 2026-06-12 No-Role Access And Sign-Out QA
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+manual QA scenarios `QA-001`, `QA-026`, `QA-032`, and `QA-036`;
+requirements `ROLE-*`, `PROJ-*`, `GM-*`, `REP-*`, and `TECH-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Environment | Local dev server ran at `http://127.0.0.1:3000`; Chrome DevTools Protocol ran on port `9223`; local `main` included PR `#72`. The temporary `carlkanda@gmail.com` project-scoped bride role assignment was removed from linked dev before this run. |
+| No-role API sweep | Authenticated `carlkanda@gmail.com` with no project role received `/api/projects` `200` with an empty project list. Dashboard, reports, audit logs, known fake project/event detail routes, guests, commercial, files, imports, RSVP summary, check-in, and seating APIs returned `403` with generic permission messages and no fake project labels, internal notes, normalized guest helper fields, or secret-shaped markers. |
+| No-role route sweep | Real Chrome navigations to `/platform`, `/platform/projects`, dashboard, reports, audit logs, known fake project/event pages, guests, imports, commercial, communications, files, RSVPs, check-in, and seating rendered either the safe workspace/project-list shell or safe `404` pages with one `main`, no runtime markers, no horizontal overflow, and no fake project or guest labels. |
+| Anonymous API sweep | No-cookie requests to 16 representative protected API routes returned `401` with the generic `Authentication is required.` error and no fake fixture labels, internal fields, normalized guest helper fields, or secret-shaped markers. |
+| Sign-out hardening | The global header previously showed `Login` even while `/platform` detected an authenticated session. The header now renders `Sign out` for authenticated sessions and keeps `Login` for anonymous/not-configured states. Chrome verified `Sign out` redirected to `/login`, changed the header back to `Login`, and made `/api/projects` return `401`. |
+| Public/anonymous continuation sweep | In-app Browser reran 19 public/protected routes at desktop `1440x900` and mobile `390x844`: home, login, invalid public guest token, platform entry, projects, dashboard, reports, audit logs, partners, fake project/event, guests, communications, files, check-in, and seating. Result: 38/38 checks passed with one `main`, one `h1`, no unlabeled visible buttons, no missing visible image alt text, no duplicate IDs, no horizontal overflow, no runtime markers, no sensitive marker hits, and protected routes redirected to `/login`. |
+| Login redirect safety | In-app Browser checked `/login` with safe and unsafe `next` values including external URL, protocol-relative URL, relative string, and `/platform`. Both visible login forms normalized unsafe values to hidden `next=/platform`, did not expose the external destination in form data or body text, and kept the login page on the same origin. |
+| Anonymous API continuation sweep | No-cookie Node requests to 15 representative protected API routes returned `401` with the generic `Authentication is required.` error and no sensitive marker hits. `/api/health` returned `200`. |
+| Automated checks | `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test` (26 files, 271 tests), `npm run build`, `git diff --check`, and `npm run secrets:scan` passed on the hardening branch before recording this note. `npm run db:lint` passed with no schema errors, `npx supabase@latest db push --linked --dry-run` reported the remote database up to date, and `npx supabase@latest db advisors --linked --type security --level info --fail-on none --output-format json` returned the existing advisory set: 3 anonymous security-definer warnings, 34 authenticated security-definer warnings, and 1 leaked-password-protection warning. |
+| PR status note | The hardening branch was pushed as PR `#73`, but GitHub GraphQL and REST status checks timed out from the local environment during the continuation run. Hosted CodeRabbit and CI status must be confirmed before merging the PR into `main`. |
+| Production sign-off impact | This strengthens local linked-dev evidence for no-role and anonymous access boundaries plus session-end UX. It does not replace the external target-environment artifact package required before production launch. |
+
 ## Current Fixture Coverage
 
 | Data area                    | Current linked-dev state                                                           |

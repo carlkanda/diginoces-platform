@@ -1,6 +1,8 @@
 import { signInWithEmailCode, signInWithMagicLink } from "./actions";
 import { LoginSubmitButton } from "./submit-button";
-import { normalizeInternalPath } from "@/lib/auth/auth-service";
+import { redirect } from "next/navigation";
+import { getAuthContext, normalizeInternalPath } from "@/lib/auth/auth-service";
+import { getAuthenticatedLoginRedirectPath } from "@/lib/auth/auth-navigation";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 
 type LoginPageProps = {
@@ -13,9 +15,16 @@ type LoginPageProps = {
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const params = await searchParams;
+  const [params, authContext] = await Promise.all([
+    searchParams,
+    getAuthContext(),
+  ]);
   const env = getPublicEnvironment();
   const next = normalizeInternalPath(params.next ?? "/platform");
+
+  if (authContext.status === "authenticated") {
+    redirect(getAuthenticatedLoginRedirectPath(next));
+  }
 
   return (
     <section className="hero">

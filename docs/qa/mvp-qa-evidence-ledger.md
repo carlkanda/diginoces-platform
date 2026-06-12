@@ -59,11 +59,11 @@ Local and linked-dev Chrome/CDP progress in `docs/qa/mvp-ui-qa-progress-report.m
 | QA-029 | `ROLE-*`; `PART-*`; `PAY-*`; `REP-*` | Partner cannot access internal/admin project surfaces | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Include unrelated project denial. |
 | QA-030 | `ROLE-*`; `CHK-*`; `SEAT-*`; `PAY-*`; `REP-*` | Check-in staff cannot access unrelated event or admin workflows | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Include assigned-event control case. |
 | QA-031 | `ROLE-*`; `PAY-*`; `TECH-*` | Operations staff cannot perform admin-only functions without grant | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Include no-mutation DB assertions. |
-| QA-032 | `ROLE-*`; `PROJ-*` | Assigned roles cannot access unassigned projects | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Cover staff, bride, groom, and partner roles. |
+| QA-032 | `ROLE-*`; `PROJ-*` | Assigned roles cannot access unassigned projects | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Linked-dev no-role cleanup sweep passed for the current user after temporary role removal; exact external staff/bride/groom/partner evidence is still required. |
 | QA-033 | `ROLE-*`; `TECH-*` | Users cannot self-escalate roles or permissions | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Include role-assignment before/after evidence. |
 | QA-034 | `RSVP-*`; `ROLE-*` | Invalid guest tokens are rejected | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Cover expired, revoked, malformed, and unrelated tokens. |
 | QA-035 | `TECH-*`; `ROLE-*` | Anonymous callers cannot execute authenticated app RPCs | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Exclude documented token-scoped guest RPCs. |
-| QA-036 | `TECH-*`; `ROLE-*` | Anonymous users cannot execute authenticated API workflows | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Exact `401` generic response evidence required. |
+| QA-036 | `TECH-*`; `ROLE-*` | Anonymous users cannot execute authenticated API workflows | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Local no-cookie protected API sweep returned generic `401` responses; exact external response evidence is still required. |
 
 ## Aggregated Status
 
