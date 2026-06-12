@@ -11,6 +11,25 @@ import {
 type AnySupabase = SupabaseClient;
 type BaseRow = Record<string, unknown>;
 
+export const partnerProfileSelectColumns = [
+  "id",
+  "organization_name",
+  "primary_contact_name",
+  "contact_email",
+  "contact_phone",
+  "whatsapp_phone",
+  "status",
+  "partner_type",
+  "approved_at",
+  "suspended_at",
+  "archived_at",
+  "created_at",
+  "updated_at",
+] as const;
+
+const partnerProfileSelect =
+  "id, organization_name, primary_contact_name, contact_email, contact_phone, whatsapp_phone, status, partner_type, approved_at, suspended_at, archived_at, created_at, updated_at";
+
 async function listRows<T extends BaseRow>(
   query: PromiseLike<{ data: T[] | null; error: unknown }>,
 ) {
@@ -91,7 +110,7 @@ function normalizeProjectDashboardInput(
 export async function listPartners(supabase: AnySupabase) {
   return listRows(
     table(supabase, "partners")
-      .select("*")
+      .select(partnerProfileSelect)
       .order("created_at", { ascending: false }),
   );
 }
@@ -101,7 +120,10 @@ export async function getPartnerDetails(
   partnerId: string,
 ) {
   const partner = await maybeRow(
-    table(supabase, "partners").select("*").eq("id", partnerId).maybeSingle(),
+    table(supabase, "partners")
+      .select(partnerProfileSelect)
+      .eq("id", partnerId)
+      .maybeSingle(),
   );
 
   if (!partner) {
@@ -175,7 +197,7 @@ export async function createPartnerProfile(
       updated_by: input.actorUserId,
       whatsapp_phone: input.whatsappPhone ?? null,
     })
-    .select("*")
+    .select(partnerProfileSelect)
     .single();
 
   if (error) {
@@ -204,7 +226,7 @@ export async function updatePartnerStatus(
       updated_by: input.actorUserId,
     })
     .eq("id", input.partnerId)
-    .select("*")
+    .select(partnerProfileSelect)
     .single();
 
   if (error) {

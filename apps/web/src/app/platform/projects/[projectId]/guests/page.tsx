@@ -4,7 +4,10 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
-import { requireAnyGuestCreatePermission } from "@/lib/guests/guest-api";
+import {
+  requireAnyGuestCreatePermission,
+  resolveReadableGuestFilters,
+} from "@/lib/guests/guest-api";
 import { guestListGateAllowsAccess } from "@/lib/contracts/contract-gates";
 import { hasAnyCommercialReadPermission } from "@/lib/contracts/contract-api";
 import {
@@ -14,6 +17,7 @@ import {
 import {
   listProjectGuests,
   parseGuestListSideFilter,
+  type GuestListFilters,
   type GuestSide,
 } from "@/lib/guests/guest-service";
 import {
@@ -166,12 +170,28 @@ export default async function ProjectGuestsPage({
   }
 
   const eventId = filters.eventId;
+  let readableGuestFilters: GuestListFilters;
+
+  try {
+    readableGuestFilters = await resolveReadableGuestFilters(
+      permissionContext,
+      projectId,
+      {
+        eventId,
+        side,
+      },
+    );
+  } catch (error) {
+    if (error instanceof ProjectAccessError) {
+      notFound();
+    }
+
+    throw error;
+  }
+
   const [events, guests] = await Promise.all([
     listProjectEvents(supabase, projectId),
-    listProjectGuests(supabase, projectId, {
-      eventId,
-      side,
-    }),
+    listProjectGuests(supabase, projectId, readableGuestFilters),
   ]);
 
   const sideHref = (

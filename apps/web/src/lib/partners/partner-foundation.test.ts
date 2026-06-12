@@ -9,6 +9,7 @@ import {
   parseProjectCommentPayload,
   requiredProjectCommentPermissions,
 } from "@/lib/partners/partner-api";
+import { partnerProfileSelectColumns } from "@/lib/partners/partner-db";
 import {
   buildPartnerAuditActions,
   buildPartnerDashboardView,
@@ -318,6 +319,22 @@ describe("Sprint 13 partner foundation", () => {
     expect(isPartnerRestrictedField("auditLogs")).toBe(true);
   });
 
+  it("keeps partner profile selects safe for partner-scoped API access", () => {
+    expect(partnerProfileSelectColumns).toEqual(
+      expect.arrayContaining([
+        "id",
+        "organization_name",
+        "contact_email",
+        "status",
+        "partner_type",
+      ]),
+    );
+    expect(partnerProfileSelectColumns).not.toContain("internal_notes");
+    expect(partnerProfileSelectColumns).not.toContain("created_by");
+    expect(partnerProfileSelectColumns).not.toContain("updated_by");
+    expect(partnerProfileSelectColumns).not.toContain("approved_by");
+  });
+
   it("keeps partner index actions aligned with server-side permissions", () => {
     expect(
       getPartnerIndexActionVisibility({
@@ -508,6 +525,13 @@ describe("Sprint 13 partner foundation", () => {
       ),
       "utf8",
     );
+    const launchQaHardeningMigration = readFileSync(
+      join(
+        repoRoot,
+        "supabase/migrations/20260612103025_mvp_launch_qa_hardening.sql",
+      ),
+      "utf8",
+    );
     const healthRoute = readFileSync(
       join(repoRoot, "apps/web/src/app/api/health/route.ts"),
       "utf8",
@@ -589,6 +613,13 @@ describe("Sprint 13 partner foundation", () => {
     expect(partnerAuditHardeningMigration).not.toMatch(
       /\bold\.(project_id|review_reason|source_notes|status|deleted_at|updated_by|created_by|invited_by|approved_by|submitted_by|reviewed_by|removed_by|assigned_by|author_user_id)\b/i,
     );
+    expect(launchQaHardeningMigration).toContain(
+      "revoke select on public.partners from authenticated",
+    );
+    expect(launchQaHardeningMigration).toContain(
+      "grant select (\n  id,\n  organization_name",
+    );
+    expect(launchQaHardeningMigration).not.toContain("internal_notes");
     expect(partnerDashboardPage).toContain("searchParams");
     expect(partnerDashboardPage).not.toMatch(/partners\s*\[\s*0\s*\]/);
     expect(partnerDashboardPage).toContain("partnerId");
