@@ -239,6 +239,11 @@ describe("Sprint 3 guest-management foundation", () => {
         side: "groom",
       }),
     ).resolves.toMatchObject({ side: "groom" });
+    await expect(
+      resolveReadableGuestFilters(readOnlyContext, projectId, {
+        side: "both",
+      }),
+    ).resolves.toMatchObject({ side: "both" });
   });
 
   it("detects duplicate candidates by normalized name and WhatsApp within one project", () => {
