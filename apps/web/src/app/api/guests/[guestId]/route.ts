@@ -9,6 +9,8 @@ import {
 } from "@/lib/projects/project-api";
 import {
   handleGuestApiError,
+  redactGuestDetailsForApi,
+  redactGuestForApi,
   requireGuestDeactivationPermission,
   requireGuestSidePermission,
 } from "@/lib/guests/guest-api";
@@ -57,7 +59,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       "guests.read",
     );
 
-    return NextResponse.json(details, {
+    return NextResponse.json(redactGuestDetailsForApi(details), {
       headers: {
         "Cache-Control": "no-store",
       },
@@ -120,7 +122,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       apiContext.user.id,
     );
 
-    return NextResponse.json({ guest });
+    return NextResponse.json({ guest: redactGuestForApi(guest) });
   } catch (error) {
     try {
       return handleGuestApiError(error);

@@ -3,6 +3,8 @@ import {
   getProjectApiContext,
   handleProjectApiError,
   isProjectApiContext,
+  redactEventDetailsForApi,
+  redactEventForApi,
   requireEventPermission,
 } from "@/lib/projects/project-api";
 import {
@@ -53,7 +55,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    return NextResponse.json(details, {
+    return NextResponse.json(redactEventDetailsForApi(details), {
       headers: {
         "Cache-Control": "no-store",
       },
@@ -83,7 +85,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
 
     return NextResponse.json({
-      event,
+      event: redactEventForApi(event),
     });
   } catch (error) {
     return handleProjectApiError(error);

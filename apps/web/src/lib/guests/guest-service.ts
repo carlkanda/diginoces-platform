@@ -21,6 +21,8 @@ export type GuestTitleTypeRow =
 export type GuestTagRow = Database["public"]["Tables"]["guest_tags"]["Row"];
 export type GuestEventAssignmentRow =
   Database["public"]["Tables"]["guest_event_assignments"]["Row"];
+export type GuestTagAssignmentRow =
+  Database["public"]["Tables"]["guest_tag_assignments"]["Row"];
 export type GuestDuplicateCandidateRow =
   Database["public"]["Tables"]["guest_duplicate_candidates"]["Row"];
 

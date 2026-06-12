@@ -6,6 +6,9 @@ import {
   jsonError,
   methodNotAllowed,
   ProjectAccessError,
+  redactEventDetailsForApi,
+  redactProjectDetailsForApi,
+  redactProjectForApi,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
 import type { ProjectApiContext } from "@/lib/projects/project-api";
@@ -28,6 +31,96 @@ function createProjectApiContext(rpc: TestRpc): ProjectApiContext {
 }
 
 describe("project API responses", () => {
+  // GH #58; QA-027/QA-028 - internal API field redaction coverage.
+  it("redacts internal project, event, and workflow fields from API payloads", () => {
+    const project = {
+      bride_name: "QA Demo Bride",
+      created_by: "actor-1",
+      groom_name: "QA Demo Groom",
+      guest_list_access_unlocked_by: "actor-2",
+      guest_page_access_unlocked_by: "actor-3",
+      guest_page_payment_exception_reason: "internal exception note",
+      id: "project-1",
+      internal_notes: "internal project note",
+      latest_contract_id: "contract-1",
+      project_code: "QA-001",
+      status: "active",
+      updated_by: "actor-4",
+    } as never;
+    const event = {
+      created_by: "actor-1",
+      event_code: "QA-001-CIV",
+      id: "event-1",
+      name: "Civil",
+      project_id: "project-1",
+      updated_by: "actor-2",
+    } as never;
+    const workflowTask = {
+      created_by: "actor-1",
+      id: "task-1",
+      project_id: "project-1",
+      title: "Confirm foundation",
+      updated_by: "actor-2",
+    } as never;
+
+    const apiProject = redactProjectForApi(project);
+    const projectDetails = redactProjectDetailsForApi({
+      events: [event],
+      project,
+      workflowTasks: [workflowTask],
+    });
+    const eventDetails = redactEventDetailsForApi({
+      event,
+      project,
+      workflowTasks: [workflowTask],
+    });
+
+    expect(apiProject).toMatchObject({
+      bride_name: "QA Demo Bride",
+      groom_name: "QA Demo Groom",
+      project_code: "QA-001",
+    });
+    expect(apiProject).not.toHaveProperty("internal_notes");
+    expect(apiProject).not.toHaveProperty("created_by");
+    expect(apiProject).not.toHaveProperty("updated_by");
+    expect(apiProject).not.toHaveProperty("guest_list_access_unlocked_by");
+    expect(apiProject).not.toHaveProperty("guest_page_access_unlocked_by");
+    expect(apiProject).not.toHaveProperty("latest_contract_id");
+    expect(apiProject).not.toHaveProperty(
+      "guest_page_payment_exception_reason",
+    );
+    expect(projectDetails.project).toHaveProperty("id", "project-1");
+    expect(projectDetails.project).toHaveProperty("project_code", "QA-001");
+    expect(projectDetails.project).not.toHaveProperty("internal_notes");
+    expect(projectDetails.project).not.toHaveProperty("created_by");
+    expect(projectDetails.project).not.toHaveProperty("updated_by");
+    expect(projectDetails.project).not.toHaveProperty(
+      "guest_list_access_unlocked_by",
+    );
+    expect(projectDetails.project).not.toHaveProperty(
+      "guest_page_access_unlocked_by",
+    );
+    expect(projectDetails.events[0]).toHaveProperty("event_code", "QA-001-CIV");
+    expect(projectDetails.events[0]).toHaveProperty("name", "Civil");
+    expect(projectDetails.events[0]).not.toHaveProperty("created_by");
+    expect(projectDetails.events[0]).not.toHaveProperty("updated_by");
+    expect(projectDetails.workflowTasks[0]).toHaveProperty(
+      "title",
+      "Confirm foundation",
+    );
+    expect(projectDetails.workflowTasks[0]).not.toHaveProperty("created_by");
+    expect(projectDetails.workflowTasks[0]).not.toHaveProperty("updated_by");
+    expect(eventDetails.event).toHaveProperty("id", "event-1");
+    expect(eventDetails.event).toHaveProperty("name", "Civil");
+    expect(eventDetails.event).not.toHaveProperty("created_by");
+    expect(eventDetails.event).not.toHaveProperty("updated_by");
+    expect(eventDetails.project).toHaveProperty("id", "project-1");
+    expect(eventDetails.project).toHaveProperty("project_code", "QA-001");
+    expect(eventDetails.project).not.toHaveProperty("internal_notes");
+    expect(eventDetails.project).not.toHaveProperty("created_by");
+    expect(eventDetails.project).not.toHaveProperty("updated_by");
+  });
+
   it("marks API error responses as non-cacheable", async () => {
     const response = jsonError(
       401,

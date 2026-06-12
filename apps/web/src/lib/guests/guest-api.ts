@@ -5,11 +5,118 @@ import {
 } from "@/lib/projects/project-api";
 import {
   GuestValidationError,
+  type GuestEventAssignmentRow,
   type GuestListFilters,
   type GuestSide,
+  type GuestRow,
+  type GuestTagAssignmentRow,
+  type GuestTagRow,
+  type GuestTitleTypeRow,
 } from "@/lib/guests/guest-service";
 import type { PermissionSlug } from "@/lib/security/permissions";
 import { isUuid } from "@/lib/validation/uuid";
+
+export type ApiGuest = Omit<
+  GuestRow,
+  | "created_by"
+  | "internal_notes"
+  | "normalized_name"
+  | "normalized_whatsapp"
+  | "updated_by"
+>;
+
+export type ApiGuestEventAssignment = Omit<
+  GuestEventAssignmentRow,
+  "created_by" | "updated_by"
+>;
+
+export type ApiGuestTagAssignment = Omit<GuestTagAssignmentRow, "created_by">;
+
+export type ApiGuestTitleType = Omit<GuestTitleTypeRow, "created_by">;
+
+export type ApiGuestTag = Omit<GuestTagRow, "created_by">;
+
+export type ApiGuestDetails = {
+  eventAssignments: ApiGuestEventAssignment[];
+  guest: ApiGuest;
+  tagAssignments: ApiGuestTagAssignment[];
+  titleType: ApiGuestTitleType | null;
+};
+
+export function redactGuestForApi(guest: GuestRow): ApiGuest {
+  const apiGuest = { ...guest } as ApiGuest & Record<string, unknown>;
+
+  delete apiGuest.created_by;
+  delete apiGuest.internal_notes;
+  delete apiGuest.normalized_name;
+  delete apiGuest.normalized_whatsapp;
+  delete apiGuest.updated_by;
+
+  return apiGuest;
+}
+
+export function redactGuestEventAssignmentForApi(
+  assignment: GuestEventAssignmentRow,
+): ApiGuestEventAssignment {
+  const apiAssignment = {
+    ...assignment,
+  } as ApiGuestEventAssignment & Record<string, unknown>;
+
+  delete apiAssignment.created_by;
+  delete apiAssignment.updated_by;
+
+  return apiAssignment;
+}
+
+export function redactGuestTagAssignmentForApi(
+  assignment: GuestTagAssignmentRow,
+): ApiGuestTagAssignment {
+  const apiAssignment = {
+    ...assignment,
+  } as ApiGuestTagAssignment & Record<string, unknown>;
+
+  delete apiAssignment.created_by;
+
+  return apiAssignment;
+}
+
+export function redactGuestTitleTypeForApi(
+  titleType: GuestTitleTypeRow,
+): ApiGuestTitleType {
+  const apiTitleType = {
+    ...titleType,
+  } as ApiGuestTitleType & Record<string, unknown>;
+
+  delete apiTitleType.created_by;
+
+  return apiTitleType;
+}
+
+export function redactGuestTagForApi(tag: GuestTagRow): ApiGuestTag {
+  const apiTag = { ...tag } as ApiGuestTag & Record<string, unknown>;
+
+  delete apiTag.created_by;
+
+  return apiTag;
+}
+
+export function redactGuestDetailsForApi(details: {
+  eventAssignments: GuestEventAssignmentRow[];
+  guest: GuestRow;
+  tagAssignments: GuestTagAssignmentRow[];
+  titleType: GuestTitleTypeRow | null;
+}): ApiGuestDetails {
+  return {
+    eventAssignments: details.eventAssignments.map(
+      redactGuestEventAssignmentForApi,
+    ),
+    guest: redactGuestForApi(details.guest),
+    tagAssignments: details.tagAssignments.map(redactGuestTagAssignmentForApi),
+    titleType: details.titleType
+      ? redactGuestTitleTypeForApi(details.titleType)
+      : null,
+  };
+}
 
 async function hasProjectPermission(
   context: ProjectApiContext,

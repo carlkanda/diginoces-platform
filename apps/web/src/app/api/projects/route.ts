@@ -3,6 +3,7 @@ import {
   getProjectApiContext,
   handleProjectApiError,
   isProjectApiContext,
+  redactProjectForApi,
   requireGlobalPermission,
 } from "@/lib/projects/project-api";
 import {
@@ -30,7 +31,9 @@ export async function GET() {
   }
 
   try {
-    const projects = await listProjects(context.supabase);
+    const projects = (await listProjects(context.supabase)).map(
+      redactProjectForApi,
+    );
 
     return NextResponse.json(
       {
@@ -66,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        project,
+        project: redactProjectForApi(project),
       },
       {
         status: 201,

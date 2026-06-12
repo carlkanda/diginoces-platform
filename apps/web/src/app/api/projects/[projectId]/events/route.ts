@@ -3,6 +3,7 @@ import {
   getProjectApiContext,
   handleProjectApiError,
   isProjectApiContext,
+  redactEventForApi,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
 import {
@@ -52,7 +53,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    const events = await listProjectEvents(apiContext.supabase, projectId);
+    const events = (
+      await listProjectEvents(apiContext.supabase, projectId)
+    ).map(redactEventForApi);
 
     return NextResponse.json(
       {
@@ -90,7 +93,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json(
       {
-        event,
+        event: redactEventForApi(event),
       },
       {
         status: 201,

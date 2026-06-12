@@ -187,6 +187,21 @@ and `TECH-*`.
 | Public-token state | The public-token API returned a 64-character token object with separate `guest_public_page` token metadata. Linked-dev aggregate query for the QA bride guest showed 1 active public guest-page token and 3 revoked historical guest-page tokens; no raw token value was recorded in git. |
 | Production sign-off impact | This pass adds current local linked-dev evidence and validates the Playwright/CDP path, but it does not close the production gate. The ledger remains `no_go` until all `QA-001` through `QA-036` rows have external artifact IDs, owner sign-off, and target-environment evidence. |
 
+## 2026-06-12 Bride-Role API Redaction QA
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+manual QA scenarios `QA-027`, `QA-028`, `QA-032`, and `QA-036`; requirements
+`ROLE-*`, `PROJ-*`, `GM-*`, `PAY-*`, `REP-*`, and `TECH-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Environment | Local dev server ran at `http://127.0.0.1:3000`; Chrome DevTools Protocol ran on port `9223`; the authenticated browser session used `carlkanda@gmail.com` with temporary project-scoped `bride` role assignment `365a55d8-ede5-43d5-8684-ba44cf7521e7` for fake project `QADEMO-2026-001`. |
+| Finding | Bride-role API inspection found that project and guest API payloads were side-scoped correctly, but still exposed internal implementation fields such as `internal_notes`, actor UUID fields, and guest normalization helper fields. Groom-side guest access still returned the expected `403`. |
+| Fix | Project/event/workflow and guest/detail/assignment/title/tag API redaction helpers now remove internal notes, actor UUIDs, commercial exception reason fields, and guest normalization helper fields before API responses are returned. Existing side and permission checks remain the enforcement layer before redaction. |
+| Browser verification | After the fix, authenticated Chrome/CDP requests to `/api/projects`, project detail, project events, bride-side guests, both-side guests, and no-side guest list returned `200` without `internal_notes`, `created_by`, `updated_by`, `normalized_name`, or `normalized_whatsapp`. The groom-side guest request still returned `403` with the generic `Guest side access denied.` message. |
+| Automated checks | `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test` (25 files, 266 tests), `npm run build`, `git diff --check`, and `npm run secrets:scan` passed on the hardening branch before recording this note. |
+| Production sign-off impact | This closes a linked-dev launch-readiness API redaction defect for the checked surfaces, but it does not replace the external target-environment evidence package. Production remains blocked until the QA ledger has opaque evidence IDs and owner sign-off for every scenario. |
+
 ## Current Fixture Coverage
 
 | Data area                    | Current linked-dev state                                                           |
