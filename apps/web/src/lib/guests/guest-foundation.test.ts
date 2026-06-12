@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { resolveReadableGuestFilters } from "@/lib/guests/guest-api";
+import {
+  redactGuestDetailsForApi,
+  redactGuestForApi,
+  resolveReadableGuestFilters,
+} from "@/lib/guests/guest-api";
 import {
   canCreateGuestSide,
   canManageGuestSide,
@@ -244,6 +248,84 @@ describe("Sprint 3 guest-management foundation", () => {
         side: "both",
       }),
     ).resolves.toMatchObject({ side: "both" });
+  });
+
+  it("redacts internal guest fields from API payloads", () => {
+    const guest = {
+      created_at: "2026-06-01T00:00:00.000Z",
+      created_by: "actor-1",
+      display_name: "Ada Kanda",
+      guest_side: "bride",
+      guest_title_type_id: guestTitleType.id,
+      id: baseGuest.id,
+      internal_notes: "internal guest note",
+      is_active: true,
+      is_printed_only: false,
+      normalized_name: "ada kanda",
+      normalized_whatsapp: "243810000001",
+      preferred_language: "fr",
+      project_id: projectId,
+      updated_at: "2026-06-01T00:00:00.000Z",
+      updated_by: "actor-2",
+      whatsapp_number: "+243 810 000 001",
+    } as never;
+    const eventAssignment = {
+      created_at: "2026-06-01T00:00:00.000Z",
+      created_by: "actor-1",
+      event_id: eventId,
+      guest_id: baseGuest.id,
+      id: "55555555-5555-4555-8555-555555555555",
+      invited: true,
+      project_id: projectId,
+      status: "invited",
+      updated_at: "2026-06-01T00:00:00.000Z",
+      updated_by: "actor-2",
+    } as never;
+    const tagAssignment = {
+      created_at: "2026-06-01T00:00:00.000Z",
+      created_by: "actor-1",
+      guest_id: baseGuest.id,
+      id: "66666666-6666-4666-8666-666666666666",
+      project_id: projectId,
+      tag_id: "77777777-7777-4777-8777-777777777777",
+    } as never;
+    const rawTitleType = {
+      created_at: "2026-06-01T00:00:00.000Z",
+      created_by: "actor-1",
+      default_guest_count: 1,
+      id: guestTitleType.id,
+      is_system_default: true,
+      label: "Mr.",
+      project_id: projectId,
+      requires_admin_approval: false,
+      slug: "mr",
+      sort_order: 1,
+      updated_at: "2026-06-01T00:00:00.000Z",
+    } as never;
+
+    const apiGuest = redactGuestForApi(guest);
+    const apiDetails = redactGuestDetailsForApi({
+      eventAssignments: [eventAssignment],
+      guest,
+      tagAssignments: [tagAssignment],
+      titleType: rawTitleType,
+    });
+
+    expect(apiGuest).toMatchObject({
+      display_name: "Ada Kanda",
+      guest_side: "bride",
+      whatsapp_number: "+243 810 000 001",
+    });
+    expect(apiGuest).not.toHaveProperty("internal_notes");
+    expect(apiGuest).not.toHaveProperty("normalized_name");
+    expect(apiGuest).not.toHaveProperty("normalized_whatsapp");
+    expect(apiGuest).not.toHaveProperty("created_by");
+    expect(apiGuest).not.toHaveProperty("updated_by");
+    expect(apiDetails.guest).not.toHaveProperty("internal_notes");
+    expect(apiDetails.eventAssignments[0]).not.toHaveProperty("created_by");
+    expect(apiDetails.eventAssignments[0]).not.toHaveProperty("updated_by");
+    expect(apiDetails.tagAssignments[0]).not.toHaveProperty("created_by");
+    expect(apiDetails.titleType).not.toHaveProperty("created_by");
   });
 
   it("detects duplicate candidates by normalized name and WhatsApp within one project", () => {

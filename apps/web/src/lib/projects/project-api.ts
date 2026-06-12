@@ -1,7 +1,14 @@
 import type { User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth/auth-service";
-import { ProjectValidationError } from "@/lib/projects/project-service";
+import {
+  ProjectValidationError,
+  type EventDetails,
+  type EventRow,
+  type ProjectDetails,
+  type ProjectRow,
+  type WorkflowTaskRow,
+} from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/validation/uuid";
 import type { PermissionSlug } from "@/lib/security/permissions";
@@ -29,6 +36,92 @@ export class ProjectAccessError extends Error {
     super(message);
     this.name = "ProjectAccessError";
   }
+}
+
+export type ApiProject = Omit<
+  ProjectRow,
+  | "created_by"
+  | "guest_list_access_unlocked_by"
+  | "guest_page_access_unlocked_by"
+  | "guest_page_payment_exception_reason"
+  | "internal_notes"
+  | "latest_contract_id"
+  | "updated_by"
+>;
+
+export type ApiEvent = Omit<EventRow, "created_by" | "updated_by">;
+
+export type ApiWorkflowTask = Omit<
+  WorkflowTaskRow,
+  "created_by" | "updated_by"
+>;
+
+export type ApiProjectDetails = {
+  events: ApiEvent[];
+  project: ApiProject;
+  workflowTasks: ApiWorkflowTask[];
+};
+
+export type ApiEventDetails = {
+  event: ApiEvent;
+  project: ApiProject;
+  workflowTasks: ApiWorkflowTask[];
+};
+
+export function redactProjectForApi(project: ProjectRow): ApiProject {
+  const runtimeProject = {
+    ...project,
+  } as ApiProject & Record<string, unknown>;
+
+  delete runtimeProject.created_by;
+  delete runtimeProject.guest_list_access_unlocked_by;
+  delete runtimeProject.guest_page_access_unlocked_by;
+  delete runtimeProject.guest_page_payment_exception_reason;
+  delete runtimeProject.internal_notes;
+  delete runtimeProject.latest_contract_id;
+  delete runtimeProject.updated_by;
+
+  return runtimeProject;
+}
+
+export function redactEventForApi(event: EventRow): ApiEvent {
+  const apiEvent = { ...event } as ApiEvent & Record<string, unknown>;
+
+  delete apiEvent.created_by;
+  delete apiEvent.updated_by;
+
+  return apiEvent;
+}
+
+export function redactWorkflowTaskForApi(
+  task: WorkflowTaskRow,
+): ApiWorkflowTask {
+  const apiTask = { ...task } as ApiWorkflowTask & Record<string, unknown>;
+
+  delete apiTask.created_by;
+  delete apiTask.updated_by;
+
+  return apiTask;
+}
+
+export function redactProjectDetailsForApi(
+  details: ProjectDetails,
+): ApiProjectDetails {
+  return {
+    events: details.events.map(redactEventForApi),
+    project: redactProjectForApi(details.project),
+    workflowTasks: details.workflowTasks.map(redactWorkflowTaskForApi),
+  };
+}
+
+export function redactEventDetailsForApi(
+  details: EventDetails,
+): ApiEventDetails {
+  return {
+    event: redactEventForApi(details.event),
+    project: redactProjectForApi(details.project),
+    workflowTasks: details.workflowTasks.map(redactWorkflowTaskForApi),
+  };
 }
 
 export function jsonError(status: number, code: string, message: string) {

@@ -8,6 +8,7 @@ import {
 } from "@/lib/projects/project-api";
 import {
   handleGuestApiError,
+  redactGuestForApi,
   requireGuestCreatePermission,
   resolveReadableGuestFilters,
 } from "@/lib/guests/guest-api";
@@ -59,11 +60,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
       parseGuestFilters(request),
     );
 
-    const guests = await listProjectGuests(
-      apiContext.supabase,
-      projectId,
-      filters,
-    );
+    const guests = (
+      await listProjectGuests(apiContext.supabase, projectId, filters)
+    ).map(redactGuestForApi);
 
     return NextResponse.json(
       { guests },
@@ -103,7 +102,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
       apiContext.user.id,
     );
 
-    return NextResponse.json({ guest }, { status: 201 });
+    return NextResponse.json(
+      { guest: redactGuestForApi(guest) },
+      { status: 201 },
+    );
   } catch (error) {
     try {
       return handleGuestApiError(error);
