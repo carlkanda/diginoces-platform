@@ -20,6 +20,10 @@
   --success-border: rgba(19, 115, 77, 0.3);
   --success-bg: #edf8f3;
   --success-text: var(--success);
+  --error: #b42318;
+  --error-border: rgba(180, 35, 24, 0.28);
+  --error-bg: #fff3f1;
+  --error-text: var(--error);
   --shadow: 0 16px 40px rgba(16, 34, 43, 0.08);
 }
 
@@ -106,8 +110,26 @@ textarea {
   font-weight: 620;
 }
 
-.nav a {
+.nav a,
+.nav button {
   padding: 8px 0;
+}
+
+.nav form {
+  margin: 0;
+}
+
+.nav button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-weight: inherit;
+}
+
+.nav button:hover,
+.nav button:focus-visible {
+  color: var(--foreground);
 }
 
 .main {
@@ -576,6 +598,12 @@ textarea {
   color: var(--alert-text);
   padding: 14px;
   font-size: 0.92rem;
+}
+
+.alert.error {
+  border-color: var(--error-border);
+  background: var(--error-bg);
+  color: var(--error-text);
 }
 
 .success {

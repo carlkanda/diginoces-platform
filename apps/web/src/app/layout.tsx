@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { signOut } from "@/app/auth/actions";
+import { getAuthContext } from "@/lib/auth/auth-service";
+import { getPrimaryAuthNavigationState } from "@/lib/auth/auth-navigation";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,6 +13,26 @@ export const metadata: Metadata = {
     shortcut: "/icon.svg",
   },
 };
+
+async function PrimaryNavigation() {
+  const authContext = await getAuthContext();
+  const authNav = getPrimaryAuthNavigationState(authContext.status);
+
+  return (
+    <nav className="nav" aria-label="Primary navigation">
+      <Link href="/platform">Platform</Link>
+      <Link href="/platform/projects">Projects</Link>
+      {authNav.showLoginLink ? (
+        <Link href="/login">{authNav.loginLabel}</Link>
+      ) : (
+        <form action={signOut}>
+          <button type="submit">{authNav.signOutLabel}</button>
+        </form>
+      )}
+      <Link href="/api/health">Health</Link>
+    </nav>
+  );
+}
 
 export default function RootLayout({
   children,
@@ -26,12 +49,7 @@ export default function RootLayout({
                 <span className="brand-mark">D</span>
                 <span>Diginoces</span>
               </Link>
-              <nav className="nav" aria-label="Primary navigation">
-                <Link href="/platform">Platform</Link>
-                <Link href="/platform/projects">Projects</Link>
-                <Link href="/login">Login</Link>
-                <Link href="/api/health">Health</Link>
-              </nav>
+              <PrimaryNavigation />
             </div>
           </header>
           <main className="main">{children}</main>

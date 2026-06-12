@@ -30,6 +30,15 @@ type AuthenticatedAuthContext = Extract<
   { status: "authenticated" }
 >;
 
+type PlatformPageProps = {
+  searchParams?: Promise<{
+    signOut?: string;
+  }>;
+};
+
+const emptyPlatformSearchParams: Promise<{ signOut?: string }> =
+  Promise.resolve({});
+
 async function getAuthenticatedPlatformActionVisibility(
   authContext: AuthenticatedAuthContext,
 ) {
@@ -89,10 +98,13 @@ async function getAuthenticatedPlatformActionVisibility(
   });
 }
 
-export default async function PlatformPage() {
-  const [authContext, foundation] = await Promise.all([
+export default async function PlatformPage({
+  searchParams,
+}: PlatformPageProps) {
+  const [authContext, foundation, params] = await Promise.all([
     getAuthContext(),
     Promise.resolve(getPlatformFoundationStatus()),
+    searchParams ?? emptyPlatformSearchParams,
   ]);
   const sprint2Foundation = getSprint2FoundationStatus();
 
@@ -119,6 +131,12 @@ export default async function PlatformPage() {
       </p>
 
       <section className="section">
+        {params.signOut === "failed" ? (
+          <div className="alert error">
+            We could not complete sign-out. Try again before leaving this
+            device.
+          </div>
+        ) : null}
         {authContext.status === "not_configured" ? (
           <div className="alert">
             Supabase environment variables are not configured. The shell remains
