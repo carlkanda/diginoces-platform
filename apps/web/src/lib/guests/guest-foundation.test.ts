@@ -204,6 +204,7 @@ describe("Sprint 3 guest-management foundation", () => {
       "guests.manage_groom_side",
     ]);
     const adminContext = guestApiContextWithPermissions(["guests.update"]);
+    const readOnlyContext = guestApiContextWithPermissions(["guests.read"]);
 
     await expect(
       resolveReadableGuestFilters(brideContext, projectId, { side: "all" }),
@@ -225,6 +226,19 @@ describe("Sprint 3 guest-management foundation", () => {
     await expect(
       resolveReadableGuestFilters(adminContext, projectId, { side: "all" }),
     ).resolves.toMatchObject({ side: "all" });
+    await expect(
+      resolveReadableGuestFilters(readOnlyContext, projectId, { side: "all" }),
+    ).resolves.toMatchObject({ side: "all" });
+    await expect(
+      resolveReadableGuestFilters(readOnlyContext, projectId, {
+        side: "bride",
+      }),
+    ).resolves.toMatchObject({ side: "bride" });
+    await expect(
+      resolveReadableGuestFilters(readOnlyContext, projectId, {
+        side: "groom",
+      }),
+    ).resolves.toMatchObject({ side: "groom" });
   });
 
   it("detects duplicate candidates by normalized name and WhatsApp within one project", () => {

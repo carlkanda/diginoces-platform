@@ -27,8 +27,12 @@ export const partnerProfileSelectColumns = [
   "updated_at",
 ] as const;
 
-const partnerProfileSelect =
+type PartnerProfileSelect =
   "id, organization_name, primary_contact_name, contact_email, contact_phone, whatsapp_phone, status, partner_type, approved_at, suspended_at, archived_at, created_at, updated_at";
+
+const partnerProfileSelect = partnerProfileSelectColumns.join(
+  ", ",
+) as PartnerProfileSelect;
 
 async function listRows<T extends BaseRow>(
   query: PromiseLike<{ data: T[] | null; error: unknown }>,
