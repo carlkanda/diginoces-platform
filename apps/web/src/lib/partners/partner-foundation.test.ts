@@ -532,6 +532,8 @@ describe("Sprint 13 partner foundation", () => {
       ),
       "utf8",
     );
+    const normalizedLaunchQaHardeningMigration =
+      launchQaHardeningMigration.replace(/\r\n/g, "\n");
     const healthRoute = readFileSync(
       join(repoRoot, "apps/web/src/app/api/health/route.ts"),
       "utf8",
@@ -616,7 +618,7 @@ describe("Sprint 13 partner foundation", () => {
     expect(launchQaHardeningMigration).toContain(
       "revoke select on public.partners from authenticated",
     );
-    expect(launchQaHardeningMigration).toContain(
+    expect(normalizedLaunchQaHardeningMigration).toContain(
       "grant select (\n  id,\n  organization_name",
     );
     expect(launchQaHardeningMigration).not.toContain("internal_notes");
