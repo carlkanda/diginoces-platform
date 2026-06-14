@@ -35,6 +35,13 @@ function readSprint11Migration() {
   return readFileSync(join(migrationDirectory, migrationFile ?? ""), "utf8");
 }
 
+function readReportDbSource() {
+  return readFileSync(
+    join(process.cwd(), "src", "lib", "reports", "report-db.ts"),
+    "utf8",
+  );
+}
+
 function permissions(...values: PermissionSlug[]) {
   return new Set(values);
 }
@@ -292,6 +299,22 @@ describe("Sprint 11 reporting and dashboard foundation", () => {
       reason: "name correction",
       source: "api",
     });
+  });
+
+  it("keeps audit-log viewer and API queries from selecting old/new snapshots", () => {
+    const reportDbSource = readReportDbSource();
+    const listAuditLogsSource = reportDbSource.slice(
+      reportDbSource.indexOf("export async function listAuditLogs"),
+      reportDbSource.indexOf("export async function listReportExports"),
+    );
+
+    expect(listAuditLogsSource).toContain(
+      "id, actor_user_id, action, object_type, object_id, source, reason, created_at",
+    );
+    expect(listAuditLogsSource).not.toContain("old_value");
+    expect(listAuditLogsSource).not.toContain("new_value");
+    expect(listAuditLogsSource).not.toContain("oldValue");
+    expect(listAuditLogsSource).not.toContain("newValue");
   });
 
   it("builds audit-log search filters without applying ilike to enum sources", () => {

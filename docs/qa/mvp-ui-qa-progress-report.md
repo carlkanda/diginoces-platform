@@ -262,6 +262,23 @@ and `QA-021`; requirements `ROLE-*`, `PROJ-*`, `GM-*`, `INV-*`,
 | API positive-path limitation | The in-app Browser sandbox does not expose `fetch`, `XMLHttpRequest`, `document.cookie`, localStorage, or sessionStorage to automation, and direct navigation to `/api/*` was blocked with `net::ERR_BLOCKED_BY_CLIENT`. Existing Chrome was not running with a DevTools remote-debugging port, and a non-destructive relaunch attempt did not expose port `9223`. Therefore authenticated API positive-path checks remain unverified in this pass, without repeating the already-completed anonymous/protected API denial matrix. |
 | Production sign-off impact | This closes the local linked-dev AAL2 internal UI positive-path gap for the combined `diginoces_admin`/`operations_manager` account. It does not prove operations-manager-only behavior because the available AAL2 user has both global roles, and it does not replace external artifact-store evidence, target-environment evidence, authenticated API positive-path evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
 
+## 2026-06-15 AAL2 Authenticated API Positive-Path Refresh
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-002`, `QA-003`, `QA-005`, `QA-006`, `QA-007`,
+`QA-008`, `QA-011`, `QA-013`, `QA-014`, `QA-016`, `QA-017`, `QA-020`,
+and `QA-021`; requirements `ROLE-*`, `PROJ-*`, `GM-*`, `INV-*`,
+`MSG-*`, `SEAT-*`, `CHK-*`, `REP-*`, `PART-*`, `PAY-*`, and `FILE-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Browser/API harness | A fresh temporary Chrome QA profile was launched with remote debugging on port `9223`, signed in as `diginoces@gmail.com`, and upgraded through MFA. Chrome CDP executed same-origin browser `fetch` calls so cookies stayed inside the browser profile and no session token or cookie value was printed. |
+| Initial API finding | The first authenticated API matrix checked 27 routes. 24 read endpoints returned successful JSON responses, two commercial creation endpoints returned expected `405` because they are POST-only and were removed from the read-positive matrix, and `/api/audit-logs` returned JSON containing `oldValue`/`newValue` snapshot payloads with internal-field markers. |
+| Fix | `listAuditLogs` now selects only audit metadata required by the viewer/API and no longer selects or maps `old_value`/`new_value`. A regression test prevents the audit-log viewer/API query from selecting `old_value`, `new_value`, `oldValue`, or `newValue` again. Audit-log CSV exports were already redacted and remain redacted. |
+| Authenticated API rerun | The AAL2 Chrome/CDP matrix reran 25 read-positive routes: health, global dashboard, reports, audit logs, project list/detail/dashboard/events, event detail/dashboard, guests list/detail, guest imports list/detail, message templates, commercial summary/packages, files, guest book, feedback, RSVP summary, check-in, seating, invitation templates, and partners. Result: 25/25 returned JSON `200`, no `5xx`, no auth/permission failures, no service-role/database/WhatsApp/Google/private-key markers, and no internal snapshot-field markers such as `internal_notes`, `normalized_name`, `normalized_whatsapp`, `oldValue`, or `newValue`. |
+| Production sign-off impact | This closes the local linked-dev authenticated API positive-path gap for the combined `diginoces_admin`/`operations_manager` AAL2 account. It does not prove operations-manager-only behavior because the available AAL2 user has both global roles, and it does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
+
 ## Non-Repetitive QA Completion Checklist
 
 This checklist prevents repeating local checks that are already current unless
@@ -284,12 +301,13 @@ Completed and not worth repeating without a relevant change:
 - AAL2 internal UI positive path for the current combined
   `diginoces_admin`/`operations_manager` linked-dev account: 40/40 focused
   internal routes passed after MFA step-up.
+- AAL2 authenticated read-positive API matrix for the current combined
+  `diginoces_admin`/`operations_manager` linked-dev account: 25/25 focused
+  internal API routes returned successful JSON after audit-log snapshot
+  redaction hardening.
 
 Still needed before the MVP can be called online-ready:
 
-- Complete authenticated internal API positive-path checks from a browser or
-  test harness that can include the AAL2 session cookies without exposing token
-  values. Do not repeat the already-completed anonymous/no-role API matrix.
 - If exact role isolation is required, run operations-manager-only positive
   checks with an AAL2 account that does not also have `diginoces_admin`, or
   approve a reversible temporary role-assignment change for linked dev.
