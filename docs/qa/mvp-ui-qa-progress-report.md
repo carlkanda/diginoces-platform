@@ -243,6 +243,25 @@ manual QA scenarios `QA-001`, `QA-022`, `QA-023`, `QA-026`, `QA-034`,
 | Automated checks | `npm run env:check-public`, `npm audit --omit=dev`, `npm run secrets:scan`, `npm run db:lint`, `npx supabase@latest db push --linked --dry-run`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test` (26 files, 271 tests), `npm run build`, and `git diff --check` passed. |
 | Production sign-off impact | This refresh strengthens local linked-dev and production-mode evidence for anonymous/public security boundaries and current build health. It still does not replace the required external QA artifact-store package, target-environment sign-off, production MFA decision evidence, monitoring owner sign-off, rollback rehearsal evidence, or the `QA-001` through `QA-036` ledger evidence IDs. |
 
+## 2026-06-15 AAL2 Internal UI Positive-Path Refresh
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-002`, `QA-003`, `QA-005`, `QA-006`, `QA-007`,
+`QA-008`, `QA-011`, `QA-013`, `QA-014`, `QA-016`, `QA-017`, `QA-020`,
+and `QA-021`; requirements `ROLE-*`, `PROJ-*`, `GM-*`, `INV-*`,
+`MSG-*`, `SEAT-*`, `CHK-*`, `REP-*`, `PART-*`, `PAY-*`, and `FILE-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Repository and environment | Local `main` was clean and aligned with `origin/main` before the evidence branch was created; local dev server at `http://127.0.0.1:3000` returned `/api/health` `200`; in-app Browser reached `/platform/dashboard` with an authenticated `diginoces@gmail.com` session after MFA step-up. |
+| Sensitive-role evidence | Linked-dev `auth.users` and role-assignment query showed `diginoces@gmail.com` has active global `diginoces_admin` and `operations_manager` assignments; both roles are marked `requires_mfa = true`. No role assignments were created, updated, or removed during this pass. |
+| AAL2 route gate | Before MFA step-up, `/platform/dashboard` redirected to `/login/mfa?next=%2Fplatform%2Fdashboard`. After the authenticator code was entered, the same session rendered `Global dashboard`, proving the MFA-gated internal route was unlocked for the current browser session. |
+| Fixture discovery | Linked-dev query confirmed fake project `QADEMO-2026-001`, two fake events, six active fake guest rows, two applied guest-import sessions, three message templates, and one project file row. No source files, raw tokens, real guests, or real client data were printed or committed. |
+| AAL2 internal UI matrix | In-app Browser checked 40 authenticated internal routes: workspace, global dashboard, reports, audit logs, projects, partners, partner review, project detail/dashboard/commercial/comments, guest list filters for all/bride/groom/both, guest create/detail/public-preview, import history/upload/detail/review/mapping, communications home/queue/templates, project files, guest book/couple review, feedback, RSVP summary, event detail/dashboard/seating/map/check-in/scan/files/invitations/new-template. Result: 40/40 rendered with one non-empty `main`, at least one `h1`, no login redirects, no error-page text, and no horizontal overflow. |
+| API positive-path limitation | The in-app Browser sandbox does not expose `fetch`, `XMLHttpRequest`, `document.cookie`, localStorage, or sessionStorage to automation, and direct navigation to `/api/*` was blocked with `net::ERR_BLOCKED_BY_CLIENT`. Existing Chrome was not running with a DevTools remote-debugging port, and a non-destructive relaunch attempt did not expose port `9223`. Therefore authenticated API positive-path checks remain unverified in this pass, without repeating the already-completed anonymous/protected API denial matrix. |
+| Production sign-off impact | This closes the local linked-dev AAL2 internal UI positive-path gap for the combined `diginoces_admin`/`operations_manager` account. It does not prove operations-manager-only behavior because the available AAL2 user has both global roles, and it does not replace external artifact-store evidence, target-environment evidence, authenticated API positive-path evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
+
 ## Non-Repetitive QA Completion Checklist
 
 This checklist prevents repeating local checks that are already current unless
@@ -262,12 +281,18 @@ Completed and not worth repeating without a relevant change:
 - Linked-dev RLS/RPC grant verification: zero non-allowlisted `PUBLIC`/`anon`
   execute grants.
 - Production-mode local smoke through `scripts/run-web-script-with-root-env.mjs`.
+- AAL2 internal UI positive path for the current combined
+  `diginoces_admin`/`operations_manager` linked-dev account: 40/40 focused
+  internal routes passed after MFA step-up.
 
 Still needed before the MVP can be called online-ready:
 
-- Re-authenticate an AAL2-capable internal user, then run positive-path
-  Diginoces admin and operations manager UI/API checks without redoing the
-  anonymous/no-role matrix.
+- Complete authenticated internal API positive-path checks from a browser or
+  test harness that can include the AAL2 session cookies without exposing token
+  values. Do not repeat the already-completed anonymous/no-role API matrix.
+- If exact role isolation is required, run operations-manager-only positive
+  checks with an AAL2 account that does not also have `diginoces_admin`, or
+  approve a reversible temporary role-assignment change for linked dev.
 - Capture external QA artifact-store evidence for every `QA-001` through
   `QA-036` scenario, using fake data only and opaque IDs in git.
 - Complete target-environment verification if staging/production differs from
@@ -289,8 +314,8 @@ Still needed before the MVP can be called online-ready:
 | ---------------------------- | ---------------------------------------------------------------------------------- |
 | Projects                     | Present: 1 fake project                                                            |
 | Events                       | Present: 2 fake events                                                             |
-| Guests                       | Observed 2026-06-06: 4 active guest rows                                           |
-| Guest import                 | Present: 1 original staged/submitted fixture import; disposable admin review/apply import cleaned after verification |
+| Guests                       | Observed 2026-06-15: 6 active guest rows                                           |
+| Guest import                 | Observed 2026-06-15: 2 applied fixture import sessions; disposable admin review/apply import cleaned after verification |
 | Commercial/payment gate      | Present: 1 permanent fake-project payment exception for guest-page/sending access; disposable contract/payment/exception QA records cleaned after verification |
 | Check-in                     | Present: settings, manual records, preload snapshot, sync batch, conflict evidence |
 | RSVP records                 | Observed 2026-06-06: 2 RSVP rows                                                   |
