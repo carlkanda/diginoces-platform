@@ -821,7 +821,7 @@ export async function listAuditLogs(
   const search = filters.search?.trim();
   let query = table(supabase, "audit_logs")
     .select(
-      "id, actor_user_id, action, object_type, object_id, old_value, new_value, source, reason, created_at",
+      "id, actor_user_id, action, object_type, object_id, source, reason, created_at",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -861,10 +861,8 @@ export async function listAuditLogs(
         typeof row.actor_user_id === "string" ? row.actor_user_id : null,
       createdAt: String(row.created_at),
       id: String(row.id),
-      newValue: (row.new_value ?? null) as AuditLogExportRow["newValue"],
       objectId: typeof row.object_id === "string" ? row.object_id : null,
       objectType: String(row.object_type),
-      oldValue: (row.old_value ?? null) as AuditLogExportRow["oldValue"],
       reason: typeof row.reason === "string" ? row.reason : null,
       source: String(row.source),
     }),
