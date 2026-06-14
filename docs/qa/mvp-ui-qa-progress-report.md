@@ -223,6 +223,66 @@ requirements `ROLE-*`, `PROJ-*`, `GM-*`, `REP-*`, and `TECH-*`.
 | Post-merge main smoke | After PR `#73` merged, local `main` was updated and clean. `/api/health` returned `200` with `supabaseConfigured: true`; In-app Browser checked `/`, `/login`, `/platform`, and `/g/not-a-real-token` with one `main`, one `h1`, no runtime markers, no horizontal overflow, and protected `/platform` redirecting to `/login?next=%2Fplatform`. Post-merge checks passed: `npm run format:check`, targeted `auth-navigation` test, `npm run env:check-public`, `npm audit --omit=dev`, `npm run secrets:scan`, `npm run db:lint`, and `npx supabase@latest db push --linked --dry-run`. |
 | Production sign-off impact | This strengthens local linked-dev evidence for no-role and anonymous access boundaries plus session-end UX. It does not replace the external target-environment artifact package required before production launch. |
 
+## 2026-06-14 Continuation QA Evidence Refresh
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-001`, `QA-022`, `QA-023`, `QA-026`, `QA-034`,
+`QA-035`, and `QA-036`; requirements `ROLE-*`, `TECH-*`, `RSVP-*`,
+`FILE-*`, `GM-*`, `PROJ-*`, and `REP-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Repository and environment | Local `main` was clean and aligned with `origin/main` at commit `5fcd193`; local dev server at `http://127.0.0.1:3000` returned `/api/health` `200`; no temporary linked-dev role assignments remained for `carlkanda@gmail.com` after the pass. |
+| Public and anonymous responsive sweep | In-app Browser opened 14 public/protected routes at mobile `390x844` and desktop `1440x900`, for 28 checks. Routes included home, login, safe and unsafe `next` values, MFA login, invalid public guest token, platform entry, project routes, dashboard, reports, audit logs, and check-in. Result: 28/28 passed with one `main`, one `h1`, no duplicate IDs, no unlabeled visible buttons, no missing visible image alt text, no horizontal overflow, no runtime markers, and no fixture/internal/secret marker hits. Unsafe `next` values normalized to hidden `next=/platform`. |
+| Anonymous protected API sweep | No-cookie Node fetch checked 37 representative protected API routes across projects, guests, imports, files, commercial controls, messages, guest book, events, dashboard, reports, audit logs, and partners. Result: `/api/health` returned `200`; protected APIs returned safe `401`; action-only routes returned `405`; no response exposed fake fixture labels, internal notes, normalized guest helper fields, service-role markers, database password markers, WhatsApp markers, Google-secret markers, or private-key markers. |
+| Direct anonymous Supabase REST/RPC sweep | Using only the local public Supabase anon key without printing it, direct REST reads for `wedding_projects` and `guests` returned empty arrays under RLS. Authenticated-only RPCs checked were `current_user_has_permission`, `apply_guest_import_approved_rows`, `review_guest_import_rows`, `register_project_file`, and `perform_guest_check_in`; all failed closed with non-2xx permission or function-resolution responses and no protected data. Token-scoped public RPCs `resolve_guest_public_page`, `submit_public_rsvp`, and `resolve_guest_file_download` returned safe `{"status":"invalid"}` responses for fake tokens. |
+| RLS/RPC grant verification | The corrected `docs/qa/rls-review.md` query returned zero non-allowlisted `PUBLIC`/`anon` execute grants in linked dev. `npm run db:lint` passed with no schema errors, and `npx supabase@latest db push --linked --dry-run` reported the remote database is up to date. |
+| Advisor refresh | Security advisor counts remained: 3 `anon_security_definer_function_executable` warnings for documented token-scoped public guest RPCs, 34 `authenticated_security_definer_function_executable` warnings for authenticated permission-gated RPCs, and 1 `auth_leaked_password_protection` warning. Performance advisor counts remained post-launch hardening candidates: 246 `unindexed_foreign_keys`, 38 `multiple_permissive_policies`, and 9 `unused_index`. |
+| Production-mode smoke | `npm run build` passed, then a temporary `next start` server launched through `scripts/run-web-script-with-root-env.mjs` on port `3003`. Smoke checks covered public pages, unsafe-login redirect input, MFA login redirect, invalid public token, protected platform routes, health, and protected APIs. Result: 13/13 passed; protected pages returned login redirects, protected APIs returned generic `401`, `/api/health` returned `200`, public/invalid-token responses had expected security headers, and no fixture/internal/secret markers leaked. The temporary server was stopped after the check. |
+| Automated checks | `npm run env:check-public`, `npm audit --omit=dev`, `npm run secrets:scan`, `npm run db:lint`, `npx supabase@latest db push --linked --dry-run`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test` (26 files, 271 tests), `npm run build`, and `git diff --check` passed. |
+| Production sign-off impact | This refresh strengthens local linked-dev and production-mode evidence for anonymous/public security boundaries and current build health. It still does not replace the required external QA artifact-store package, target-environment sign-off, production MFA decision evidence, monitoring owner sign-off, rollback rehearsal evidence, or the `QA-001` through `QA-036` ledger evidence IDs. |
+
+## Non-Repetitive QA Completion Checklist
+
+This checklist prevents repeating local checks that are already current unless
+the app code, migrations, linked-dev configuration, dependency graph, or target
+environment changes after commit `5fcd193`.
+
+Completed and not worth repeating without a relevant change:
+
+- Local build and static gates: format, lint, typecheck, full test suite, build,
+  dependency audit, secret scan, public env check, `db:lint`, linked dry-run, and
+  `git diff --check`.
+- Anonymous/public browser checks: home, login, unsafe `next` handling, MFA
+  login redirect, invalid public guest token, protected app redirects, mobile
+  and desktop layout basics.
+- Anonymous API/RPC checks: protected API denial, direct Supabase anon table RLS
+  checks, authenticated-only RPC denial, invalid-token public RPC safe states.
+- Linked-dev RLS/RPC grant verification: zero non-allowlisted `PUBLIC`/`anon`
+  execute grants.
+- Production-mode local smoke through `scripts/run-web-script-with-root-env.mjs`.
+
+Still needed before the MVP can be called online-ready:
+
+- Re-authenticate an AAL2-capable internal user, then run positive-path
+  Diginoces admin and operations manager UI/API checks without redoing the
+  anonymous/no-role matrix.
+- Capture external QA artifact-store evidence for every `QA-001` through
+  `QA-036` scenario, using fake data only and opaque IDs in git.
+- Complete target-environment verification if staging/production differs from
+  linked dev: migrations, dry-run, `db:lint`, RLS/RPC grants, advisors, bucket
+  policies, secrets, and `/api/health`.
+- Record the production MFA decision: enforce MFA, configure a controlled-pilot
+  exception with owner acceptance and remediation date, or restrict launch.
+- Verify QA artifact-store infrastructure outside git: endpoint, upload/read
+  authorization, unauthorized denial, encryption, retention, and audit logging.
+- Record monitoring owners and response paths, then execute rollback rehearsal
+  with external checksum/log evidence.
+- Update `docs/qa/mvp-qa-evidence-ledger.md` counts and
+  `docs/planning/mvp-launch-checklist.md` only after external evidence IDs and
+  owner sign-off exist.
+
 ## Current Fixture Coverage
 
 | Data area                    | Current linked-dev state                                                           |
