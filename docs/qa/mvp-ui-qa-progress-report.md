@@ -380,12 +380,27 @@ manual QA scenarios `QA-001`, `QA-002`, `QA-003`, `QA-005`, `QA-006`,
 | Route expectation corrections | The no-cookie MFA route safely redirects to the public `Staff access` login page when no MFA session is present, and the guest detail/edit surface uses the guest name `QA Bride Guest` as the page heading. Those are current UI contracts, not findings. |
 | Production sign-off impact | This improves local linked-dev form accessibility evidence. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
 
+## 2026-06-15 Mobile Form-Heavy UI QA
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-001`, `QA-002`, `QA-003`, `QA-005`, `QA-006`,
+`QA-008`, `QA-011`, `QA-013`, `QA-014`, `QA-016`, `QA-020`, and
+`QA-031`; requirements `ROLE-*`, `PROJ-*`, `GM-*`, `IMPORT-*`, `MSG-*`,
+`CHK-*`, `PAY-*`, `FILE-*`, `RSVP-*`, `SEAT-*`, `INV-*`, and `TECH-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Browser state | Chrome/CDP used a no-cookie mobile context for public auth forms and the authenticated linked-dev AAL2 `diginoces@gmail.com` admin/operations session for internal pages at `390x844`; `/api/health` returned `200` before the pass and local `main` was clean and aligned with `origin/main`. |
+| Mobile route matrix | The pass covered 19 form-heavy MVP pages: login, MFA no-session redirect, guest list filters, guest create, guest detail/edit, guest import upload/detail/review, communications queue, message templates, audit logs, event check-in, commercial controls, project files, RSVP summary, guest book, feedback, seating, and invitation setup. Result: 19/19 passed. |
+| Mobile control coverage | The pass inspected 345 visible controls, including 204 visible form controls. It found zero app-owned visible controls without accessible names, zero horizontally offscreen visible controls, zero undersized visible form/action controls under the checked threshold, zero duplicate IDs, no unexpected login redirects, no runtime-error text, no horizontal overflow, and no unexpected console errors. |
+| Production sign-off impact | This improves local linked-dev mobile readiness for dense MVP form surfaces. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
+
 ## Non-Repetitive QA Completion Checklist
 
 This checklist prevents repeating local checks that are already current unless
 the app code, migrations, linked-dev configuration, dependency graph, or target
-environment changes after the 2026-06-15 accessible control name QA
-refresh.
+environment changes after the 2026-06-15 mobile form-heavy UI QA refresh.
 
 Completed and not worth repeating without a relevant change:
 
@@ -434,6 +449,11 @@ Completed and not worth repeating without a relevant change:
   controls; all app-owned visible controls had accessible names, with no
   duplicate IDs, runtime errors, horizontal overflow, unexpected redirects, or
   unexpected console errors.
+- Mobile form-heavy UI: Chrome/CDP checked the same 19 dense public/internal
+  form surfaces at `390x844`; 345 visible controls and 204 visible form
+  controls passed accessible-name, horizontal-overflow, offscreen-control,
+  duplicate-ID, undersized-form/action-control, redirect, runtime-error, and
+  console-error checks.
 
 Still needed before the MVP can be called online-ready:
 
