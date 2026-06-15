@@ -6,6 +6,18 @@ Traceability: GitHub issue `#31`; sprint plan `docs/planning/sprint-15-plan.md`;
 
 This plan defines how to pause, roll back, or fall back from an MVP deployment if launch QA or post-launch monitoring finds a blocking issue.
 
+## MVP Owner Decision
+
+Recorded 2026-06-15:
+
+- Rollback owner: Carl.
+- Rollback approach: approved.
+- Evidence runbook: `RBR-GDRIVE-MVP-LAUNCH-001`.
+
+Before production promotion, execute the non-destructive rollback rehearsal in
+staging, store the evidence externally, and record only opaque evidence IDs in
+git.
+
 ## Rollback Triggers
 
 - Unauthorized access, data exposure, or public-token leakage.

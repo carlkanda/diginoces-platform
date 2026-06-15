@@ -33,6 +33,28 @@ Before starting, confirm these inputs exist outside the repository:
 - MFA decision evidence for sensitive roles;
 - release owner, QA lead, operations lead, and engineering lead names.
 
+Current selected inputs from the Diginoces owner on 2026-06-15:
+
+- QA artifact store: Google Drive under `diginoces@gmail.com`, tracked in git
+  only as opaque runbook reference `RBR-GDRIVE-MVP-LAUNCH-001`.
+- Staging target: Vercel deployment.
+- Production domain target: `diginoces.com`, with DNS currently managed through
+  Bluehost.
+- MFA decision: enforce MFA for all sensitive/admin roles before launch.
+- Monitoring owner: Carl.
+- Monitoring backup owner: Diginoces operations.
+- Alert channels: email and dashboard.
+- Rollback owner: Carl.
+- Rollback approach: approved.
+
+Still required before scenario execution:
+
+- Vercel staging deployment URL and deployment ID.
+- Target Supabase project reference for staging.
+- Vercel environment-variable configuration evidence without exposing values.
+- Google Drive folder/access verification evidence.
+- Opaque evidence IDs for each completed scenario.
+
 If any input is missing, record the missing item in issue `#58` and keep the
 ledger rows as `pending_external_artifact` or `blocked`.
 

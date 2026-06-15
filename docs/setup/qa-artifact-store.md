@@ -6,6 +6,24 @@ Traceability: GitHub issue `#31`; sprint plan `docs/planning/sprint-15-plan.md`;
 
 Manual QA evidence must be stored outside this repository in an encrypted, access-controlled artifact store. Do not commit screenshots, credentials, exports, logs, real guest data, or private client data to git.
 
+## Selected MVP Store
+
+The MVP QA evidence store is Google Drive under the Diginoces account
+`diginoces@gmail.com`.
+
+Repository docs must reference the external runbook with opaque ID
+`RBR-GDRIVE-MVP-LAUNCH-001` only. Do not commit the Google Drive document URL,
+folder URL, file URLs, screenshots, exported files, logs, deployment IDs, or
+credential references.
+
+Current status:
+
+- Google Drive runbook initialized with opaque reference
+  `RBR-GDRIVE-MVP-LAUNCH-001`.
+- Scenario evidence folders, access permissions, unauthorized denial checks,
+  retention, encryption, and audit-logging verification remain required before
+  production sign-off.
+
 ## Provisioning Requirements
 
 Before manual QA begins, provision a company-managed encrypted object store or internal artifact system with:

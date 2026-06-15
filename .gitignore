@@ -40,3 +40,5 @@ uploads/
 exports/
 apps/web/AGENTS.md
 apps/web/CLAUDE.md
+
+.vercel

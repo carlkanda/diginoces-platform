@@ -19,13 +19,13 @@ The MVP can proceed to controlled staging QA after Sprint 15 changes for issue `
 | RLS/security | Advisors reviewed | Linked dev June 6, 2026 security advisor refresh returned 34 authenticated security-definer warnings, 3 token-scoped anon security-definer warnings, and 1 leaked-password warning; RPC grant verification returned zero non-allowlisted `PUBLIC`/`anon` execute grants | Re-run advisors and `docs/qa/rls-review.md` verification in the target environment |
 | Secrets | No committed real secrets/private data | Maintained scan passed before merge | Clean targeted scan |
 | Permissions | Role boundary review exists | Exact linked-dev role QA passed on PR `#48` for bride, groom, partner, and check-in staff boundaries; PRs `#76` through `#78` added AAL2 admin/operations UI and API evidence plus operations-manager-only denial evidence; full external QA evidence package still required | Run full QA-026 through QA-036 evidence capture in the target QA artifact store |
-| MFA | Sensitive roles require MFA metadata | AAL2 browser QA passed through `/login/mfa`, including the June 15, 2026 linked-dev admin/operations refresh; production MFA decision evidence remains pending | Follow MFA decision flow below; enforce/configure MFA or restrict launch with accepted risk |
+| MFA | Sensitive roles require MFA metadata | Diginoces owner decision recorded on June 15, 2026: enforce MFA for all sensitive/admin roles before launch; AAL2 browser QA passed through `/login/mfa`, including the June 15, 2026 linked-dev admin/operations refresh | Configure and verify MFA enforcement in the target Vercel/Supabase environment, then store evidence externally under `RBR-GDRIVE-MVP-LAUNCH-001` |
 | Storage | Private buckets and signed URLs documented | Ready for verification | Confirm bucket policies in target project |
 | Public guest access | Token-scoped flows documented | Ready for verification | Manual token isolation QA |
 | Manual workflows | WhatsApp/payments/Canva fallbacks documented | Ready | Operations accepts manual workflow |
-| Staging smoke | Scenario checklist and evidence ledger exist | Local/linked-dev Chrome/CDP QA has covered the major MVP flows and exact low-privilege boundaries, with June 15, 2026 AAL2 UI/API and operations-manager-only evidence recorded in `docs/qa/mvp-ui-qa-progress-report.md`; `docs/qa/mvp-qa-evidence-ledger.md` tracks QA-001 through QA-036, all still pending external artifact evidence for production sign-off | Run the handoff in `docs/qa/mvp-qa-execution-handoff.md`, execute all scenarios in `docs/qa/mvp-manual-qa-scenarios.md`, store artifacts in the secure QA artifact store from `docs/setup/qa-artifact-store.md`, and update `docs/qa/mvp-qa-evidence-ledger.md` with opaque evidence IDs |
-| Rollback | Rollback plan exists | Added in Sprint 15 | Owner acknowledges fallback process in `docs/planning/mvp-rollback-plan.md` |
-| Monitoring | Post-launch plan exists | Added in Sprint 15 | Assign owners and response paths in `docs/qa/post-launch-monitoring.md` |
+| Staging smoke | Scenario checklist and evidence ledger exist | Google Drive QA runbook `RBR-GDRIVE-MVP-LAUNCH-001` initialized; staging target selected as Vercel; local/linked-dev Chrome/CDP QA has covered the major MVP flows and exact low-privilege boundaries, with June 15, 2026 AAL2 UI/API and operations-manager-only evidence recorded in `docs/qa/mvp-ui-qa-progress-report.md`; `docs/qa/mvp-qa-evidence-ledger.md` tracks QA-001 through QA-036, all still pending external artifact evidence for production sign-off | Create/verify the Vercel staging deployment, run the handoff in `docs/qa/mvp-qa-execution-handoff.md`, execute all scenarios in `docs/qa/mvp-manual-qa-scenarios.md`, store artifacts in Google Drive under `RBR-GDRIVE-MVP-LAUNCH-001`, and update `docs/qa/mvp-qa-evidence-ledger.md` with opaque evidence IDs |
+| Rollback | Rollback plan exists | Rollback owner recorded as Carl on June 15, 2026; rollback approach approved | Execute non-destructive rollback rehearsal and store evidence externally before production |
+| Monitoring | Post-launch plan exists | Monitoring owner recorded as Carl; backup owner Diginoces operations; alert channels email and dashboard | Configure and test monitoring in staging/production target; store alert-rule and test-alert evidence externally |
 
 ## Security & Access
 
@@ -36,7 +36,8 @@ Record post-apply RLS/RPC grant verification sign-off here before production pro
 | Linked dev RPC grant verification | Engineering lead | 2026-06-04 | Query result: zero non-allowlisted `PUBLIC`/`anon` execute grants; opaque runbook reference to be stored externally |
 | Linked dev PR #48 role-boundary and advisor refresh | Engineering lead | 2026-06-06 | PR `#48`; Verify and CodeRabbit passed; RPC grant verification returned zero rows; external evidence package still pending |
 | Linked dev AAL2 admin/operations and operations-only QA refresh | Engineering lead | 2026-06-15 | PRs `#76`, `#77`, and `#78`; authenticated UI/API and operations-manager-only evidence recorded in `docs/qa/mvp-ui-qa-progress-report.md`; external evidence package still pending |
-| Pending | Operations lead | Pending | Runbook Ref ID: RBR-pending - URL stored in secured runbook |
+| MFA enforcement decision | Diginoces owner role | 2026-06-15 | Enforce MFA for all sensitive/admin roles before launch; target-environment enforcement evidence pending in `RBR-GDRIVE-MVP-LAUNCH-001` |
+| Monitoring and rollback ownership | Diginoces owner role | 2026-06-15 | Monitoring owner Carl; backup Diginoces operations; email/dashboard alerts; rollback owner Carl; rollback approach approved; rehearsal/test evidence pending in `RBR-GDRIVE-MVP-LAUNCH-001` |
 
 ## QA Infrastructure Readiness
 
@@ -44,7 +45,7 @@ Record QA artifact-store verification here before manual staging QA begins:
 
 | Item | Owner | Status | Evidence ID / Reference |
 | --- | --- | --- | --- |
-| Artifact store endpoint available in external secure release runbook | Operations lead | Pending | Runbook Ref ID: RBR-pending - URL stored in secured runbook |
+| Artifact store endpoint available in external secure release runbook | Operations lead | Initialized | Google Drive under `diginoces@gmail.com`; opaque runbook ref `RBR-GDRIVE-MVP-LAUNCH-001`; private URL stored externally only |
 | QA access ticketing flow or approved temporary fallback documented | Engineering lead | Pending | Ticket ID: QA-pending - URL stored in secured runbook or vault |
 | Upload/read authorization and unauthorized denial verified | QA lead | Pending | Artifact ID: QAART-pending - URL stored in secured runbook |
 | Retention, encryption, and audit logging verified | Engineering lead | Pending | Artifact ID: QAART-pending - URL stored in secured runbook |
