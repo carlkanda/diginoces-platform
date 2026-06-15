@@ -297,11 +297,25 @@ manual QA scenarios `QA-002`, `QA-003`, `QA-005`, `QA-006`, `QA-007`,
 | Admin-only denial | With only `operations_manager` active, `/platform/audit-logs` rendered the safe 404 page instead of the audit viewer, and `/api/audit-logs` returned JSON `403` with a generic error. No secret markers or internal snapshot-field markers appeared in the denial response. |
 | Production sign-off impact | This closes the local linked-dev operations-manager-only UI/API proof and confirms the audit-log admin boundary for the checked surfaces. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
 
+## 2026-06-15 Authenticated App-Shell Navigation Sanity Refresh
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-002`, `QA-003`, and `QA-020`; requirements
+`ROLE-*`, `PROJ-*`, `REP-*`, and `TECH-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Browser state | Local `main` was clean and aligned with `origin/main`; `/api/health` returned `200`; the in-app browser and Chrome/CDP sessions were authenticated on the linked-dev app at `http://127.0.0.1:3000/platform/dashboard`. |
+| Dashboard visual baseline | The visible dashboard rendered `Global dashboard` with non-empty `main` content, no login redirect, no runtime-error text, no horizontal overflow, no duplicate IDs, no unlabeled visible buttons, and no secret-marker text. |
+| App-shell click navigation | Chrome/CDP used actual link clicks with URL-based waits for `Projects`, `Reports`, `Audit logs`, and the recent project card. Result: 5/5 checks passed across dashboard start, `/platform/projects`, `/platform/reports`, `/platform/audit-logs`, and `/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c/dashboard`. |
+| Production sign-off impact | This closes the latest post-merge local app-shell navigation sanity check for the authenticated admin/operations session. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
+
 ## Non-Repetitive QA Completion Checklist
 
 This checklist prevents repeating local checks that are already current unless
 the app code, migrations, linked-dev configuration, dependency graph, or target
-environment changes after commit `5fcd193`.
+environment changes after PR `#79`.
 
 Completed and not worth repeating without a relevant change:
 
@@ -327,6 +341,10 @@ Completed and not worth repeating without a relevant change:
   focused read API routes passed while audit logs remained denied; the temporary
   admin assignment expiry was restored and both sensitive roles were active
   afterward.
+- Authenticated app-shell click navigation: Chrome/CDP clicked the dashboard
+  `Projects`, `Reports`, `Audit logs`, and recent project-card links with
+  URL-based waits; 5/5 checks passed with no runtime, layout, duplicate ID,
+  unlabeled button, or secret-marker issues.
 
 Still needed before the MVP can be called online-ready:
 
