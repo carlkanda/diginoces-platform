@@ -1116,6 +1116,46 @@ describe("Sprint 15 release readiness", () => {
     }
   });
 
+  it("keeps project and event code-generation trigger helpers executable for authenticated inserts only", () => {
+    const effectiveFunctionPrivilegeStates =
+      buildEffectiveFunctionPrivilegeStates(readMigrationHistory());
+    const triggerHelperSignatures = [
+      "app_private.generate_project_code(text, text, integer)",
+      "app_private.generate_event_code(uuid, public.event_type)",
+    ];
+
+    for (const signature of triggerHelperSignatures) {
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "authenticated",
+        ),
+      ).toBe(true);
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "service_role",
+        ),
+      ).toBe(true);
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "public",
+        ),
+      ).toBe(false);
+      expect(
+        hasEffectiveFunctionGrantForRole(
+          effectiveFunctionPrivilegeStates,
+          signature,
+          "anon",
+        ),
+      ).toBe(false);
+    }
+  });
+
   it("keeps guest assignment management RLS non-recursive after check-in policies", () => {
     const migration = readMigrationBySuffix(
       "_mvp_ui_qa_rls_route_hardening.sql",
