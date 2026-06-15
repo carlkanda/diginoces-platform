@@ -87,8 +87,8 @@ external artifacts and an opaque evidence ID before production sign-off.
 | QA-024 | `REP-*`; `TECH-*` | Monitoring signal validation | `pass` | `not_classified` | `QAART-20260615-QA-024` | Operations lead | GitHub Actions staging health monitor is configured for the protected Vercel Preview `/api/health` endpoint; healthy run `27568966140` passed with two `200`/`ok` samples, and intentional same-origin failure run `27569035612` failed after two `404` samples to prove the dashboard/test-alert path. |
 | QA-025 | `ROAD-*`; `TECH-*` | Rollback dry-run | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Include checksum and repository-state evidence. |
 | QA-026 | `ROLE-*`; `TECH-*` | Guest token cannot open authenticated app routes | `pass` | `not_classified` | `QAART-20260615-QA-026` | QA lead | Protected Vercel staging authenticated-route denial used a valid fake guest public-page token as a credential header; protected pages returned encoded login redirects, protected APIs returned generic `401`, no response echoed the raw token or protected markers, project/guest audit rows were 0 after route requests, setup-only token audit rows were identified, and temporary fake token rows were cleaned up. |
-| QA-027 | `ROLE-*`; `GM-*`; `PAY-*`; `REP-*` | Bride cannot edit groom-only guests or internal/commercial data | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Linked-dev Chrome/CDP found and fixed API internal-field overexposure for the bride-role path; exact external role-boundary evidence is still required. |
-| QA-028 | `ROLE-*`; `GM-*`; `PAY-*`; `REP-*` | Groom cannot edit bride-only guests or internal/commercial data | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Shared API redaction helpers cover guest/project payload internals; exact external groom role-boundary evidence is still required. |
+| QA-027 | `ROLE-*`; `GM-*`; `PAY-*`; `REP-*` | Bride cannot edit groom-only guests or internal/commercial data | `pass` | `not_classified` | `QAART-20260615-QA-027` | QA lead | Protected Vercel staging bride-role negative boundary passed with disposable fake project/users: bride own-side permission true, groom-side false, audit/payment/revenue permissions false; groom-side list and patch, audit read, and payment record requests returned `403`; role-filtered report catalog returned `200` without protected fields; guest/payment/audit mutation counts stayed 0 and fake data was cleaned up. |
+| QA-028 | `ROLE-*`; `GM-*`; `PAY-*`; `REP-*` | Groom cannot edit bride-only guests or internal/commercial data | `pass` | `not_classified` | `QAART-20260615-QA-028` | QA lead | Protected Vercel staging groom-role negative boundary passed with disposable fake project/users: groom own-side permission true, bride-side false, audit/payment/revenue permissions false; bride-side list and patch, audit read, and payment record requests returned `403`; role-filtered report catalog returned `200` without protected fields; guest/payment/audit mutation counts stayed 0 and fake data was cleaned up. |
 | QA-029 | `ROLE-*`; `PART-*`; `PAY-*`; `REP-*` | Partner cannot access internal/admin project surfaces | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Include unrelated project denial. |
 | QA-030 | `ROLE-*`; `CHK-*`; `SEAT-*`; `PAY-*`; `REP-*` | Check-in staff cannot access unrelated event or admin workflows | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Include assigned-event control case. |
 | QA-031 | `ROLE-*`; `PAY-*`; `TECH-*` | Operations staff cannot perform admin-only functions without grant | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | PR `#78` recorded operations-manager-only UI/API access and audit-log denial evidence in linked dev; external no-mutation DB assertions still required. |
@@ -102,8 +102,8 @@ external artifacts and an opaque evidence ID before production sign-off.
 
 | Status | Count |
 | --- | ---: |
-| `pending_external_artifact` | 27 |
-| `pass` | 9 |
+| `pending_external_artifact` | 25 |
+| `pass` | 11 |
 | `fail` | 0 |
 | `blocked` | 0 |
 | `waived` | 0 |
