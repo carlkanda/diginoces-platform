@@ -28,6 +28,10 @@ Current status:
   `QAART-20260615-ARTIFACT-ACCESS-001`: Drive metadata reported
   `shared=false`, a single listed owner permission, and an unauthenticated
   export probe returned HTTP 401 with zero protected evidence-marker hits.
+- Scenario-level evidence IDs, including `QAART-20260615-QA-006`, are tracked
+  in `docs/qa/mvp-qa-evidence-ledger.md` and
+  `docs/planning/mvp-launch-checklist.md`; this setup document records only
+  artifact-store rules and opaque runbook references.
 - Scenario evidence folders, assigned-tester upload/read permissions,
   second-account folder denial checks, retention, encryption, audit logging, and
   access-ticketing verification remain required before production sign-off.
