@@ -346,11 +346,28 @@ manual QA scenarios `QA-003`, `QA-008`, `QA-011`, `QA-012`, `QA-014`,
 | Visual review | Event detail and check-in mobile screenshots were inspected. The event action bar wrapped cleanly, the event detail layout remained readable, and the check-in heading/buttons/status cards were usable at `390x844`; no code fix was required. |
 | Production sign-off impact | This improves local linked-dev mobile event workflow readiness for authenticated admin/operations users. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
 
+## 2026-06-15 Authenticated Keyboard And Focus QA
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-002`, `QA-003`, `QA-005`, `QA-006`, `QA-011`,
+`QA-013`, `QA-016`, `QA-020`, and `QA-031`; requirements `ROLE-*`,
+`PROJ-*`, `GM-*`, `IMPORT-*`, `MSG-*`, `CHK-*`, `REP-*`, and `TECH-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Browser state | Chrome/CDP used the authenticated linked-dev AAL2 `diginoces@gmail.com` admin/operations session at desktop viewport `1280x720`; `/api/health` returned `200` before the pass and local `main` was clean and aligned with `origin/main`. |
+| Focus matrix | Real keyboard `Tab` events checked 8 authenticated internal pages: workspace, projects, project detail, guests, guest-import upload, communications queue, event check-in, and audit logs. Result: 8/8 pages passed after filtering the Next development overlay portal from app-owned focus checks. |
+| Focus assertions | App-owned focus targets stayed visible and within the viewport, exposed a visible focus indicator, rendered expected headings, avoided login redirects, avoided runtime-error text, avoided horizontal overflow, and produced no unexpected console errors. |
+| Keyboard activation | Real keyboard `Enter` activation passed 4/4 safe navigation checks: dashboard nav `Projects`, projects card to the QA project detail, project detail `Guests`, and project detail `Guest imports`. All reached the expected URLs/headings without login redirects, runtime errors, horizontal overflow, or console errors. |
+| Route correction | An initial test URL used `/guest-imports/upload`, which is not the implemented route and produced a dev error surface for that invalid path during the test. The actual upload page is `/guest-imports/new`; the corrected keyboard/focus pass loaded `Upload guest CSV` and passed. |
+| Production sign-off impact | This improves local linked-dev keyboard accessibility evidence for authenticated admin/operations users. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
+
 ## Non-Repetitive QA Completion Checklist
 
 This checklist prevents repeating local checks that are already current unless
 the app code, migrations, linked-dev configuration, dependency graph, or target
-environment changes after the 2026-06-15 authenticated mobile event-surface QA
+environment changes after the 2026-06-15 authenticated keyboard/focus QA
 refresh.
 
 Completed and not worth repeating without a relevant change:
@@ -390,6 +407,11 @@ Completed and not worth repeating without a relevant change:
   invitations/new-template at `390x844`; 12/12 effective checks passed with no
   runtime, layout, duplicate ID, unlabeled button, offscreen control,
   console-error, or secret-marker issues.
+- Authenticated keyboard/focus accessibility: Chrome/CDP real keyboard events
+  checked 8 internal pages and 4 safe Enter-navigation flows at `1280x720`;
+  app-owned focus targets stayed visible, within the viewport, and focus
+  indicated, with no login redirects, runtime errors, horizontal overflow, or
+  unexpected console errors.
 
 Still needed before the MVP can be called online-ready:
 
