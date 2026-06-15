@@ -14,6 +14,24 @@ Production launch remains `no_go` until every scenario row is either:
 
 Local and linked-dev Chrome/CDP progress in `docs/qa/mvp-ui-qa-progress-report.md` is useful readiness evidence, but it is not a substitute for the external QA artifact package required before production.
 
+## Current External Evidence Target
+
+Recorded 2026-06-15:
+
+- External QA artifact store: Google Drive under `diginoces@gmail.com`.
+- Opaque runbook reference for git/docs: `RBR-GDRIVE-MVP-LAUNCH-001`.
+- Staging deployment target: Vercel.
+- Production domain target: `diginoces.com`, with DNS currently managed through
+  Bluehost.
+- MFA decision: enforce MFA for all sensitive/admin roles before launch.
+- Monitoring owner: Carl; backup owner: Diginoces operations; alert channels:
+  email and dashboard.
+- Rollback owner: Carl; rollback approach approved.
+
+These decisions unblock QA execution planning but do not change any scenario
+status to `pass`. Each scenario still needs external artifacts and an opaque
+evidence ID before production sign-off.
+
 ## Status Values
 
 | Status | Meaning |

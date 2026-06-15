@@ -6,11 +6,24 @@ Traceability: GitHub issue `#31`; sprint plan `docs/planning/sprint-15-plan.md`;
 
 This plan defines the first operational monitoring loop after MVP launch or controlled pilot launch.
 
+## MVP Owner Decisions
+
+Recorded 2026-06-15:
+
+- Monitoring owner: Carl.
+- Backup owner: Diginoces operations.
+- Alert channels: email and dashboard.
+- Evidence runbook: `RBR-GDRIVE-MVP-LAUNCH-001`.
+
+Private inboxes, dashboard URLs, alert-rule URLs, screenshots, and test-alert
+payloads must stay in the external Google Drive runbook/artifact store. This
+repository records only opaque evidence IDs.
+
 ## Signals To Monitor
 
 | Area | Trigger threshold | Owner | Approval and fallback |
 | --- | --- | --- | --- |
-| App availability | Hosted uptime monitor or scheduled health poll fails 2 consecutive 5-minute checks, or error rate exceeds 5% for 15 minutes based on 5-minute sampling | Operations | Engineering lead may roll back app deploy; use `docs/planning/mvp-rollback-plan.md#application-rollback` |
+| App availability | Hosted uptime monitor or scheduled health poll fails 2 consecutive 5-minute checks, or error rate exceeds 5% for 15 minutes based on 5-minute sampling | Carl; backup Diginoces operations | Engineering lead may roll back app deploy; use `docs/planning/mvp-rollback-plan.md#application-rollback` |
 | Auth | Login failures exceed 5% of attempts, MFA/session errors affect sensitive roles, or unexpected anonymous access appears | Admin/engineering | Diginoces owner role approves sensitive-role pause; refer to internal operations documentation for the designated incident notification channel or on-call rota, not personal contacts in repo |
 | Supabase database | API/RPC error rate exceeds 2%, any RLS denial affects an authorized flow, or repeated queries exceed 2 seconds | Engineering lead | Engineering lead classifies blocker/risk and opens corrective migration if needed |
 | Public guest pages | Guest token resolution or RSVP submission failures exceed 3 events/hour | Operations | Operations lead activates manual RSVP fallback via `docs/planning/mvp-rollback-plan.md#manual-operational-fallback` |

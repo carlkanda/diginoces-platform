@@ -42,6 +42,19 @@ mode.
 
 ## Application Deployment
 
+Selected targets:
+
+- Staging hosting target: Vercel staging deployment.
+- Production domain target: `diginoces.com`, with DNS currently managed through
+  Bluehost.
+- The Vercel connector returned the CLI/Git-integration deployment path on
+  June 15, 2026. The Vercel CLI created a local `.vercel` project link, and
+  `.vercel` is ignored so provider metadata is not committed. The staging
+  deployment was not verified in this session because the CLI attempt timed out
+  and the Vercel MCP project lookup returned `403 Forbidden`. Verify the Vercel
+  project, root/build settings, environment variables, Git integration, and
+  deployment URL in the Vercel dashboard before recording staging evidence.
+
 1. Run local verification: `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run env:check-public`, `npm run build`, and `npm audit --omit=dev`.
 2. Confirm CI runs the same core checks on the PR.
 3. Deploy the branch to staging.
@@ -65,8 +78,11 @@ Use the pinned Supabase CLI version above for deployment-readiness evidence. Spr
 1. Configure a hosted uptime monitor, hosting-provider synthetic check, or custom scheduled health poll for the home page and `/api/health`.
 2. Use 5-minute sampling for MVP unless the hosting provider supports a stricter interval without extra operational load.
 3. Alert when 2 consecutive checks fail or when the app error rate exceeds 5% for 15 minutes, matching `docs/qa/post-launch-monitoring.md`.
-4. Route alerts to the internal incident channel named in the external release runbook; do not commit personal phone numbers or private contact details.
-5. Assign Operations as first responder and engineering lead as rollback approver/escalation owner in `docs/planning/mvp-launch-checklist.md` before production.
+4. Route alerts to email and dashboard channels named in the external release
+   runbook; do not commit private inbox URLs, personal phone numbers, or private
+   contact details.
+5. Assign Carl as monitoring owner and Diginoces operations as backup owner in
+   `docs/planning/mvp-launch-checklist.md` before production.
 6. Store monitor configuration screenshots, alert rule IDs, and test alert evidence in the QA artifact store.
 
 ## Deployment Gates
