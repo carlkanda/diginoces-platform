@@ -8,8 +8,9 @@ Manual QA evidence must be stored outside this repository in an encrypted, acces
 
 ## Selected MVP Store
 
-The MVP QA evidence store is Google Drive under the Diginoces account
-`diginoces@gmail.com`.
+The MVP QA evidence store is Google Drive under `kandacarl@gmail.com`.
+The Diginoces owner approved this account as the evidence-store owner on
+June 15, 2026 after connected Drive metadata confirmed it owns the runbook.
 
 Repository docs must reference the external runbook with opaque ID
 `RBR-GDRIVE-MVP-LAUNCH-001` only. Do not commit the Google Drive document URL,
@@ -21,9 +22,8 @@ Current status:
 - Google Drive runbook initialized with opaque reference
   `RBR-GDRIVE-MVP-LAUNCH-001`.
 - June 15, 2026 readback through the connected Google Drive tool confirmed the
-  runbook is available, but Drive metadata reported an owner account that does
-  not match the documented `diginoces@gmail.com` store owner. Confirm or
-  transfer ownership before production sign-off.
+  runbook is available and owned by `kandacarl@gmail.com`; Diginoces owner
+  approval is recorded externally under `QAART-20260615-OWNER-001`.
 - Scenario evidence folders, access permissions, unauthorized denial checks,
   retention, encryption, and audit-logging verification remain required before
   production sign-off.

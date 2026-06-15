@@ -35,8 +35,9 @@ Before starting, confirm these inputs exist outside the repository:
 
 Current selected inputs from the Diginoces owner on 2026-06-15:
 
-- QA artifact store: Google Drive under `diginoces@gmail.com`, tracked in git
-  only as opaque runbook reference `RBR-GDRIVE-MVP-LAUNCH-001`.
+- QA artifact store: Google Drive under `kandacarl@gmail.com`, approved by the
+  Diginoces owner on June 15, 2026 and tracked in git only as opaque runbook
+  reference `RBR-GDRIVE-MVP-LAUNCH-001`.
 - Staging target: Vercel deployment. Preview build evidence
   `VCL-STAGING-20260615-001` is recorded externally after a `READY` deployment;
   Preview environment-variable configuration and the fresh env-backed `READY`
@@ -57,7 +58,9 @@ Still required before scenario execution:
 - Target Supabase project reference confirmation for staging sign-off.
 - Reuse the approved protected-access bypass path, Vercel-authenticated tester
   access, or an approved staging custom domain for browser scenario execution.
-- Google Drive folder/access verification evidence.
+- Google Drive folder/access verification evidence, including approved-owner
+  metadata readback, assigned-tester upload/read proof, unauthorized denial
+  proof, retention/encryption evidence, and audit-log evidence.
 - Opaque evidence IDs for each completed scenario.
 
 If any input is missing, record the missing item in issue `#58` and keep the
