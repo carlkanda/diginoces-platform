@@ -396,11 +396,29 @@ manual QA scenarios `QA-001`, `QA-002`, `QA-003`, `QA-005`, `QA-006`,
 | Mobile control coverage | The pass inspected 345 visible controls, including 204 visible form controls. It found zero app-owned visible controls without accessible names, zero horizontally offscreen visible controls, zero undersized visible form/action controls under the checked threshold, zero duplicate IDs, no unexpected login redirects, no runtime-error text, no horizontal overflow, and no unexpected console errors. |
 | Production sign-off impact | This improves local linked-dev mobile readiness for dense MVP form surfaces. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
 
+## 2026-06-15 Mobile Filter And Query-State QA
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-002`, `QA-003`, `QA-005`, `QA-006`, `QA-008`,
+`QA-011`, `QA-013`, `QA-014`, `QA-016`, `QA-020`, and `QA-031`;
+requirements `ROLE-*`, `PROJ-*`, `GM-*`, `IMPORT-*`, `MSG-*`, `RSVP-*`,
+`CHK-*`, `REP-*`, and `TECH-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Browser state | Chrome/CDP used the authenticated linked-dev AAL2 `diginoces@gmail.com` admin/operations session at mobile viewport `390x844`; `/api/health` returned `200` before the pass and local `main` was clean and aligned with `origin/main`. |
+| Query/filter route matrix | Chrome/CDP opened 13 read-only query/filter states: guest list all, guest side `bride`, guest side `groom`, guest side `both`, guest event filter for `QA Civil Ceremony`, invalid guest side fail-closed 404, audit-log filters for action/object/search, check-in search with `q=QA&side=bride`, check-in `side=both`, check-in invalid side normalization to `all`, communications queue `messageError`, feedback `status=reviewed`, and feedback `status=error`. Result: 13/13 passed. |
+| Query-state assertions | Guest filters preserved active `aria-current` state for all/bride/groom/both/event filters; invalid guest side returned the expected not-found surface; audit-log inputs preserved `action=guest.created`, `objectType=guest`, and `search=QA`; check-in inputs preserved valid query state and normalized invalid side to `all`; communications and feedback status/error query messages rendered without submitting forms. |
+| Mobile layout assertions | Every checked route avoided login redirects, runtime-error text, horizontal overflow, horizontally offscreen visible controls, unnamed visible controls, duplicate IDs, and unexpected console errors. |
+| Production sign-off impact | This improves local linked-dev evidence that mobile query/filter URLs remain stable and readable for core internal workflows. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
+
 ## Non-Repetitive QA Completion Checklist
 
 This checklist prevents repeating local checks that are already current unless
 the app code, migrations, linked-dev configuration, dependency graph, or target
-environment changes after the 2026-06-15 mobile form-heavy UI QA refresh.
+environment changes after the 2026-06-15 mobile filter/query-state UI QA
+refresh.
 
 Completed and not worth repeating without a relevant change:
 
@@ -454,6 +472,12 @@ Completed and not worth repeating without a relevant change:
   controls passed accessible-name, horizontal-overflow, offscreen-control,
   duplicate-ID, undersized-form/action-control, redirect, runtime-error, and
   console-error checks.
+- Mobile filter/query-state UI: Chrome/CDP checked 13 read-only mobile query
+  states for guest list side/event filters, audit-log filters, check-in search
+  and side filters, communications queue feedback, and post-event feedback
+  status/error messages; 13/13 passed with expected URL/form state, no login
+  redirects, no runtime errors, no horizontal overflow, no offscreen or unnamed
+  visible controls, no duplicate IDs, and no unexpected console errors.
 
 Still needed before the MVP can be called online-ready:
 
