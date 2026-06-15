@@ -23,11 +23,10 @@ Recorded 2026-06-15:
 - Staging deployment target: Vercel. Preview build evidence
   `VCL-STAGING-20260615-001` is stored externally after a `READY` deployment.
   Preview environment configuration and a fresh env-backed `READY` deployment
-  are stored externally under `VCL-STAGING-20260615-002`; app-level staging
-  smoke is still pending because staging access is blocked by Vercel
-  Authentication before app code. Preview server-side storage signed URL
-  behavior also remains unverified until a service-role signing key is
-  configured.
+  are stored externally under `VCL-STAGING-20260615-002`. Protected-access
+  bypass setup, server-side Supabase secret-key configuration, and app-level
+  smoke are stored externally under `VCL-STAGING-20260615-003`; full scenario
+  evidence remains pending.
 - Production domain target: `diginoces.com`, with DNS currently managed through
   Bluehost.
 - MFA decision: enforce MFA for all sensitive/admin roles before launch.
