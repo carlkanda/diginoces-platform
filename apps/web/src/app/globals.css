@@ -219,6 +219,7 @@ textarea {
   margin-top: 36px;
 }
 
+.status-grid > div,
 .status-item {
   min-height: 124px;
   border: 1px solid var(--border);
@@ -227,11 +228,21 @@ textarea {
   padding: 18px;
 }
 
-.status-item strong {
-  display: block;
-  margin-bottom: 8px;
+.status-grid > div {
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
 }
 
+.status-grid > div strong,
+.status-item strong {
+  display: block;
+  margin: 0;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.status-grid > div span,
 .status-item span,
 .meta-list,
 .form-note {
