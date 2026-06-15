@@ -27,8 +27,8 @@ Recorded 2026-06-15:
   Preview environment configuration and a fresh env-backed `READY` deployment
   are stored externally under `VCL-STAGING-20260615-002`. Protected-access
   bypass setup, server-side Supabase secret-key configuration, and app-level
-  smoke are stored externally under `VCL-STAGING-20260615-003`; full scenario
-  evidence remains pending.
+  smoke are stored externally under `VCL-STAGING-20260615-003`; scenario
+  evidence capture is in progress.
 - Production domain target: `diginoces.com`, with DNS currently managed through
   Bluehost.
 - MFA decision: enforce MFA for all sensitive/admin roles before launch.
@@ -79,7 +79,7 @@ external artifacts and an opaque evidence ID before production sign-off.
 | QA-023 | `TECH-*`; `FILE-*`; `REP-*` | Security review checklist | `pass` | `not_classified` | `QAART-20260615-QA-023` | Engineering lead | Install, format, lint, typecheck, tests, build, audit, public-env check, and targeted secret scan passed; performance-advisor items remain post-launch follow-up unless staging load evidence escalates them. |
 | QA-024 | `REP-*`; `TECH-*` | Monitoring signal validation | `pending_external_artifact` | `not_classified` | `QAART-pending` | Operations lead | Owners and alert response paths required. |
 | QA-025 | `ROAD-*`; `TECH-*` | Rollback dry-run | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Include checksum and repository-state evidence. |
-| QA-026 | `ROLE-*`; `TECH-*` | Guest token cannot open authenticated app routes | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Response, DB, and audit assertions required. |
+| QA-026 | `ROLE-*`; `TECH-*` | Guest token cannot open authenticated app routes | `pass` | `not_classified` | `QAART-20260615-QA-026` | QA lead | Protected Vercel staging authenticated-route denial used a valid fake guest public-page token as a credential header; protected pages returned encoded login redirects, protected APIs returned generic `401`, no response echoed the raw token or protected markers, project/guest audit rows were 0 after route requests, setup-only token audit rows were identified, and temporary fake token rows were cleaned up. |
 | QA-027 | `ROLE-*`; `GM-*`; `PAY-*`; `REP-*` | Bride cannot edit groom-only guests or internal/commercial data | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Linked-dev Chrome/CDP found and fixed API internal-field overexposure for the bride-role path; exact external role-boundary evidence is still required. |
 | QA-028 | `ROLE-*`; `GM-*`; `PAY-*`; `REP-*` | Groom cannot edit bride-only guests or internal/commercial data | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Shared API redaction helpers cover guest/project payload internals; exact external groom role-boundary evidence is still required. |
 | QA-029 | `ROLE-*`; `PART-*`; `PAY-*`; `REP-*` | Partner cannot access internal/admin project surfaces | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Include unrelated project denial. |
@@ -95,8 +95,8 @@ external artifacts and an opaque evidence ID before production sign-off.
 
 | Status | Count |
 | --- | ---: |
-| `pending_external_artifact` | 30 |
-| `pass` | 6 |
+| `pending_external_artifact` | 29 |
+| `pass` | 7 |
 | `fail` | 0 |
 | `blocked` | 0 |
 | `waived` | 0 |
