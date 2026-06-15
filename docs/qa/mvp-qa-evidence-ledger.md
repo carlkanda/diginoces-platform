@@ -62,7 +62,7 @@ external artifacts and an opaque evidence ID before production sign-off.
 | ID | Requirement group | Scenario summary | Current status | Classification | Evidence ID / reference | Owner | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | QA-001 | `PV-*`; `TECH-*` | App loads and health endpoint responds | `pass` | `not_classified` | `QAART-20260615-QA-001` | QA lead | Protected Vercel staging smoke passed for home, health, login, auth redirect, invalid guest token, and unauthenticated protected API denial. |
-| QA-002 | `ROLE-*` | Admin signs in and reaches platform routes | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | PR `#76` recorded linked-dev AAL2 internal UI evidence and PR `#77` recorded authenticated read-positive API evidence; external evidence still required. |
+| QA-002 | `ROLE-*` | Admin signs in and reaches platform routes | `pass` | `not_classified` | `QAART-20260615-QA-002` | QA lead | Protected Vercel staging admin sign-in and route access passed with a disposable fake `diginoces_admin` user: the role required MFA, the AAL1 app callback and `/platform/dashboard` route redirected to `/login/mfa`, the temporary TOTP-verified AAL2 session reached `/platform`, `/platform/projects`, `/platform/dashboard`, `/platform/audit-logs`, and `/platform/reports` with `200` responses, route responses exposed no server-secret markers, and fake role assignment/app-user/auth-user data was cleaned up with zero role/app-user residue. |
 | QA-003 | `PROJ-*` | Admin creates a wedding project and events | `pending_external_artifact` | `not_classified` | `QAART-pending` | Operations lead | Use fake project and event data only. |
 | QA-004 | `PAY-*`; `RSVP-*`; `MSG-*` | Contract, pricing, and payment gates are configured | `pending_external_artifact` | `not_classified` | `QAART-pending` | Operations lead | Manual payment and gate workflow remains MVP scope. |
 | QA-005 | `GM-*`; `ROLE-*` | Manual guest creation and update | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Must include side-boundary evidence. |
@@ -102,8 +102,8 @@ external artifacts and an opaque evidence ID before production sign-off.
 
 | Status | Count |
 | --- | ---: |
-| `pending_external_artifact` | 21 |
-| `pass` | 15 |
+| `pending_external_artifact` | 20 |
+| `pass` | 16 |
 | `fail` | 0 |
 | `blocked` | 0 |
 | `waived` | 0 |
