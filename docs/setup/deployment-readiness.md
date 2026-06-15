@@ -49,11 +49,17 @@ Selected targets:
   Bluehost.
 - The Vercel connector returned the CLI/Git-integration deployment path on
   June 15, 2026. The Vercel CLI created a local `.vercel` project link, and
-  `.vercel` is ignored so provider metadata is not committed. The staging
-  deployment was not verified in this session because the CLI attempt timed out
-  and the Vercel MCP project lookup returned `403 Forbidden`. Verify the Vercel
-  project, root/build settings, environment variables, Git integration, and
-  deployment URL in the Vercel dashboard before recording staging evidence.
+  `.vercel` is ignored so provider metadata is not committed.
+- Vercel staging build evidence `VCL-STAGING-20260615-001` is stored in the
+  external runbook. The preview deployment reached `READY` after setting the
+  Vercel project framework to `nextjs` and output directory to
+  `apps/web/.next`.
+- App-level staging smoke remains pending because direct `/` and `/api/health`
+  requests currently return Vercel Authentication `401` before app code, and
+  `vercel env ls preview` showed no Preview environment variables configured.
+  Configure Preview env vars and provide Vercel-authenticated tester access,
+  a protected-access bypass, or an approved staging custom domain before
+  recording scenario evidence.
 
 1. Run local verification: `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run env:check-public`, `npm run build`, and `npm audit --omit=dev`.
 2. Confirm CI runs the same core checks on the PR.
