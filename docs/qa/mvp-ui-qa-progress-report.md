@@ -328,11 +328,30 @@ manual QA scenarios `QA-002`, `QA-003`, `QA-005`, `QA-006`, `QA-013`, and
 | Desktop regression smoke | Chrome/CDP also checked the global dashboard and project dashboard at `1440x900` after the shared status-grid change; both rendered non-empty status grids with no runtime-error text and no horizontal overflow. |
 | Production sign-off impact | This improves local linked-dev mobile UI readiness for authenticated admin/operations workflows. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
 
+## 2026-06-15 Authenticated Mobile Event-Surface QA
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-003`, `QA-008`, `QA-011`, `QA-012`, `QA-014`,
+`QA-015`, `QA-016`, `QA-017`, and `QA-020`; requirements `PROJ-*`,
+`GM-*`, `INV-*`, `PDF-*`, `QR-*`, `FILE-*`, `SEAT-*`, `CHK-*`,
+`REP-*`, and `TECH-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Browser state | Local `main` was clean and aligned with `origin/main`; `/api/health` returned `200`; Chrome/CDP remained authenticated with the linked-dev AAL2 `diginoces@gmail.com` admin/operations session at mobile viewport `390x844`. |
+| Event fixture | The pass used fake civil event `QA Civil Ceremony` (`8dc5c8d7-1f75-454a-b902-0c4f09439413`) under fake project `QADEMO-2026-001`; no source files, raw tokens, real guests, or real client data were printed or committed. |
+| Event navigation matrix | Chrome/CDP checked 12 effective mobile event-surface controls/routes across 11 unique surfaces: project detail baseline, project event-card click, event detail, event dashboard, top Check-in click, check-in direct route, scan route, seating route, seating-map route, files route, invitations route, and new-invitation-template route. The first Check-in click attempt matched two same-destination links (`Check-in` and `Open check-in`), so the rerun scoped the selector to the top page-heading action; the app behavior passed. |
+| Mobile assertions | Every checked event page had the expected URL or heading, one non-empty `main` surface, no login redirect, no runtime-error text, no unexpected 404/not-found state, no horizontal overflow, no duplicate IDs, no unlabeled visible buttons, no horizontally offscreen interactive controls, no secret-marker text, and zero captured console errors. |
+| Visual review | Event detail and check-in mobile screenshots were inspected. The event action bar wrapped cleanly, the event detail layout remained readable, and the check-in heading/buttons/status cards were usable at `390x844`; no code fix was required. |
+| Production sign-off impact | This improves local linked-dev mobile event workflow readiness for authenticated admin/operations users. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
+
 ## Non-Repetitive QA Completion Checklist
 
 This checklist prevents repeating local checks that are already current unless
 the app code, migrations, linked-dev configuration, dependency graph, or target
-environment changes after the 2026-06-15 authenticated mobile QA refresh.
+environment changes after the 2026-06-15 authenticated mobile event-surface QA
+refresh.
 
 Completed and not worth repeating without a relevant change:
 
@@ -366,6 +385,11 @@ Completed and not worth repeating without a relevant change:
   projects, project detail, guests, imports/upload, communications/queue,
   reports, and audit logs at `390x844`; 11/11 passed after metric-card spacing
   was fixed for `.status-grid` direct children.
+- Authenticated mobile event surfaces: Chrome/CDP checked project-to-event
+  navigation, event detail/dashboard, check-in/scan, seating/map, files, and
+  invitations/new-template at `390x844`; 12/12 effective checks passed with no
+  runtime, layout, duplicate ID, unlabeled button, offscreen control,
+  console-error, or secret-marker issues.
 
 Still needed before the MVP can be called online-ready:
 
