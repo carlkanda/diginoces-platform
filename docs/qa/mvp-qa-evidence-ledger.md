@@ -18,7 +18,9 @@ Local and linked-dev Chrome/CDP progress in `docs/qa/mvp-ui-qa-progress-report.m
 
 Recorded 2026-06-15:
 
-- External QA artifact store: Google Drive under `diginoces@gmail.com`.
+- External QA artifact store: Google Drive under `kandacarl@gmail.com`,
+  approved by the Diginoces owner on June 15, 2026 under
+  `QAART-20260615-OWNER-001`.
 - Opaque runbook reference for git/docs: `RBR-GDRIVE-MVP-LAUNCH-001`.
 - Staging deployment target: Vercel. Preview build evidence
   `VCL-STAGING-20260615-001` is stored externally after a `READY` deployment.
