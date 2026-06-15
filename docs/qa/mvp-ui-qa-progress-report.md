@@ -363,11 +363,28 @@ manual QA scenarios `QA-002`, `QA-003`, `QA-005`, `QA-006`, `QA-011`,
 | Route correction | An initial test URL used `/guest-imports/upload`, which is not the implemented route and produced a dev error surface for that invalid path during the test. The actual upload page is `/guest-imports/new`; the corrected keyboard/focus pass loaded `Upload guest CSV` and passed. |
 | Production sign-off impact | This improves local linked-dev keyboard accessibility evidence for authenticated admin/operations users. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
 
+## 2026-06-15 Accessible Control Name QA
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-001`, `QA-002`, `QA-003`, `QA-005`, `QA-006`,
+`QA-008`, `QA-011`, `QA-013`, `QA-014`, `QA-016`, `QA-020`, and
+`QA-031`; requirements `ROLE-*`, `PROJ-*`, `GM-*`, `IMPORT-*`, `MSG-*`,
+`CHK-*`, `PAY-*`, `FILE-*`, `RSVP-*`, `SEAT-*`, `INV-*`, and `TECH-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Browser state | Chrome/CDP used a no-cookie context for public auth forms and the authenticated linked-dev AAL2 `diginoces@gmail.com` admin/operations session for internal pages at desktop viewport `1280x720`; `/api/health` returned `200` before the pass and local `main` was clean and aligned with `origin/main`. |
+| Form-heavy route matrix | The scan covered 19 form-heavy MVP pages: login, MFA no-session redirect, guest list filters, guest create, guest detail/edit, guest import upload/detail/review, communications queue, message templates, audit logs, event check-in, commercial controls, project files, RSVP summary, guest book, feedback, seating, and invitation setup. Result: 19/19 passed. |
+| Control coverage | The pass inspected 345 visible controls, including 204 visible form controls. It found zero app-owned visible controls without an accessible name, zero duplicate IDs, no unexpected login redirects, no runtime-error text, no horizontal overflow, and no unexpected console errors. |
+| Route expectation corrections | The no-cookie MFA route safely redirects to the public `Staff access` login page when no MFA session is present, and the guest detail/edit surface uses the guest name `QA Bride Guest` as the page heading. Those are current UI contracts, not findings. |
+| Production sign-off impact | This improves local linked-dev form accessibility evidence. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
+
 ## Non-Repetitive QA Completion Checklist
 
 This checklist prevents repeating local checks that are already current unless
 the app code, migrations, linked-dev configuration, dependency graph, or target
-environment changes after the 2026-06-15 authenticated keyboard/focus QA
+environment changes after the 2026-06-15 accessible control name QA
 refresh.
 
 Completed and not worth repeating without a relevant change:
@@ -411,6 +428,11 @@ Completed and not worth repeating without a relevant change:
   checked 8 internal pages and 4 safe Enter-navigation flows at `1280x720`;
   app-owned focus targets stayed visible, within the viewport, and focus
   indicated, with no login redirects, runtime errors, horizontal overflow, or
+  unexpected console errors.
+- Accessible control names: Chrome/CDP checked 19 public/authenticated
+  form-heavy pages and 345 visible controls, including 204 visible form
+  controls; all app-owned visible controls had accessible names, with no
+  duplicate IDs, runtime errors, horizontal overflow, unexpected redirects, or
   unexpected console errors.
 
 Still needed before the MVP can be called online-ready:
