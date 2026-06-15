@@ -52,6 +52,10 @@ function isCompactJwt(value: string) {
   return value.split(".").length === 3;
 }
 
+function isSupabaseSecretKey(value: string) {
+  return value.startsWith("sb_secret_");
+}
+
 export function getSupabaseStorageSigningKey(
   env: StorageSigningEnvironment = process.env,
 ) {
@@ -67,9 +71,9 @@ export function getSupabaseStorageSigningKey(
     throw new StorageNotConfiguredError();
   }
 
-  if (!isCompactJwt(secretKey)) {
+  if (!isCompactJwt(secretKey) && !isSupabaseSecretKey(secretKey)) {
     throw new StorageNotConfiguredError(
-      "Supabase Storage signed URL generation requires a JWT storage signing credential.",
+      "Supabase Storage signed URL generation requires a Supabase secret key or JWT storage signing credential.",
     );
   }
 

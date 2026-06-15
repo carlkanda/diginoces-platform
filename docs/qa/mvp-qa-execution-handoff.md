@@ -40,7 +40,9 @@ Current selected inputs from the Diginoces owner on 2026-06-15:
 - Staging target: Vercel deployment. Preview build evidence
   `VCL-STAGING-20260615-001` is recorded externally after a `READY` deployment;
   Preview environment-variable configuration and the fresh env-backed `READY`
-  deployment are recorded externally under `VCL-STAGING-20260615-002`.
+  deployment are recorded externally under `VCL-STAGING-20260615-002`;
+  protected-access bypass smoke with server-side `SUPABASE_SECRET_KEY`
+  configured is recorded externally under `VCL-STAGING-20260615-003`.
 - Production domain target: `diginoces.com`, with DNS currently managed through
   Bluehost.
 - MFA decision: enforce MFA for all sensitive/admin roles before launch.
@@ -52,13 +54,9 @@ Current selected inputs from the Diginoces owner on 2026-06-15:
 
 Still required before scenario execution:
 
-- App-level Vercel staging smoke after staging access is configured.
-- Target Supabase project reference for staging.
-- Preview server-side storage signing key configuration, if guest file download
-  QA will be run in Vercel Preview; local `SUPABASE_SERVICE_ROLE_KEY` is empty.
-- Vercel-authenticated tester access, a protected-access bypass, or an approved
-  staging custom domain because direct staging requests currently receive
-  Vercel Authentication `401` before app code.
+- Target Supabase project reference confirmation for staging sign-off.
+- Reuse the approved protected-access bypass path, Vercel-authenticated tester
+  access, or an approved staging custom domain for browser scenario execution.
 - Google Drive folder/access verification evidence.
 - Opaque evidence IDs for each completed scenario.
 

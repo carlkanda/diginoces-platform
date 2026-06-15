@@ -26,13 +26,24 @@ describe("storage provider configuration", () => {
     ).toBe("secret.role.jwt");
   });
 
-  it("rejects opaque Supabase secret keys for storage signed URLs", () => {
+  it("allows current Supabase secret keys for backend storage signing", () => {
+    expect(
+      getSupabaseStorageSigningKey({
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_safe",
+        SUPABASE_SECRET_KEY: "  sb_secret_backend_only  ",
+      }),
+    ).toBe("sb_secret_backend_only");
+  });
+
+  it("rejects unrecognized opaque storage signing secrets", () => {
     expect(() =>
       getSupabaseStorageSigningKey({
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_safe",
-        SUPABASE_SECRET_KEY: "sb_secret_short",
+        SUPABASE_SECRET_KEY: "opaque_backend_key",
       }),
-    ).toThrow("requires a JWT storage signing credential");
+    ).toThrow(
+      "requires a Supabase secret key or JWT storage signing credential",
+    );
   });
 
   it("fails closed when no storage signing secret is configured", () => {

@@ -19,8 +19,8 @@ mode.
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser/server Supabase project URL | Public value, still environment-specific |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key | Public browser key, not service role |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-side private Storage signed URL generation | Server-only legacy JWT; required for guest file downloads after token-scoped backend authorization |
-| `SUPABASE_SECRET_KEY` | Optional backward-compatible Storage signing key | Server-only; leave empty unless it is JWT-compatible because opaque `sb_secret_...` keys are rejected by the current Storage signed URL path |
+| `SUPABASE_SECRET_KEY` | Server-side private Storage signed URL generation | Server-only Supabase `sb_secret_...` key; required for guest file downloads after token-scoped backend authorization |
+| `SUPABASE_SERVICE_ROLE_KEY` | Legacy server-side private Storage signed URL generation | Server-only legacy JWT fallback; keep empty unless a legacy project still requires it |
 | `DATABASE_URL` | Local tooling database connection | Placeholder only in `.env.example`; do not commit real password |
 | `WHATSAPP_MODE` | `manual` or future adapter mode | MVP should use `manual` unless approved provider credentials exist |
 
@@ -58,13 +58,14 @@ Selected targets:
   recorded externally under `VCL-STAGING-20260615-002`. The configured Preview
   variables include the app URL, public Supabase URL/key aliases, storage
   provider/bucket, MFA flag, and WhatsApp mode.
-- Preview server-side storage signed URL behavior remains unverified because
-  local `.env.local` has an empty `SUPABASE_SERVICE_ROLE_KEY`, so no service
-  role key was copied to Vercel.
-- App-level staging smoke remains pending because direct `/` and `/api/health`
-  requests still return Vercel Authentication `401` before app code. Provide
-  Vercel-authenticated tester access, a protected-access bypass, or an approved
-  staging custom domain before recording scenario evidence.
+- Preview server-side `SUPABASE_SECRET_KEY` configuration, Vercel automation
+  bypass setup, and protected app-level smoke are recorded externally under
+  `VCL-STAGING-20260615-003`. Header-based bypass smoke returned `200` for `/`
+  and `/api/health`; the health response reported `status: ok` and
+  `supabaseConfigured: true`.
+- Full scenario evidence remains pending. Run the QA handoff before production
+  sign-off and keep bypass secrets, deployment URLs, and raw logs in the
+  external runbook or vault only.
 
 1. Run local verification: `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run env:check-public`, `npm run build`, and `npm audit --omit=dev`.
 2. Confirm CI runs the same core checks on the PR.
@@ -80,7 +81,7 @@ Use the pinned Supabase CLI version above for deployment-readiness evidence. Spr
 
 - Buckets for project, invitation, and archive files must stay private.
 - Signed download URLs must be created only through server routes/RPCs after permission checks.
-- Public guest file downloads require `SUPABASE_SERVICE_ROLE_KEY` on the server because the anonymous public guest page session cannot sign private `project-files` objects directly.
+- Public guest file downloads require `SUPABASE_SECRET_KEY` or the legacy `SUPABASE_SERVICE_ROLE_KEY` on the server because the anonymous public guest page session cannot sign private `project-files` objects directly.
 - Zero-byte placeholder file metadata must follow the provider-backed registration policy in `docs/architecture/file-management-policy.md`.
 - Do not enable direct public object access for generated invitations, guest files, contracts, payment proofs, archives, or reports.
 
