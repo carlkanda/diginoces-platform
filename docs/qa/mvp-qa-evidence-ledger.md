@@ -87,7 +87,7 @@ external artifacts and an opaque evidence ID before production sign-off.
 | QA-031 | `ROLE-*`; `PAY-*`; `TECH-*` | Operations staff cannot perform admin-only functions without grant | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | PR `#78` recorded operations-manager-only UI/API access and audit-log denial evidence in linked dev; external no-mutation DB assertions still required. |
 | QA-032 | `ROLE-*`; `PROJ-*` | Assigned roles cannot access unassigned projects | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Linked-dev no-role cleanup sweep passed for the current user after temporary role removal; exact external staff/bride/groom/partner evidence is still required. |
 | QA-033 | `ROLE-*`; `TECH-*` | Users cannot self-escalate roles or permissions | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Include role-assignment before/after evidence. |
-| QA-034 | `RSVP-*`; `ROLE-*` | Invalid guest tokens are rejected | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Cover expired, revoked, malformed, and unrelated tokens. |
+| QA-034 | `RSVP-*`; `ROLE-*` | Invalid guest tokens are rejected | `pass` | `not_classified` | `QAART-20260615-QA-034` | QA lead | Protected Vercel staging public-page sweep covered expired, revoked, unrelated check-in, and malformed token states; all 4 returned `404`, no protected markers were found, mutation audit rows after the run timestamp were 0, and temporary fake token rows were cleaned up. |
 | QA-035 | `TECH-*`; `ROLE-*` | Anonymous callers cannot execute authenticated app RPCs | `pass` | `not_classified` | `QAART-20260615-QA-035` | Engineering lead | Linked target grant verification found 55 authenticated-only RPC signatures and 0 anon/PUBLIC execute violations; anonymous REST sweep returned 404 for all 55 with no protected record fields, and audit rows after the run timestamp were 0. |
 | QA-036 | `TECH-*`; `ROLE-*` | Anonymous users cannot execute authenticated API workflows | `pass` | `not_classified` | `QAART-20260615-QA-036` | Engineering lead | Protected Vercel staging sweep covered 66 source-derived authenticated API route/method combinations; all returned generic `401`, and timestamp-bounded audit query returned zero rows. |
 
@@ -95,8 +95,8 @@ external artifacts and an opaque evidence ID before production sign-off.
 
 | Status | Count |
 | --- | ---: |
-| `pending_external_artifact` | 31 |
-| `pass` | 5 |
+| `pending_external_artifact` | 30 |
+| `pass` | 6 |
 | `fail` | 0 |
 | `blocked` | 0 |
 | `waived` | 0 |
