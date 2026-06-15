@@ -20,6 +20,10 @@ Current status:
 
 - Google Drive runbook initialized with opaque reference
   `RBR-GDRIVE-MVP-LAUNCH-001`.
+- June 15, 2026 readback through the connected Google Drive tool confirmed the
+  runbook is available, but Drive metadata reported an owner account that does
+  not match the documented `diginoces@gmail.com` store owner. Confirm or
+  transfer ownership before production sign-off.
 - Scenario evidence folders, access permissions, unauthorized denial checks,
   retention, encryption, and audit-logging verification remain required before
   production sign-off.
