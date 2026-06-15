@@ -279,6 +279,24 @@ and `QA-021`; requirements `ROLE-*`, `PROJ-*`, `GM-*`, `INV-*`,
 | Authenticated API rerun | The AAL2 Chrome/CDP matrix reran 25 read-positive routes: health, global dashboard, reports, audit logs, project list/detail/dashboard/events, event detail/dashboard, guests list/detail, guest imports list/detail, message templates, commercial summary/packages, files, guest book, feedback, RSVP summary, check-in, seating, invitation templates, and partners. Result: 25/25 returned JSON `200`, no `5xx`, no auth/permission failures, no service-role/database/WhatsApp/Google/private-key markers, and no internal snapshot-field markers such as `internal_notes`, `normalized_name`, `normalized_whatsapp`, `oldValue`, or `newValue`. |
 | Production sign-off impact | This closes the local linked-dev authenticated API positive-path gap for the combined `diginoces_admin`/`operations_manager` AAL2 account. It does not prove operations-manager-only behavior because the available AAL2 user has both global roles, and it does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
 
+## 2026-06-15 Operations-Manager-Only Role Isolation QA
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-002`, `QA-003`, `QA-005`, `QA-006`, `QA-007`,
+`QA-008`, `QA-011`, `QA-013`, `QA-014`, `QA-016`, `QA-017`, `QA-020`,
+`QA-021`, and `QA-031`; requirements `ROLE-*`, `PROJ-*`, `GM-*`,
+`INV-*`, `MSG-*`, `SEAT-*`, `CHK-*`, `REP-*`, `PART-*`, `PAY-*`, and
+`FILE-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Role isolation setup | In linked dev, the `diginoces_admin` role assignment for `diginoces@gmail.com` was temporarily expired while the global `operations_manager` assignment stayed active. The signed-in Chrome QA session remained MFA-upgraded. After the checks, the `diginoces_admin` assignment was restored to its original active state and a verification query showed both roles active again. |
+| Operations UI matrix | Chrome/CDP checked 22 operations-positive routes: workspace, global dashboard, reports, project list/detail/dashboard/commercial, partners, partner review, guest list, guest import history/review, communications, files, guest book, feedback, RSVP summary, event detail/dashboard/check-in/seating/invitations. Result: 22/22 rendered with one non-empty `main`, a heading, no login redirects, no 404s, no runtime-error text, and no horizontal overflow. |
+| Operations API matrix | Chrome/CDP checked 24 operations-positive read API routes across health, dashboard, reports, projects, events, guests, imports, messages, commercial summaries/packages, files, guest book, feedback, RSVP summary, check-in, seating, invitation templates, and partners. Result: 24/24 returned JSON `200`, no `5xx`, no auth/permission failures, no service-role/database/WhatsApp/Google/private-key markers, and no internal snapshot-field markers. |
+| Admin-only denial | With only `operations_manager` active, `/platform/audit-logs` rendered the safe 404 page instead of the audit viewer, and `/api/audit-logs` returned JSON `403` with a generic error. No secret markers or internal snapshot-field markers appeared in the denial response. |
+| Production sign-off impact | This closes the local linked-dev operations-manager-only UI/API proof and confirms the audit-log admin boundary for the checked surfaces. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
+
 ## Non-Repetitive QA Completion Checklist
 
 This checklist prevents repeating local checks that are already current unless
@@ -305,12 +323,13 @@ Completed and not worth repeating without a relevant change:
   `diginoces_admin`/`operations_manager` linked-dev account: 25/25 focused
   internal API routes returned successful JSON after audit-log snapshot
   redaction hardening.
+- Operations-manager-only role isolation: 22/22 focused UI routes and 24/24
+  focused read API routes passed while audit logs remained denied; the temporary
+  admin assignment expiry was restored and both sensitive roles were active
+  afterward.
 
 Still needed before the MVP can be called online-ready:
 
-- If exact role isolation is required, run operations-manager-only positive
-  checks with an AAL2 account that does not also have `diginoces_admin`, or
-  approve a reversible temporary role-assignment change for linked dev.
 - Capture external QA artifact-store evidence for every `QA-001` through
   `QA-036` scenario, using fake data only and opaque IDs in git.
 - Complete target-environment verification if staging/production differs from
