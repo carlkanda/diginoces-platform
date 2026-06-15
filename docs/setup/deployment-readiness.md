@@ -54,12 +54,17 @@ Selected targets:
   external runbook. The preview deployment reached `READY` after setting the
   Vercel project framework to `nextjs` and output directory to
   `apps/web/.next`.
+- Vercel Preview environment configuration and a fresh `READY` deployment are
+  recorded externally under `VCL-STAGING-20260615-002`. The configured Preview
+  variables include the app URL, public Supabase URL/key aliases, storage
+  provider/bucket, MFA flag, and WhatsApp mode.
+- Preview server-side storage signed URL behavior remains unverified because
+  local `.env.local` has an empty `SUPABASE_SERVICE_ROLE_KEY`, so no service
+  role key was copied to Vercel.
 - App-level staging smoke remains pending because direct `/` and `/api/health`
-  requests currently return Vercel Authentication `401` before app code, and
-  `vercel env ls preview` showed no Preview environment variables configured.
-  Configure Preview env vars and provide Vercel-authenticated tester access,
-  a protected-access bypass, or an approved staging custom domain before
-  recording scenario evidence.
+  requests still return Vercel Authentication `401` before app code. Provide
+  Vercel-authenticated tester access, a protected-access bypass, or an approved
+  staging custom domain before recording scenario evidence.
 
 1. Run local verification: `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run env:check-public`, `npm run build`, and `npm audit --omit=dev`.
 2. Confirm CI runs the same core checks on the PR.

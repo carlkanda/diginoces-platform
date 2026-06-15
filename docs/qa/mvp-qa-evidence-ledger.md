@@ -21,9 +21,13 @@ Recorded 2026-06-15:
 - External QA artifact store: Google Drive under `diginoces@gmail.com`.
 - Opaque runbook reference for git/docs: `RBR-GDRIVE-MVP-LAUNCH-001`.
 - Staging deployment target: Vercel. Preview build evidence
-  `VCL-STAGING-20260615-001` is stored externally after a `READY` deployment;
-  app-level staging smoke is still pending because Preview env vars and
-  staging access are not yet configured.
+  `VCL-STAGING-20260615-001` is stored externally after a `READY` deployment.
+  Preview environment configuration and a fresh env-backed `READY` deployment
+  are stored externally under `VCL-STAGING-20260615-002`; app-level staging
+  smoke is still pending because staging access is blocked by Vercel
+  Authentication before app code. Preview server-side storage signed URL
+  behavior also remains unverified until a service-role signing key is
+  configured.
 - Production domain target: `diginoces.com`, with DNS currently managed through
   Bluehost.
 - MFA decision: enforce MFA for all sensitive/admin roles before launch.
