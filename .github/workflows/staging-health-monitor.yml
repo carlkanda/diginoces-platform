@@ -1,0 +1,194 @@
+name: Staging Health Monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      health_url:
+        description: "Optional HTTPS health URL override. Defaults to vars.STAGING_HEALTH_URL."
+        required: false
+        type: string
+      sample_delay_seconds:
+        description: "Seconds between the two health samples."
+        required: false
+        default: "300"
+        type: string
+      expected_status:
+        description: "Expected HTTP status for both health samples."
+        required: false
+        default: "200"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-health-monitor
+  cancel-in-progress: false
+
+jobs:
+  health:
+    name: Two-sample health poll
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      DEFAULT_HEALTH_URL: ${{ vars.STAGING_HEALTH_URL }}
+      DISPATCH_HEALTH_URL: ${{ inputs.health_url }}
+      EXPECTED_STATUS: ${{ inputs.expected_status || '200' }}
+      SAMPLE_DELAY_SECONDS: ${{ inputs.sample_delay_seconds || '300' }}
+
+    steps:
+      - name: Run two-sample health check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const defaultHealthUrl = (process.env.DEFAULT_HEALTH_URL || "").trim();
+          const dispatchHealthUrl = (process.env.DISPATCH_HEALTH_URL || "").trim();
+          const healthUrl = (dispatchHealthUrl || defaultHealthUrl).trim();
+          const expectedStatus = Number.parseInt(process.env.EXPECTED_STATUS || "200", 10);
+          const sampleDelaySeconds = Number.parseInt(process.env.SAMPLE_DELAY_SECONDS || "300", 10);
+          const bypassSecret = process.env.BYPASS_SECRET || "";
+          const fetchTimeoutMs = 15_000;
+
+          if (!defaultHealthUrl) {
+            console.error("STAGING_HEALTH_URL is required as a GitHub Actions variable.");
+            process.exit(1);
+          }
+
+          let defaultParsedUrl;
+          try {
+            defaultParsedUrl = new URL(defaultHealthUrl);
+          } catch {
+            console.error("STAGING_HEALTH_URL must be a valid HTTPS URL.");
+            process.exit(1);
+          }
+
+          let parsedUrl;
+          try {
+            parsedUrl = new URL(healthUrl);
+          } catch {
+            console.error("Health URL must be a valid HTTPS URL.");
+            process.exit(1);
+          }
+
+          if (
+            defaultParsedUrl.protocol !== "https:" ||
+            defaultParsedUrl.username ||
+            defaultParsedUrl.password
+          ) {
+            console.error("STAGING_HEALTH_URL must use HTTPS and must not contain embedded credentials.");
+            process.exit(1);
+          }
+
+          if (parsedUrl.protocol !== "https:" || parsedUrl.username || parsedUrl.password) {
+            console.error("Health URL must use HTTPS and must not contain embedded credentials.");
+            process.exit(1);
+          }
+
+          const trustedOrigin = defaultParsedUrl.origin;
+          const isTrustedTarget = parsedUrl.origin === trustedOrigin;
+
+          if (!isTrustedTarget) {
+            console.error("Health URL override must use the same origin as STAGING_HEALTH_URL.");
+            process.exit(1);
+          }
+
+          if (!Number.isInteger(expectedStatus) || expectedStatus < 100 || expectedStatus > 599) {
+            console.error("expected_status must be an HTTP status code.");
+            process.exit(1);
+          }
+
+          if (!Number.isInteger(sampleDelaySeconds) || sampleDelaySeconds < 1 || sampleDelaySeconds > 300) {
+            console.error("sample_delay_seconds must be between 1 and 300.");
+            process.exit(1);
+          }
+
+          const sanitizedTarget = `${parsedUrl.origin}${parsedUrl.pathname}`;
+
+          async function runSample(sample) {
+            const startedAt = new Date().toISOString();
+            const headers = {
+              "cache-control": "no-cache",
+              "x-diginoces-monitor": "staging-health-monitor",
+              "x-qa-request-id": `QA-024-github-actions-${Date.now()}-${sample}`,
+            };
+
+            if (bypassSecret && isTrustedTarget) {
+              headers["x-vercel-protection-bypass"] = bypassSecret;
+            }
+
+            let response;
+            let body = null;
+            let errorMessage = null;
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), fetchTimeoutMs);
+
+            try {
+              response = await fetch(sanitizedTarget, {
+                headers,
+                redirect: "manual",
+                signal: controller.signal,
+              });
+
+              try {
+                body = await response.json();
+              } catch {
+                body = null;
+              }
+            } catch (error) {
+              errorMessage = error instanceof Error ? error.message : String(error);
+            } finally {
+              clearTimeout(timeout);
+            }
+
+            const status = response?.status ?? 0;
+            const healthy =
+              status === expectedStatus &&
+              body?.status === "ok" &&
+              body?.supabaseConfigured === true;
+
+            return {
+              sample,
+              startedAt,
+              status,
+              healthy,
+              healthStatus: body?.status ?? null,
+              supabaseConfigured: body?.supabaseConfigured ?? null,
+              sprintCount: Array.isArray(body?.sprints) ? body.sprints.length : null,
+              errorMessage,
+            };
+          }
+
+          const samples = [];
+          samples.push(await runSample(1));
+
+          await new Promise((resolve) => setTimeout(resolve, sampleDelaySeconds * 1000));
+
+          samples.push(await runSample(2));
+
+          const consecutiveFailures = samples.every((sample) => !sample.healthy);
+          const summary = {
+            target: sanitizedTarget,
+            expectedStatus,
+            sampleDelaySeconds,
+            fetchTimeoutMs,
+            bypassConfigured: Boolean(bypassSecret),
+            samples,
+            consecutiveFailures,
+          };
+
+          console.log(JSON.stringify(summary, null, 2));
+
+          if (consecutiveFailures) {
+            console.error("Staging health monitor failed after two consecutive unhealthy samples.");
+            process.exit(1);
+          }
+
+          if (samples.some((sample) => !sample.healthy)) {
+            console.warn("One health sample was unhealthy, but the two-consecutive-failure threshold was not met.");
+          }
+          NODE

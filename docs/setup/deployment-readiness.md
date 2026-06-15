@@ -97,6 +97,28 @@ Use the pinned Supabase CLI version above for deployment-readiness evidence. Spr
    `docs/planning/mvp-launch-checklist.md` before production.
 6. Store monitor configuration screenshots, alert rule IDs, and test alert evidence in the QA artifact store.
 
+### GitHub Actions Staging Monitor
+
+The repository includes `.github/workflows/staging-health-monitor.yml` as the
+MVP custom scheduled health-poll option for protected staging. Configure these
+GitHub Actions settings before relying on it for QA-024 evidence:
+
+- repository variable `STAGING_HEALTH_URL`: HTTPS URL for the staging
+  `/api/health` endpoint;
+- repository secret `VERCEL_AUTOMATION_BYPASS_SECRET`: protected Vercel
+  staging bypass secret, when the target is a protected Vercel Preview.
+
+The workflow runs every 5 minutes and checks the health endpoint twice, 5
+minutes apart. It fails only when both samples are unhealthy, which maps to the
+two-consecutive-check threshold in `docs/qa/post-launch-monitoring.md`. GitHub
+Actions provides the monitoring dashboard evidence. Manual dispatch URL
+overrides must stay on the same origin as `STAGING_HEALTH_URL`; this keeps the
+protected Vercel bypass header scoped to the trusted staging deployment. Failed
+workflow runs act as the test-alert evidence and trigger the repository
+notification channels configured for the monitoring owner and backup owner
+outside this repository. Store workflow run IDs, dashboard screenshots, and any
+received email alert evidence only in the external QA artifact store.
+
 ## Deployment Gates
 
 Deployment to production should not proceed unless:
