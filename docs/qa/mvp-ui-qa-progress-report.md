@@ -311,11 +311,28 @@ manual QA scenarios `QA-002`, `QA-003`, and `QA-020`; requirements
 | App-shell click navigation | Chrome/CDP used actual link clicks with URL-based waits for `Projects`, `Reports`, `Audit logs`, and the recent project card. Result: 5/5 checks passed across dashboard start, `/platform/projects`, `/platform/reports`, `/platform/audit-logs`, and `/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c/dashboard`. |
 | Production sign-off impact | This closes the latest post-merge local app-shell navigation sanity check for the authenticated admin/operations session. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
 
+## 2026-06-15 Authenticated Mobile Core Navigation QA
+
+Traceability: issue [#58](https://github.com/carlkanda/diginoces-platform/issues/58);
+Sprint 15 issue [#31](https://github.com/carlkanda/diginoces-platform/issues/31);
+manual QA scenarios `QA-002`, `QA-003`, `QA-005`, `QA-006`, `QA-013`, and
+`QA-020`; requirements `ROLE-*`, `PROJ-*`, `GM-*`, `MSG-*`, `REP-*`, and
+`TECH-*`.
+
+| Area | Evidence |
+| --- | --- |
+| Mobile visual finding | Chrome/CDP mobile viewport `390x844` found the authenticated global dashboard metric rows were technically fitting but visually read as joined label/value pairs such as `Projects1` because `.status-grid` direct children did not receive the card/value spacing styles. |
+| Fix | `apps/web/src/app/globals.css` now applies the status-card layout to direct `.status-grid > div` children as well as `.status-item`, giving metric labels and values separate readable rows without changing routes, permissions, data, or product scope. |
+| Mobile rerun | Chrome/CDP reran 11 authenticated mobile-width checks: dashboard baseline after the metric-card fix, header `Projects`, project-list card, project-detail `Dashboard`, `Guests`, `Guest imports`, upload CSV, `Communications`, queue, reports, and audit logs. Result: 11/11 passed. |
+| Mobile assertions | Every checked page had one non-empty `main` surface with the expected heading, no login redirect, no runtime-error text, no horizontal overflow, no duplicate IDs, no unlabeled visible buttons, no horizontally offscreen interactive controls, no secret-marker text, and zero captured console errors. |
+| Desktop regression smoke | Chrome/CDP also checked the global dashboard and project dashboard at `1440x900` after the shared status-grid change; both rendered non-empty status grids with no runtime-error text and no horizontal overflow. |
+| Production sign-off impact | This improves local linked-dev mobile UI readiness for authenticated admin/operations workflows. It does not replace external artifact-store evidence, target-environment evidence, production MFA decision evidence, monitoring sign-off, or rollback rehearsal evidence. |
+
 ## Non-Repetitive QA Completion Checklist
 
 This checklist prevents repeating local checks that are already current unless
 the app code, migrations, linked-dev configuration, dependency graph, or target
-environment changes after PR `#79`.
+environment changes after the 2026-06-15 authenticated mobile QA refresh.
 
 Completed and not worth repeating without a relevant change:
 
@@ -345,6 +362,10 @@ Completed and not worth repeating without a relevant change:
   `Projects`, `Reports`, `Audit logs`, and recent project-card links with
   URL-based waits; 5/5 checks passed with no runtime, layout, duplicate ID,
   unlabeled button, or secret-marker issues.
+- Authenticated mobile-width core navigation: Chrome/CDP checked dashboard,
+  projects, project detail, guests, imports/upload, communications/queue,
+  reports, and audit logs at `390x844`; 11/11 passed after metric-card spacing
+  was fixed for `.status-grid` direct children.
 
 Still needed before the MVP can be called online-ready:
 
