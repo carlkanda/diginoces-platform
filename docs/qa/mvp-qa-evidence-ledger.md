@@ -20,7 +20,10 @@ Recorded 2026-06-15:
 
 - External QA artifact store: Google Drive under `diginoces@gmail.com`.
 - Opaque runbook reference for git/docs: `RBR-GDRIVE-MVP-LAUNCH-001`.
-- Staging deployment target: Vercel.
+- Staging deployment target: Vercel. Preview build evidence
+  `VCL-STAGING-20260615-001` is stored externally after a `READY` deployment;
+  app-level staging smoke is still pending because Preview env vars and
+  staging access are not yet configured.
 - Production domain target: `diginoces.com`, with DNS currently managed through
   Bluehost.
 - MFA decision: enforce MFA for all sensitive/admin roles before launch.

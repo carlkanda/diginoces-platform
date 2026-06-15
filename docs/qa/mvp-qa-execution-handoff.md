@@ -37,7 +37,8 @@ Current selected inputs from the Diginoces owner on 2026-06-15:
 
 - QA artifact store: Google Drive under `diginoces@gmail.com`, tracked in git
   only as opaque runbook reference `RBR-GDRIVE-MVP-LAUNCH-001`.
-- Staging target: Vercel deployment.
+- Staging target: Vercel deployment. Preview build evidence
+  `VCL-STAGING-20260615-001` is recorded externally after a `READY` deployment.
 - Production domain target: `diginoces.com`, with DNS currently managed through
   Bluehost.
 - MFA decision: enforce MFA for all sensitive/admin roles before launch.
@@ -49,9 +50,14 @@ Current selected inputs from the Diginoces owner on 2026-06-15:
 
 Still required before scenario execution:
 
-- Vercel staging deployment URL and deployment ID.
+- App-level Vercel staging smoke after Preview environment variables and
+  staging access are configured.
 - Target Supabase project reference for staging.
-- Vercel environment-variable configuration evidence without exposing values.
+- Vercel Preview environment-variable configuration evidence without exposing
+  values; `vercel env ls preview` returned no variables on 2026-06-15.
+- Vercel-authenticated tester access, a protected-access bypass, or an approved
+  staging custom domain because direct staging requests currently receive
+  Vercel Authentication `401` before app code.
 - Google Drive folder/access verification evidence.
 - Opaque evidence IDs for each completed scenario.
 
