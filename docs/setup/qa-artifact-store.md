@@ -24,9 +24,13 @@ Current status:
 - June 15, 2026 readback through the connected Google Drive tool confirmed the
   runbook is available and owned by `kandacarl@gmail.com`; Diginoces owner
   approval is recorded externally under `QAART-20260615-OWNER-001`.
-- Scenario evidence folders, access permissions, unauthorized denial checks,
-  retention, encryption, and audit-logging verification remain required before
-  production sign-off.
+- June 15, 2026 artifact-store access proof is recorded externally under
+  `QAART-20260615-ARTIFACT-ACCESS-001`: Drive metadata reported
+  `shared=false`, a single listed owner permission, and an unauthenticated
+  export probe returned HTTP 401 with zero protected evidence-marker hits.
+- Scenario evidence folders, assigned-tester upload/read permissions,
+  second-account folder denial checks, retention, encryption, audit logging, and
+  access-ticketing verification remain required before production sign-off.
 
 ## Provisioning Requirements
 
