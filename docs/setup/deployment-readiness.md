@@ -111,11 +111,13 @@ GitHub Actions settings before relying on it for QA-024 evidence:
 The workflow runs every 5 minutes and checks the health endpoint twice, 5
 minutes apart. It fails only when both samples are unhealthy, which maps to the
 two-consecutive-check threshold in `docs/qa/post-launch-monitoring.md`. GitHub
-Actions provides the monitoring dashboard evidence; failed workflow runs act as
-the test-alert evidence and trigger the repository notification channels
-configured for the monitoring owner and backup owner outside this repository.
-Store workflow run IDs, dashboard screenshots, and any received email alert
-evidence only in the external QA artifact store.
+Actions provides the monitoring dashboard evidence. Manual dispatch URL
+overrides must stay on the same origin as `STAGING_HEALTH_URL`; this keeps the
+protected Vercel bypass header scoped to the trusted staging deployment. Failed
+workflow runs act as the test-alert evidence and trigger the repository
+notification channels configured for the monitoring owner and backup owner
+outside this repository. Store workflow run IDs, dashboard screenshots, and any
+received email alert evidence only in the external QA artifact store.
 
 ## Deployment Gates
 

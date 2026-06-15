@@ -46,13 +46,24 @@ jobs:
           set -euo pipefail
 
           node <<'NODE'
-          const healthUrl = (process.env.DISPATCH_HEALTH_URL || process.env.DEFAULT_HEALTH_URL || "").trim();
+          const defaultHealthUrl = (process.env.DEFAULT_HEALTH_URL || "").trim();
+          const dispatchHealthUrl = (process.env.DISPATCH_HEALTH_URL || "").trim();
+          const healthUrl = (dispatchHealthUrl || defaultHealthUrl).trim();
           const expectedStatus = Number.parseInt(process.env.EXPECTED_STATUS || "200", 10);
           const sampleDelaySeconds = Number.parseInt(process.env.SAMPLE_DELAY_SECONDS || "300", 10);
           const bypassSecret = process.env.BYPASS_SECRET || "";
+          const fetchTimeoutMs = 15_000;
 
-          if (!healthUrl) {
-            console.error("STAGING_HEALTH_URL is required as a GitHub Actions variable unless workflow_dispatch provides health_url.");
+          if (!defaultHealthUrl) {
+            console.error("STAGING_HEALTH_URL is required as a GitHub Actions variable.");
+            process.exit(1);
+          }
+
+          let defaultParsedUrl;
+          try {
+            defaultParsedUrl = new URL(defaultHealthUrl);
+          } catch {
+            console.error("STAGING_HEALTH_URL must be a valid HTTPS URL.");
             process.exit(1);
           }
 
@@ -64,8 +75,25 @@ jobs:
             process.exit(1);
           }
 
+          if (
+            defaultParsedUrl.protocol !== "https:" ||
+            defaultParsedUrl.username ||
+            defaultParsedUrl.password
+          ) {
+            console.error("STAGING_HEALTH_URL must use HTTPS and must not contain embedded credentials.");
+            process.exit(1);
+          }
+
           if (parsedUrl.protocol !== "https:" || parsedUrl.username || parsedUrl.password) {
             console.error("Health URL must use HTTPS and must not contain embedded credentials.");
+            process.exit(1);
+          }
+
+          const trustedOrigin = defaultParsedUrl.origin;
+          const isTrustedTarget = parsedUrl.origin === trustedOrigin;
+
+          if (!isTrustedTarget) {
+            console.error("Health URL override must use the same origin as STAGING_HEALTH_URL.");
             process.exit(1);
           }
 
@@ -89,18 +117,21 @@ jobs:
               "x-qa-request-id": `QA-024-github-actions-${Date.now()}-${sample}`,
             };
 
-            if (bypassSecret) {
+            if (bypassSecret && isTrustedTarget) {
               headers["x-vercel-protection-bypass"] = bypassSecret;
             }
 
             let response;
             let body = null;
             let errorMessage = null;
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), fetchTimeoutMs);
 
             try {
               response = await fetch(healthUrl, {
                 headers,
                 redirect: "manual",
+                signal: controller.signal,
               });
 
               try {
@@ -110,6 +141,8 @@ jobs:
               }
             } catch (error) {
               errorMessage = error instanceof Error ? error.message : String(error);
+            } finally {
+              clearTimeout(timeout);
             }
 
             const status = response?.status ?? 0;
@@ -142,6 +175,7 @@ jobs:
             target: sanitizedTarget,
             expectedStatus,
             sampleDelaySeconds,
+            fetchTimeoutMs,
             bypassConfigured: Boolean(bypassSecret),
             samples,
             consecutiveFailures,
