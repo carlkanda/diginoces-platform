@@ -128,7 +128,7 @@ jobs:
             const timeout = setTimeout(() => controller.abort(), fetchTimeoutMs);
 
             try {
-              response = await fetch(healthUrl, {
+              response = await fetch(sanitizedTarget, {
                 headers,
                 redirect: "manual",
                 signal: controller.signal,
