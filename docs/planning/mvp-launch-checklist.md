@@ -44,6 +44,7 @@ Record post-apply RLS/RPC grant verification sign-off here before production pro
 | MFA enforcement decision | Diginoces owner role | 2026-06-15 | Enforce MFA for all sensitive/admin roles before launch; target-environment enforcement evidence pending in `RBR-GDRIVE-MVP-LAUNCH-001` |
 | Monitoring and rollback ownership | Diginoces owner role | 2026-06-15 | Monitoring owner Carl; backup Diginoces operations; email/dashboard alerts; rollback owner Carl; rollback approach approved; rehearsal/test evidence pending in `RBR-GDRIVE-MVP-LAUNCH-001` |
 | Artifact-store owner approval | Diginoces owner role | 2026-06-15 | `QAART-20260615-OWNER-001`; `kandacarl@gmail.com` approved as the Google Drive QA evidence-store owner for `RBR-GDRIVE-MVP-LAUNCH-001` |
+| Artifact-store runbook private-access proof | QA lead | 2026-06-15 | `QAART-20260615-ARTIFACT-ACCESS-001`; Drive metadata reported `shared=false` and a single listed owner permission, and an unauthenticated export probe returned HTTP 401 with zero protected evidence-marker hits; folder/tester/retention/audit checks remain pending |
 
 ## QA Infrastructure Readiness
 
@@ -51,9 +52,9 @@ Record QA artifact-store verification here before manual staging QA begins:
 
 | Item | Owner | Status | Evidence ID / Reference |
 | --- | --- | --- | --- |
-| Artifact store endpoint available in external secure release runbook | Operations lead | Initialized/readable | Google Drive runbook ref `RBR-GDRIVE-MVP-LAUNCH-001`; private URL stored externally only; June 15, 2026 readback confirmed ownership by approved evidence-store owner `kandacarl@gmail.com` under `QAART-20260615-OWNER-001` |
+| Artifact store endpoint available in external secure release runbook | Operations lead | Initialized/readable; private runbook access partially verified | Google Drive runbook ref `RBR-GDRIVE-MVP-LAUNCH-001`; private URL stored externally only; June 15, 2026 readback confirmed ownership by approved evidence-store owner `kandacarl@gmail.com` under `QAART-20260615-OWNER-001`; private-access proof recorded under `QAART-20260615-ARTIFACT-ACCESS-001` |
 | QA access ticketing flow or approved temporary fallback documented | Engineering lead | Pending | Ticket ID: QA-pending - URL stored in secured runbook or vault |
-| Upload/read authorization and unauthorized denial verified | QA lead | Pending | Artifact ID: QAART-pending - URL stored in secured runbook |
+| Upload/read authorization and unauthorized denial verified | QA lead | Pending; runbook public-read denial partially verified | `QAART-20260615-ARTIFACT-ACCESS-001` proves unauthenticated runbook export denial only; assigned-tester upload/read and second-account scenario-folder denial remain pending |
 | Retention, encryption, and audit logging verified | Engineering lead | Pending | Artifact ID: QAART-pending - URL stored in secured runbook |
 | Local filename parser and regression coverage | Engineering lead | 2026-06-06 | `validateArtifactFilename` / `sanitizeTesterId`; `npm --workspace apps/web run test -- --run src/lib/platform/release-readiness.test.ts`; external endpoint verification still pending |
 

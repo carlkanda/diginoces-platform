@@ -22,6 +22,12 @@ Recorded 2026-06-15:
   approved by the Diginoces owner on June 15, 2026 under
   `QAART-20260615-OWNER-001`.
 - Opaque runbook reference for git/docs: `RBR-GDRIVE-MVP-LAUNCH-001`.
+- Artifact-store private-access proof is recorded externally under
+  `QAART-20260615-ARTIFACT-ACCESS-001`: Drive metadata reported
+  `shared=false` with a single listed owner permission, and an unauthenticated
+  export probe returned HTTP 401 with zero protected evidence-marker hits. This
+  does not mark any QA scenario row as passed and does not replace folder,
+  assigned-tester, retention, encryption, audit-log, or ticketing evidence.
 - Staging deployment target: Vercel. Preview build evidence
   `VCL-STAGING-20260615-001` is stored externally after a `READY` deployment.
   Preview environment configuration and a fresh env-backed `READY` deployment
