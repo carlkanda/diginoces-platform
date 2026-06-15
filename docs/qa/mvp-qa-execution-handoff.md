@@ -50,6 +50,9 @@ Current selected inputs from the Diginoces owner on 2026-06-15:
 - Monitoring owner: Carl.
 - Monitoring backup owner: Diginoces operations.
 - Alert channels: email and dashboard.
+- Monitoring signal validation: `QAART-20260615-QA-024` records the GitHub
+  Actions staging monitor configuration, healthy run, and intentional
+  dashboard/test-alert failure run.
 - Rollback owner: Carl.
 - Rollback approach: approved.
 

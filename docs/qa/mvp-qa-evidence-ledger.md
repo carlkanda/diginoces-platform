@@ -33,7 +33,8 @@ Recorded 2026-06-15:
   Bluehost.
 - MFA decision: enforce MFA for all sensitive/admin roles before launch.
 - Monitoring owner: Carl; backup owner: Diginoces operations; alert channels:
-  email and dashboard.
+  email and dashboard. Staging monitor signal evidence is recorded under
+  `QAART-20260615-QA-024`.
 - Rollback owner: Carl; rollback approach approved.
 
 These decisions unblock QA execution planning. Only rows with explicit opaque
@@ -77,7 +78,7 @@ external artifacts and an opaque evidence ID before production sign-off.
 | QA-021 | `PART-*` | Partner profile, submission, and project draft flows | `pending_external_artifact` | `not_classified` | `QAART-pending` | Operations lead | Include partner negative boundaries. |
 | QA-022 | `ROLE-*`; `TECH-*` | RLS policy enforcement review | `pass` | `not_classified` | `QAART-20260615-QA-022` | Engineering lead | Linked database lint, dry-run, migration list, advisors, and RPC grant verification were recorded externally; non-allowlisted `PUBLIC`/`anon` execute grant query returned zero rows. |
 | QA-023 | `TECH-*`; `FILE-*`; `REP-*` | Security review checklist | `pass` | `not_classified` | `QAART-20260615-QA-023` | Engineering lead | Install, format, lint, typecheck, tests, build, audit, public-env check, and targeted secret scan passed; performance-advisor items remain post-launch follow-up unless staging load evidence escalates them. |
-| QA-024 | `REP-*`; `TECH-*` | Monitoring signal validation | `pending_external_artifact` | `not_classified` | `QAART-pending` | Operations lead | Owners and alert response paths required. |
+| QA-024 | `REP-*`; `TECH-*` | Monitoring signal validation | `pass` | `not_classified` | `QAART-20260615-QA-024` | Operations lead | GitHub Actions staging health monitor is configured for the protected Vercel Preview `/api/health` endpoint; healthy run `27568966140` passed with two `200`/`ok` samples, and intentional same-origin failure run `27569035612` failed after two `404` samples to prove the dashboard/test-alert path. |
 | QA-025 | `ROAD-*`; `TECH-*` | Rollback dry-run | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Include checksum and repository-state evidence. |
 | QA-026 | `ROLE-*`; `TECH-*` | Guest token cannot open authenticated app routes | `pass` | `not_classified` | `QAART-20260615-QA-026` | QA lead | Protected Vercel staging authenticated-route denial used a valid fake guest public-page token as a credential header; protected pages returned encoded login redirects, protected APIs returned generic `401`, no response echoed the raw token or protected markers, project/guest audit rows were 0 after route requests, setup-only token audit rows were identified, and temporary fake token rows were cleaned up. |
 | QA-027 | `ROLE-*`; `GM-*`; `PAY-*`; `REP-*` | Bride cannot edit groom-only guests or internal/commercial data | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Linked-dev Chrome/CDP found and fixed API internal-field overexposure for the bride-role path; exact external role-boundary evidence is still required. |
@@ -95,8 +96,8 @@ external artifacts and an opaque evidence ID before production sign-off.
 
 | Status | Count |
 | --- | ---: |
-| `pending_external_artifact` | 29 |
-| `pass` | 7 |
+| `pending_external_artifact` | 28 |
+| `pass` | 8 |
 | `fail` | 0 |
 | `blocked` | 0 |
 | `waived` | 0 |
