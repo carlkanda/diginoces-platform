@@ -34,9 +34,9 @@ Recorded 2026-06-15:
   email and dashboard.
 - Rollback owner: Carl; rollback approach approved.
 
-These decisions unblock QA execution planning but do not change any scenario
-status to `pass`. Each scenario still needs external artifacts and an opaque
-evidence ID before production sign-off.
+These decisions unblock QA execution planning. Only rows with explicit opaque
+evidence IDs below are marked `pass`; each remaining scenario still needs
+external artifacts and an opaque evidence ID before production sign-off.
 
 ## Status Values
 
@@ -52,7 +52,7 @@ evidence ID before production sign-off.
 
 | ID | Requirement group | Scenario summary | Current status | Classification | Evidence ID / reference | Owner | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| QA-001 | `PV-*`; `TECH-*` | App loads and health endpoint responds | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Local Chrome/CDP smoke exists; target artifact package still required. |
+| QA-001 | `PV-*`; `TECH-*` | App loads and health endpoint responds | `pass` | `not_classified` | `QAART-20260615-QA-001` | QA lead | Protected Vercel staging smoke passed for home, health, login, auth redirect, invalid guest token, and unauthenticated protected API denial. |
 | QA-002 | `ROLE-*` | Admin signs in and reaches platform routes | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | PR `#76` recorded linked-dev AAL2 internal UI evidence and PR `#77` recorded authenticated read-positive API evidence; external evidence still required. |
 | QA-003 | `PROJ-*` | Admin creates a wedding project and events | `pending_external_artifact` | `not_classified` | `QAART-pending` | Operations lead | Use fake project and event data only. |
 | QA-004 | `PAY-*`; `RSVP-*`; `MSG-*` | Contract, pricing, and payment gates are configured | `pending_external_artifact` | `not_classified` | `QAART-pending` | Operations lead | Manual payment and gate workflow remains MVP scope. |
@@ -73,8 +73,8 @@ evidence ID before production sign-off.
 | QA-019 | `WISH-*`; `REP-*` | Public guest wish/message and couple review | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Include approved export behavior. |
 | QA-020 | `REP-*`; `FILE-*` | Reports, exports, audit logs, retention/archive | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | PR `#77` redacted audit API snapshot fields and reran a 25/25 authenticated read-positive API matrix; external audit, export, and file lifecycle evidence still required. |
 | QA-021 | `PART-*` | Partner profile, submission, and project draft flows | `pending_external_artifact` | `not_classified` | `QAART-pending` | Operations lead | Include partner negative boundaries. |
-| QA-022 | `ROLE-*`; `TECH-*` | RLS policy enforcement review | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Use `docs/qa/rls-review.md` query output. |
-| QA-023 | `TECH-*`; `FILE-*`; `REP-*` | Security review checklist | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Include dependency, secret, and file-artifact handling evidence. |
+| QA-022 | `ROLE-*`; `TECH-*` | RLS policy enforcement review | `pass` | `not_classified` | `QAART-20260615-QA-022` | Engineering lead | Linked database lint, dry-run, migration list, advisors, and RPC grant verification were recorded externally; non-allowlisted `PUBLIC`/`anon` execute grant query returned zero rows. |
+| QA-023 | `TECH-*`; `FILE-*`; `REP-*` | Security review checklist | `pass` | `not_classified` | `QAART-20260615-QA-023` | Engineering lead | Install, format, lint, typecheck, tests, build, audit, public-env check, and targeted secret scan passed; performance-advisor items remain post-launch follow-up unless staging load evidence escalates them. |
 | QA-024 | `REP-*`; `TECH-*` | Monitoring signal validation | `pending_external_artifact` | `not_classified` | `QAART-pending` | Operations lead | Owners and alert response paths required. |
 | QA-025 | `ROAD-*`; `TECH-*` | Rollback dry-run | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Include checksum and repository-state evidence. |
 | QA-026 | `ROLE-*`; `TECH-*` | Guest token cannot open authenticated app routes | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Response, DB, and audit assertions required. |
@@ -87,14 +87,14 @@ evidence ID before production sign-off.
 | QA-033 | `ROLE-*`; `TECH-*` | Users cannot self-escalate roles or permissions | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Include role-assignment before/after evidence. |
 | QA-034 | `RSVP-*`; `ROLE-*` | Invalid guest tokens are rejected | `pending_external_artifact` | `not_classified` | `QAART-pending` | QA lead | Cover expired, revoked, malformed, and unrelated tokens. |
 | QA-035 | `TECH-*`; `ROLE-*` | Anonymous callers cannot execute authenticated app RPCs | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Exclude documented token-scoped guest RPCs. |
-| QA-036 | `TECH-*`; `ROLE-*` | Anonymous users cannot execute authenticated API workflows | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Local no-cookie protected API sweep returned generic `401` responses; PR `#77` separately confirmed authenticated positive-path APIs; exact external anonymous response evidence is still required. |
+| QA-036 | `TECH-*`; `ROLE-*` | Anonymous users cannot execute authenticated API workflows | `pass` | `not_classified` | `QAART-20260615-QA-036` | Engineering lead | Protected Vercel staging sweep covered 66 source-derived authenticated API route/method combinations; all returned generic `401`, and timestamp-bounded audit query returned zero rows. |
 
 ## Aggregated Status
 
 | Status | Count |
 | --- | ---: |
-| `pending_external_artifact` | 36 |
-| `pass` | 0 |
+| `pending_external_artifact` | 32 |
+| `pass` | 4 |
 | `fail` | 0 |
 | `blocked` | 0 |
 | `waived` | 0 |
