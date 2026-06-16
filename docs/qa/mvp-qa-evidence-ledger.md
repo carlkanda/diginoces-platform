@@ -26,8 +26,14 @@ Recorded 2026-06-15:
   `QAART-20260615-ARTIFACT-ACCESS-001`: Drive metadata reported
   `shared=false` with a single listed owner permission, and an unauthenticated
   export probe returned HTTP 401 with zero protected evidence-marker hits. This
-  does not mark any QA scenario row as passed and does not replace folder,
-  assigned-tester, retention, encryption, audit-log, or ticketing evidence.
+  does not mark any QA scenario row as passed.
+- Artifact-store infrastructure smoke is recorded externally under
+  `QAART-20260616-ARTIFACT-STORE-002`: the approved owner created the external
+  folder convention path, uploaded and read back a fake smoke artifact, verified
+  owner-only Drive metadata, and confirmed unauthenticated probing did not expose
+  private artifact content. Workspace-admin retention/audit evidence and a
+  separate second-account folder-denial proof remain non-scenario launch gates
+  unless formally accepted as an MVP fallback.
 - Staging deployment target: Vercel. Preview build evidence
   `VCL-STAGING-20260615-001` is stored externally after a `READY` deployment.
   Preview environment configuration and a fresh env-backed `READY` deployment
@@ -38,6 +44,11 @@ Recorded 2026-06-15:
 - Production domain target: `diginoces.com`, with DNS currently managed through
   Bluehost.
 - MFA decision: enforce MFA for all sensitive/admin roles before launch.
+  App-level protected-staging MFA evidence is recorded in scenario rows and
+  summarized under `QAART-20260616-AUTH-GATE-001`. Supabase Auth
+  leaked-password protection still reports disabled in linked security-advisor
+  output and remains a non-scenario production gate until enabled or formally
+  accepted as an exception.
 - Monitoring owner: Carl; backup owner: Diginoces operations; alert channels:
   email and dashboard. Staging monitor signal evidence is recorded under
   `QAART-20260615-QA-024`.
