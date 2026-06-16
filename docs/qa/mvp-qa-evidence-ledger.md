@@ -6,7 +6,8 @@ Traceability: GitHub issue `#31`; sprint plan `docs/planning/sprint-15-plan.md`;
 
 This ledger is the production sign-off tracker for QA-001 through QA-036. It records only opaque evidence references, statuses, owners, and classifications. Real screenshots, exports, logs, credential references, guest data, client data, and artifact-store URLs must remain outside git in the encrypted QA artifact store or secure release runbook.
 
-Production launch remains `no_go` until every scenario row is either:
+For any target environment, scenario evidence remains `no_go` until every
+scenario row is either:
 
 - `pass` with an external evidence ID/reference;
 - `fail` with a linked blocker issue and accepted classification;
@@ -32,9 +33,9 @@ Recorded 2026-06-15:
   `QAART-20260616-ARTIFACT-STORE-002`: the approved owner created the external
   folder convention path, uploaded and read back a fake smoke artifact, verified
   owner-only Drive metadata, and confirmed unauthenticated probing did not expose
-  private artifact content. Workspace-admin retention/audit evidence and a
-  separate second-account folder-denial proof remain non-scenario launch gates
-  unless formally accepted as an MVP fallback.
+  private artifact content. Final sign-off
+  `QAART-20260616-FINAL-SIGNOFF-001` accepts owner-only Google Drive control as
+  the MVP launch evidence-store fallback.
 - Staging deployment target: Vercel. Preview build evidence
   `VCL-STAGING-20260615-001` is stored externally after a `READY` deployment.
   Preview environment configuration and a fresh env-backed `READY` deployment
@@ -48,16 +49,20 @@ Recorded 2026-06-15:
   App-level protected-staging MFA evidence is recorded in scenario rows and
   summarized under `QAART-20260616-AUTH-GATE-001`. Supabase Auth
   leaked-password protection still reports disabled in linked security-advisor
-  output and remains a non-scenario production gate until enabled or formally
-  accepted as an exception.
-- Issue #58 closure path is recorded externally under
-  `QAART-20260616-LAUNCH-GATE-CLOSURE-001`: enable
-  `password_hibp_enabled=true` on the target Supabase Auth config and rerun
-  advisors until `auth_leaked_password_protection` is absent, or formally accept
-  a time-boxed MVP exception; provide Workspace-admin retention/audit and
-  second-account denial evidence, or formally accept owner-only Drive control as
-  the MVP fallback; record final Operations and Engineering sign-off before
-  closing issue #58.
+  output. Final sign-off `QAART-20260616-FINAL-SIGNOFF-001` records a time-boxed
+  MVP exception through July 16, 2026 or until password-based auth, Supabase plan
+  upgrade, or a different Supabase target is introduced, whichever comes first.
+- Issue #58 closure path was recorded externally under
+  `QAART-20260616-LAUNCH-GATE-CLOSURE-001`; final decisions are recorded under
+  `QAART-20260616-FINAL-SIGNOFF-001`.
+- Issue #58 final launch-gate sign-off is recorded externally under
+  `QAART-20260616-FINAL-SIGNOFF-001`: Diginoces owner approved the Supabase
+  leaked-password-protection time-boxed MVP exception, accepted owner-only Google
+  Drive control as the MVP evidence-store fallback, and approved Operations and
+  Engineering sign-off for the protected Vercel Preview plus linked Supabase dev
+  target already exercised. If `diginoces.com` production or another Supabase
+  project is promoted as a different target, target-environment checks must be
+  repeated before production promotion.
 - Monitoring owner: Carl; backup owner: Diginoces operations; alert channels:
   email and dashboard. Staging monitor signal evidence is recorded under
   `QAART-20260615-QA-024`.

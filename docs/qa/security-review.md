@@ -76,7 +76,7 @@ On June 6, 2026, the linked-dev Supabase advisor refresh returned:
 - Security: 34 `authenticated_security_definer_function_executable` warnings, 3 `anon_security_definer_function_executable` warnings, and 1 `auth_leaked_password_protection` warning.
 - Performance: 246 `unindexed_foreign_keys` info items, 38 `multiple_permissive_policies` warnings, and 29 `unused_index` info items.
 
-The security-definer warnings align with the documented permission-gated authenticated RPCs and the token-scoped public guest RPC allow-list above. The leaked-password protection warning remains an external Supabase Auth configuration decision before production; it is lower impact while the app exposes magic-link sign-in only, but it should be enabled or formally accepted before any password-based auth surface is exposed. Issue #58 closure evidence `QAART-20260616-LAUNCH-GATE-CLOSURE-001` records the narrow target setting as `password_hibp_enabled=true` on the Supabase Auth config and records why broad `supabase config push` is not acceptable for this gate.
+The security-definer warnings align with the documented permission-gated authenticated RPCs and the token-scoped public guest RPC allow-list above. The leaked-password protection warning remains in linked security-advisor output. Issue #58 closure evidence `QAART-20260616-LAUNCH-GATE-CLOSURE-001` records the narrow target setting as `password_hibp_enabled=true` on the Supabase Auth config and records why broad `supabase config push` is not acceptable for this gate. Final sign-off `QAART-20260616-FINAL-SIGNOFF-001` records a time-boxed MVP exception for Supabase leaked-password protection through July 16, 2026 or until password-based auth, Supabase plan upgrade, or a different Supabase target is introduced, whichever comes first.
 
 The performance advisor items are launch-risk inputs for staging load testing and post-MVP database tuning, not current app security blockers.
 
@@ -105,4 +105,4 @@ No real wedding, couple, client, guest, payment, WhatsApp, or Google data should
 
 ## Security Recommendation
 
-Controlled staging QA can proceed after the Sprint 15 migration is applied. Production go-live is conditional on MFA handling for sensitive roles, successful staging QA, green CI, clean dependency audit, Supabase Auth leaked-password protection sign-off, and no unresolved launch blockers.
+Controlled staging QA can proceed after the Sprint 15 migration is applied. Issue #58 final sign-off is recorded for the protected Vercel Preview plus linked Supabase dev target already exercised, including MFA handling for sensitive roles, successful staging QA, green CI, clean dependency audit, Supabase Auth leaked-password-protection exception sign-off, accepted artifact-store fallback, and Operations/Engineering sign-off. If `diginoces.com` production or another Supabase project is promoted as a different target, repeat the target-environment security checks before production promotion.
