@@ -29,8 +29,9 @@ Current status:
   `shared=false`, a single listed owner permission, and an unauthenticated
   export probe returned HTTP 401 with zero protected evidence-marker hits.
 - Scenario-level evidence IDs, including `QAART-20260615-QA-006`,
-  `QAART-20260615-QA-007`, `QAART-20260615-QA-008`, and
-  `QAART-20260615-QA-009` through `QAART-20260615-QA-021`, are tracked in
+  `QAART-20260615-QA-007`, `QAART-20260615-QA-008`,
+  `QAART-20260615-QA-009` through `QAART-20260615-QA-021`, and
+  `QAART-20260615-QA-025`, are tracked in
   `docs/qa/mvp-qa-evidence-ledger.md` and
   `docs/planning/mvp-launch-checklist.md`; this setup document records only
   artifact-store rules and opaque runbook references.

@@ -41,11 +41,12 @@ Recorded 2026-06-15:
 - Monitoring owner: Carl; backup owner: Diginoces operations; alert channels:
   email and dashboard. Staging monitor signal evidence is recorded under
   `QAART-20260615-QA-024`.
-- Rollback owner: Carl; rollback approach approved.
+- Rollback owner: Carl; rollback approach approved. Non-destructive rollback
+  rehearsal evidence is recorded under `QAART-20260615-QA-025`.
 
 These decisions unblock QA execution planning. Only rows with explicit opaque
-evidence IDs below are marked `pass`; each remaining scenario still needs
-external artifacts and an opaque evidence ID before production sign-off.
+evidence IDs below are marked `pass`; all scenario rows now have external
+artifact evidence recorded through opaque references.
 
 ## Status Values
 
@@ -85,7 +86,7 @@ external artifacts and an opaque evidence ID before production sign-off.
 | QA-022 | `ROLE-*`; `TECH-*` | RLS policy enforcement review | `pass` | `not_classified` | `QAART-20260615-QA-022` | Engineering lead | Linked database lint, dry-run, migration list, advisors, and RPC grant verification were recorded externally; non-allowlisted `PUBLIC`/`anon` execute grant query returned zero rows. |
 | QA-023 | `TECH-*`; `FILE-*`; `REP-*` | Security review checklist | `pass` | `not_classified` | `QAART-20260615-QA-023` | Engineering lead | Install, format, lint, typecheck, tests, build, audit, public-env check, and targeted secret scan passed; performance-advisor items remain post-launch follow-up unless staging load evidence escalates them. |
 | QA-024 | `REP-*`; `TECH-*` | Monitoring signal validation | `pass` | `not_classified` | `QAART-20260615-QA-024` | Operations lead | GitHub Actions staging health monitor is configured for the protected Vercel Preview `/api/health` endpoint; healthy run `27568966140` passed with two `200`/`ok` samples, and intentional same-origin failure run `27569035612` failed after two `404` samples to prove the dashboard/test-alert path. |
-| QA-025 | `ROAD-*`; `TECH-*` | Rollback dry-run | `pending_external_artifact` | `not_classified` | `QAART-pending` | Engineering lead | Include checksum and repository-state evidence. |
+| QA-025 | `ROAD-*`; `TECH-*` | Rollback dry-run | `pass` | `not_classified` | `QAART-20260615-QA-025` | Engineering lead | Non-destructive staging rollback rehearsal passed: evidence package includes Sheets/CSV fallback, Canva version-restore log placeholder, WhatsApp manual notification log with fake recipients, RSVP manual fallback export, manual check-in list, pre/post git logs, pre/post SHA256 checksum files, checksum comparison, and rollback drill object; repository head/status/index and build artifact checksums were unchanged. |
 | QA-026 | `ROLE-*`; `TECH-*` | Guest token cannot open authenticated app routes | `pass` | `not_classified` | `QAART-20260615-QA-026` | QA lead | Protected Vercel staging authenticated-route denial used a valid fake guest public-page token as a credential header; protected pages returned encoded login redirects, protected APIs returned generic `401`, no response echoed the raw token or protected markers, project/guest audit rows were 0 after route requests, setup-only token audit rows were identified, and temporary fake token rows were cleaned up. |
 | QA-027 | `ROLE-*`; `GM-*`; `PAY-*`; `REP-*` | Bride cannot edit groom-only guests or internal/commercial data | `pass` | `not_classified` | `QAART-20260615-QA-027` | QA lead | Protected Vercel staging bride-role negative boundary passed with disposable fake project/users: bride own-side permission true, groom-side false, audit/payment/revenue permissions false; groom-side list and patch, audit read, and payment record requests returned `403`; role-filtered report catalog returned `200` without protected fields; guest/payment/audit mutation counts stayed 0 and fake data was cleaned up. |
 | QA-028 | `ROLE-*`; `GM-*`; `PAY-*`; `REP-*` | Groom cannot edit bride-only guests or internal/commercial data | `pass` | `not_classified` | `QAART-20260615-QA-028` | QA lead | Protected Vercel staging groom-role negative boundary passed with disposable fake project/users: groom own-side permission true, bride-side false, audit/payment/revenue permissions false; bride-side list and patch, audit read, and payment record requests returned `403`; role-filtered report catalog returned `200` without protected fields; guest/payment/audit mutation counts stayed 0 and fake data was cleaned up. |
@@ -102,13 +103,16 @@ external artifacts and an opaque evidence ID before production sign-off.
 
 | Status | Count |
 | --- | ---: |
-| `pending_external_artifact` | 1 |
-| `pass` | 35 |
+| `pending_external_artifact` | 0 |
+| `pass` | 36 |
 | `fail` | 0 |
 | `blocked` | 0 |
 | `waived` | 0 |
 
-Production decision from this ledger: `no_go` until external evidence is recorded for all 36 scenarios or formally classified with owner approval.
+Production decision from this ledger: all 36 scenario rows have external
+evidence recorded or are otherwise represented with opaque references. Production
+promotion still depends on the non-scenario launch gates in
+`docs/planning/mvp-launch-checklist.md`.
 
 ## Update Procedure
 
