@@ -28,6 +28,13 @@ Current status:
   `QAART-20260615-ARTIFACT-ACCESS-001`: Drive metadata reported
   `shared=false`, a single listed owner permission, and an unauthenticated
   export probe returned HTTP 401 with zero protected evidence-marker hits.
+- June 16, 2026 artifact-store infrastructure smoke is recorded externally
+  under `QAART-20260616-ARTIFACT-STORE-002`: the approved owner created the
+  `staging/QADEMO-2026-001/QA-INFRA-20260616/` folder path, uploaded a fake
+  smoke artifact with the required filename convention, read it back through
+  authenticated Drive access, verified owner-only metadata on the folder and
+  artifact, and confirmed an unauthenticated download probe did not expose the
+  private evidence marker or file content.
 - Scenario-level evidence IDs, including `QAART-20260615-QA-006`,
   `QAART-20260615-QA-007`, `QAART-20260615-QA-008`,
   `QAART-20260615-QA-009` through `QAART-20260615-QA-021`, and
@@ -35,9 +42,10 @@ Current status:
   `docs/qa/mvp-qa-evidence-ledger.md` and
   `docs/planning/mvp-launch-checklist.md`; this setup document records only
   artifact-store rules and opaque runbook references.
-- Scenario evidence folders, assigned-tester upload/read permissions,
-  second-account folder denial checks, retention, encryption, audit logging, and
-  access-ticketing verification remain required before production sign-off.
+- Workspace-admin retention-rule evidence, Drive audit-log evidence, and
+  second-account folder denial remain required before production sign-off unless
+  the Diginoces owner and engineering lead formally accept the owner-only Drive
+  control as the MVP launch evidence-store fallback.
 
 ## Provisioning Requirements
 
