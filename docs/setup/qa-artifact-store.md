@@ -45,13 +45,16 @@ Current status:
   `docs/planning/mvp-launch-checklist.md`; this setup document records only
   artifact-store rules and opaque runbook references.
 - Workspace-admin retention-rule evidence, Drive audit-log evidence, and
-  second-account folder denial remain required before production sign-off unless
-  the Diginoces owner and engineering lead formally accept the owner-only Drive
-  control as the MVP launch evidence-store fallback.
+  second-account folder denial remain recommended hardening evidence. The
+  Diginoces owner accepted owner-only Google Drive control as the MVP launch
+  evidence-store fallback under `QAART-20260616-FINAL-SIGNOFF-001`.
 - Issue #58 closure path is recorded externally under
   `QAART-20260616-LAUNCH-GATE-CLOSURE-001`; this public setup document records
   only the opaque reference and keeps private runbook URLs, folder IDs, and raw
   evidence outside git.
+- Issue #58 final launch-gate sign-off is recorded externally under
+  `QAART-20260616-FINAL-SIGNOFF-001`; this includes the accepted owner-only
+  Google Drive fallback for MVP launch evidence.
 
 ## Provisioning Requirements
 
