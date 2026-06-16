@@ -76,7 +76,7 @@ On June 6, 2026, the linked-dev Supabase advisor refresh returned:
 - Security: 34 `authenticated_security_definer_function_executable` warnings, 3 `anon_security_definer_function_executable` warnings, and 1 `auth_leaked_password_protection` warning.
 - Performance: 246 `unindexed_foreign_keys` info items, 38 `multiple_permissive_policies` warnings, and 29 `unused_index` info items.
 
-The security-definer warnings align with the documented permission-gated authenticated RPCs and the token-scoped public guest RPC allow-list above. The leaked-password protection warning remains an external Supabase Auth configuration decision before production; it is lower impact while the app exposes magic-link sign-in only, but it should be enabled or formally accepted before any password-based auth surface is exposed.
+The security-definer warnings align with the documented permission-gated authenticated RPCs and the token-scoped public guest RPC allow-list above. The leaked-password protection warning remains an external Supabase Auth configuration decision before production; it is lower impact while the app exposes magic-link sign-in only, but it should be enabled or formally accepted before any password-based auth surface is exposed. Issue #58 closure evidence `QAART-20260616-LAUNCH-GATE-CLOSURE-001` records the narrow target setting as `password_hibp_enabled=true` on the Supabase Auth config and records why broad `supabase config push` is not acceptable for this gate.
 
 The performance advisor items are launch-risk inputs for staging load testing and post-MVP database tuning, not current app security blockers.
 
