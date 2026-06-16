@@ -20,7 +20,8 @@ Recorded 2026-06-15:
 
 - External QA artifact store: Google Drive under `kandacarl@gmail.com`,
   approved by the Diginoces owner on June 15, 2026 under
-  `QAART-20260615-OWNER-001`.
+  `QAART-20260615-OWNER-001`, and reaffirmed by the Diginoces owner on
+  June 16, 2026 under `QAART-20260616-LAUNCH-GATE-CLOSURE-001`.
 - Opaque runbook reference for git/docs: `RBR-GDRIVE-MVP-LAUNCH-001`.
 - Artifact-store private-access proof is recorded externally under
   `QAART-20260615-ARTIFACT-ACCESS-001`: Drive metadata reported
@@ -49,6 +50,14 @@ Recorded 2026-06-15:
   leaked-password protection still reports disabled in linked security-advisor
   output and remains a non-scenario production gate until enabled or formally
   accepted as an exception.
+- Issue #58 closure path is recorded externally under
+  `QAART-20260616-LAUNCH-GATE-CLOSURE-001`: enable
+  `password_hibp_enabled=true` on the target Supabase Auth config and rerun
+  advisors until `auth_leaked_password_protection` is absent, or formally accept
+  a time-boxed MVP exception; provide Workspace-admin retention/audit and
+  second-account denial evidence, or formally accept owner-only Drive control as
+  the MVP fallback; record final Operations and Engineering sign-off before
+  closing issue #58.
 - Monitoring owner: Carl; backup owner: Diginoces operations; alert channels:
   email and dashboard. Staging monitor signal evidence is recorded under
   `QAART-20260615-QA-024`.

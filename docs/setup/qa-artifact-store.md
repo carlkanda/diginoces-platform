@@ -10,7 +10,8 @@ Manual QA evidence must be stored outside this repository in an encrypted, acces
 
 The MVP QA evidence store is Google Drive under `kandacarl@gmail.com`.
 The Diginoces owner approved this account as the evidence-store owner on
-June 15, 2026 after connected Drive metadata confirmed it owns the runbook.
+June 15, 2026 after connected Drive metadata confirmed it owns the runbook, and
+reaffirmed that approval on June 16, 2026 under issue #58 closure evidence.
 
 Repository docs must reference the external runbook with opaque ID
 `RBR-GDRIVE-MVP-LAUNCH-001` only. Do not commit the Google Drive document URL,
@@ -23,7 +24,8 @@ Current status:
   `RBR-GDRIVE-MVP-LAUNCH-001`.
 - June 15, 2026 readback through the connected Google Drive tool confirmed the
   runbook is available and owned by `kandacarl@gmail.com`; Diginoces owner
-  approval is recorded externally under `QAART-20260615-OWNER-001`.
+  approval is recorded externally under `QAART-20260615-OWNER-001` and
+  reaffirmed under `QAART-20260616-LAUNCH-GATE-CLOSURE-001`.
 - June 15, 2026 artifact-store access proof is recorded externally under
   `QAART-20260615-ARTIFACT-ACCESS-001`: Drive metadata reported
   `shared=false`, a single listed owner permission, and an unauthenticated
@@ -46,6 +48,10 @@ Current status:
   second-account folder denial remain required before production sign-off unless
   the Diginoces owner and engineering lead formally accept the owner-only Drive
   control as the MVP launch evidence-store fallback.
+- Issue #58 closure path is recorded externally under
+  `QAART-20260616-LAUNCH-GATE-CLOSURE-001`; this public setup document records
+  only the opaque reference and keeps private runbook URLs, folder IDs, and raw
+  evidence outside git.
 
 ## Provisioning Requirements
 
