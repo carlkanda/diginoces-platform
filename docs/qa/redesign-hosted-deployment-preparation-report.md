@@ -62,6 +62,12 @@ Hosted CodeRabbit requested changes on the initial PR. The follow-up patch addre
 - adding semantic list roles to the seating map markers;
 - improving partner submission waiting-state copy so actionable reviews are not labeled as waiting.
 
+The hosted rerun then approved the PR and surfaced three additional comments, which were also addressed:
+
+- the invitation field selector now uses the indexed `fieldKey:${index}` form name expected by the save action;
+- the check-in scan table display map now keys formatted names by stable `tableId` instead of non-unique table names;
+- the seating map now imports `pluralize` from the shared UI formatter module.
+
 ## Hosted Verification Plan
 
 1. Commit and push the redesign branch.

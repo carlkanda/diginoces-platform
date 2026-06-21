@@ -61,6 +61,7 @@ import {
   formatEventTableName,
 } from "@/lib/seating/seating-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { pluralize } from "@/lib/ui/format-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -69,10 +70,6 @@ type SeatingMapPageProps = {
     eventId: string;
   }>;
 };
-
-function pluralize(count: number, singular: string, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
 
 function capacityLabel(activeGuests: number, capacity: number) {
   if (capacity <= 0) {

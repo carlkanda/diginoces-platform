@@ -753,7 +753,7 @@ export default async function InvitationTemplateDetailPage({
                               defaultValue={field.field_key}
                               disabled={!canUpdate}
                               id={`fieldKey-${index}`}
-                              name="fieldKey"
+                              name={`fieldKey:${index}`}
                             >
                               {getFieldOptions().map(([value, label]) => (
                                 <NativeSelectOption key={value} value={value}>

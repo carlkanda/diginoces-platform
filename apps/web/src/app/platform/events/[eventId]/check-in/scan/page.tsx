@@ -247,15 +247,17 @@ export default async function CheckInScanPage({
   const overview = await getCheckInOverview(supabase, eventId);
   const tableDisplayNames = new Map(
     [
-      ...new Set(
-        overview.guests
-          .map((checkInGuest) => checkInGuest.tableName)
-          .filter((tableName): tableName is string => Boolean(tableName)),
-      ),
+      ...new Map(
+        overview.guests.flatMap((checkInGuest) =>
+          checkInGuest.tableId && checkInGuest.tableName
+            ? ([[checkInGuest.tableId, checkInGuest.tableName]] as const)
+            : [],
+        ),
+      ).entries(),
     ]
-      .sort((left, right) => left.localeCompare(right))
-      .map((tableName, tableIndex) => [
-        tableName,
+      .sort((left, right) => left[1].localeCompare(right[1]))
+      .map(([tableId, tableName], tableIndex) => [
+        tableId,
         formatEventTableName(tableName, tableIndex),
       ]),
   );
@@ -529,8 +531,8 @@ export default async function CheckInScanPage({
                   <div className="ops-ledger__metric">
                     <span className="ops-ledger__metric-label">Table</span>
                     <strong className="ops-ledger__metric-value text-base">
-                      {guest.tableName
-                        ? (tableDisplayNames.get(guest.tableName) ??
+                      {guest.tableId && guest.tableName
+                        ? (tableDisplayNames.get(guest.tableId) ??
                           formatEventTableName(
                             guest.tableName,
                             tableDisplayNames.size,
