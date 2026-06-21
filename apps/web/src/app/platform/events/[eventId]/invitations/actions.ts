@@ -125,7 +125,7 @@ async function getActionContext() {
   }
 
   if (authContext.status === "not_configured") {
-    throw new Error("Supabase is not configured.");
+    throw new Error("Workspace connection is not ready.");
   }
 
   return {
@@ -161,7 +161,7 @@ async function requireTemplateDetailsForEvent(
   );
 
   if (!details || details.template.event_id !== eventId) {
-    throw new InvitationValidationError("Invitation template was not found.");
+    throw new InvitationValidationError("Invitation design was not found.");
   }
 
   return details;
@@ -184,7 +184,7 @@ export async function registerInvitationTemplateAction(
 
   if (file.size > MAX_INVITATION_TEMPLATE_PDF_BYTES) {
     throw new InvitationValidationError(
-      "Invitation template PDF must be 20 MB or smaller.",
+      "Invitation design PDF must be 20 MB or smaller.",
     );
   }
 
@@ -192,8 +192,8 @@ export async function registerInvitationTemplateAction(
     throw new InvitationValidationError("Upload a Canva-exported PDF file.");
   }
 
-  // Sprint 6 registers PDF metadata only; source-file bytes are persisted when
-  // the storage-provider integration replaces the current placeholder.
+  // Store PDF metadata here; private PDF storage is handled by the configured
+  // file provider when available.
   const template = await registerInvitationTemplate(
     context.supabase,
     details.project.id,

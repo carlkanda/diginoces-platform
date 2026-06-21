@@ -1,496 +1,423 @@
+import Image from "next/image";
 import Link from "next/link";
-import { getSprint10CommercialStatus } from "@/lib/contracts/contract-service";
+import {
+  ArrowRightIcon,
+  CheckCircle2Icon,
+  ClipboardListIcon,
+  DoorOpenIcon,
+  LayoutDashboardIcon,
+  ShieldCheckIcon,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getPublicEnvironment } from "@/lib/env/public-env";
-import { getSprint14FilesStatus } from "@/lib/files/file-service";
-import { getSprint4ImportStatus } from "@/lib/guest-imports/guest-import-service";
-import { getSprint12GuestWishesStatus } from "@/lib/guest-wishes/guest-wish-service";
-import { getSprint3FoundationStatus } from "@/lib/guests/guest-service";
-import { getSprint9CheckInStatus } from "@/lib/check-in/check-in-service";
-import { getSprint6InvitationStatus } from "@/lib/invitations/invitation-service";
-import { getSprint7CommunicationStatus } from "@/lib/messages/message-service";
-import { getSprint13PartnerStatus } from "@/lib/partners/partner-service";
-import { getPlatformFoundationStatus } from "@/lib/platform/foundation";
-import { getSprint2FoundationStatus } from "@/lib/projects/project-foundation";
-import { getSprint11ReportingStatus } from "@/lib/reports/report-service";
-import { getSprint5RsvpStatus } from "@/lib/rsvp/rsvp-service";
-import { getSprint8SeatingStatus } from "@/lib/seating/seating-service";
 
 export const dynamic = "force-dynamic";
 
-const projectRouteExamples = [
+const workspaceStarts = [
   {
-    description: "Sprint 3 manual guest list, side/event filters, create/edit.",
-    label: "Guest list",
-    path: "/platform/projects/{projectId}/guests",
-  },
-  {
-    description: "Sprint 3 manual guest creation foundation.",
-    label: "Add guest",
-    path: "/platform/projects/{projectId}/guests/new",
-  },
-  {
-    description: "Sprint 4 CSV import sessions and review history.",
-    label: "Import history",
-    path: "/platform/projects/{projectId}/guest-imports",
-  },
-  {
-    description: "Sprint 4 CSV upload and staged import start.",
-    label: "Upload CSV",
-    path: "/platform/projects/{projectId}/guest-imports/new",
-  },
-  {
-    description: "Sprint 5 RSVP counts and manual review foundation.",
-    label: "RSVP summary",
-    path: "/platform/projects/{projectId}/rsvps",
+    description:
+      "Continue with the weddings, reviews, and event-day tasks available to your role.",
+    href: "/platform",
+    icon: DoorOpenIcon,
+    label: "Open workspace",
   },
   {
     description:
-      "Sprint 7 WhatsApp templates, guided manual queue, and communication history.",
-    label: "Communications",
-    path: "/platform/projects/{projectId}/communications",
-  },
-  {
-    description: "Sprint 7 message template foundation.",
-    label: "Message templates",
-    path: "/platform/projects/{projectId}/communications/templates",
-  },
-  {
-    description: "Sprint 7 guided manual WhatsApp preparation queue.",
-    label: "Sending queue",
-    path: "/platform/projects/{projectId}/communications/queue",
+      "Find a wedding, then move into guests, RSVP, files, invitations, messages, and event pages.",
+    href: "/platform/projects",
+    icon: ClipboardListIcon,
+    label: "Find a wedding",
   },
   {
     description:
-      "Sprint 10 packages, pricing, project contract approval, payments, addendums, exceptions, and gate status.",
-    label: "Contracts & payments",
-    path: "/platform/projects/{projectId}/commercial",
-  },
-  {
-    description:
-      "Sprint 12 guest wishes, couple review, guest-book export, and post-event feedback foundation.",
-    label: "Guest book & feedback",
-    path: "/platform/projects/{projectId}/guest-book",
-  },
-  {
-    description:
-      "Sprint 13 partner-visible project comment thread with internal-note separation.",
-    label: "Project comments",
-    path: "/platform/projects/{projectId}/comments",
-  },
-  {
-    description:
-      "Sprint 14 project file library, registration, retention review, download, and archive foundation.",
-    label: "Files and archive",
-    path: "/platform/projects/{projectId}/files",
-  },
-  {
-    description: "Sprint 5 admin/staff preview for one guest page.",
-    label: "Guest preview",
-    path: "/platform/projects/{projectId}/guests/{guestId}/public-preview",
+      "Review operational signals, reports, and activity history across visible weddings.",
+    href: "/platform/dashboard",
+    icon: LayoutDashboardIcon,
+    label: "Operations view",
   },
 ];
 
-const eventRouteExamples = [
+const capabilityRows = [
   {
-    description:
-      "Sprint 6 event-level invitation templates, field editor, preview approval, and generation jobs.",
-    label: "Invitation templates",
-    path: "/platform/events/{eventId}/invitations",
+    area: "Guest list",
+    opens: "Guests, imports, duplicates, tags",
+    purpose: "Keep names, sides, contacts, and event assignments clean.",
   },
   {
-    description: "Sprint 6 Canva PDF registration foundation.",
-    label: "Register template",
-    path: "/platform/events/{eventId}/invitations/new",
+    area: "RSVP",
+    opens: "Public guest page, answers, deadlines",
+    purpose: "Track attendance per event without exposing staff tools.",
   },
   {
-    description:
-      "Sprint 8 event tables, RSVP-aware occupancy, assignments, unassigned guests, and table-card CSV exports.",
-    label: "Tables and seating",
-    path: "/platform/events/{eventId}/seating",
+    area: "Invitations",
+    opens: "PDF templates, field placement, previews",
+    purpose: "Prepare files and guest links before communication starts.",
   },
   {
-    description: "Sprint 8 visual seating-map placeholder foundation.",
-    label: "Seating map",
-    path: "/platform/events/{eventId}/seating/map",
+    area: "Messages",
+    opens: "Templates, queue, manual send history",
+    purpose: "Prepare French and English wording with traceable outcomes.",
   },
   {
-    description:
-      "Sprint 9 staff-only QR/manual check-in, unexpected guests, offline sync, and dashboard foundation.",
-    label: "Wedding-day check-in",
-    path: "/platform/events/{eventId}/check-in",
+    area: "Event day",
+    opens: "Tables, seating map, check-in",
+    purpose: "Give the team a fast view for arrival and seating decisions.",
   },
   {
-    description: "Sprint 9 event-specific check-in QR confirmation flow.",
-    label: "QR check-in scan",
-    path: "/platform/events/{eventId}/check-in/scan",
-  },
-  {
-    description:
-      "Sprint 14 event-scoped file library and secure download foundation.",
-    label: "Event files",
-    path: "/platform/events/{eventId}/files",
+    area: "Oversight",
+    opens: "Files, partners, reports, activity trail",
+    purpose: "Keep sensitive records permission-aware and reviewable.",
   },
 ];
 
-const deferredScope = [
-  "production WhatsApp API sending",
-  "online payment processing",
-  "partner commission management",
-  "partner billing",
-  "white-label SaaS",
-  "advanced digital asset management",
+const operationsFlow = [
+  {
+    label: "Wedding record",
+    state: "Start",
+  },
+  {
+    label: "Guests",
+    state: "Prepare",
+  },
+  {
+    label: "RSVP",
+    state: "Confirm",
+  },
+  {
+    label: "Invitations",
+    state: "Approve",
+  },
+  {
+    label: "Messages",
+    state: "Coordinate",
+  },
+  {
+    label: "Event day",
+    state: "Run",
+  },
 ];
-
-type HomeSprintModule = {
-  description?: string;
-  name: string;
-  requirementIds?: string[];
-};
-
-type HomeSprintSummary = {
-  description: string;
-  features?: string[];
-  issue: number;
-  modules: HomeSprintModule[];
-  sprint: string;
-  stories?: string[];
-};
 
 export default function HomePage() {
-  const foundation = getPlatformFoundationStatus();
-  const sprint2Foundation = getSprint2FoundationStatus();
-  const sprint3Foundation = getSprint3FoundationStatus();
-  const sprint4Foundation = getSprint4ImportStatus();
-  const sprint5Foundation = getSprint5RsvpStatus();
-  const sprint6Foundation = getSprint6InvitationStatus();
-  const sprint7Foundation = getSprint7CommunicationStatus();
-  const sprint8Foundation = getSprint8SeatingStatus();
-  const sprint9Foundation = getSprint9CheckInStatus();
-  const sprint10Foundation = getSprint10CommercialStatus();
-  const sprint11Foundation = getSprint11ReportingStatus();
-  const sprint12Foundation = getSprint12GuestWishesStatus();
-  const sprint13Foundation = getSprint13PartnerStatus();
-  const sprint14Foundation = getSprint14FilesStatus();
   const env = getPublicEnvironment();
-  const coveredRequirementIds = Array.from(
-    new Set([
-      ...foundation.requirementIds,
-      ...sprint2Foundation.modules.flatMap((module) => module.requirementIds),
-      ...sprint3Foundation.modules.flatMap((module) => module.requirementIds),
-      ...sprint4Foundation.requirementIds,
-      ...sprint5Foundation.requirementIds,
-      ...sprint6Foundation.requirementIds,
-      ...sprint7Foundation.requirementIds,
-      ...sprint8Foundation.requirementIds,
-      ...sprint9Foundation.requirementIds,
-      ...sprint10Foundation.requirementIds,
-      ...sprint11Foundation.requirementIds,
-      ...sprint12Foundation.requirementIds,
-      ...sprint13Foundation.requirementIds,
-      ...sprint14Foundation.requirementIds,
-    ]),
-  ).sort();
-
-  const sprintSummaries: HomeSprintSummary[] = [
-    {
-      description:
-        "Secure Next.js app shell with Supabase auth, permissions, audit logging, and fail-closed storage foundations.",
-      issue: foundation.issue,
-      modules: foundation.modules,
-      sprint: foundation.sprint,
-    },
-    {
-      description:
-        "Wedding project, event, membership, lifecycle, code generation, and setup checklist foundations.",
-      features: sprint2Foundation.features,
-      issue: sprint2Foundation.issue,
-      modules: sprint2Foundation.modules,
-      sprint: sprint2Foundation.sprint,
-    },
-    {
-      description:
-        "Project-level guests with title/type, tags, side ownership, event assignment, validation, duplicate detection, and audit coverage.",
-      features: sprint3Foundation.features,
-      issue: sprint3Foundation.issue,
-      modules: sprint3Foundation.modules,
-      sprint: "Sprint 3 - Guest Management & Guest Lists Foundation",
-    },
-    {
-      description:
-        "CSV-only import sessions, row staging, mapping, preview validation, approval states, apply workflow, history, and audit coverage.",
-      features: sprint4Foundation.features,
-      issue: sprint4Foundation.issue,
-      modules: sprint4Foundation.modules,
-      sprint: sprint4Foundation.sprint,
-      stories: sprint4Foundation.stories,
-    },
-    {
-      description:
-        "Secure guest public tokens, payment-gated public access, admin preview, event-specific RSVP, deadlines, change rules, language labels, and invitation placeholder.",
-      features: sprint5Foundation.features,
-      issue: sprint5Foundation.issue,
-      modules: sprint5Foundation.modules,
-      sprint: sprint5Foundation.sprint,
-      stories: sprint5Foundation.stories,
-    },
-    {
-      description:
-        "Event invitation template registration, coordinate field configuration, technical preview approval, invitation record/file versions, public guest page QR/link fields, batch generation jobs, and tested PDF worker abstraction.",
-      features: sprint6Foundation.features,
-      issue: sprint6Foundation.issue,
-      modules: sprint6Foundation.modules,
-      sprint: sprint6Foundation.sprint,
-      stories: sprint6Foundation.stories,
-    },
-    {
-      description:
-        "WhatsApp-first message templates, French/English rendering, readiness checks, guided manual sending, API-ready adapter, status logs, reminders, modification notices, communication history, permissions, and audit coverage.",
-      features: sprint7Foundation.features,
-      issue: sprint7Foundation.issue,
-      modules: sprint7Foundation.modules,
-      sprint: sprint7Foundation.sprint,
-      stories: sprint7Foundation.stories,
-    },
-    {
-      description:
-        "Event-specific tables, table/seat structure, RSVP-aware occupancy, unassigned guest tracking, VIP/protocol notes, visual map placeholder, table-card CSV exports, print tracking, regeneration awareness, permissions, and audit coverage.",
-      features: sprint8Foundation.features,
-      issue: sprint8Foundation.issue,
-      modules: sprint8Foundation.modules,
-      sprint: sprint8Foundation.sprint,
-      stories: sprint8Foundation.stories,
-    },
-    {
-      description:
-        "Event-specific check-in settings, staff-only QR/manual search, secure separate check-in tokens, partial Couple arrivals, unexpected guest approvals, devices, offline preload/sync, VIP highlights, dashboard metrics, and audit coverage.",
-      features: sprint9Foundation.features,
-      issue: sprint9Foundation.issue,
-      modules: sprint9Foundation.modules,
-      sprint: sprint9Foundation.sprint,
-      stories: sprint9Foundation.stories,
-    },
-    {
-      description:
-        "Service packages and add-ons, event package selection, planned-guest-count pricing, one project contract, in-app approval, addendums, manual payments, payment gates, exceptions, revenue restrictions, permissions, and audit coverage.",
-      features: sprint10Foundation.features,
-      issue: sprint10Foundation.issue,
-      modules: sprint10Foundation.modules,
-      sprint: sprint10Foundation.sprint,
-      stories: sprint10Foundation.stories,
-    },
-    {
-      description:
-        "Role-aware global, project, event, couple, and restricted partner dashboards, report catalog/CSV export, audit-log viewer/export, and internal visibility controls.",
-      features: sprint11Foundation.features,
-      issue: sprint11Foundation.issue,
-      modules: sprint11Foundation.modules,
-      sprint: sprint11Foundation.sprint,
-    },
-    {
-      description:
-        "Text-only guest wishes on public guest pages, moderation, couple review, Canva guest-book CSV export metadata, private post-event feedback, and testimonial review controls.",
-      features: sprint12Foundation.features,
-      issue: sprint12Foundation.issue,
-      modules: sprint12Foundation.modules,
-      sprint: sprint12Foundation.sprint,
-    },
-    {
-      description:
-        "Partner profiles, partner user linkage, lifecycle controls, partner-created project drafts, Diginoces review, source tracking, restricted partner dashboard, project comments, commercial restrictions, permissions, and audit coverage.",
-      features: sprint13Foundation.features,
-      issue: sprint13Foundation.issue,
-      modules: sprint13Foundation.modules,
-      sprint: sprint13Foundation.sprint,
-    },
-    {
-      description:
-        "Project, event, guest, invitation, report/export, contract, and partner file library with secure signed-download routing, version/latest tracking, retention review, archive lifecycle, storage buckets, permissions, and audit coverage.",
-      features: sprint14Foundation.features,
-      issue: sprint14Foundation.issue,
-      modules: sprint14Foundation.modules,
-      sprint: sprint14Foundation.sprint,
-      stories: sprint14Foundation.stories,
-    },
-  ];
 
   return (
-    <>
-      <section className="hero">
-        <div>
-          <p className="eyebrow">Sprint 1-14 implementation status</p>
-          <h1>Diginoces platform progress</h1>
-          <p>
-            The home page surfaces the foundations already delivered across the
-            first fourteen sprints, while keeping future wedding operations out
-            of scope until their documented sprint begins.
-          </p>
-          <div className="requirement-list" aria-label="Requirements covered">
-            {coveredRequirementIds.map((requirementId) => (
-              <span key={requirementId}>{requirementId}</span>
-            ))}
-          </div>
-        </div>
-        <aside className="panel" aria-label="Sprint status">
-          <div className="panel-body">
-            <strong>Current local status</strong>
-            <p className="meta-list">
-              Supabase is{" "}
-              {env.supabaseConfigured ? "configured" : "not configured"} for
-              this dev server. Project-specific guest and import pages require a
-              configured Supabase session before real records can load.
-            </p>
-            <div className="button-group">
-              <Link className="button" href="/platform">
-                Platform shell
-              </Link>
-              <Link className="button secondary" href="/api/health">
-                Health
-              </Link>
-            </div>
-          </div>
-        </aside>
-      </section>
-
-      <section className="section" aria-label="Sprint progress">
-        <div className="section-heading">
-          <h2>What has been built so far</h2>
-          <span className="meta-list">14 sprint foundations</span>
-        </div>
-        <div className="progress-overview">
-          {sprintSummaries.map((sprint) => (
-            <article className="progress-card" key={sprint.sprint}>
-              <div className="progress-card-header">
-                <div>
-                  <p className="eyebrow">Issue #{sprint.issue}</p>
-                  <h3>{sprint.sprint}</h3>
-                </div>
-                <span className="tag">Foundation</span>
-              </div>
-              <p>{sprint.description}</p>
-              {"features" in sprint && sprint.features ? (
-                <div className="requirement-list" aria-label="Features">
-                  {sprint.features.map((feature) => (
-                    <span key={feature}>{feature}</span>
-                  ))}
-                </div>
-              ) : null}
-              {"stories" in sprint && sprint.stories ? (
-                <div className="requirement-list" aria-label="Stories">
-                  {sprint.stories.map((story) => (
-                    <span key={story}>{story}</span>
-                  ))}
-                </div>
-              ) : null}
-              <ul className="module-list">
-                {sprint.modules.map((module) => (
-                  <li key={module.name}>
-                    <strong>{module.name}</strong>
-                    {module.description ? (
-                      <span>{module.description}</span>
-                    ) : null}
-                    {module.requirementIds ? (
-                      <small>{module.requirementIds.join(", ")}</small>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="section route-section">
-        <div className="section-heading">
-          <h2>Where to look in the app</h2>
-          <Link className="button secondary" href="/platform/projects">
-            Project list
+    <div className="public-route min-h-svh bg-background text-foreground">
+      <header className="border-b bg-background">
+        <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Link
+            className="flex min-w-0 items-center gap-3 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            href="/"
+          >
+            <Image
+              aria-hidden="true"
+              className="size-10 rounded-lg bg-card"
+              src="/diginoces-logo.png"
+              alt=""
+              width={40}
+              height={40}
+              priority
+            />
+            <span className="flex min-w-0 flex-col leading-tight">
+              <strong className="truncate text-sm font-semibold">
+                Diginoces
+              </strong>
+              <span className="truncate text-xs text-muted-foreground">
+                Event guest management
+              </span>
+            </span>
           </Link>
-        </div>
-        <div className="route-grid">
-          <article className="route-card">
-            <strong>Available directly</strong>
-            <p className="meta-list">
-              These pages render without needing a specific project id.
-            </p>
-            <div className="button-group">
-              <Link className="button secondary" href="/platform">
-                Platform shell
-              </Link>
-              <Link className="button secondary" href="/platform/projects">
-                Projects
-              </Link>
-              <Link className="button secondary" href="/platform/dashboard">
-                Dashboards
-              </Link>
-              <Link className="button secondary" href="/platform/reports">
-                Reports
-              </Link>
-              <Link className="button secondary" href="/platform/audit-logs">
-                Audit logs
-              </Link>
-              <Link className="button secondary" href="/platform/partners">
-                Partners
-              </Link>
-              <Link
-                className="button secondary"
-                href="/platform/partner-dashboard"
-              >
-                Partner dashboard
-              </Link>
-              <Link className="button secondary" href="/api/health">
-                Health JSON
-              </Link>
-            </div>
-          </article>
-          <article className="route-card">
-            <strong>Project-specific foundations</strong>
-            <p className="meta-list">
-              Replace <code>{"{projectId}"}</code> with a real project from the
-              project list after Supabase auth is configured.
-            </p>
-            <div className="code-list">
-              {projectRouteExamples.map((route) => (
-                <div key={route.path}>
-                  <strong>{route.label}</strong>
-                  <code>{route.path}</code>
-                  <span>{route.description}</span>
-                </div>
-              ))}
-            </div>
-          </article>
-          <article className="route-card">
-            <strong>Event-specific foundations</strong>
-            <p className="meta-list">
-              Replace <code>{"{eventId}"}</code> with a real event from a
-              project after Supabase auth is configured.
-            </p>
-            <div className="code-list">
-              {eventRouteExamples.map((route) => (
-                <div key={route.path}>
-                  <strong>{route.label}</strong>
-                  <code>{route.path}</code>
-                  <span>{route.description}</span>
-                </div>
-              ))}
-            </div>
-          </article>
-        </div>
-      </section>
 
-      <section className="section">
-        <div className="scope-note">
-          <strong>Still intentionally out of scope</strong>
-          <p>
-            The following areas are not implemented on the home page or in the
-            completed foundations yet because they belong to later sprint scope.
-          </p>
-          <div className="requirement-list" aria-label="Deferred scope">
-            {deferredScope.map((item) => (
-              <span key={item}>{item}</span>
-            ))}
-          </div>
+          <nav className="flex items-center gap-2" aria-label="Public actions">
+            <Button variant="ghost" render={<Link href="/platform/projects" />}>
+              Find a wedding
+            </Button>
+            <Button variant="outline" render={<Link href="/login" />}>
+              Sign in
+            </Button>
+          </nav>
         </div>
-      </section>
-    </>
+      </header>
+
+      <main className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        <section className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.98fr)_minmax(360px,0.82fr)]">
+          <div className="flex max-w-3xl flex-col gap-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">Diginoces</Badge>
+              <Badge variant="outline">Wedding operations desk</Badge>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <h1 className="max-w-3xl text-4xl leading-tight font-semibold tracking-normal text-balance md:text-5xl">
+                Bring every guest detail into one calm event workspace.
+              </h1>
+              <p className="max-w-2xl text-base leading-7 text-muted-foreground text-pretty">
+                Diginoces helps authorized teams move from a wedding record to
+                guest lists, RSVP, invitations, messages, tables, check-in,
+                files, partners, reports, and activity history without losing
+                the next safe action.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button size="lg" render={<Link href="/platform" />}>
+                Open workspace
+                <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                render={<Link href="/platform/projects" />}
+              >
+                Find a wedding
+              </Button>
+            </div>
+
+            <Alert>
+              <ShieldCheckIcon aria-hidden="true" />
+              <AlertTitle>Built for sensitive wedding operations</AlertTitle>
+              <AlertDescription>
+                Guest details, partner access, commercial records, and activity
+                history stay behind role-aware navigation and server-side
+                checks.
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Wedding desk preview</CardTitle>
+              <CardDescription>
+                One record can move through planning, guest readiness, guest
+                communication, and event-day handoff without changing the access
+                rules underneath it.
+              </CardDescription>
+              <CardAction>
+                <Image
+                  aria-hidden="true"
+                  className="rounded-lg bg-background"
+                  src="/diginoces-logo.png"
+                  alt=""
+                  width={44}
+                  height={44}
+                  priority
+                />
+              </CardAction>
+            </CardHeader>
+            <CardContent className="entry-desk">
+              <dl className="entry-desk__signals">
+                <div className="entry-desk__signal">
+                  <dt className="entry-desk__signal-label">Current focus</dt>
+                  <dd className="entry-desk__signal-value">Guest readiness</dd>
+                  <dd className="entry-desk__signal-note">
+                    Import review, RSVP, seating, and files
+                  </dd>
+                </div>
+                <div className="entry-desk__signal">
+                  <dt className="entry-desk__signal-label">Event-day desk</dt>
+                  <dd className="entry-desk__signal-value">Arrival control</dd>
+                  <dd className="entry-desk__signal-note">
+                    Tables, check-in, and live exceptions
+                  </dd>
+                </div>
+              </dl>
+
+              <Separator />
+
+              <div className="entry-desk__flow">
+                {operationsFlow.map((step, index) => (
+                  <div className="entry-desk__flow-step" key={step.label}>
+                    <span className="entry-desk__flow-index">{index + 1}</span>
+                    <span className="entry-desk__flow-label">{step.label}</span>
+                    <Badge variant={index < 3 ? "secondary" : "outline"}>
+                      {step.state}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {env.supabaseConfigured
+                    ? "Workspace data can load from the connected project."
+                    : "Workspace data appears after the project connection is configured."}
+                </p>
+                <Button
+                  variant="outline"
+                  render={<Link href="/platform/dashboard" />}
+                >
+                  Operations view
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[minmax(260px,0.42fr)_minmax(0,1fr)]">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-2xl leading-tight font-semibold tracking-normal">
+              Choose the next piece of work.
+            </h2>
+            <p className="text-sm leading-6 text-muted-foreground text-pretty">
+              Start from the workspace if you already know what needs attention,
+              or open the wedding list when you need the project context first.
+            </p>
+          </div>
+
+          <div className="grid gap-3">
+            {workspaceStarts.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Card key={item.href}>
+                  <CardHeader className="sm:grid-cols-[1fr_auto]">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <Icon aria-hidden="true" />
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <CardTitle>{item.label}</CardTitle>
+                        <CardDescription>{item.description}</CardDescription>
+                      </div>
+                    </div>
+                    <CardAction>
+                      <Button
+                        variant="outline"
+                        render={<Link href={item.href} />}
+                      >
+                        Continue
+                        <ArrowRightIcon
+                          data-icon="inline-end"
+                          aria-hidden="true"
+                        />
+                      </Button>
+                    </CardAction>
+                  </CardHeader>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[minmax(260px,0.35fr)_minmax(0,1fr)]">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-2xl leading-tight font-semibold tracking-normal">
+              See the guest journey as connected work.
+            </h2>
+            <p className="text-sm leading-6 text-muted-foreground text-pretty">
+              The product is organized around the way a wedding moves: prepare
+              people, confirm attendance, create guest-facing materials, then
+              hand the event team a usable day-of view.
+            </p>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Workspace map</CardTitle>
+              <CardDescription>
+                Each area has its own state, permission boundary, and safe next
+                action.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 md:hidden">
+                {capabilityRows.map((row) => (
+                  <div
+                    className="flex flex-col gap-1 border-b pb-3 last:border-b-0 last:pb-0"
+                    key={row.area}
+                  >
+                    <strong>{row.area}</strong>
+                    <span className="text-sm">{row.purpose}</span>
+                    <span className="text-sm text-muted-foreground">
+                      Opens: {row.opens}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Area</TableHead>
+                      <TableHead>What it controls</TableHead>
+                      <TableHead>Opens</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {capabilityRows.map((row) => (
+                      <TableRow key={row.area}>
+                        <TableCell className="font-medium">
+                          {row.area}
+                        </TableCell>
+                        <TableCell>{row.purpose}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {row.opens}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              A calm workspace for high-pressure wedding days
+            </CardTitle>
+            <CardDescription>
+              The same product supports careful preparation before the event and
+              fast confirmation on the event day.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-5 md:grid-cols-3">
+            <div className="flex flex-col gap-2">
+              <CheckCircle2Icon aria-hidden="true" />
+              <strong>Clear ownership</strong>
+              <p className="text-sm text-muted-foreground">
+                Couples, staff, partners, and administrators see only the work
+                their role is allowed to handle.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <CheckCircle2Icon aria-hidden="true" />
+              <strong>Practical handoffs</strong>
+              <p className="text-sm text-muted-foreground">
+                Guest lists, files, invitations, messages, tables, and check-in
+                pages keep next steps visible.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <CheckCircle2Icon aria-hidden="true" />
+              <strong>Traceable decisions</strong>
+              <p className="text-sm text-muted-foreground">
+                Reviews, approvals, exports, and sensitive updates keep an
+                activity trail for Diginoces operations.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
   );
 }

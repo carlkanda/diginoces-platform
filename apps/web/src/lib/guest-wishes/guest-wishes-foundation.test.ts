@@ -107,13 +107,13 @@ describe("Sprint 12 guest wishes, guest-book export, and feedback foundation", (
         attachmentCount: 1,
         messageText: "See photo",
       }),
-    ).toThrow("file uploads are not supported");
+    ).toThrow("file uploads are not available yet");
     expect(() =>
       parsePublicGuestMessagePayload({
         messageText: "See photo",
         photoData: new Uint8Array([1]),
       }),
-    ).toThrow("file uploads are not supported");
+    ).toThrow("file uploads are not available yet");
 
     expect(() =>
       parsePublicGuestMessagePayload({

@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-19T00:00:00.000Z",
+  "title": "Diginoces Current-Goal Local Redesign Context",
+  "register": "product",
+  "resetId": "REDESIGN-RESET-2026-06-19-CURRENT-GOAL-REINIT",
+  "reinitializedFor": {
+    "goal": "Redo the local Diginoces application UI and UX from scratch, one route at a time, using Impeccable guidance and shadcn/ui as the structural component base.",
+    "scope": "Local redesign accepted. Hosted deployment preparation is approved after local review and user approval.",
+    "rejectedDirection": "The previous generic redesign pass is rejected. Do not inherit its visual language, layout rhythm, copy tone, page structure, component habits, or approval status.",
+    "notThis": [
+      "not the previous generic redesign direction",
+      "not active sprint implementation work",
+      "not an active sprint implementation pass",
+      "not a shadcn demo page"
+    ],
+    "behaviorRule": "Existing pages are behavior inventory only. Preserve routes, route protection, auth, MFA, Supabase access, permissions, form field names, server actions, API contracts, validation, audit behavior, public-token access, and existing product capability.",
+    "approvalRule": "A route counts only after purpose intake, shadcn component selection, behavior preservation, product-copy review, focused checks, Impeccable detector, local browser verification, and user acceptance."
+  },
+  "product": {
+    "purpose": "Secure wedding and event operations for projects, events, guests, imports, RSVPs, invitations, messages, files, partners, commercial controls, seating, check-in, reports, and audit trails.",
+    "northStar": "Wedding Operations Atelier",
+    "scene": "Event operations staff, couples, partners, and event-day crews coordinate sensitive wedding data under time pressure on laptops, tablets, and phones.",
+    "qualityBar": "A user fluent in Linear, Stripe Dashboard, Notion, and Apple system apps should trust the interface and move through the task without pausing at strange components.",
+    "antiReferences": [
+      "generic SaaS dashboards",
+      "decorative wedding stationery",
+      "internal engineering reports",
+      "dark command-console dashboards",
+      "repeated identical card grids",
+      "demo-page component galleries",
+      "AI-looking gradients, glass panels, bokeh blobs, sketch graphics, and ornamental backgrounds"
+    ]
+  },
+  "users": [
+    "Diginoces administrators",
+    "operations managers",
+    "client-facing staff",
+    "bride and groom users",
+    "event-day teams",
+    "partners and support roles"
+  ],
+  "pageFamilies": [
+    {
+      "name": "Command Desk",
+      "purpose": "Launchpads and overviews with orientation, current state, priority queues, and one safe next action."
+    },
+    {
+      "name": "Detail Workspace",
+      "purpose": "Weddings, events, guests, invitations, messages, files, partners, commercial controls, and reports."
+    },
+    {
+      "name": "Review Queue",
+      "purpose": "Approvals, moderation, import review, preview checks, partner review, and operational exceptions."
+    },
+    {
+      "name": "Guided Form",
+      "purpose": "Creation and setup flows with grouped fields, clear labels, preserved field names, validation guidance, and stable submit/cancel actions."
+    },
+    {
+      "name": "Public Guest Experience",
+      "purpose": "Mobile-first invitation, RSVP, and guest-message pages that are bilingual-ready and free of administrative clutter."
+    },
+    {
+      "name": "Event-Day Board",
+      "purpose": "Seating, maps, check-in, scanning, and live operations with scan contrast, large touch targets, current state, blockers, and one next action."
+    },
+    {
+      "name": "Evidence Surface",
+      "purpose": "Reports, audit history, files, launch readiness, and commercial controls with source context, redaction-aware copy, exports, and trust-building empty states."
+    }
+  ],
+  "pageIntake": [
+    "purpose",
+    "primary user",
+    "workflow",
+    "record or state being controlled",
+    "risky state or permission boundary",
+    "safest next action",
+    "shadcn component choices",
+    "first-time-user teaching goal"
+  ],
+  "tokens": {
+    "colors": {
+      "ink": "#10292e",
+      "inkSoft": "#36545b",
+      "canvas": "#f6f8f7",
+      "surface": "#ffffff",
+      "surfaceRaised": "#fbfdfc",
+      "surfaceMuted": "#edf2f1",
+      "border": "#d6e0df",
+      "borderStrong": "#b8cac8",
+      "inputBorder": "#c8dad8",
+      "primary": "#06343b",
+      "primaryHover": "#082f35",
+      "primarySoft": "#e1eeec",
+      "ceremony": "#a9803d",
+      "ceremonySoft": "#f3ead8",
+      "success": "#146c4b",
+      "successSoft": "#edf8f2",
+      "warning": "#8a5a12",
+      "warningSoft": "#fff7e8",
+      "danger": "#b42318",
+      "dangerSoft": "#fff3f1"
+    },
+    "typography": {
+      "family": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+      "rules": [
+        "fixed rem sizes",
+        "no negative letter spacing",
+        "no display typography in labels, buttons, forms, or data tables",
+        "monospace only for real codes, tokens, identifiers, and technical values"
+      ]
+    },
+    "radius": {
+      "control": "8px",
+      "card": "12px",
+      "panel": "12px",
+      "pill": "999px"
+    },
+    "motion": {
+      "duration": "150ms to 220ms",
+      "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+      "rule": "state feedback only; provide reduced-motion handling when animation exists"
+    }
+  },
+  "shadcn": {
+    "style": "base-nova",
+    "framework": "Next.js App Router",
+    "rsc": true,
+    "tailwind": "v4",
+    "iconLibrary": "lucide",
+    "uiAlias": "@/components/ui",
+    "globalCss": "apps/web/src/app/globals.css",
+    "componentRule": "Use shadcn components first and read docs before unfamiliar component work.",
+    "componentMap": {
+      "shell": [
+        "Sidebar",
+        "Breadcrumb",
+        "Separator",
+        "ScrollArea",
+        "Tooltip"
+      ],
+      "navigation": [
+        "Tabs",
+        "Command",
+        "DropdownMenu",
+        "Popover",
+        "Sheet"
+      ],
+      "actions": [
+        "Button",
+        "AlertDialog",
+        "Dialog"
+      ],
+      "records": [
+        "Table",
+        "Badge",
+        "Empty",
+        "Skeleton"
+      ],
+      "forms": [
+        "FieldSet",
+        "FieldGroup",
+        "Field",
+        "Input",
+        "InputGroup",
+        "Textarea",
+        "NativeSelect",
+        "Select",
+        "Checkbox",
+        "RadioGroup",
+        "Switch",
+        "ToggleGroup",
+        "InputOTP"
+      ],
+      "guidance": [
+        "Alert",
+        "Card",
+        "Separator",
+        "Tooltip"
+      ]
+    }
+  },
+  "copy": {
+    "use": [
+      "wedding",
+      "event",
+      "guest list",
+      "import",
+      "review",
+      "invitation",
+      "RSVP",
+      "message queue",
+      "table plan",
+      "check-in",
+      "file",
+      "report",
+      "audit trail",
+      "approval",
+      "readiness",
+      "handoff"
+    ],
+    "avoidInProductScreens": [
+      "sprint",
+      "foundation",
+      "MVP",
+      "backlog",
+      "issue",
+      "PR",
+      "implementation",
+      "migration",
+      "hardening",
+      "scaffold",
+      "test case"
+    ]
+  },
+  "qualityGates": [
+    "current-goal reset acknowledged",
+    "route purpose intake",
+    "shadcn component choice",
+    "behavior and security preservation",
+    "product-copy pass",
+    "focused checks",
+    "checklist evidence",
+    "local browser review",
+    "user acceptance before hosted update"
+  ],
+  "checklist": {
+    "path": "docs/qa/redesign-rebuild-checklist.md",
+    "rule": "Every route pass must be recorded here before moving on or repeating work."
+  }
+}

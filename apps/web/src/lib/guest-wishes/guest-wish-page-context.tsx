@@ -8,6 +8,14 @@ import {
   ProjectAccessError,
   type ProjectApiContext,
 } from "@/lib/projects/project-api";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type ResolveGuestWishProjectPageContextInput<TPermissions> = {
   nextPath: string;
@@ -47,12 +55,27 @@ export async function resolveGuestWishProjectPageContext<TPermissions>({
   if (authContext.status === "not_configured") {
     return {
       element: (
-        <>
-          <h1 className="page-title">{notConfiguredTitle}</h1>
-          <section className="section">
-            <div className="alert">{notConfiguredMessage}</div>
-          </section>
-        </>
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <h1 className="text-2xl font-semibold tracking-normal text-balance">
+                  {notConfiguredTitle}
+                </h1>
+              </CardTitle>
+              <CardDescription>
+                Connect the workspace before loading protected celebration
+                records.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Alert>
+                <AlertTitle>Workspace connection required</AlertTitle>
+                <AlertDescription>{notConfiguredMessage}</AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </div>
       ),
       status: "not_configured",
     };

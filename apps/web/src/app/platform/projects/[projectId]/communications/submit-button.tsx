@@ -4,12 +4,14 @@ import { useFormStatus } from "react-dom";
 import type { ReactNode } from "react";
 
 type SubmitButtonProps = {
+  ariaLabel?: string;
   children: ReactNode;
   className?: string;
   pendingLabel?: string;
 };
 
 export function SubmitButton({
+  ariaLabel,
   children,
   className = "button secondary",
   pendingLabel = "Processing...",
@@ -18,6 +20,7 @@ export function SubmitButton({
 
   return (
     <button
+      aria-label={ariaLabel}
       aria-busy={pending}
       className={className}
       disabled={pending}

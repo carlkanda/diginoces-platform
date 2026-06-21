@@ -17,6 +17,9 @@ import {
   canPerformPartnerAction,
   createPartnerProjectDraft,
   createPartnerProfileFoundation,
+  formatPartnerContactDisplay,
+  formatPartnerOrganizationDisplay,
+  formatPartnerSubmissionCoupleDisplayName,
   getPartnerIndexActionVisibility,
   isPartnerRestrictedField,
   linkPartnerUserFoundation,
@@ -370,6 +373,31 @@ describe("Sprint 13 partner foundation", () => {
     });
   });
 
+  it("formats seeded partner display labels without exposing QA fixture names", () => {
+    expect(formatPartnerOrganizationDisplay("QA Demo Planner", 0)).toBe(
+      "Partner profile 1",
+    );
+    expect(formatPartnerOrganizationDisplay("Diginoces Floral Studio", 1)).toBe(
+      "Diginoces Floral Studio",
+    );
+    expect(formatPartnerContactDisplay("planner@example.com")).toBe("Not set");
+    expect(formatPartnerContactDisplay("events@diginoces.com")).toBe(
+      "events@diginoces.com",
+    );
+    expect(
+      formatPartnerSubmissionCoupleDisplayName(
+        { bride_name: "QA Bride", groom_name: "QA Groom" },
+        2,
+      ),
+    ).toBe("Submitted project 3");
+    expect(
+      formatPartnerSubmissionCoupleDisplayName(
+        { bride_name: "Aline", groom_name: "Cedric" },
+        0,
+      ),
+    ).toBe("Aline & Cedric");
+  });
+
   it("builds a restricted partner dashboard without revenue, payment, internal note, or audit fields", () => {
     const dashboard = buildPartnerDashboardView({
       now,
@@ -634,8 +662,10 @@ describe("Sprint 13 partner foundation", () => {
     expect(partnerDb).toMatch(/\bpartner_project_assignments\b/);
     expect(partnerDb).toMatch(/\bevent_date\b/);
     expect(healthRoute).toContain("getSprint13PartnerStatus");
-    expect(homePage).toContain("getSprint13PartnerStatus");
-    expect(homePage).toContain("Project comments");
+    expect(homePage).toContain("Event guest management");
+    expect(homePage).toContain("partner access");
+    expect(homePage).toContain("Files, partners, reports, activity trail");
+    expect(homePage).not.toContain("getSprint13PartnerStatus");
     expect(localSetup).toContain("Sprint 13 partner");
     expect(localSetup).toContain("/platform/partners");
     expect(

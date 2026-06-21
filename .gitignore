@@ -36,8 +36,10 @@ tmp/
 *.log
 
 # Generated local files
+.agents/
 uploads/
 exports/
+output/
 apps/web/AGENTS.md
 apps/web/CLAUDE.md
 

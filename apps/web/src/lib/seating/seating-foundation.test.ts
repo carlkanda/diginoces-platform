@@ -12,6 +12,9 @@ import {
   canAssignGuestSide,
   canPerformSeatingAction,
   filterUnassignedGuests,
+  formatEventTableCode,
+  formatEventTableName,
+  formatEventTableReference,
   getGuestOccupancyUnits,
   getSprint8SeatingStatus,
   isGuestActiveForSeating,
@@ -506,6 +509,29 @@ describe("Sprint 8 seating foundation", () => {
         positionY: 140,
       },
     ]);
+  });
+
+  it("masks internal QA-style table labels from user-facing seating views", () => {
+    expect(formatEventTableCode("QA110901", 0)).toBe("T1");
+    expect(formatEventTableName("QA110901 - Table 1", 0)).toBe("Table 1");
+    expect(
+      formatEventTableReference(
+        {
+          tableCode: "QA110901",
+          tableName: "QA110901 - Table 1",
+        },
+        0,
+      ),
+    ).toBe("T1 - Table 1");
+    expect(
+      formatEventTableReference(
+        {
+          tableCode: "VIP",
+          tableName: "Family table",
+        },
+        1,
+      ),
+    ).toBe("VIP - Family table");
   });
 
   it("documents Sprint 8 traceability and excludes future modules", () => {

@@ -142,6 +142,8 @@ export type TableCardCsvRow = {
 
 export type SeatingAction = "assign" | "export" | "read" | "tables.manage";
 
+type EventTableDisplayFields = Pick<EventTable, "tableCode" | "tableName">;
+
 const seatingActionPermissions: Record<SeatingAction, PermissionSlug> = {
   assign: "seating.assign",
   export: "seating.export",
@@ -161,6 +163,30 @@ const tableStatuses = new Set<EventTableStatus>([
   "locked",
 ]);
 const guestSides = new Set<GuestSide>(["both", "bride", "groom"]);
+const internalEventTableLabelPattern =
+  /\bmvp\b|\bui qa\b|\bqa table\b|^\s*qa[\d_-]+\b/i;
+
+export function isInternalEventTableLabel(value: string) {
+  return internalEventTableLabelPattern.test(value);
+}
+
+export function formatEventTableCode(code: string, index: number) {
+  return isInternalEventTableLabel(code) ? `T${index + 1}` : code;
+}
+
+export function formatEventTableName(name: string, index: number) {
+  return isInternalEventTableLabel(name) ? `Table ${index + 1}` : name;
+}
+
+export function formatEventTableReference(
+  table: EventTableDisplayFields,
+  index: number,
+) {
+  return `${formatEventTableCode(table.tableCode, index)} - ${formatEventTableName(
+    table.tableName,
+    index,
+  )}`;
+}
 
 function asRecord(payload: unknown) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {

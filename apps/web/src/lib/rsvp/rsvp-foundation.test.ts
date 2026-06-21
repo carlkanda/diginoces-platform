@@ -1,4 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   buildGuestPublicToken,
@@ -16,6 +18,8 @@ import {
   type PublicGuestEvent,
   type RsvpRecord,
 } from "@/lib/rsvp/rsvp-service";
+import { PublicGuestPageView } from "@/lib/rsvp/public-guest-page-view";
+import type { PublicGuestPagePayload } from "@/lib/rsvp/rsvp-db";
 import type { RoleAssignment } from "@/lib/security/permissions";
 
 const projectId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -285,10 +289,96 @@ describe("Sprint 5 RSVP and public guest page foundation", () => {
 
   it("provides French and English public guest labels", () => {
     expect(getGuestPageLabels("fr").yes).toBe("Oui");
+    expect(getGuestPageLabels("fr").downloadAction).toBe(
+      "Ouvrir le téléchargement sécurisé",
+    );
     expect(getGuestPageLabels("en").maybe).toBe("Maybe");
+    expect(getGuestPageLabels("en").messageUnavailableHelp).toContain(
+      "safely saved",
+    );
     expect(getGuestPageLabels(null).lockedTitle).toBe(
       getGuestPageLabels("fr").lockedTitle,
     );
+  });
+
+  it("renders the public guest view with RSVP, download, and message contracts", () => {
+    const payload: Extract<PublicGuestPagePayload, { status: "ok" }> = {
+      events: [
+        {
+          assignmentId: "assignment-1",
+          eventDate: "2026-08-08",
+          eventId: eventA,
+          name: "Ceremony",
+          rsvp: null,
+          rsvpDeadlineAt: "2026-07-31T21:59:59.000Z",
+          startsAt: "15:00:00",
+          venueAddress: null,
+          venueName: "Notre Dame",
+        },
+      ],
+      guest: {
+        displayName: "Marie L.",
+        id: guestId,
+        isPrintedOnly: false,
+        preferredLanguage: "en",
+      },
+      guestMessage: {
+        approvedText: null,
+        currentText: "Congratulations!",
+        deadlineAt: "2026-07-30T18:00:00.000Z",
+        lastGuestEditedAt: null,
+        messageId: "message-1",
+        status: "not_submitted",
+        submittedAt: null,
+      },
+      invitation: {
+        downloadAvailable: true,
+        placeholderOnly: false,
+      },
+      mode: "public",
+      project: {
+        brideName: "Amara",
+        couplePhotoUrl: null,
+        groomName: "Julien",
+        guestPageAccessStatus: "payment_confirmed",
+        id: projectId,
+        preferredLanguage: "en",
+      },
+      status: "ok",
+      tokenId: "token-1",
+    };
+
+    const html = renderToStaticMarkup(
+      createElement(PublicGuestPageView, {
+        downloadableFiles: [
+          {
+            category: "invitation_pdf",
+            fileId: "file-1",
+            filename: "invitation.pdf",
+            mimeType: "application/pdf",
+            version: 2,
+          },
+        ],
+        formActionFactory: () => () => undefined,
+        guestToken: "guest-token",
+        messageFormAction: () => undefined,
+        payload,
+      }),
+    );
+
+    expect(html).toContain("Amara &amp; Julien");
+    expect(html).toContain("Marie L., your personal invitation page is ready.");
+    expect(html).toContain("Ceremony");
+    expect(html).toContain('name="preferredLanguage"');
+    expect(html).toContain('name="response"');
+    expect(html).toContain('value="yes"');
+    expect(html).toContain('value="no"');
+    expect(html).toContain('value="maybe"');
+    expect(html).toContain(
+      "/api/public/guest/guest-token/files/file-1/download",
+    );
+    expect(html).toContain('name="messageText"');
+    expect(html).toContain("Congratulations!");
   });
 
   it("represents RSVP and public-page audit hooks without exposing future modules", () => {

@@ -351,7 +351,7 @@ function parseLanguage(value: unknown): MessageLanguage {
     return value;
   }
 
-  throw new MessageValidationError("language must be fr or en.");
+  throw new MessageValidationError("Language must be French or English.");
 }
 
 function parseMessageType(value: unknown): MessageType {
@@ -957,7 +957,7 @@ export function createApiReadyMessagingAdapter() {
     async send(_message?: PreparedMessageLog) {
       const attemptedMessage = _message ? " for a prepared message" : "";
       throw new MessageValidationError(
-        `Sprint 7 does not use real WhatsApp API credentials${attemptedMessage}.`,
+        `Automatic WhatsApp sending is not connected${attemptedMessage}. Use the guided manual sending workflow instead.`,
       );
     },
   };

@@ -202,6 +202,9 @@ export const partnerAuditActions = [
 
 export type PartnerAuditAction = (typeof partnerAuditActions)[number];
 
+const internalPartnerDisplayPattern =
+  /\bmvp\b|\bsprint\b|\bfoundation\b|\bui qa\b|\bqa demo\b|^\s*qa\b|^qademo\b|\bdemo\b|\bfixture\b|\btest\b|\binternal\b|example\.com/i;
+
 const actionPermissions: Record<PartnerAction, PermissionSlug> = {
   "comments.create": "project_comments.create",
   "comments.internal.read": "project_comments.internal.read",
@@ -219,6 +222,57 @@ const actionPermissions: Record<PartnerAction, PermissionSlug> = {
 const activePartnerStatuses = new Set<PartnerStatus>(["active"]);
 const restrictedFieldPattern =
   /(revenue|amount|balance|payment|price|pricing|discount|gesture|exception|internal|audit|commission|referral|payout|billing)/i;
+
+export function isInternalPartnerDisplayText(value: string) {
+  return internalPartnerDisplayPattern.test(value);
+}
+
+export function formatPartnerOrganizationDisplay(
+  value: unknown,
+  index: number,
+) {
+  const text = typeof value === "string" ? value.trim() : "";
+
+  if (!text || isInternalPartnerDisplayText(text)) {
+    return `Partner profile ${index + 1}`;
+  }
+
+  return text;
+}
+
+export function formatPartnerContactDisplay(value: unknown) {
+  const text = typeof value === "string" ? value.trim() : "";
+
+  if (!text || isInternalPartnerDisplayText(text)) {
+    return "Not set";
+  }
+
+  return text;
+}
+
+export function formatPartnerSubmissionCoupleDisplayName(
+  submission: {
+    bride_name?: unknown;
+    groom_name?: unknown;
+  },
+  index: number,
+) {
+  const brideName =
+    typeof submission.bride_name === "string"
+      ? submission.bride_name.trim()
+      : "";
+  const groomName =
+    typeof submission.groom_name === "string"
+      ? submission.groom_name.trim()
+      : "";
+  const coupleName = `${brideName} & ${groomName}`;
+
+  if (!brideName || !groomName || isInternalPartnerDisplayText(coupleName)) {
+    return `Submitted project ${index + 1}`;
+  }
+
+  return coupleName;
+}
 
 export class PartnerValidationError extends Error {
   constructor(message: string) {

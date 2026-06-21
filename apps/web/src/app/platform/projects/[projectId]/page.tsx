@@ -1,13 +1,67 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
+  ArrowRightIcon,
+  CalendarDaysIcon,
+  CheckCircle2Icon,
+  ClipboardCheckIcon,
+  FolderKanbanIcon,
+  LanguagesIcon,
+  LockKeyholeIcon,
+  MailCheckIcon,
+  UsersRoundIcon,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
+import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import {
+  formatProjectContactDisplay,
+  formatProjectCoupleDisplayName,
+  formatProjectDisplayReference,
+  formatProjectEventDisplayName,
+  formatProjectEventDisplayReference,
+  formatProjectVenueDisplay,
+  type EventLifecycleStatus,
   getEventLifecycleLabel,
   getEventTypeLabel,
   getProjectLifecycleLabel,
+  type ProjectLifecycleStatus,
 } from "@/lib/projects/project-foundation";
 import {
   hasProjectPermission,
@@ -22,6 +76,7 @@ import { hasAnyCommercialReadPermission } from "@/lib/contracts/contract-api";
 import { hasAnyProjectFileCapability } from "@/lib/files/file-api";
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +84,20 @@ type ProjectDetailPageProps = {
   params: Promise<{
     projectId: string;
   }>;
+};
+
+type ProjectWorkArea = {
+  description: string;
+  href: string;
+  label: string;
+  show: boolean;
+  tone?: "primary";
+};
+
+type ProjectWorkAreaGroup = {
+  areas: ProjectWorkArea[];
+  description: string;
+  label: string;
 };
 
 function formatDate(value: string | null) {
@@ -46,6 +115,63 @@ function formatDate(value: string | null) {
   }).format(date);
 }
 
+function formatTaskStatus(value: string) {
+  return value
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function formatPreferredLanguage(value: string | null) {
+  if (!value) {
+    return "Language not set";
+  }
+
+  const labels: Record<string, string> = {
+    en: "English",
+    fr: "French",
+  };
+
+  return labels[value.toLowerCase()] ?? value;
+}
+
+function pluralize(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function getProjectStatusVariant(
+  status: ProjectLifecycleStatus,
+): "default" | "secondary" | "outline" {
+  if (
+    status === "active" ||
+    status === "ready_for_invitations" ||
+    status === "event_operations"
+  ) {
+    return "default";
+  }
+
+  if (status === "lead" || status === "draft" || status === "submitted") {
+    return "secondary";
+  }
+
+  return "outline";
+}
+
+function getEventStatusVariant(
+  status: EventLifecycleStatus,
+): "default" | "secondary" | "outline" {
+  if (status === "ready" || status === "in_progress") {
+    return "default";
+  }
+
+  if (status === "draft" || status === "scheduled") {
+    return "secondary";
+  }
+
+  return "outline";
+}
+
 export default async function ProjectDetailPage({
   params,
 }: ProjectDetailPageProps) {
@@ -58,15 +184,24 @@ export default async function ProjectDetailPage({
 
   if (authContext.status === "not_configured") {
     return (
-      <>
-        <h1 className="page-title">Project detail</h1>
-        <section className="section">
-          <div className="alert">
-            Supabase environment variables are not configured. Project details
-            will load after local credentials are supplied.
-          </div>
-        </section>
-      </>
+      <main className="flex flex-col gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Wedding workspace</CardTitle>
+            <CardDescription>
+              Project data will appear after the workspace connection is ready.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+        <Alert>
+          <LockKeyholeIcon />
+          <AlertTitle>Workspace connection pending</AlertTitle>
+          <AlertDescription>
+            The page stays available without exposing project records until the
+            Supabase connection is configured.
+          </AlertDescription>
+        </Alert>
+      </main>
     );
   }
 
@@ -142,391 +277,504 @@ export default async function ProjectDetailPage({
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",
   );
+  const projectName = formatProjectCoupleDisplayName(details.project, 0);
+  const projectReference = formatProjectDisplayReference(details.project, 0);
+  const preferredLanguage = formatPreferredLanguage(
+    details.project.preferred_language,
+  );
+  const primaryContact = formatProjectContactDisplay(
+    details.project.primary_contact_name ??
+      details.project.primary_contact_email ??
+      details.project.primary_contact_phone ??
+      null,
+  );
+  const workAreaGroups: ProjectWorkAreaGroup[] = [
+    {
+      label: "Plan and review",
+      description:
+        "Use dashboards and reports to understand where this wedding stands.",
+      areas: [
+        {
+          description:
+            "Review project activity, guest progress, RSVP movement, and operational signals.",
+          href: `/platform/projects/${projectId}/dashboard`,
+          label: "Project dashboard",
+          show: canReadProjectDashboard,
+          tone: "primary",
+        },
+        {
+          description:
+            "Open the couple-facing view for a simpler project summary.",
+          href: `/platform/projects/${projectId}/couple-dashboard`,
+          label: "Couple view",
+          show: canReadCoupleDashboard,
+        },
+        {
+          description:
+            "Open project-scoped reporting and exports available to this account.",
+          href: `/platform/reports?projectId=${projectId}`,
+          label: "Reports",
+          show: canReadReports,
+        },
+      ],
+    },
+    {
+      label: "Prepare guests",
+      description:
+        "Build the guest list, review imports, collect responses, and prepare messages.",
+      areas: [
+        {
+          description:
+            "Manage names, sides, tags, title types, event assignments, and guest profiles.",
+          href: `/platform/projects/${projectId}/guests`,
+          label: "Guest list",
+          show: canReadGuests,
+          tone: "primary",
+        },
+        {
+          description:
+            "Review uploaded CSV rows before they are added to the guest list.",
+          href: `/platform/projects/${projectId}/guest-imports`,
+          label: "Guest imports",
+          show: canReadGuestImports,
+        },
+        {
+          description:
+            "Track event-level Yes, No, Maybe, and pending responses.",
+          href: `/platform/projects/${projectId}/rsvps`,
+          label: "RSVP",
+          show: canReadRsvps,
+        },
+        {
+          description:
+            "Prepare WhatsApp text, guided sends, follow-ups, and message history.",
+          href: `/platform/projects/${projectId}/communications`,
+          label: "Messages",
+          show: canReadMessages,
+        },
+      ],
+    },
+    {
+      label: "Deliver and coordinate",
+      description:
+        "Keep the project moving with files, commercial controls, partner comments, and post-event work.",
+      areas: [
+        {
+          description:
+            "Manage project files, event files, guest-facing downloads, and retention review.",
+          href: `/platform/projects/${projectId}/files`,
+          label: "Files",
+          show: canReadFiles,
+        },
+        {
+          description:
+            "Review packages, contract status, payments, and guest-page gates.",
+          href: `/platform/projects/${projectId}/commercial`,
+          label: "Commercial work",
+          show: canReadCommercial,
+        },
+        {
+          description:
+            "Coordinate project notes with authorized staff and partners.",
+          href: `/platform/projects/${projectId}/comments`,
+          label: "Project comments",
+          show: canReadProjectComments,
+        },
+        {
+          description: "Moderate guest wishes and prepare guest-book content.",
+          href: `/platform/projects/${projectId}/guest-book`,
+          label: "Guest book",
+          show: canReadGuestBook,
+        },
+        {
+          description:
+            "Review private post-event feedback and testimonial permission.",
+          href: `/platform/projects/${projectId}/feedback`,
+          label: "Feedback",
+          show: canReadPostEventFeedback,
+        },
+      ],
+    },
+  ];
+  const visibleWorkAreaGroups = workAreaGroups
+    .map((group) => ({
+      ...group,
+      areas: group.areas.filter((area) => area.show),
+    }))
+    .filter((group) => group.areas.length > 0);
 
   return (
-    <>
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">{details.project.project_code}</p>
-          <h1 className="page-title">
-            {details.project.bride_name} & {details.project.groom_name}
-          </h1>
-          <p className="page-summary">
-            Status: {getProjectLifecycleLabel(details.project.status)}
-          </p>
-        </div>
-        <Link className="button secondary" href="/platform/projects">
-          Projects
-        </Link>
-        {canReadProjectDashboard ? (
-          <Link
-            className="button"
-            href={`/platform/projects/${projectId}/dashboard`}
-          >
-            Dashboard
-          </Link>
-        ) : null}
-        {canReadCoupleDashboard ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/couple-dashboard`}
-          >
-            Couple view
-          </Link>
-        ) : null}
-        {canReadReports ? (
-          <Link
-            className="button secondary"
-            href={`/platform/reports?projectId=${projectId}`}
-          >
-            Reports
-          </Link>
-        ) : null}
-        {canReadGuests ? (
-          <Link
-            className="button"
-            href={`/platform/projects/${projectId}/guests`}
-          >
-            Guests
-          </Link>
-        ) : null}
-        {canReadGuestImports ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/guest-imports`}
-          >
-            Guest imports
-          </Link>
-        ) : null}
-        {canReadRsvps ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/rsvps`}
-          >
-            RSVP summary
-          </Link>
-        ) : null}
-        {canReadMessages ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/communications`}
-          >
-            Communications
-          </Link>
-        ) : null}
-        {canReadProjectComments ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/comments`}
-          >
-            Project comments
-          </Link>
-        ) : null}
-        {canReadFiles ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/files`}
-          >
-            Files
-          </Link>
-        ) : null}
-        {canReadCommercial ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/commercial`}
-          >
-            Contracts & payments
-          </Link>
-        ) : null}
-        {canReadGuestBook ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/guest-book`}
-          >
-            Guest book
-          </Link>
-        ) : null}
-        {canReadPostEventFeedback ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/feedback`}
-          >
-            Feedback
-          </Link>
-        ) : null}
-      </div>
+    <main className="flex flex-col gap-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link href="/platform" />}>
+              Workspace
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link href="/platform/projects" />}>
+              Projects
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{projectName}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
-      <section className="section">
-        <h2>Project foundation</h2>
-        <div className="detail-grid">
-          <div>
-            <span>Project code</span>
-            <strong>{details.project.project_code}</strong>
-          </div>
-          <div>
-            <span>Project year</span>
-            <strong>{details.project.project_year}</strong>
-          </div>
-          <div>
-            <span>Preferred language</span>
-            <strong>
-              {details.project.preferred_language ?? "Unassigned"}
-            </strong>
-          </div>
-          <div>
-            <span>Primary contact</span>
-            <strong>
-              {details.project.primary_contact_name ?? "Unassigned"}
-            </strong>
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="section-heading">
-          <h2>Guest management</h2>
-          <span className="meta-list">Sprint 3, 4, and 5 foundation</span>
-        </div>
-        <p className="page-summary">
-          Manage the project master guest list, bride/groom side filters, tags,
-          title types, event assignments, import history, and RSVP summary
-          foundation without invitations, seating, or check-in workflows.
-        </p>
-        {canReadGuests ? (
-          <Link
-            className="button"
-            href={`/platform/projects/${projectId}/guests`}
+      <Card>
+        <CardHeader className="has-data-[slot=card-action]:grid-cols-1 sm:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
+          <CardTitle>
+            <h1 className="text-2xl leading-tight font-semibold text-balance">
+              {projectName}
+            </h1>
+          </CardTitle>
+          <CardDescription className="max-w-3xl">
+            Open the next area of work for this wedding. Your role determines
+            which records, event tools, and review queues appear here.
+          </CardDescription>
+          <CardAction className="col-start-1 row-start-auto mt-3 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
+            <Badge variant={getProjectStatusVariant(details.project.status)}>
+              {getProjectLifecycleLabel(details.project.status)}
+            </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(220px,280px)]">
+          <dl
+            aria-label="Wedding project details"
+            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
           >
-            Open guest list
-          </Link>
-        ) : null}
-        {canReadGuestImports ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/guest-imports`}
-          >
-            Open imports
-          </Link>
-        ) : null}
-        {canReadRsvps ? (
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/rsvps`}
-          >
-            RSVP summary
-          </Link>
-        ) : null}
-      </section>
-
-      <section className="section">
-        <div className="section-heading">
-          <h2>WhatsApp communications</h2>
-          <span className="meta-list">Sprint 7 foundation</span>
-        </div>
-        <p className="page-summary">
-          Manage approved French/English templates, prepare guided manual
-          WhatsApp messages, open the correct WhatsApp link, and record sent,
-          failed, skipped, or resent statuses with audit coverage.
-        </p>
-        {canReadMessages ? (
-          <Link
-            className="button"
-            href={`/platform/projects/${projectId}/communications`}
-          >
-            Open communications
-          </Link>
-        ) : null}
-      </section>
-
-      <section className="section">
-        <div className="section-heading">
-          <h2>Tables and seating</h2>
-          <span className="meta-list">Sprint 8 foundation</span>
-        </div>
-        <p className="page-summary">
-          Manage event-specific tables, capacity warnings, RSVP-aware
-          assignments, VIP/protocol seating notes, and Canva table-card CSV
-          exports from each event.
-        </p>
-        {canReadSeating && details.events.length > 0 ? (
-          <div className="button-group">
-            {details.events.map((event) => (
-              <Link
-                className="button secondary"
-                href={`/platform/events/${event.id}/seating`}
-                key={event.id}
-              >
-                {event.name} seating
-              </Link>
-            ))}
-          </div>
-        ) : details.events.length === 0 ? (
-          <div className="empty-state">
-            No events configured. Create an event to manage seating.
-          </div>
-        ) : (
-          <div className="empty-state">
-            You do not have access to seating for these events. Contact your
-            admin.
-          </div>
-        )}
-      </section>
-
-      <section className="section">
-        <div className="section-heading">
-          <h2>Commercial controls</h2>
-          <span className="meta-list">Sprint 10 foundation</span>
-        </div>
-        <p className="page-summary">
-          Configure service packages, select event packages, calculate pricing,
-          generate the project contract, approve it in-app, record manual
-          payments, and monitor guest-facing payment gates.
-        </p>
-        {canReadCommercial ? (
-          <Link
-            className="button"
-            href={`/platform/projects/${projectId}/commercial`}
-          >
-            Open contracts and payments
-          </Link>
-        ) : null}
-      </section>
-
-      <section className="section">
-        <div className="section-heading">
-          <h2>Guest wishes and feedback</h2>
-          <span className="meta-list">Sprint 12 foundation</span>
-        </div>
-        <p className="page-summary">
-          Collect text guest wishes from public guest pages, moderate approved
-          guest-book content, track Canva CSV export metadata, and collect
-          private post-event feedback with testimonial permission.
-        </p>
-        {canReadGuestBook || canReadPostEventFeedback ? (
-          <div className="button-group">
-            {canReadGuestBook ? (
-              <Link
-                className="button"
-                href={`/platform/projects/${projectId}/guest-book`}
-              >
-                Open guest book
-              </Link>
-            ) : null}
-            {canReadPostEventFeedback ? (
-              <Link
-                className="button secondary"
-                href={`/platform/projects/${projectId}/feedback`}
-              >
-                Open feedback
-              </Link>
-            ) : null}
-          </div>
-        ) : (
-          <div className="empty-state">
-            Guest wishes and post-event feedback are not available for your
-            current project access.
-          </div>
-        )}
-      </section>
-
-      <section className="section">
-        <div className="section-heading">
-          <h2>Partner collaboration</h2>
-          <span className="meta-list">Sprint 13 foundation</span>
-        </div>
-        <p className="page-summary">
-          Track partner-originated or assigned projects through restricted
-          partner views and a partner-visible project comment thread. Internal
-          notes, audit logs, revenue, payment details, and exception reasons
-          remain internal.
-        </p>
-        {canReadProjectComments ? (
-          <Link
-            className="button"
-            href={`/platform/projects/${projectId}/comments`}
-          >
-            Open project comments
-          </Link>
-        ) : (
-          <div className="empty-state">
-            Project comments are not available for your current project access.
-          </div>
-        )}
-      </section>
-
-      <section className="section">
-        <div className="section-heading">
-          <h2>Files and archive</h2>
-          <span className="meta-list">Sprint 14 foundation</span>
-        </div>
-        <p className="page-summary">
-          Manage the project file library, event files, guest-facing file
-          controls, version history, secure download links, retention review,
-          and archive lifecycle without automated destructive deletion.
-        </p>
-        {canReadFiles ? (
-          <Link
-            className="button"
-            href={`/platform/projects/${projectId}/files`}
-          >
-            Open files
-          </Link>
-        ) : (
-          <div className="empty-state">
-            Files and archive controls are not available for your current
-            project access.
-          </div>
-        )}
-      </section>
-
-      <section className="section">
-        <div className="section-heading">
-          <h2>Events</h2>
-          <span className="meta-list">{details.events.length} records</span>
-        </div>
-
-        {details.events.length === 0 ? (
-          <div className="empty-state">No events are configured yet.</div>
-        ) : (
-          <div className="record-list">
-            {details.events.map((event) => (
-              <Link
-                className="record-row"
-                href={`/platform/events/${event.id}`}
-                key={event.id}
-              >
-                <span>
-                  <strong>{event.name}</strong>
-                  <small>
-                    {event.event_code} - {getEventTypeLabel(event.event_type)}
-                  </small>
-                </span>
-                <span className="tag">
-                  {getEventLifecycleLabel(event.status)}
-                </span>
-                <span className="meta-list">
-                  {formatDate(event.event_date)}
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="section">
-        <h2>Workflow foundation</h2>
-        <div className="task-list">
-          {projectTasks.map((task) => (
-            <div className="task-row" key={task.id}>
-              <span>
-                <strong>{task.title}</strong>
-                <small>{task.requirement_ids.join(", ")}</small>
-              </span>
-              <span className="tag">{task.status.replaceAll("_", " ")}</span>
+            <div className="rounded-lg border bg-background p-3">
+              <dt className="text-xs font-medium text-muted-foreground">
+                {projectReference.label}
+              </dt>
+              <dd className="mt-1 truncate font-medium">
+                {projectReference.value}
+              </dd>
             </div>
-          ))}
+            <div className="rounded-lg border bg-background p-3">
+              <dt className="text-xs font-medium text-muted-foreground">
+                Events
+              </dt>
+              <dd className="mt-1 font-medium">
+                {pluralize(details.events.length, "event")}
+              </dd>
+            </div>
+            <div className="rounded-lg border bg-background p-3">
+              <dt className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                <LanguagesIcon aria-hidden="true" />
+                Language
+              </dt>
+              <dd className="mt-1 font-medium">{preferredLanguage}</dd>
+            </div>
+            <div className="rounded-lg border bg-background p-3">
+              <dt className="text-xs font-medium text-muted-foreground">
+                Primary contact
+              </dt>
+              <dd className="mt-1 truncate font-medium">{primaryContact}</dd>
+            </div>
+          </dl>
+          <div className="flex flex-col gap-3 rounded-lg border bg-background p-3">
+            <div>
+              <p className="text-sm font-medium">Quick actions</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Start with the records most teams need first.
+              </p>
+            </div>
+            <Separator />
+            <Link
+              className={buttonVariants({ variant: "outline" })}
+              href="/platform/projects"
+            >
+              Back to projects
+            </Link>
+            {canReadProjectDashboard ? (
+              <Link
+                className={buttonVariants({ variant: "outline" })}
+                href={`/platform/projects/${projectId}/dashboard`}
+              >
+                Open dashboard
+              </Link>
+            ) : null}
+            {canReadGuests ? (
+              <Link
+                className={buttonVariants()}
+                href={`/platform/projects/${projectId}/guests`}
+              >
+                Open guest list
+                <ArrowRightIcon data-icon="inline-end" />
+              </Link>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Work areas</CardTitle>
+          <CardDescription>
+            Move through this wedding by task. Each destination appears only
+            when your role can use it.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {visibleWorkAreaGroups.length === 0 ? (
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <FolderKanbanIcon />
+                </EmptyMedia>
+                <EmptyTitle>No available work areas</EmptyTitle>
+                <EmptyDescription>
+                  This account can see the project but has no project work area
+                  available yet. Ask an administrator to review role assignment.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-3">
+              {visibleWorkAreaGroups.map((group) => (
+                <section className="flex flex-col gap-3" key={group.label}>
+                  <div>
+                    <h2 className="text-base font-semibold">{group.label}</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {group.description}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {group.areas.map((area) => (
+                      <Link
+                        aria-label={`${area.label}: ${area.description}`}
+                        className={cn(
+                          "group flex min-h-24 items-start justify-between gap-3 rounded-lg border bg-background p-3 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                          area.tone === "primary" && "bg-secondary",
+                        )}
+                        href={area.href}
+                        key={area.href}
+                      >
+                        <span className="min-w-0">
+                          <span className="block font-medium">
+                            {area.label}
+                          </span>
+                          <span className="mt-1 block text-sm text-muted-foreground">
+                            {area.description}
+                          </span>
+                        </span>
+                        <ArrowRightIcon aria-hidden="true" />
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(340px,0.75fr)]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDaysIcon />
+              Events
+            </CardTitle>
+            <CardDescription>
+              Open an event for invitations, seating, check-in, files, and
+              event-level dashboards.
+            </CardDescription>
+            <CardAction>
+              <Badge variant="outline">
+                {pluralize(details.events.length, "event")}
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            {details.events.length === 0 ? (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <CalendarDaysIcon />
+                  </EmptyMedia>
+                  <EmptyTitle>No events configured</EmptyTitle>
+                  <EmptyDescription>
+                    Events linked to this wedding will appear here with date,
+                    venue, status, and event-day entry points.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Event</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden md:table-cell">Date</TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      Venue
+                    </TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {details.events.map((event, eventIndex) => {
+                    const eventLabel = formatProjectEventDisplayName(
+                      event,
+                      eventIndex,
+                    );
+                    const eventReference = formatProjectEventDisplayReference(
+                      event,
+                      eventIndex,
+                    );
+                    const venueLabel = formatProjectVenueDisplay(
+                      event.venue_name,
+                    );
+
+                    return (
+                      <TableRow key={event.id}>
+                        <TableCell className="min-w-56 whitespace-normal">
+                          <div className="flex flex-col gap-1">
+                            <Link
+                              className="font-medium underline-offset-4 hover:underline"
+                              href={`/platform/events/${event.id}`}
+                            >
+                              {eventLabel}
+                            </Link>
+                            <span className="text-xs text-muted-foreground">
+                              {getEventTypeLabel(event.event_type)}
+                            </span>
+                            <span
+                              aria-label={`${eventReference.label}: ${eventReference.value}.`}
+                              className="font-mono text-xs text-muted-foreground"
+                            >
+                              {eventReference.value}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getEventStatusVariant(event.status)}>
+                            {getEventLifecycleLabel(event.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden text-muted-foreground md:table-cell">
+                          {formatDate(event.event_date)}
+                        </TableCell>
+                        <TableCell className="hidden max-w-56 whitespace-normal text-muted-foreground lg:table-cell">
+                          {venueLabel}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {canReadSeating ? (
+                              <Link
+                                className={buttonVariants({
+                                  variant: "outline",
+                                  size: "sm",
+                                })}
+                                href={`/platform/events/${event.id}/seating`}
+                              >
+                                Seating
+                              </Link>
+                            ) : null}
+                            <Link
+                              aria-label={`Open ${eventLabel}`}
+                              className={buttonVariants({
+                                variant: "outline",
+                                size: "sm",
+                              })}
+                              href={`/platform/events/${event.id}`}
+                            >
+                              Open
+                            </Link>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardCheckIcon />
+                Readiness tasks
+              </CardTitle>
+              <CardDescription>
+                Project tasks that keep guest, invitation, seating, and
+                event-day work on track.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {projectTasks.length === 0 ? (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <CheckCircle2Icon />
+                    </EmptyMedia>
+                    <EmptyTitle>No readiness tasks</EmptyTitle>
+                    <EmptyDescription>
+                      No project-level readiness tasks are assigned right now.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Task</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {projectTasks.map((task) => (
+                      <TableRow key={task.id}>
+                        <TableCell className="whitespace-normal font-medium">
+                          {task.title}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="outline">
+                            {formatTaskStatus(task.status)}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          <Alert>
+            <UsersRoundIcon />
+            <AlertTitle>Permission-scoped workspace</AlertTitle>
+            <AlertDescription>
+              Work areas, events, and actions are limited to what your role can
+              access. Missing destinations usually mean the project membership
+              or role assignment needs review.
+            </AlertDescription>
+          </Alert>
+
+          <Card size="sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MailCheckIcon />
+                Best next step
+              </CardTitle>
+              <CardDescription>
+                Start with guest list readiness when available, then move into
+                RSVP, invitations, messages, seating, and check-in as the event
+                approaches.
+              </CardDescription>
+            </CardHeader>
+          </Card>
         </div>
-      </section>
-    </>
+      </div>
+    </main>
   );
 }
