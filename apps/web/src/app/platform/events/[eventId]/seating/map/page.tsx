@@ -73,7 +73,7 @@ type SeatingMapPageProps = {
 
 function capacityLabel(activeGuests: number, capacity: number) {
   if (capacity <= 0) {
-    return "No capacity";
+    return activeGuests > 0 ? `Over by ${activeGuests}` : "No capacity";
   }
 
   if (activeGuests > capacity) {
@@ -85,6 +85,22 @@ function capacityLabel(activeGuests: number, capacity: number) {
   }
 
   return `${capacity - activeGuests} open`;
+}
+
+function capacityBadgeVariant(activeGuests: number, capacity: number) {
+  if (capacity <= 0) {
+    return activeGuests > 0 ? "destructive" : "secondary";
+  }
+
+  if (activeGuests > capacity) {
+    return "destructive";
+  }
+
+  if (activeGuests === capacity) {
+    return "secondary";
+  }
+
+  return "outline";
 }
 
 export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
@@ -280,7 +296,7 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
         </CardContent>
       </Card>
 
-      <Alert>
+      <Alert role="note">
         <MapIcon aria-hidden="true" />
         <AlertTitle>Map is a placement review</AlertTitle>
         <AlertDescription>
@@ -332,7 +348,6 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
                   );
                   const activeGuests = summary?.activeGuestCount ?? 0;
                   const capacity = summary?.capacity ?? 0;
-                  const isOverCapacity = activeGuests > capacity;
 
                   return (
                     <div
@@ -352,7 +367,7 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
                         {activeGuests}/{capacity} seats
                       </span>
                       <Badge
-                        variant={isOverCapacity ? "destructive" : "secondary"}
+                        variant={capacityBadgeVariant(activeGuests, capacity)}
                       >
                         {capacityLabel(activeGuests, capacity)}
                       </Badge>
@@ -387,6 +402,10 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
                         summary.table.tableName,
                         tableIndex,
                       );
+                      const capacityState = capacityLabel(
+                        summary.activeGuestCount,
+                        summary.capacity,
+                      );
 
                       return (
                         <div
@@ -396,19 +415,12 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
                           <div className="flex items-start justify-between gap-3">
                             <span className="font-medium">{displayLabel}</span>
                             <Badge
-                              variant={
-                                summary.overCapacityBy > 0
-                                  ? "destructive"
-                                  : summary.remainingCapacity === 0
-                                    ? "secondary"
-                                    : "outline"
-                              }
+                              variant={capacityBadgeVariant(
+                                summary.activeGuestCount,
+                                summary.capacity,
+                              )}
                             >
-                              {summary.overCapacityBy > 0
-                                ? `Over by ${summary.overCapacityBy}`
-                                : summary.remainingCapacity === 0
-                                  ? "Full"
-                                  : `${summary.remainingCapacity} open`}
+                              {capacityState}
                             </Badge>
                           </div>
                           <div className="flex items-center justify-between gap-3 text-sm">
@@ -440,6 +452,10 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
                             summary.table.tableName,
                             tableIndex,
                           );
+                          const capacityState = capacityLabel(
+                            summary.activeGuestCount,
+                            summary.capacity,
+                          );
 
                           return (
                             <TableRow key={summary.table.id}>
@@ -451,19 +467,12 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
                               </TableCell>
                               <TableCell>
                                 <Badge
-                                  variant={
-                                    summary.overCapacityBy > 0
-                                      ? "destructive"
-                                      : summary.remainingCapacity === 0
-                                        ? "secondary"
-                                        : "outline"
-                                  }
+                                  variant={capacityBadgeVariant(
+                                    summary.activeGuestCount,
+                                    summary.capacity,
+                                  )}
                                 >
-                                  {summary.overCapacityBy > 0
-                                    ? `Over by ${summary.overCapacityBy}`
-                                    : summary.remainingCapacity === 0
-                                      ? "Full"
-                                      : `${summary.remainingCapacity} open`}
+                                  {capacityState}
                                 </Badge>
                               </TableCell>
                             </TableRow>

@@ -64,9 +64,11 @@ Hosted CodeRabbit requested changes on the initial PR. The follow-up patch addre
 
 The hosted rerun then approved the PR and surfaced three additional comments, which were also addressed:
 
-- the invitation field selector now uses the indexed `fieldKey:${index}` form name expected by the save action;
+- the invitation field selector was verified against `saveInvitationTemplateFieldsAction` and kept on the repeated `fieldKey` form name expected by `formData.getAll("fieldKey")`;
 - the check-in scan table display map now keys formatted names by stable `tableId` instead of non-unique table names;
-- the seating map now imports `pluralize` from the shared UI formatter module.
+- the seating map now imports `pluralize` from the shared UI formatter module;
+- the seating map informational callout uses non-urgent note semantics, and its capacity badge text/variant now share one helper;
+- the check-in not-found copy no longer renders a stray space before punctuation.
 
 ## Hosted Verification Plan
 
