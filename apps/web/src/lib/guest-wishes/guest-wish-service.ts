@@ -228,7 +228,7 @@ export function parsePublicGuestMessagePayload(value: unknown) {
 
   if (hasUploadAttempt(value)) {
     throw new GuestWishValidationError(
-      "Guest message file uploads are not supported in Sprint 12.",
+      "Guest message file uploads are not available yet.",
     );
   }
 

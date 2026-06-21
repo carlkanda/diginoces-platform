@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useFormStatus } from "react-dom";
+import { Button } from "@/components/ui/button";
 
 export type LoginSubmitButtonProps = {
   children: ReactNode;
@@ -10,7 +11,7 @@ export type LoginSubmitButtonProps = {
   pendingLabel?: string;
 };
 
-// MVP launch gate #58: keep auth submissions single-flight to avoid repeated Supabase email sends.
+// Keep auth submissions single-flight to avoid repeated email sends.
 export function LoginSubmitButton({
   children,
   className = "button",
@@ -20,7 +21,7 @@ export function LoginSubmitButton({
   const { pending } = useFormStatus();
 
   return (
-    <button
+    <Button
       aria-busy={pending}
       className={className}
       disabled={disabled || pending}
@@ -33,6 +34,6 @@ export function LoginSubmitButton({
       ) : (
         children
       )}
-    </button>
+    </Button>
   );
 }

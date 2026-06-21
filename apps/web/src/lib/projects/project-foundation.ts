@@ -22,6 +22,20 @@ export type WorkflowTaskTemplate = {
   title: string;
 };
 
+type ProjectDisplayFields = {
+  bride_name: string;
+  groom_name: string;
+  project_code: string;
+};
+
+type EventDisplayFields = {
+  event_code: string;
+  name: string;
+};
+
+const internalProjectDisplayPattern =
+  /\bmvp\b|\bsprint\b|\bfoundation\b|\bui qa\b|\bqa(?:\s+(?:demo|bride|groom|civil|reception|both|city|garden|csv|ui|import)|[_-])|\bqademo\b/i;
+
 export const projectLifecycleOptions: StatusOption<ProjectLifecycleStatus>[] = [
   {
     description: "Potential client request or early internal setup.",
@@ -201,6 +215,84 @@ export function getEventTypeLabel(eventType: EventType) {
     eventTypeOptions.find((option) => option.value === eventType)?.label ??
     eventType
   );
+}
+
+export function isInternalProjectDisplayText(value: string) {
+  return internalProjectDisplayPattern.test(value);
+}
+
+export function formatProjectCoupleDisplayName(
+  project: Pick<ProjectDisplayFields, "bride_name" | "groom_name">,
+  index: number,
+) {
+  const coupleName = `${project.bride_name} & ${project.groom_name}`;
+
+  return isInternalProjectDisplayText(coupleName)
+    ? `Wedding project ${index + 1}`
+    : coupleName;
+}
+
+export function formatProjectDisplayReference(
+  project: Pick<ProjectDisplayFields, "project_code">,
+  index: number,
+) {
+  if (isInternalProjectDisplayText(project.project_code)) {
+    return {
+      isCode: false,
+      label: "Project reference",
+      value: `Project ${index + 1}`,
+    };
+  }
+
+  return {
+    isCode: true,
+    label: "Project code",
+    value: project.project_code,
+  };
+}
+
+export function formatProjectContactDisplay(value: string | null | undefined) {
+  if (!value || isInternalProjectDisplayText(value)) {
+    return "Not set";
+  }
+
+  return value;
+}
+
+export function formatProjectEventDisplayName(
+  event: Pick<EventDisplayFields, "name">,
+  index: number,
+) {
+  return isInternalProjectDisplayText(event.name)
+    ? `Event ${index + 1}`
+    : event.name;
+}
+
+export function formatProjectEventDisplayReference(
+  event: Pick<EventDisplayFields, "event_code">,
+  index: number,
+) {
+  if (isInternalProjectDisplayText(event.event_code)) {
+    return {
+      isCode: false,
+      label: "Event reference",
+      value: `Event ${index + 1}`,
+    };
+  }
+
+  return {
+    isCode: true,
+    label: "Event code",
+    value: event.event_code,
+  };
+}
+
+export function formatProjectVenueDisplay(value: string | null | undefined) {
+  if (!value || isInternalProjectDisplayText(value)) {
+    return "Venue not set";
+  }
+
+  return value;
 }
 
 export function getSprint2FoundationStatus() {

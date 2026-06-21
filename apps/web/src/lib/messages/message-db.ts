@@ -382,14 +382,22 @@ export async function getMessageLogDetails(
   projectId: string,
   messageLogId: string,
 ): Promise<MessageLogRow | null> {
-  return maybeSingleRecord(
+  const record = (await maybeSingleRecord(
     supabase
       .from("message_logs")
       .select("*")
       .eq("project_id", projectId)
       .eq("id", messageLogId)
       .maybeSingle(),
-  ) as Promise<MessageLogRow | null>;
+  )) as MessageLogRow | null;
+
+  if (!record) {
+    return null;
+  }
+
+  const [recordWithGuestName] = await withGuestDisplayNames(supabase, [record]);
+
+  return recordWithGuestName;
 }
 
 async function getPreparationInput(

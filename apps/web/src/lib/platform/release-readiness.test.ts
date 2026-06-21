@@ -930,10 +930,10 @@ describe("Sprint 15 release readiness", () => {
       /<PublicGuestPageView\s+payload=\{payload\}\s*\/>/,
     );
     expect(authenticatedPreviewMarkup).toMatch(
-      /<p\s+className="page-title">\s*Public guest page preview\s*<\/p>/,
+      /<p\s+className="text-2xl font-semibold tracking-normal text-balance">\s*Public guest page preview\s*<\/p>/,
     );
     expect(authenticatedPreviewMarkup).not.toMatch(
-      /<h1\s+className="page-title">/,
+      /<h1[^>]*>\s*Public guest page preview\s*<\/h1>/,
     );
   });
 

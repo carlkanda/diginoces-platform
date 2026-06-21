@@ -1,6 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
+import { Input } from "@/components/ui/input";
 
 const retentionActions = [
   "archive",
@@ -21,9 +27,11 @@ export function RetentionActionFields() {
 
   return (
     <>
-      <label>
-        Action
-        <select
+      <Field>
+        <FieldLabel htmlFor="retention-action">Retention action</FieldLabel>
+        <NativeSelect
+          className="w-full"
+          id="retention-action"
           name="action"
           onChange={(event) => {
             const nextAction = event.currentTarget.value;
@@ -35,29 +43,45 @@ export function RetentionActionFields() {
           required
           value={action}
         >
-          <option value="mark_completed">Mark completed</option>
-          <option value="archive">Archive project</option>
-          <option value="extend_retention">Extend retention</option>
-          <option value="mark_pending_deletion">Mark pending deletion</option>
-          <option value="cancel_pending_deletion">
+          <NativeSelectOption value="mark_completed">
+            Mark retention complete
+          </NativeSelectOption>
+          <NativeSelectOption value="archive">
+            Archive project files
+          </NativeSelectOption>
+          <NativeSelectOption value="extend_retention">
+            Extend retention date
+          </NativeSelectOption>
+          <NativeSelectOption value="mark_pending_deletion">
+            Mark deletion pending
+          </NativeSelectOption>
+          <NativeSelectOption value="cancel_pending_deletion">
             Cancel pending deletion
-          </option>
-        </select>
-      </label>
+          </NativeSelectOption>
+        </NativeSelect>
+        <FieldDescription>
+          Select the lifecycle update that should be recorded for the wedding
+          file vault.
+        </FieldDescription>
+      </Field>
+
       {requiresExtendedUntil ? (
-        <label>
-          Extend until
-          <input
+        <Field>
+          <FieldLabel htmlFor="extendedUntil">
+            Extend retention through
+          </FieldLabel>
+          <Input
             aria-describedby="extendedUntil-help"
+            id="extendedUntil"
             min={today}
             name="extendedUntil"
             required
             type="date"
           />
-          <small id="extendedUntil-help">
-            Required when extending retention.
-          </small>
-        </label>
+          <FieldDescription id="extendedUntil-help">
+            Choose the new retention end date.
+          </FieldDescription>
+        </Field>
       ) : null}
     </>
   );

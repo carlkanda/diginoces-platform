@@ -212,7 +212,9 @@ function assertCsvSource(input: StartGuestImportInput) {
 
   const filename = makeFilename(input.sourceFilename);
   if (!filename.toLowerCase().endsWith(".csv")) {
-    throw new GuestImportValidationError("Sprint 4 supports CSV files only.");
+    throw new GuestImportValidationError(
+      "Guest imports currently support CSV files only.",
+    );
   }
 
   return filename;

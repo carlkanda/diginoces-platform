@@ -17,6 +17,11 @@ import {
   type MessagePreparationInput,
   type MessageTemplate,
 } from "@/lib/messages/message-service";
+import {
+  formatMessageBodyPreview,
+  formatMessageWhatsappNumber,
+  publicManualWhatsappUrl,
+} from "@/lib/messages/message-format";
 import type { RoleAssignment } from "@/lib/security/permissions";
 
 const projectId = "11111111-1111-4111-8111-111111111111";
@@ -154,6 +159,40 @@ function readSprint7Migration() {
 }
 
 describe("Sprint 7 WhatsApp communication workflow foundation", () => {
+  it("hides seeded QA message wording previews", () => {
+    expect(
+      formatMessageBodyPreview(
+        "Hello {{guest.display_name}}, QA message 20260607110901: {{public_guest_page_link}}",
+      ),
+    ).toBe("Saved wording preview is hidden for this sample workspace record.");
+    expect(formatMessageBodyPreview(frenchInvitationTemplate.body)).toBe(
+      frenchInvitationTemplate.body,
+    );
+  });
+
+  it("hides seeded QA manual WhatsApp links", () => {
+    expect(
+      publicManualWhatsappUrl(
+        "https://wa.me/243000000001?text=Bonjour%20QA%20Bride%20Guest%2C%20ceci%20est%20un%20message%20de%20controle%20Diginoces%20pour%20QA%20Civil%20Ceremony.",
+      ),
+    ).toBeNull();
+    expect(
+      publicManualWhatsappUrl(
+        "https://wa.me/243000000001?text=Bonjour%20Ada%2C%20votre%20invitation%20est%20prete.",
+      ),
+    ).toBe(
+      "https://wa.me/243000000001?text=Bonjour%20Ada%2C%20votre%20invitation%20est%20prete.",
+    );
+  });
+
+  it("hides obvious sample WhatsApp numbers", () => {
+    expect(formatMessageWhatsappNumber("+243000000001")).toBe(
+      "Sample number hidden",
+    );
+    expect(formatMessageWhatsappNumber("+243810000001")).toBe("+243810000001");
+    expect(formatMessageWhatsappNumber(null)).toBe("No number linked");
+  });
+
   it("maps implemented scope to EPIC-MSG, issue 21, and approved backlog rows", () => {
     const status = getSprint7CommunicationStatus();
 
@@ -472,7 +511,7 @@ describe("Sprint 7 WhatsApp communication workflow foundation", () => {
     ]);
   });
 
-  it("keeps API-ready messaging adapter credential-free in Sprint 7", async () => {
+  it("keeps API-ready messaging adapter on guided manual sending", async () => {
     const adapter = createApiReadyMessagingAdapter();
     const prepared = prepareCommunicationMessage(basePreparationInput);
 
@@ -482,7 +521,7 @@ describe("Sprint 7 WhatsApp communication workflow foundation", () => {
       status: "queued",
     });
     await expect(adapter.send(prepared)).rejects.toThrow(
-      /real WhatsApp API credentials/i,
+      /Automatic WhatsApp sending is not connected/i,
     );
   });
 

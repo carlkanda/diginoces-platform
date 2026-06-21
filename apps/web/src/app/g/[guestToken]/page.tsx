@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CalendarHeartIcon, ShieldAlertIcon } from "lucide-react";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 import { listGuestFileDownloads } from "@/lib/files/file-db";
 import { serverLogger } from "@/lib/logging";
@@ -10,6 +11,15 @@ import {
   submitPublicGuestMessageAction,
   submitPublicRsvpAction,
 } from "./actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -33,14 +43,10 @@ export default async function PublicGuestPage({
 
   if (!env.supabaseConfigured) {
     return (
-      <section className="public-route public-locked">
-        <p className="eyebrow">Diginoces RSVP</p>
-        <h1>Public RSVP is not configured locally</h1>
-        <p>
-          Supabase public environment variables are required before a guest
-          token can be resolved.
-        </p>
-      </section>
+      <PublicGuestUnavailable
+        body="Please use the invitation link in the environment shared by Diginoces."
+        title="This guest page is not available here"
+      />
     );
   }
 
@@ -55,11 +61,10 @@ export default async function PublicGuestPage({
     const labels = getGuestPageLabels(payload.preferredLanguage);
 
     return (
-      <section className="public-route public-locked">
-        <p className="eyebrow">Diginoces RSVP</p>
-        <h1>{labels.lockedTitle}</h1>
-        <p>{labels.lockedBody}</p>
-      </section>
+      <PublicGuestUnavailable
+        body={labels.lockedBody}
+        title={labels.lockedTitle}
+      />
     );
   }
 
@@ -86,5 +91,45 @@ export default async function PublicGuestPage({
       result={rsvp}
       guestToken={guestToken}
     />
+  );
+}
+
+function PublicGuestUnavailable({
+  body,
+  title,
+}: {
+  body: string;
+  title: string;
+}) {
+  return (
+    <section className="public-route min-h-svh bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100svh-4rem)] w-full max-w-3xl place-items-center">
+        <Card className="w-full">
+          <CardHeader>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">Diginoces RSVP</Badge>
+              <Badge variant="outline">Personal invitation</Badge>
+            </div>
+            <CardTitle>
+              <h1 className="flex items-center gap-2 text-3xl leading-tight tracking-normal text-balance">
+                <CalendarHeartIcon aria-hidden="true" />
+                {title}
+              </h1>
+            </CardTitle>
+            <CardDescription className="text-base">{body}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert>
+              <ShieldAlertIcon aria-hidden="true" />
+              <AlertTitle>Invitation link required</AlertTitle>
+              <AlertDescription>
+                This page opens only from a valid personal guest link shared for
+                the celebration.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
   );
 }

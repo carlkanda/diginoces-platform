@@ -1,15 +1,57 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
+  ArrowLeftIcon,
+  CheckCircle2Icon,
+  ExternalLinkIcon,
+  MessageSquareTextIcon,
+  SendIcon,
+  ShieldCheckIcon,
+  TriangleAlertIcon,
+  XCircleIcon,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+  FieldLegend,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
 import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { getMessageLogDetails } from "@/lib/messages/message-db";
 import {
+  formatMessageBodyPreview,
+  formatMessageGuestDisplayName,
+  formatMessageLanguage,
+  formatMessageWhatsappNumber,
   formatStatus,
+  publicManualWhatsappUrl,
   sanitizeFeedbackMessage,
-  shortId,
 } from "@/lib/messages/message-format";
 import {
   hasProjectPermission,
@@ -45,6 +87,39 @@ function sanitizeFeedbackStatus(value: string | undefined) {
   return value && allowedFeedbackStatuses.has(value) ? value : undefined;
 }
 
+function getStatusBadgeVariant(status: string) {
+  if (status === "failed") {
+    return "destructive" as const;
+  }
+
+  if (status === "sent" || status === "opened_manually") {
+    return "default" as const;
+  }
+
+  if (status === "skipped") {
+    return "outline" as const;
+  }
+
+  return "secondary" as const;
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) {
+    return "Not recorded";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Time not recorded";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
 export default async function MessageLogDetailPage({
   params,
   searchParams,
@@ -67,15 +142,28 @@ export default async function MessageLogDetailPage({
 
   if (authContext.status === "not_configured") {
     return (
-      <>
-        <h1 className="page-title">Guided manual message</h1>
-        <section className="section">
-          <div className="alert">
-            Supabase environment variables are not configured. Message details
-            will load after local credentials are supplied.
-          </div>
-        </section>
-      </>
+      <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-2">
+          <Badge variant="outline" className="w-fit">
+            Prepared message
+          </Badge>
+          <h1 className="text-2xl font-semibold tracking-normal text-balance">
+            Message details
+          </h1>
+          <p className="max-w-2xl text-sm text-muted-foreground text-pretty">
+            Message details will appear after this environment is connected to
+            Diginoces access services.
+          </p>
+        </div>
+        <Alert>
+          <MessageSquareTextIcon data-icon="inline-start" />
+          <AlertTitle>Access setup needed</AlertTitle>
+          <AlertDescription>
+            Supabase is not configured for this environment, so this prepared
+            message cannot be loaded yet.
+          </AlertDescription>
+        </Alert>
+      </main>
     );
   }
 
@@ -134,125 +222,345 @@ export default async function MessageLogDetailPage({
     messageLogId,
     "skipped",
   );
+  const guestLabel = formatMessageGuestDisplayName(
+    messageLog.guest_display_name,
+  );
+  const messageContext = `${formatStatus(messageLog.message_type)} for ${guestLabel}`;
+  const manualWhatsappUrl = publicManualWhatsappUrl(
+    messageLog.manual_whatsapp_url,
+  );
 
   return (
-    <>
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Guided manual WhatsApp</p>
-          <h1 className="page-title">
-            {formatStatus(messageLog.message_type)}
-          </h1>
-          <p className="page-summary">
-            {messageLog.language.toUpperCase()} -{" "}
-            {formatStatus(messageLog.status)} - guest{" "}
-            {messageLog.guest_display_name ??
-              shortId(messageLog.guest_id) ??
-              "Unlinked"}
-          </p>
-        </div>
-        <div className="button-group">
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/communications/queue`}
-          >
-            Queue
-          </Link>
-          <Link
-            className="button secondary"
-            href={`/platform/projects/${projectId}/communications`}
-          >
-            History
-          </Link>
-        </div>
-      </div>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link href="/platform" />}>
+              Workspace
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link href="/platform/projects" />}>
+              Weddings
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              render={<Link href={`/platform/projects/${projectId}`} />}
+            >
+              Project
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              render={
+                <Link href={`/platform/projects/${projectId}/communications`} />
+              }
+            >
+              Messages
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>
+              {formatStatus(messageLog.message_type)}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
-      <section className="section">
-        <div className="section-heading">
-          <h2>Prepared message</h2>
-          <span className="tag">{formatStatus(messageLog.status)}</span>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={getStatusBadgeVariant(messageLog.status)}>
+              {formatStatus(messageLog.status)}
+            </Badge>
+            <Badge variant="outline">
+              {formatMessageLanguage(messageLog.language)}
+            </Badge>
+            <Badge variant="secondary">{guestLabel}</Badge>
+          </div>
+          <CardTitle className="text-2xl font-semibold tracking-normal text-balance">
+            <h1>{formatStatus(messageLog.message_type)}</h1>
+          </CardTitle>
+          <CardDescription className="max-w-3xl text-pretty">
+            Review the exact WhatsApp text for {guestLabel}, open WhatsApp only
+            when ready, then record the result so the team can follow up
+            confidently.
+          </CardDescription>
+          <CardAction className="flex flex-wrap gap-2">
+            <Link
+              className={buttonVariants({ variant: "outline" })}
+              href={`/platform/projects/${projectId}/communications/queue`}
+            >
+              <ArrowLeftIcon data-icon="inline-start" />
+              Queue
+            </Link>
+            <Link
+              className={buttonVariants({ variant: "outline" })}
+              href={`/platform/projects/${projectId}/communications`}
+            >
+              Message overview
+            </Link>
+          </CardAction>
+        </CardHeader>
+      </Card>
+
+      {feedback.messageError ? (
+        <Alert variant="destructive">
+          <TriangleAlertIcon data-icon="inline-start" />
+          <AlertTitle>Message status was not updated</AlertTitle>
+          <AlertDescription>{feedback.messageError}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {feedback.messageStatus ? (
+        <Alert>
+          <CheckCircle2Icon data-icon="inline-start" />
+          <AlertTitle>Status recorded</AlertTitle>
+          <AlertDescription>
+            Message status updated to {formatStatus(feedback.messageStatus)}.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2>Prepared message</h2>
+            </CardTitle>
+            <CardDescription>
+              Confirm the recipient, wording version, and final text before any
+              manual send.
+            </CardDescription>
+            <CardAction>
+              <Badge variant={getStatusBadgeVariant(messageLog.status)}>
+                {formatStatus(messageLog.status)}
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="message-ops">
+            <dl className="message-ops__grid">
+              <div className="message-ops__metric">
+                <dt className="message-ops__metric-label">WhatsApp number</dt>
+                <dd className="message-ops__metric-value">
+                  {formatMessageWhatsappNumber(
+                    messageLog.target_whatsapp_number,
+                  )}
+                </dd>
+                <dd className="message-ops__metric-note">Recipient channel</dd>
+              </div>
+              <div className="message-ops__metric">
+                <dt className="message-ops__metric-label">Wording version</dt>
+                <dd className="message-ops__metric-value">
+                  {messageLog.template_version ?? "Unassigned"}
+                </dd>
+                <dd className="message-ops__metric-note">
+                  Template used for rendering
+                </dd>
+              </div>
+              <div className="message-ops__metric">
+                <dt className="message-ops__metric-label">WhatsApp opened</dt>
+                <dd className="message-ops__metric-value">
+                  {formatDateTime(messageLog.opened_at)}
+                </dd>
+                <dd className="message-ops__metric-note">Manual app handoff</dd>
+              </div>
+              <div className="message-ops__metric">
+                <dt className="message-ops__metric-label">Sent result</dt>
+                <dd className="message-ops__metric-value">
+                  {formatDateTime(messageLog.sent_at)}
+                </dd>
+                <dd className="message-ops__metric-note">
+                  Final recorded outcome
+                </dd>
+              </div>
+            </dl>
+            <div className="message-ops__preview">
+              <pre>
+                {formatMessageBodyPreview(
+                  messageLog.rendered_body,
+                  "Prepared message preview is hidden for this sample workspace record.",
+                )}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <h2>Delivery summary</h2>
+              </CardTitle>
+              <CardDescription>
+                Current send state for this guest message.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="message-ops">
+              <dl className="message-ops__grid">
+                <div className="message-ops__metric">
+                  <dt className="message-ops__metric-label">Channel</dt>
+                  <dd className="message-ops__metric-value">
+                    {formatStatus(messageLog.channel)}
+                  </dd>
+                  <dd className="message-ops__metric-note">
+                    Communication channel
+                  </dd>
+                </div>
+                <div className="message-ops__metric">
+                  <dt className="message-ops__metric-label">Mode</dt>
+                  <dd className="message-ops__metric-value">
+                    {formatStatus(messageLog.sending_mode)}
+                  </dd>
+                  <dd className="message-ops__metric-note">
+                    Sending remains manual
+                  </dd>
+                </div>
+                <div className="message-ops__metric">
+                  <dt className="message-ops__metric-label">Prepared</dt>
+                  <dd className="message-ops__metric-value">
+                    {formatDateTime(messageLog.created_at)}
+                  </dd>
+                  <dd className="message-ops__metric-note">
+                    Message creation time
+                  </dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+
+          <Alert>
+            <ShieldCheckIcon data-icon="inline-start" />
+            <AlertTitle>Manual sending checkpoint</AlertTitle>
+            <AlertDescription>
+              Opening WhatsApp does not mark the message as sent. Record the
+              final outcome after the team completes the manual step.
+            </AlertDescription>
+          </Alert>
         </div>
-        <div className="detail-grid">
-          <div>
-            <span>Target WhatsApp</span>
-            <strong>
-              {messageLog.target_whatsapp_number ?? "Manual only"}
-            </strong>
-          </div>
-          <div>
-            <span>Template version</span>
-            <strong>{messageLog.template_version ?? "Unassigned"}</strong>
-          </div>
-          <div>
-            <span>Opened</span>
-            <strong>{messageLog.opened_at ? "Yes" : "No"}</strong>
-          </div>
-          <div>
-            <span>Sent confirmation</span>
-            <strong>{messageLog.sent_at ? "Recorded" : "Pending"}</strong>
-          </div>
-        </div>
-        <pre className="message-preview">{messageLog.rendered_body}</pre>
       </section>
 
       {canSend ? (
-        <section className="section">
-          <div className="section-heading">
-            <h2>Manual send controls</h2>
-            <span className="meta-list">No unofficial automation</span>
-          </div>
-          {feedback.messageError ? (
-            <div className="alert">{feedback.messageError}</div>
-          ) : null}
-          {feedback.messageStatus ? (
-            <div className="alert success">
-              Message status updated to {formatStatus(feedback.messageStatus)}.
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2>Send and record outcome</h2>
+            </CardTitle>
+            <CardDescription>
+              Open WhatsApp when a link is available, then mark the result so
+              operations can follow up accurately.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-5">
+            <div className="flex flex-wrap gap-2">
+              {manualWhatsappUrl ? (
+                <a
+                  className={buttonVariants()}
+                  href={manualWhatsappUrl}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <ExternalLinkIcon data-icon="inline-start" />
+                  Open WhatsApp
+                </a>
+              ) : null}
+              <form action={markOpened}>
+                <SubmitButton
+                  ariaLabel={`Mark WhatsApp opened for ${messageContext}`}
+                  className={buttonVariants({ variant: "outline" })}
+                >
+                  <ExternalLinkIcon data-icon="inline-start" />
+                  Mark opened
+                </SubmitButton>
+              </form>
+              <form action={markSent}>
+                <SubmitButton
+                  ariaLabel={`Mark sent for ${messageContext}`}
+                  className={buttonVariants({ variant: "outline" })}
+                >
+                  <SendIcon data-icon="inline-start" />
+                  Mark sent
+                </SubmitButton>
+              </form>
             </div>
-          ) : null}
-          <div className="button-group">
-            {messageLog.manual_whatsapp_url ? (
-              <a
-                className="button"
-                href={messageLog.manual_whatsapp_url}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Open WhatsApp
-              </a>
-            ) : null}
-            <form action={markOpened}>
-              <SubmitButton>Mark opened</SubmitButton>
-            </form>
-            <form action={markSent}>
-              <SubmitButton>Mark sent</SubmitButton>
-            </form>
-          </div>
-          <div className="form-grid">
-            <form action={markFailed} className="stacked-form">
-              <label>
-                Failure reason
-                <input
-                  name="reason"
-                  placeholder="Wrong number provided"
-                  required
-                />
-              </label>
-              <SubmitButton>Mark failed</SubmitButton>
-            </form>
-            <form action={markSkipped} className="stacked-form">
-              <label>
-                Skip reason
-                <input
-                  name="reason"
-                  placeholder="Guest prefers printed invitation only"
-                  required
-                />
-              </label>
-              <SubmitButton>Mark skipped</SubmitButton>
-            </form>
-          </div>
-        </section>
-      ) : null}
-    </>
+
+            <FieldSet>
+              <FieldLegend>Exceptions</FieldLegend>
+              <FieldDescription>
+                Failed or skipped messages need a reason so another team member
+                understands what happened.
+              </FieldDescription>
+              <FieldGroup className="grid gap-4 md:grid-cols-2">
+                <form
+                  action={markFailed}
+                  aria-label={`Mark failed for ${messageContext}`}
+                  className="message-ops__exception"
+                >
+                  <Field>
+                    <FieldLabel htmlFor="failureReason">
+                      Failure reason
+                    </FieldLabel>
+                    <Input
+                      id="failureReason"
+                      name="reason"
+                      placeholder="Wrong number provided"
+                      required
+                    />
+                    <FieldDescription>
+                      Use when the message could not be sent.
+                    </FieldDescription>
+                  </Field>
+                  <SubmitButton
+                    ariaLabel={`Mark failed for ${messageContext}`}
+                    className={buttonVariants({ variant: "destructive" })}
+                  >
+                    <XCircleIcon data-icon="inline-start" />
+                    Mark failed
+                  </SubmitButton>
+                </form>
+                <form
+                  action={markSkipped}
+                  aria-label={`Mark skipped for ${messageContext}`}
+                  className="message-ops__exception"
+                >
+                  <Field>
+                    <FieldLabel htmlFor="skipReason">Skip reason</FieldLabel>
+                    <Input
+                      id="skipReason"
+                      name="reason"
+                      placeholder="Guest prefers printed invitation only"
+                      required
+                    />
+                    <FieldDescription>
+                      Use when the team intentionally does not send.
+                    </FieldDescription>
+                  </Field>
+                  <SubmitButton
+                    ariaLabel={`Mark skipped for ${messageContext}`}
+                    className={buttonVariants({ variant: "outline" })}
+                  >
+                    Mark skipped
+                  </SubmitButton>
+                </form>
+              </FieldGroup>
+            </FieldSet>
+          </CardContent>
+        </Card>
+      ) : (
+        <Alert>
+          <ShieldCheckIcon data-icon="inline-start" />
+          <AlertTitle>Outcome recording is restricted</AlertTitle>
+          <AlertDescription>
+            Your role can read this prepared message, but only authorized team
+            members can open the sending controls and record outcomes.
+          </AlertDescription>
+        </Alert>
+      )}
+    </main>
   );
 }

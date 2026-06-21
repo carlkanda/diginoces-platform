@@ -8,43 +8,40 @@ type PricingPreviewProps = {
   pricing: ProjectPricingCalculation | null;
 };
 
+function PricingMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg border bg-background p-3">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <strong className="text-sm font-medium break-words">{value}</strong>
+    </div>
+  );
+}
+
 export function PricingPreview({
   canReadCommercialGestures,
   pricing,
 }: PricingPreviewProps) {
   const subtotal = pricing
     ? formatUsd(pricing.subtotalAmountCents)
-    : "Not calculated";
+    : "No estimate yet";
   const commercialGesture = pricing
     ? formatUsd(pricing.discountAmountCents)
-    : "Not calculated";
+    : "No estimate yet";
   const total = pricing
     ? formatUsd(pricing.totalAmountCents)
-    : "Not calculated";
+    : "No estimate yet";
   const plannedGuests = pricing
     ? String(pricing.plannedGuestCountSnapshot)
-    : "Not calculated";
+    : "No estimate yet";
 
   return (
-    <div className="detail-grid">
-      <div>
-        <span>Subtotal</span>
-        <strong>{subtotal}</strong>
-      </div>
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <PricingMetric label="Subtotal" value={subtotal} />
       {canReadCommercialGestures ? (
-        <div>
-          <span>Commercial gesture</span>
-          <strong>{commercialGesture}</strong>
-        </div>
+        <PricingMetric label="Approved adjustment" value={commercialGesture} />
       ) : null}
-      <div>
-        <span>Total</span>
-        <strong>{total}</strong>
-      </div>
-      <div>
-        <span>Planned guests</span>
-        <strong>{plannedGuests}</strong>
-      </div>
+      <PricingMetric label="Total" value={total} />
+      <PricingMetric label="Planned guests" value={plannedGuests} />
     </div>
   );
 }

@@ -341,10 +341,10 @@ describe("Sprint 10 commercial foundation", () => {
       }),
     );
 
-    expect(coupleSummary).not.toContain("Commercial gesture");
+    expect(coupleSummary).not.toContain("Approved adjustment");
     expect(coupleSummary).not.toContain("$100.00");
     expect(coupleSummary).toContain("$1,650.00");
-    expect(internalSummary).toContain("Commercial gesture");
+    expect(internalSummary).toContain("Approved adjustment");
     expect(internalSummary).toContain("$100.00");
   });
 
@@ -356,8 +356,8 @@ describe("Sprint 10 commercial foundation", () => {
       }),
     );
 
-    expect(pendingSummary).toContain("Commercial gesture");
-    expect(pendingSummary).toContain("Not calculated");
+    expect(pendingSummary).toContain("Approved adjustment");
+    expect(pendingSummary).toContain("No estimate yet");
     expect(pendingSummary).not.toContain("$0.00");
   });
 

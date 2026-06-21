@@ -87,7 +87,7 @@ async function getActionContext(eventId: string, permission: PermissionSlug) {
   }
 
   if (authContext.status === "not_configured") {
-    throw new ProjectAccessError("Supabase is not configured.", 503);
+    throw new ProjectAccessError("Workspace connection is not ready.", 503);
   }
 
   const context = {
@@ -195,7 +195,7 @@ export async function createCheckInTokenAction(
   } catch (error) {
     redirect(
       checkInPath(eventId, {
-        checkInError: checkInError(error, "Unable to create check-in token."),
+        checkInError: checkInError(error, "Unable to create QR reference."),
       }),
     );
   }
@@ -261,7 +261,7 @@ export async function resolveTokenForScanAction(
     );
 
     if (resolved.status !== "ok" || typeof resolved.guestId !== "string") {
-      throw new CheckInValidationError("Check-in token could not be resolved.");
+      throw new CheckInValidationError("QR code could not be resolved.");
     }
 
     scanParams = {
@@ -279,7 +279,7 @@ export async function resolveTokenForScanAction(
   } catch (error) {
     redirect(
       scanPath(eventId, {
-        scanError: checkInError(error, "Unable to resolve check-in token."),
+        scanError: checkInError(error, "Unable to resolve QR code."),
       }),
     );
   }
@@ -287,7 +287,7 @@ export async function resolveTokenForScanAction(
   if (!scanParams) {
     redirect(
       scanPath(eventId, {
-        scanError: "Check-in token could not be resolved.",
+        scanError: "QR code could not be resolved.",
       }),
     );
   }

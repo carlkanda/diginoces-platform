@@ -15,6 +15,9 @@
     "db:lint": "node scripts/supabase-db-lint.mjs",
     "backlog:sync-aliases": "node scripts/sync-backlog-aliases.mjs",
     "env:check-public": "node scripts/check-public-env-vars.mjs",
+    "redesign:design-system-check": "node scripts/check-redesign-design-system.mjs",
+    "redesign:check": "node scripts/check-redesign-readiness.mjs",
+    "redesign:check:approval": "node scripts/check-redesign-readiness.mjs --require-approval",
     "secrets:scan": "node scripts/scan-secrets.mjs"
   },
   "workspaces": [

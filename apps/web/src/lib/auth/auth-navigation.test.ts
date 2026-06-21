@@ -15,12 +15,12 @@ describe("getPrimaryAuthNavigationState", () => {
 
   it("keeps login visible for anonymous or not-configured states", () => {
     expect(getPrimaryAuthNavigationState("anonymous")).toEqual({
-      loginLabel: "Login",
+      loginLabel: "Sign in",
       showLoginLink: true,
       showSignOut: false,
     });
     expect(getPrimaryAuthNavigationState("not_configured")).toEqual({
-      loginLabel: "Login",
+      loginLabel: "Sign in",
       showLoginLink: true,
       showSignOut: false,
     });

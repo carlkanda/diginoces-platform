@@ -88,7 +88,11 @@ export const DEFAULT_GUEST_PAGE_LANGUAGE: GuestPageLanguage = "fr";
 
 export type GuestPageLabels = {
   availableDownloads: string;
+  downloadAction: string;
+  downloadHelp: string;
   downloadPlaceholder: string;
+  downloadUnavailableHelp: string;
+  fileVersionLabel: string;
   filesTitle: string;
   lockedBody: string;
   lockedTitle: string;
@@ -114,6 +118,7 @@ export type GuestPageLabels = {
   messageStatusPendingReview: string;
   messageSubmissionUnavailable: string;
   messageTextareaLabel: string;
+  messageUnavailableHelp: string;
   no: string;
   pending: string;
   rsvpTitle: string;
@@ -138,7 +143,13 @@ const publicPreviewPermission: PermissionSlug = "guest_public_pages.preview";
 const labels: Record<GuestPageLanguage, GuestPageLabels> = {
   en: {
     availableDownloads: "Available downloads",
+    downloadAction: "Open secure download",
+    downloadHelp:
+      "Download the files the couple or Diginoces has made available for your invitation.",
     downloadPlaceholder: "Invitation download will be available later.",
+    downloadUnavailableHelp:
+      "Invitation files will appear here when the couple or Diginoces makes them available.",
+    fileVersionLabel: "Version",
     filesTitle: "Files",
     lockedBody:
       "This personal guest page is not open yet. Please check your invitation link again later.",
@@ -170,6 +181,8 @@ const labels: Record<GuestPageLanguage, GuestPageLabels> = {
     messageSubmissionUnavailable:
       "Message submission is unavailable in this view.",
     messageTextareaLabel: "Message",
+    messageUnavailableHelp:
+      "The couple will only see messages that can still be safely saved for this invitation.",
     no: "No",
     pending: "Pending",
     rsvpTitle: "Your RSVP",
@@ -178,8 +191,14 @@ const labels: Record<GuestPageLanguage, GuestPageLabels> = {
   },
   fr: {
     availableDownloads: "téléchargements disponibles",
+    downloadAction: "Ouvrir le téléchargement sécurisé",
+    downloadHelp:
+      "Téléchargez les fichiers que le couple ou Diginoces a mis à disposition pour votre invitation.",
     downloadPlaceholder:
       "Le téléchargement de l'invitation sera disponible plus tard.",
+    downloadUnavailableHelp:
+      "Les fichiers d'invitation apparaîtront ici lorsque le couple ou Diginoces les rendra disponibles.",
+    fileVersionLabel: "Version",
     filesTitle: "Fichiers",
     lockedBody:
       "Cette page personnelle n'est pas encore ouverte. Veuillez réessayer avec votre lien d'invitation plus tard.",
@@ -211,6 +230,8 @@ const labels: Record<GuestPageLanguage, GuestPageLabels> = {
     messageSubmissionUnavailable:
       "La soumission de message n'est pas disponible dans cette vue.",
     messageTextareaLabel: "Message",
+    messageUnavailableHelp:
+      "Le couple verra uniquement les messages qui peuvent encore être enregistrés pour cette invitation.",
     no: "Non",
     pending: "En attente",
     rsvpTitle: "Votre RSVP",

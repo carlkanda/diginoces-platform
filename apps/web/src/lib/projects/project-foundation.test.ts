@@ -8,7 +8,14 @@ import {
 import {
   defaultEventWorkflowTasks,
   defaultProjectWorkflowTasks,
+  formatProjectContactDisplay,
+  formatProjectCoupleDisplayName,
+  formatProjectDisplayReference,
+  formatProjectEventDisplayName,
+  formatProjectEventDisplayReference,
+  formatProjectVenueDisplay,
   getSprint2FoundationStatus,
+  isInternalProjectDisplayText,
 } from "@/lib/projects/project-foundation";
 import { hasScopedPermission } from "@/lib/projects/project-permissions";
 import {
@@ -78,6 +85,71 @@ describe("Sprint 2 projects and events foundation", () => {
         sequence: 2,
       }),
     ).toBe("CAR-2026-001-REC-02");
+  });
+
+  it("masks internal QA demo project labels for user-facing lists", () => {
+    expect(
+      formatProjectCoupleDisplayName(
+        {
+          bride_name: "QA Demo Bride",
+          groom_name: "QA Demo Groom",
+        },
+        0,
+      ),
+    ).toBe("Wedding project 1");
+    expect(
+      formatProjectDisplayReference({ project_code: "QADEMO-2026-001" }, 0),
+    ).toStrictEqual({
+      isCode: false,
+      label: "Project reference",
+      value: "Project 1",
+    });
+    expect(
+      formatProjectCoupleDisplayName(
+        {
+          bride_name: "Carlie",
+          groom_name: "Kanda",
+        },
+        1,
+      ),
+    ).toBe("Carlie & Kanda");
+    expect(
+      formatProjectDisplayReference({ project_code: "CAR-2026-001" }, 1),
+    ).toStrictEqual({
+      isCode: true,
+      label: "Project code",
+      value: "CAR-2026-001",
+    });
+    expect(formatProjectContactDisplay("QA Demo Contact")).toBe("Not set");
+    expect(isInternalProjectDisplayText("QA_PKG_110901")).toBe(true);
+    expect(isInternalProjectDisplayText("Bonjour QA Bride Guest")).toBe(true);
+    expect(isInternalProjectDisplayText("Event: QA Civil Ceremony")).toBe(true);
+    expect(formatProjectContactDisplay("Ada Manager")).toBe("Ada Manager");
+    expect(formatProjectEventDisplayName({ name: "QA Reception" }, 0)).toBe(
+      "Event 1",
+    );
+    expect(
+      formatProjectEventDisplayReference(
+        { event_code: "QADEMO-2026-001-REC" },
+        0,
+      ),
+    ).toStrictEqual({
+      isCode: false,
+      label: "Event reference",
+      value: "Event 1",
+    });
+    expect(formatProjectVenueDisplay("QA Garden Venue")).toBe("Venue not set");
+    expect(formatProjectEventDisplayName({ name: "Reception" }, 1)).toBe(
+      "Reception",
+    );
+    expect(
+      formatProjectEventDisplayReference({ event_code: "CAR-2026-001-REC" }, 1),
+    ).toStrictEqual({
+      isCode: true,
+      label: "Event code",
+      value: "CAR-2026-001-REC",
+    });
+    expect(formatProjectVenueDisplay("Villa Kanda")).toBe("Villa Kanda");
   });
 
   it("rejects invalid sequence values before formatting codes", () => {
