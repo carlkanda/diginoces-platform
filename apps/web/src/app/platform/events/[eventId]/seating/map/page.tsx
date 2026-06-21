@@ -326,7 +326,7 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
                 ) : null}
               </Empty>
             ) : (
-              <div className="seating-map">
+              <div className="seating-map" role="list">
                 {mapTables.map((table, tableIndex) => {
                   const summary = summaryByTableId.get(table.id);
                   const displayLabel = formatEventTableName(
@@ -342,6 +342,7 @@ export default async function SeatingMapPage({ params }: SeatingMapPageProps) {
                       aria-label={`${displayLabel}. Occupancy ${activeGuests} of ${capacity}.`}
                       className="seating-map-table"
                       key={table.id}
+                      role="listitem"
                       style={
                         {
                           "--table-x": `${table.positionX}px`,

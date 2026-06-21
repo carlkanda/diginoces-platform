@@ -666,7 +666,9 @@ export default async function GlobalDashboardPage() {
                     <span className="text-sm font-medium">{signal.label}</span>
                     <Badge
                       variant={
-                        signal.value !== "0" && signal.value !== "Not available"
+                        signal.value !== "0" &&
+                        signal.value !== "Not available" &&
+                        signal.value !== "Restricted by role"
                           ? "destructive"
                           : "outline"
                       }

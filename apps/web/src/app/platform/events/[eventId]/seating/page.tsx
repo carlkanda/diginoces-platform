@@ -84,6 +84,13 @@ import {
 } from "@/lib/seating/seating-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
+  formatGuestDeliveryType,
+  formatGuestSide,
+  formatRsvpStatus,
+  seatingStatusBadgeVariant as statusBadgeVariant,
+} from "@/lib/ui/event-format-helpers";
+import { pluralize } from "@/lib/ui/format-helpers";
+import {
   assignGuestToEventTableAction,
   bulkCreateEventTablesAction,
   createEventTableAction,
@@ -112,37 +119,6 @@ function formatDate(value: string | null) {
     dateStyle: "medium",
     timeZone: "UTC",
   }).format(new Date(dateValue));
-}
-
-function pluralize(count: number, singular: string, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
-function formatGuestSide(value: string | null | undefined) {
-  const labels: Record<string, string> = {
-    both: "Both families",
-    bride: "Bride side",
-    groom: "Groom side",
-  };
-
-  return value ? (labels[value] ?? value.replaceAll("_", " ")) : "No side";
-}
-
-function formatRsvpStatus(value: string | null | undefined) {
-  const labels: Record<string, string> = {
-    locked: "Locked",
-    manual_review: "Needs review",
-    maybe: "Maybe",
-    no: "Cannot attend",
-    pending: "Awaiting reply",
-    yes: "Attending",
-  };
-
-  return value ? (labels[value] ?? value.replaceAll("_", " ")) : "No RSVP";
-}
-
-function formatGuestDeliveryType(isPrintedOnly: boolean) {
-  return isPrintedOnly ? "Printed invitation" : "Digital link";
 }
 
 function formatAssignmentMode(value: string | null | undefined) {
@@ -194,19 +170,6 @@ function statusMessage(status: string | undefined) {
       return "Tables created.";
     default:
       return null;
-  }
-}
-
-function statusBadgeVariant(status: string) {
-  switch (status) {
-    case "active":
-      return "secondary" as const;
-    case "locked":
-      return "outline" as const;
-    case "archived":
-      return "destructive" as const;
-    default:
-      return "outline" as const;
   }
 }
 

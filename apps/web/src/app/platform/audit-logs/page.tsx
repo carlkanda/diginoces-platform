@@ -28,6 +28,11 @@ import {
 import { listAuditLogs } from "@/lib/reports/report-db";
 import { normalizeAuditLogFilters } from "@/lib/reports/report-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  formatDateTime,
+  formatLabel,
+  pluralize,
+} from "@/lib/ui/format-helpers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -89,39 +94,18 @@ type AuditLogsPageProps = {
   }>;
 };
 
-function pluralize(count: number, singular: string, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
+const auditSourceLabels: Record<string, string> = {
+  api: "App activity",
+  auth: "Sign-in activity",
+  storage: "File activity",
+  system: "System update",
+};
 
-function formatLabel(value: string | null | undefined) {
-  if (!value) {
-    return "System";
-  }
-
-  const labels: Record<string, string> = {
-    api: "App activity",
-    auth: "Sign-in activity",
-    storage: "File activity",
-    system: "System update",
-  };
-
-  if (labels[value]) {
-    return labels[value];
-  }
-
-  const label = value
-    .replaceAll(".", " ")
-    .replaceAll("_", " ")
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-
-  return label
-    .replace(/\bApi\b/g, "App")
-    .replace(/\bCsv\b/g, "CSV")
-    .replace(/\bId\b/g, "ID")
-    .replace(/\bPdf\b/g, "PDF")
-    .replace(/\bQr\b/g, "QR")
-    .replace(/\bRsvp\b/g, "RSVP");
+function formatAuditLabel(value: string | null | undefined) {
+  return formatLabel(value, {
+    fallback: "System",
+    labels: auditSourceLabels,
+  });
 }
 
 function formatTeamMemberReference(value: string | null | undefined) {
@@ -145,23 +129,6 @@ function formatRecordReference(value: string | null | undefined) {
   return value.length > 16
     ? `${value.slice(0, 8)}...${value.slice(-4)}`
     : value;
-}
-
-function formatDateTime(value: string | null | undefined) {
-  if (!value) {
-    return "Time not recorded";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Time not recorded";
-  }
-
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
 }
 
 function formatAuditExportError(value: string) {
@@ -601,18 +568,22 @@ export default async function AuditLogsPage({
                   <div className="workflow-record" key={log.id}>
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <p className="font-medium">{formatLabel(log.action)}</p>
+                        <p className="font-medium">
+                          {formatAuditLabel(log.action)}
+                        </p>
                         <p className="mt-1 text-sm leading-5 text-muted-foreground">
                           {log.reason ?? "No reason note recorded."}
                         </p>
                       </div>
-                      <Badge variant="outline">{formatLabel(log.source)}</Badge>
+                      <Badge variant="outline">
+                        {formatAuditLabel(log.source)}
+                      </Badge>
                     </div>
                     <Separator />
                     <div className="grid gap-2 text-sm">
                       <div className="grid gap-1">
                         <span className="text-muted-foreground">Record</span>
-                        <span>{formatLabel(log.objectType)}</span>
+                        <span>{formatAuditLabel(log.objectType)}</span>
                         <span className="break-all font-mono text-xs text-muted-foreground">
                           {formatRecordReference(log.objectId)}
                         </span>
@@ -654,7 +625,7 @@ export default async function AuditLogsPage({
                         <TableCell className="max-w-sm whitespace-normal">
                           <div className="flex flex-col gap-1">
                             <span className="font-medium">
-                              {formatLabel(log.action)}
+                              {formatAuditLabel(log.action)}
                             </span>
                             <span className="text-sm leading-5 text-muted-foreground">
                               {log.reason ?? "No reason note recorded."}
@@ -663,7 +634,7 @@ export default async function AuditLogsPage({
                         </TableCell>
                         <TableCell className="max-w-xs whitespace-normal">
                           <div className="flex flex-col gap-1">
-                            <span>{formatLabel(log.objectType)}</span>
+                            <span>{formatAuditLabel(log.objectType)}</span>
                             <span className="font-mono text-xs text-muted-foreground">
                               {formatRecordReference(log.objectId)}
                             </span>
@@ -679,7 +650,7 @@ export default async function AuditLogsPage({
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {formatLabel(log.source)}
+                            {formatAuditLabel(log.source)}
                           </Badge>
                         </TableCell>
                         <TableCell>{formatDateTime(log.createdAt)}</TableCell>

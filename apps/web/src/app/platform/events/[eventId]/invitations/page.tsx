@@ -21,6 +21,12 @@ import {
   type InvitationTemplateRow,
 } from "@/lib/invitations/invitation-db";
 import {
+  formatDateTime,
+  formatFileSize,
+  formatTemplateName,
+  formatTemplateSourceFilename,
+} from "@/lib/invitations/invitation-format";
+import {
   ProjectAccessError,
   hasProjectPermission,
   requireEventPermission,
@@ -38,6 +44,7 @@ import {
 } from "@/lib/projects/project-foundation";
 import { getEventDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { pluralize } from "@/lib/ui/format-helpers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -137,60 +144,6 @@ function getTemplateNextAction(status: string) {
   };
 
   return labels[status] ?? "Open design";
-}
-
-function formatTemplateName(name: string, index: number) {
-  if (isInternalProjectDisplayText(name) || /\bqa invitation\b/i.test(name)) {
-    return `Invitation design ${index + 1}`;
-  }
-
-  return name;
-}
-
-function formatTemplateSourceFilename(filename: string, index: number) {
-  if (
-    isInternalProjectDisplayText(filename) ||
-    /\b(mvp|qa|seed|demo)[-_]/i.test(filename)
-  ) {
-    return `Canva PDF export ${index + 1}.pdf`;
-  }
-
-  return filename;
-}
-
-function pluralize(count: number, singular: string, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return "Not recorded";
-  }
-
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function formatFileSize(bytes: number) {
-  if (!Number.isFinite(bytes) || bytes <= 0) {
-    return "Size not recorded";
-  }
-
-  const units = ["bytes", "KB", "MB"];
-  let value = bytes;
-  let unitIndex = 0;
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-
-  const formatted =
-    unitIndex === 0 ? Math.round(value).toString() : value.toFixed(1);
-
-  return `${formatted} ${units[unitIndex]}`;
 }
 
 function getWorkflowSteps(templates: InvitationTemplateRow[]): WorkflowStep[] {

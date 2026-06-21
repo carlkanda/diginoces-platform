@@ -117,10 +117,6 @@ function formatGuestDeliveryType(isPrintedOnly: boolean) {
   return isPrintedOnly ? "Printed invitation" : "Digital link";
 }
 
-function formatCheckInTableName(value: string | null | undefined) {
-  return value ? formatEventTableName(value, 0) : "Unassigned";
-}
-
 function fallbackCheckInEventName(event: { event_code: string; name: string }) {
   const source = `${event.name} ${event.event_code}`.toLowerCase();
 
@@ -249,6 +245,20 @@ export default async function CheckInScanPage({
   const scanStatus = searchParamText(resolvedSearchParams, "scanStatus");
   const scanError = searchParamText(resolvedSearchParams, "scanError");
   const overview = await getCheckInOverview(supabase, eventId);
+  const tableDisplayNames = new Map(
+    [
+      ...new Set(
+        overview.guests
+          .map((checkInGuest) => checkInGuest.tableName)
+          .filter((tableName): tableName is string => Boolean(tableName)),
+      ),
+    ]
+      .sort((left, right) => left.localeCompare(right))
+      .map((tableName, tableIndex) => [
+        tableName,
+        formatEventTableName(tableName, tableIndex),
+      ]),
+  );
   const allowedMethods = resolveAllowedCheckInMethods(
     overview.settings?.allowed_methods,
   );
@@ -519,7 +529,13 @@ export default async function CheckInScanPage({
                   <div className="ops-ledger__metric">
                     <span className="ops-ledger__metric-label">Table</span>
                     <strong className="ops-ledger__metric-value text-base">
-                      {formatCheckInTableName(guest.tableName)}
+                      {guest.tableName
+                        ? (tableDisplayNames.get(guest.tableName) ??
+                          formatEventTableName(
+                            guest.tableName,
+                            tableDisplayNames.size,
+                          ))
+                        : "Unassigned"}
                     </strong>
                   </div>
                 </div>

@@ -24,6 +24,13 @@ import {
   type InvitationTemplateFieldRow,
 } from "@/lib/invitations/invitation-db";
 import {
+  formatDateTime,
+  formatFileSize,
+  formatTemplateName,
+  formatTemplateSourceFilename,
+  isInternalTemplateFileReference,
+} from "@/lib/invitations/invitation-format";
+import {
   hasProjectPermission,
   ProjectAccessError,
   requireEventPermission,
@@ -41,6 +48,7 @@ import {
 } from "@/lib/projects/project-foundation";
 import { getEventDetails } from "@/lib/projects/project-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { pluralize } from "@/lib/ui/format-helpers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -202,29 +210,6 @@ function formatFileType(fileType: string) {
   return formatStatus(fileType);
 }
 
-function formatTemplateName(name: string) {
-  if (isInternalProjectDisplayText(name) || /\bqa invitation\b/i.test(name)) {
-    return "Invitation design";
-  }
-
-  return name;
-}
-
-function isInternalTemplateFileReference(value: string) {
-  return (
-    isInternalProjectDisplayText(value) ||
-    /\b(mvp|qa|seed|demo)[-_/]/i.test(value)
-  );
-}
-
-function formatTemplateSourceFilename(filename: string) {
-  if (isInternalTemplateFileReference(filename)) {
-    return "Canva PDF export.pdf";
-  }
-
-  return filename;
-}
-
 function formatTemplateStorageReference(storagePath: string) {
   if (isInternalTemplateFileReference(storagePath)) {
     return "Stored invitation design file";
@@ -235,41 +220,6 @@ function formatTemplateStorageReference(storagePath: string) {
 
 function fieldValue(position: Record<string, number>, key: string) {
   return String(position[key] ?? 0);
-}
-
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return "Not recorded";
-  }
-
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function formatFileSize(bytes: number) {
-  if (!Number.isFinite(bytes) || bytes <= 0) {
-    return "Size not recorded";
-  }
-
-  const units = ["bytes", "KB", "MB"];
-  let value = bytes;
-  let unitIndex = 0;
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-
-  const formatted =
-    unitIndex === 0 ? Math.round(value).toString() : value.toFixed(1);
-
-  return `${formatted} ${units[unitIndex]}`;
-}
-
-function pluralize(count: number, singular: string, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
 }
 
 function getPreviewState(previewGenerated: boolean, previewApproved: boolean) {

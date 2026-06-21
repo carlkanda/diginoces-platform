@@ -15,7 +15,11 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
-import { ProjectAccessError } from "@/lib/projects/project-api";
+import {
+  hasEventPermission,
+  hasProjectPermission,
+  ProjectAccessError,
+} from "@/lib/projects/project-api";
 import {
   formatProjectCoupleDisplayName,
   formatProjectEventDisplayName,
@@ -76,6 +80,7 @@ type DashboardSummarySection = {
   actionHref: string;
   actionLabel: string;
   description: string;
+  show: boolean;
   title: string;
   values: Record<string, number>;
 };
@@ -312,38 +317,67 @@ export default async function EventDashboardPage({ params }: PageProps) {
   const projectHref = overview.project
     ? `/platform/projects/${overview.project.id}`
     : "/platform/projects";
-  const summarySections = [
-    {
-      actionHref: overview.project
-        ? `/platform/projects/${overview.project.id}/rsvps`
-        : `/platform/events/${eventId}`,
-      actionLabel: "Review RSVPs",
-      description: "Current guest replies that affect event attendance.",
-      title: "Guest replies",
-      values: overview.summaries.rsvps,
-    },
-    {
-      actionHref: `/platform/events/${eventId}/invitations`,
-      actionLabel: "Open invitations",
-      description: "Invitation files and delivery preparation for this event.",
-      title: "Invitations",
-      values: overview.summaries.invitations,
-    },
-    {
-      actionHref: `/platform/events/${eventId}/seating`,
-      actionLabel: "Open seating",
-      description: "Table capacity and current seat assignments.",
-      title: "Seating",
-      values: overview.summaries.seating,
-    },
-    {
-      actionHref: `/platform/events/${eventId}/check-in`,
-      actionLabel: "Open check-in",
-      description: "Arrival activity recorded by the event team.",
-      title: "Arrivals",
-      values: overview.summaries.checkIn,
-    },
-  ] satisfies DashboardSummarySection[];
+  const permissionContext = { supabase, user: authContext.user };
+  const [canReadRsvps, canReadInvitations, canReadSeating, canReadCheckIn] =
+    overview.project
+      ? await Promise.all([
+          hasProjectPermission(
+            permissionContext,
+            overview.project.id,
+            "rsvps.read",
+          ),
+          hasProjectPermission(
+            permissionContext,
+            overview.project.id,
+            "invitation_templates.read",
+          ),
+          hasProjectPermission(
+            permissionContext,
+            overview.project.id,
+            "seating.read",
+          ),
+          hasEventPermission(permissionContext, eventId, "check_in.read"),
+        ])
+      : [false, false, false, false];
+  const summarySections = (
+    [
+      {
+        actionHref: overview.project
+          ? `/platform/projects/${overview.project.id}/rsvps`
+          : `/platform/events/${eventId}`,
+        actionLabel: "Review RSVPs",
+        description: "Current guest replies that affect event attendance.",
+        show: canReadRsvps,
+        title: "Guest replies",
+        values: overview.summaries.rsvps,
+      },
+      {
+        actionHref: `/platform/events/${eventId}/invitations`,
+        actionLabel: "Open invitations",
+        description:
+          "Invitation files and delivery preparation for this event.",
+        show: canReadInvitations,
+        title: "Invitations",
+        values: overview.summaries.invitations,
+      },
+      {
+        actionHref: `/platform/events/${eventId}/seating`,
+        actionLabel: "Open seating",
+        description: "Table capacity and current seat assignments.",
+        show: canReadSeating,
+        title: "Seating",
+        values: overview.summaries.seating,
+      },
+      {
+        actionHref: `/platform/events/${eventId}/check-in`,
+        actionLabel: "Open check-in",
+        description: "Arrival activity recorded by the event team.",
+        show: canReadCheckIn,
+        title: "Arrivals",
+        values: overview.summaries.checkIn,
+      },
+    ] satisfies DashboardSummarySection[]
+  ).filter((section) => section.show);
   const readinessSignals = [
     {
       detail: "Rows that need review before response counts are trusted.",
@@ -609,37 +643,52 @@ export default async function EventDashboardPage({ params }: PageProps) {
         </TabsContent>
 
         <TabsContent value="areas">
-          <div className="grid gap-4 lg:grid-cols-2">
-            {summarySections.map((section) => (
-              <Card key={section.title}>
-                <CardHeader>
-                  <CardTitle>{section.title}</CardTitle>
-                  <CardDescription>{section.description}</CardDescription>
-                  <CardAction>
-                    <Badge variant="secondary">
-                      {totalValues(section.values).toLocaleString("en")} total
-                    </Badge>
-                  </CardAction>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                  <SummaryTable values={section.values} />
-                  <div>
-                    <Button
-                      render={<Link href={section.actionHref} />}
-                      size="sm"
-                      variant="outline"
-                    >
-                      {section.actionLabel}
-                      <ArrowRightIcon
-                        aria-hidden="true"
-                        data-icon="inline-end"
-                      />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {summarySections.length === 0 ? (
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <ShieldCheckIcon aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyTitle>No downstream areas available</EmptyTitle>
+                <EmptyDescription>
+                  This role can read the event dashboard but cannot open the
+                  detailed event work areas from this view.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {summarySections.map((section) => (
+                <Card key={section.title}>
+                  <CardHeader>
+                    <CardTitle>{section.title}</CardTitle>
+                    <CardDescription>{section.description}</CardDescription>
+                    <CardAction>
+                      <Badge variant="secondary">
+                        {totalValues(section.values).toLocaleString("en")} total
+                      </Badge>
+                    </CardAction>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-4">
+                    <SummaryTable values={section.values} />
+                    <div>
+                      <Button
+                        render={<Link href={section.actionHref} />}
+                        size="sm"
+                        variant="outline"
+                      >
+                        {section.actionLabel}
+                        <ArrowRightIcon
+                          aria-hidden="true"
+                          data-icon="inline-end"
+                        />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="readiness">

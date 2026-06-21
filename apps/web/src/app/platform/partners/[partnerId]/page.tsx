@@ -599,6 +599,9 @@ export default async function PartnerDetailPage({ params }: PageProps) {
                   const status = String(submission.status);
                   const canSubmit =
                     status === "draft" || status === "changes_requested";
+                  const showWaiting =
+                    (canSubmit && !canSubmitPartnerProjects) ||
+                    (status === "submitted" && !canReviewProjects);
                   const submitAction = submitPartnerProjectAction.bind(
                     null,
                     partnerId,
@@ -652,7 +655,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
                             />
                           </Button>
                         ) : null}
-                        {!canSubmit || !canSubmitPartnerProjects ? (
+                        {showWaiting ? (
                           <span className="text-sm text-muted-foreground">
                             Waiting on Diginoces
                           </span>
@@ -679,6 +682,9 @@ export default async function PartnerDetailPage({ params }: PageProps) {
                       const status = String(submission.status);
                       const canSubmit =
                         status === "draft" || status === "changes_requested";
+                      const showWaiting =
+                        (canSubmit && !canSubmitPartnerProjects) ||
+                        (status === "submitted" && !canReviewProjects);
                       const submitAction = submitPartnerProjectAction.bind(
                         null,
                         partnerId,
@@ -733,7 +739,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
                                   />
                                 </Button>
                               ) : null}
-                              {!canSubmit || !canSubmitPartnerProjects ? (
+                              {showWaiting ? (
                                 <span className="text-sm text-muted-foreground">
                                   Waiting on Diginoces
                                 </span>

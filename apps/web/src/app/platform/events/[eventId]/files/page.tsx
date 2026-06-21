@@ -19,6 +19,8 @@ import { redirectToMfaIfStepUpRequired } from "@/lib/auth/mfa-route-guard";
 import { formatDate } from "@/lib/dates/format-date";
 import { listEventFiles, type ProjectFileRow } from "@/lib/files/file-db";
 import {
+  hasEventPermission,
+  hasProjectPermission,
   ProjectAccessError,
   requireEventPermission,
 } from "@/lib/projects/project-api";
@@ -156,8 +158,11 @@ function formatLabel(value: string | null | undefined) {
 }
 
 function formatBytes(value: number) {
-  if (!Number.isFinite(value) || value <= 0) {
+  if (!Number.isFinite(value) || value < 0) {
     return "Size not recorded";
+  }
+  if (value === 0) {
+    return "0 B";
   }
 
   const units = ["B", "KB", "MB", "GB"];
@@ -297,6 +302,16 @@ export default async function EventFilesPage({ params }: PageProps) {
   const projectName = formatProjectCoupleDisplayName(event.project, 0);
   const venueName = formatProjectVenueDisplay(event.event.venue_name);
   const summary = fileSummary(files);
+  const [canReadInvitations, canReadSeating, canReadCheckIn] =
+    await Promise.all([
+      hasProjectPermission(
+        context,
+        event.project.id,
+        "invitation_templates.read",
+      ),
+      hasProjectPermission(context, event.project.id, "seating.read"),
+      hasEventPermission(context, eventId, "check_in.read"),
+    ]);
 
   return (
     <main className="flex flex-col gap-6">
@@ -644,32 +659,45 @@ export default async function EventFilesPage({ params }: PageProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-              <Button
-                render={
-                  <Link href={`/platform/events/${eventId}/invitations`} />
-                }
-                size="sm"
-                variant="outline"
-              >
-                Invitation files
-                <ArrowRightIcon aria-hidden="true" data-icon="inline-end" />
-              </Button>
-              <Button
-                render={<Link href={`/platform/events/${eventId}/seating`} />}
-                size="sm"
-                variant="outline"
-              >
-                Seating exports
-                <ArrowRightIcon aria-hidden="true" data-icon="inline-end" />
-              </Button>
-              <Button
-                render={<Link href={`/platform/events/${eventId}/check-in`} />}
-                size="sm"
-                variant="outline"
-              >
-                Check-in records
-                <ArrowRightIcon aria-hidden="true" data-icon="inline-end" />
-              </Button>
+              {canReadInvitations ? (
+                <Button
+                  render={
+                    <Link href={`/platform/events/${eventId}/invitations`} />
+                  }
+                  size="sm"
+                  variant="outline"
+                >
+                  Invitation files
+                  <ArrowRightIcon aria-hidden="true" data-icon="inline-end" />
+                </Button>
+              ) : null}
+              {canReadSeating ? (
+                <Button
+                  render={<Link href={`/platform/events/${eventId}/seating`} />}
+                  size="sm"
+                  variant="outline"
+                >
+                  Seating exports
+                  <ArrowRightIcon aria-hidden="true" data-icon="inline-end" />
+                </Button>
+              ) : null}
+              {canReadCheckIn ? (
+                <Button
+                  render={
+                    <Link href={`/platform/events/${eventId}/check-in`} />
+                  }
+                  size="sm"
+                  variant="outline"
+                >
+                  Check-in records
+                  <ArrowRightIcon aria-hidden="true" data-icon="inline-end" />
+                </Button>
+              ) : null}
+              {!canReadInvitations && !canReadSeating && !canReadCheckIn ? (
+                <p className="text-sm text-muted-foreground">
+                  No additional event handoff pages are available for this role.
+                </p>
+              ) : null}
             </CardContent>
           </Card>
 
