@@ -89,7 +89,7 @@ returns a JSON list of findings; `[]` means no detector findings were reported.
 - No new environment variables are introduced by this branch.
 - Pull request: `https://github.com/carlkanda/diginoces-platform/pull/132`
 - Vercel preview URL: `https://diginoces-platform-git-codex-bilingu-3e8239-carlkandas-projects.vercel.app`
-- Vercel deployment dashboard: `https://vercel.com/carlkandas-projects/diginoces-platform/4VNMqgMhnZ4gJMecXs6n1RisBnfK`
+- Vercel deployment dashboard: use the latest `Vercel` status check on PR `#132`; deployment IDs change on each pushed commit, while the branch preview URL remains stable.
 - Production deployment should wait for hosted preview visual approval, PR readiness, hosted CodeRabbit review, and merge approval.
 
 ## Security Notes
