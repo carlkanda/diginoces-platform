@@ -113,6 +113,8 @@ The previous generic redesign direction is rejected. Do not reuse its visual lan
 
 This is not an active sprint implementation pass. The local redesign has been accepted, and hosted deployment preparation is now approved subject to the post-approval checks, review, hosted build, and hosted verification.
 
+Out-of-band requirement context: `UX-REDESIGN-001` / GitHub issue `#131` covers the French-first bilingual UX simplification, public home refinement, representative protected-surface copy and navigation improvements, and hosted-review preparation on branch `codex/bilingual-ux-simplification-homepage`. This requirement is explicitly separate from Sprint 16 AI Assistance and does not authorize AI, Sprint 17, or later product scope.
+
 Existing source is behavior inventory. Preserve route protection, auth, MFA, Supabase data access, server actions, API contracts, validation, audit behavior, permissions, public-token access, and form field names.
 
 Current approval ladder:

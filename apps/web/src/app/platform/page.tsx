@@ -9,6 +9,7 @@ import {
   ShieldCheckIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoHint } from "@/components/info-hint";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -345,9 +346,7 @@ export default async function PlatformPage({
                 </h1>
               </CardTitle>
               <CardDescription className="max-w-2xl text-base leading-7 text-muted-foreground">
-                Open a wedding, see the work available to this account, and move
-                safely between guests, invitations, messages, seating, check-in,
-                files, reports, and partner coordination.
+                Start with the wedding or work area available to this account.
               </CardDescription>
             </div>
           </CardHeader>
@@ -379,10 +378,11 @@ export default async function PlatformPage({
             <CardTitle className="flex items-center gap-2">
               <ShieldCheckIcon aria-hidden="true" data-icon="inline-start" />
               <h2>Current access</h2>
+              <InfoHint
+                label="How access works"
+                text="The app only opens areas available to this account. If a destination is missing, the role or project membership needs review."
+              />
             </CardTitle>
-            <CardDescription>
-              The app only opens areas available to this account.
-            </CardDescription>
           </CardHeader>
           <CardContent className="launchpad-access">
             <div className="launchpad-access__identity">
@@ -451,13 +451,15 @@ export default async function PlatformPage({
       <section className="grid gap-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-xl font-semibold tracking-normal">
-              Start with the next action
-            </h2>
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              These are the direct entry points available to the current
-              account. Each one leads into a controlled work area.
-            </p>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold tracking-normal">
+                Start with the next action
+              </h2>
+              <InfoHint
+                label="Entry point guidance"
+                text="These are the direct entry points available to the current account. Each one leads into a controlled work area."
+              />
+            </div>
           </div>
         </div>
 
@@ -510,14 +512,15 @@ export default async function PlatformPage({
 
       <section className="grid gap-4">
         <div>
-          <h2 className="text-xl font-semibold tracking-normal">
-            Wedding operating map
-          </h2>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Open a wedding first for wedding-specific work. This map explains
-            how Diginoces separates planning, guest preparation, communication,
-            event-day execution, and controlled review.
-          </p>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold tracking-normal">
+              Wedding operating map
+            </h2>
+            <InfoHint
+              label="Wedding map guidance"
+              text="Open a wedding first for wedding-specific work. Diginoces separates planning, guest preparation, communication, event-day execution, and controlled review."
+            />
+          </div>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2">

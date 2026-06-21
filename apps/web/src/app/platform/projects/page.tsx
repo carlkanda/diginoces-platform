@@ -8,6 +8,7 @@ import {
   LockKeyholeIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoHint } from "@/components/info-hint";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -131,9 +132,7 @@ export default async function ProjectsPage() {
             Wedding project desk
           </h1>
           <CardDescription className="max-w-3xl">
-            Find the right wedding, confirm its operating state, and move into
-            the work area that owns events, guests, imports, RSVP, invitations,
-            messages, seating, files, and delivery checks.
+            Find a wedding, check its state, and open the next work area.
           </CardDescription>
           <CardAction className="col-start-1 row-start-auto mt-3 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
             <Link
@@ -256,13 +255,13 @@ export default async function ProjectsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>
+              <CardTitle className="flex items-center gap-2">
                 <h2>Your wedding projects</h2>
+                <InfoHint
+                  label="Project visibility"
+                  text="You only see weddings connected to this account. Open one to continue inside its project workspace."
+                />
               </CardTitle>
-              <CardDescription>
-                You only see weddings connected to this account. Open one to
-                continue inside its project workspace.
-              </CardDescription>
               <CardAction>
                 <Badge variant="outline">
                   {pluralize(projects.length, "wedding")}
@@ -398,9 +397,8 @@ export default async function ProjectsPage() {
             <GaugeIcon aria-hidden="true" />
             <AlertTitle>Role-aware project view</AlertTitle>
             <AlertDescription>
-              This desk is scoped by backend permissions and database policies.
-              If a wedding is missing, the project membership or role assignment
-              should be checked before operational work begins.
+              Missing weddings usually mean the project membership or role needs
+              review.
             </AlertDescription>
           </Alert>
 

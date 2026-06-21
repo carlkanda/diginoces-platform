@@ -58,6 +58,18 @@ Next planned sprint:
 Sprint 17 — Advanced Integrations
 ```
 
+## Approved out-of-band UX work
+
+The product owner approved an out-of-band UX redesign and hosted-review preparation pass:
+
+```text
+Requirement: UX-REDESIGN-001
+Issue: #131 — Bilingual UX simplification and public home refinement
+Branch: codex/bilingual-ux-simplification-homepage
+Scope: French-first bilingual user experience, public home refinement, representative protected-surface copy/navigation improvements, and hosted preview preparation.
+Governance note: This work is separate from Sprint 16 — AI Assistance and must not implement AI Assistance or Sprint 17+ product scope.
+```
+
 ## Active sprint sync rule
 
 When the active sprint changes, update both `AGENTS.md` and `README.md` in the same commit.

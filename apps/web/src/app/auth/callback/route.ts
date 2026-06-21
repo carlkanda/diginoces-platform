@@ -7,7 +7,8 @@ import {
   buildLoginErrorRedirectPath,
   buildMfaRedirectPath,
   getMfaAssuranceLevelForClient,
-  getInvalidOrExpiredMagicLinkMessage,
+  getInvalidOrExpiredMagicLinkErrorCode,
+  LOGIN_AUTH_ERROR_CODES,
 } from "@/lib/auth/auth-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getPublicEnvironment } from "@/lib/env/public-env";
@@ -30,7 +31,13 @@ export async function GET(request: Request) {
 
   if (!env.supabaseConfigured) {
     return NextResponse.redirect(
-      new URL("/login?error=Supabase%20is%20not%20configured", requestUrl),
+      new URL(
+        buildLoginErrorRedirectPath(
+          next,
+          LOGIN_AUTH_ERROR_CODES.AUTH_WORKSPACE_NOT_CONFIGURED,
+        ),
+        requestUrl,
+      ),
     );
   }
 
@@ -76,7 +83,10 @@ export async function GET(request: Request) {
 
   return NextResponse.redirect(
     new URL(
-      buildLoginErrorRedirectPath(next, getInvalidOrExpiredMagicLinkMessage()),
+      buildLoginErrorRedirectPath(
+        next,
+        getInvalidOrExpiredMagicLinkErrorCode(),
+      ),
       requestUrl,
     ),
   );

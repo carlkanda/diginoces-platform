@@ -1,7 +1,7 @@
 # Local Redesign QA Evidence
 
 Date: 2026-06-18
-Branch: `codex/redesign-platform-shell`
+Branch: `codex/bilingual-ux-simplification-homepage`
 Status: local review accepted; hosted deployment preparation approved
 
 ## Objective
@@ -12,7 +12,7 @@ Redesign the Diginoces application locally, one page at a time, using Impeccable
 
 | Requirement | Evidence | Status |
 | --- | --- | --- |
-| Work locally before hosted deployment | All work is on `codex/redesign-platform-shell`; no hosted deployment was updated. | Satisfied |
+| Work locally before hosted deployment | All work is on `codex/bilingual-ux-simplification-homepage`; no hosted deployment was updated. | Satisfied |
 | Use Impeccable guidance | `PRODUCT.md`, `DESIGN.md`, and Impeccable detector checks document and validate the product UI direction. | Satisfied |
 | Start with authenticated `/platform` | `/platform` is browser verified and listed in the route checklist as the primary task launcher. | Satisfied |
 | Establish a cohesive event guest-management design system | `DESIGN.md` defines colors, typography, components, navigation, and product rules; `globals.css` applies the shared system across app routes. | Satisfied |

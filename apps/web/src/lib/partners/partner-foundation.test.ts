@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getAuditFoundationSummary } from "@/lib/audit/audit-log";
 import { canPerformCommercialAction } from "@/lib/contracts/contract-service";
+import { getHomeCopy, homeCopy } from "@/lib/i18n/home-copy";
 import type { RoleAssignment } from "@/lib/security/permissions";
 import {
   parseLinkPartnerUserPayload,
@@ -662,9 +663,20 @@ describe("Sprint 13 partner foundation", () => {
     expect(partnerDb).toMatch(/\bpartner_project_assignments\b/);
     expect(partnerDb).toMatch(/\bevent_date\b/);
     expect(healthRoute).toContain("getSprint13PartnerStatus");
-    expect(homePage).toContain("Event guest management");
-    expect(homePage).toContain("partner access");
-    expect(homePage).toContain("Files, partners, reports, activity trail");
+    expect(getHomeCopy("en")).toBe(homeCopy.en);
+    expect(getHomeCopy("fr")).toBe(homeCopy.fr);
+    expect(homeCopy.en.hero.secondaryAction).toBe("View weddings");
+    expect(homeCopy.fr.header.publicNavigationLabel).toBe(
+      "Navigation publique",
+    );
+    expect(homeCopy.en.header.tagline).toBe("Guest management for weddings");
+    expect(homeCopy.en.audience.items).toContainEqual(
+      expect.objectContaining({
+        body: expect.stringContaining("permission-aware work areas"),
+        title: "For partners",
+      }),
+    );
+    expect(homeCopy.en.hero.body).toContain("files, and reports");
     expect(homePage).not.toContain("getSprint13PartnerStatus");
     expect(localSetup).toContain("Sprint 13 partner");
     expect(localSetup).toContain("/platform/partners");
