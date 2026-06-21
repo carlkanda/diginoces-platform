@@ -77,6 +77,12 @@ The hosted rerun then approved the PR and surfaced three additional comments, wh
 3. Verify the Vercel-hosted preview loads the public home page, login page, protected platform redirect, and representative authenticated routes.
 4. Promote or merge only after the hosted build is ready and visual checks pass.
 
+## Production Follow-Up
+
+After PR `#129` was merged, production responded with `200` on the canonical `https://www.diginoces.com` routes and `https://www.diginoces.com/api/health` returned `{"status":"ok","supabaseConfigured":true}`. Chrome visual verification also confirmed the redesigned home page rendered with the Diginoces logo and updated navigation.
+
+Chrome console verification then surfaced a generated Next.js/Turbopack runtime error: `ReferenceError: module is not defined` from a production client chunk. Current Next.js 16 documentation confirms Turbopack is the default for `next build` and that `next build --webpack` is the supported opt-out. The hosted deployment build script was therefore updated to use webpack for production builds until the tracked Next.js canary/Turbopack risk is safe to revisit. A Windows-local webpack build attempt exited from the Next.js build worker with code `3221226505`, while the same `npm run build` command passed under WSL/Linux, matching Vercel's Linux deployment environment more closely.
+
 ## Security Notes
 
 - No `.env`, `.env.local`, Supabase service-role key, database password, WhatsApp token, Google credential, private key, real guest data, or real client data is intentionally included in this branch.
