@@ -95,7 +95,7 @@ const commandMenuCopy: Record<SupportedLanguage, WorkspaceCommandMenuCopy> = {
     shortcut: "Ctrl K",
     shortcutHint: "Ouvrir la navigation rapide avec Ctrl ou Commande plus K",
     title: "Rechercher dans Diginoces",
-    trigger: "Rechercher",
+    trigger: "Rechercher dans l'espace de travail",
   },
 };
 

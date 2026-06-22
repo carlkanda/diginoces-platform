@@ -19,6 +19,24 @@ describe("formatLabel", () => {
     ).toBe("Awaiting couple reply");
   });
 
+  it("uses own-property label overrides even when the label is falsy", () => {
+    expect(
+      formatLabel("pending", {
+        labels: {
+          pending: "",
+        },
+      }),
+    ).toBe("");
+  });
+
+  it("ignores inherited label properties", () => {
+    const inheritedLabels = Object.create({
+      pending: "Inherited label",
+    }) as Record<string, string>;
+
+    expect(formatLabel("pending", { labels: inheritedLabels })).toBe("Waiting");
+  });
+
   it("still formats unknown values and preserves technical acronyms", () => {
     expect(formatLabel("guest_rsvp_pdf")).toBe("Guest RSVP PDF");
     expect(formatLabel(null, { fallback: "No value" })).toBe("No value");

@@ -302,7 +302,7 @@ Use these shared patterns before creating one-off route treatments.
 
 The authenticated shell includes a shadcn `Command` inside `Dialog` through `WorkspaceCommandMenu`.
 
-- Trigger label: `Search workspace` / `Rechercher`.
+- Trigger label: `Search workspace` / `Rechercher dans l'espace de travail`.
 - Keyboard shortcut: `Ctrl K` or `Cmd K`.
 - Global destinations are always available.
 - Wedding shortcuts appear only when the current route contains a valid wedding ID.

@@ -122,7 +122,7 @@ const exactEnglishToFrench = {
   "Seating map": "Plan de salle",
   "Secure access": "Accès sécurisé",
   "Search Diginoces": "Rechercher dans Diginoces",
-  "Search workspace": "Rechercher",
+  "Search workspace": "Rechercher dans l'espace de travail",
   "Search wedding operations...": "Rechercher dans les opérations...",
   "Send sign-in link": "Envoyer le lien de connexion",
   "Sending...": "Envoi...",

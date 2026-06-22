@@ -39,6 +39,10 @@ const defaultLabelOverrides: Record<string, string> = {
   yes: "Yes",
 };
 
+function hasOwnLabel(labels: Record<string, string>, value: string) {
+  return Object.prototype.hasOwnProperty.call(labels, value);
+}
+
 export function formatLabel(
   value: string | null | undefined,
   {
@@ -53,11 +57,11 @@ export function formatLabel(
     return fallback;
   }
 
-  if (labels[value]) {
+  if (hasOwnLabel(labels, value)) {
     return labels[value];
   }
 
-  if (defaultLabelOverrides[value]) {
+  if (hasOwnLabel(defaultLabelOverrides, value)) {
     return defaultLabelOverrides[value];
   }
 
