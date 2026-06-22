@@ -1,0 +1,120 @@
+# Redesign UI Deep Test Checklist
+
+Date started: 2026-06-22
+
+Date completed: 2026-06-22
+
+Branch: `codex/bilingual-ux-simplification-homepage`
+
+Scope: PR `#132` redesigned, French-first bilingual user experience.
+
+## Purpose
+
+This checklist records the completed page-by-page QA pass for the redesigned
+local app. It is intentionally evidence-based so future QA does not repeat the
+same browser sweeps unless a page changes again.
+
+## Test Environment
+
+| Item                | Value                                                                                                                |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Local app           | `http://127.0.0.1:3000`                                                                                              |
+| Browser             | In-app Browser plus Playwright-driven route sweeps                                                                   |
+| Dev data            | Dev-only QA accounts for internal operations, bride, groom, event staff, and partner roles                           |
+| Evidence location   | Temporary JSON and screenshots under `output/`; these files are not committed                                        |
+| Sensitive artifacts | Auth callback URLs, MFA setup data, and transient public guest tokens were not documented and were deleted after use |
+
+## Completion Summary
+
+| Area                     | Status | Evidence                                                                                                                                    |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public pages             | Passed | Home, login, MFA redirect, valid public guest page, and invalid public guest page rendered without runtime overlays or horizontal overflow. |
+| Protected page inventory | Passed | 47 Next.js `page.tsx` routes were covered through internal AAL2, public-token, and role-specific browser sweeps.                            |
+| Role-specific access     | Passed | Internal operations, bride, groom, event staff, and partner sessions were tested with permissions appropriate to each role.                 |
+| Mobile basics            | Passed | Home, login, and invalid public guest routes were checked at mobile viewport width with no horizontal overflow.                             |
+| Form controls            | Passed | Login email fields, email-code field, and MFA code field were exercised in browser sessions.                                                |
+| Redirect behavior        | Passed | Anonymous protected routes redirect to login with encoded `next` parameters.                                                                |
+| Design terminology       | Passed | Route sweeps did not find old internal planning terms in visible page content.                                                              |
+| Security hygiene         | Passed | Transient auth URLs and public guest tokens were removed from local temp files before final checks.                                         |
+
+## Page Inventory Coverage
+
+The app currently has 47 concrete page files under `apps/web/src/app`. The
+following route families were covered with generated dev QA users and safe dev
+records:
+
+| Route family            | Pages covered                                                                                         | QA role used                                                          |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Public and auth         | `/`, `/login`, `/login/mfa`, `/g/[guestToken]`                                                        | Anonymous, internal AAL1, internal AAL2, transient public guest token |
+| Workspace shell         | `/platform`, `/platform/dashboard`, `/platform/projects`, `/platform/reports`, `/platform/audit-logs` | Internal operations                                                   |
+| Project core            | `/platform/projects/[projectId]`, `/dashboard`, `/couple-dashboard`, `/comments`, `/commercial`       | Internal operations, bride, groom, partner                            |
+| Guests and RSVP         | `/guests`, `/guests/new`, `/guests/[guestId]`, `/guests/[guestId]/public-preview`, `/rsvps`           | Internal operations, bride, groom                                     |
+| Guest imports           | `/guest-imports`, `/guest-imports/new`, `/guest-imports/[importId]`, `/mapping`, `/review`            | Internal operations, bride, groom                                     |
+| Guest book and feedback | `/guest-book`, `/guest-book/couple-review`, `/feedback`                                               | Internal operations                                                   |
+| Invitations             | `/events/[eventId]/invitations`, `/new`, `/[templateId]`                                              | Internal operations                                                   |
+| Communications          | `/communications`, `/templates`, `/queue`, `/communications/[messageLogId]`                           | Internal operations                                                   |
+| Files                   | `/projects/[projectId]/files`, `/files/[fileId]`, `/events/[eventId]/files`                           | Internal operations                                                   |
+| Events                  | `/events/[eventId]`, `/dashboard`, `/seating`, `/seating/map`, `/check-in`, `/check-in/scan`          | Internal operations, event staff                                      |
+| Partners                | `/partner-dashboard`, `/partners`, `/partners/review`, `/partners/[partnerId]`                        | Internal operations, partner                                          |
+
+Permission-limited role sweeps intentionally produced controlled locked or
+not-found states for routes outside the assigned role's capability. Those states
+were treated as access-control coverage, not visual regressions.
+
+## Browser Evidence Files
+
+| Evidence file                                                          | Result                                                         |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `output/ui-deep-qa-internal-aal2-batch-1-public-workspace.json`        | Passed, 10 route checks                                        |
+| `output/ui-deep-qa-internal-aal2-batch-2-guests-imports.json`          | Passed, 11 route checks                                        |
+| `output/ui-deep-qa-internal-aal2-batch-3-collab-invites-messages.json` | Passed, 11 route checks                                        |
+| `output/ui-deep-qa-internal-aal2-batch-4-files-events.json`            | Passed after targeted recheck for two soft navigation timeouts |
+| `output/ui-deep-qa-internal-aal2-batch-5-management-partners.json`     | Passed after targeted recheck for two soft navigation timeouts |
+| `output/ui-deep-qa-check-in-targeted-recheck.json`                     | Passed, check-in routes rendered cleanly                       |
+| `output/ui-deep-qa-soft-timeout-targeted-recheck.json`                 | Passed, commercial and partners routes rendered cleanly        |
+| `output/ui-deep-qa-role-bride.json`                                    | Passed, bride role boundaries rendered safely                  |
+| `output/ui-deep-qa-role-groom.json`                                    | Passed, groom role boundaries rendered safely                  |
+| `output/ui-deep-qa-role-event-staff.json`                              | Passed, event staff pages rendered safely                      |
+| `output/ui-deep-qa-role-partner.json`                                  | Passed, partner pages rendered safely                          |
+| `output/ui-deep-qa-email-code-input-interaction.json`                  | Passed, six-digit email-code input clamps typed values         |
+| `output/ui-deep-qa-mfa-input-interaction.json`                         | Passed, MFA code input clamps typed values                     |
+
+The soft navigation timeouts were not reproducible defects: direct targeted
+rechecks loaded the same pages, found expected headings, and reported no
+framework overlay or horizontal overflow.
+
+## Findings Log
+
+| Status     | Route or flow             | Finding                                                                                                                                                                                 | Action                                                                                                                                                     |
+| ---------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fixed      | `/login` email-code form  | The six-digit code field accepted nine typed digits, which made the field invalid after normal typing.                                                                                  | Fixed the shared `Input` component to clamp typed values to `maxLength`; browser retest passed.                                                            |
+| Fixed      | `/login/mfa` code form    | The same shared input behavior could affect MFA verification code entry.                                                                                                                | The shared `Input` fix covers MFA code entry; authenticated AAL1 browser retest clamped the value to six digits.                                           |
+| Fixed      | Shared input component    | During the final post-test CodeRabbit loop, local review noted that typed truncation should not interrupt active IME composition and that controlled values should remain parent-owned. | The shared `Input` component now clamps typed values only after composition is inactive, while leaving controlled/default values to the owning form state. |
+| Documented | Internal QA route batches | Four routes reported initial soft navigation timeouts while still rendering correctly on direct recheck.                                                                                | Targeted rechecks passed; no source change needed.                                                                                                         |
+
+## Commands And Checks
+
+| Command                                                                                       | Result                                                                                                                                                                                                                                                                         |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run format:check`                                                                        | Passed after final checklist update.                                                                                                                                                                                                                                           |
+| `npm run lint`                                                                                | Passed.                                                                                                                                                                                                                                                                        |
+| `npm run typecheck`                                                                           | Passed after correcting the input event type.                                                                                                                                                                                                                                  |
+| `npm run test -- --run src\lib\auth\auth-service.test.ts src\app\login\submit-button.test.ts` | Passed, 31 focused tests.                                                                                                                                                                                                                                                      |
+| `npm run test`                                                                                | Passed, 299 tests.                                                                                                                                                                                                                                                             |
+| `npm run redesign:check`                                                                      | Passed, 47 browser-verified route rows, 0 blocked.                                                                                                                                                                                                                             |
+| `npm run redesign:design-system-check`                                                        | Passed.                                                                                                                                                                                                                                                                        |
+| `npm run redesign:check:approval`                                                             | Passed.                                                                                                                                                                                                                                                                        |
+| `npm run build`                                                                               | Passed.                                                                                                                                                                                                                                                                        |
+| `npm run env:check-public`                                                                    | Passed.                                                                                                                                                                                                                                                                        |
+| `npm run secrets:scan`                                                                        | Passed.                                                                                                                                                                                                                                                                        |
+| `git diff --check`                                                                            | Passed after final checklist update.                                                                                                                                                                                                                                           |
+| Local CodeRabbit review                                                                       | Docs-scoped review corrected stale rows that still said final checks were pending. Source-scoped review corrected the shared `Input` component to use Base UI-derived event handler types, leave controlled/default values parent-owned, and apply IME-aware typed truncation. |
+
+## Remaining Notes
+
+- The local dev server emitted a Turbopack cache-persistence warning caused by a
+  Windows filesystem permission issue. It did not block page rendering or build
+  output.
+- No app UI, API, database schema, or production configuration change is made by
+  this checklist. The only source fix from this QA pass is the shared input
+  `maxLength` hardening.
