@@ -825,6 +825,12 @@ Latest focused message-wording library polish:
 - Browser verification covered `/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c/communications/templates`; the rendered route showed three saved-wording cards with chip rows, zero old metadata classes, no stale internal wording, and no horizontal overflow.
 - Reran `npm run format`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test -- --run src/lib/messages/message-foundation.test.ts`, the Impeccable detector for the touched route plus CSS, and targeted stale-copy scans. Result: all passed; targeted messaging tests reported 1 file passed and 16 tests passed.
 
+Latest current-goal all-page QA sweep:
+
+- After the user explicitly asked that the work cover all pages and that QA users be generated when needed, ran a fresh full-page sweep through `output/redesign-color-translation-mfa-qa.mjs` with evidence written to `output/redesign-all-pages-current-goal-report.json`.
+- The sweep generated fresh dev-only internal operations/admin and MFA QA users, verified 47 current app page routes, 43 protected route materializations, and 5 public/auth route states in French and English, and reported `failureCount: 0` with no MFA failures.
+- This sweep supplements the earlier role-specific evidence for bride, groom, event staff, and partner sessions under `output/ui-deep-qa-role-*.json`; no new source defect was found, so no product code, route behavior, schema, RLS, permission, or server-action change was made.
+
 ## Copy And Internal-Term Scan
 
 Visible app copy was scanned for old internal terms such as `Sprint`, `MVP`, `Supabase environment`, `local credentials`, `metadata only`, `source-file`, `storage provider`, `pricing snapshot`, `commercial gesture`, `fr or en`, `old_value`, `new_value`, `deferred`, and `page-heading`.

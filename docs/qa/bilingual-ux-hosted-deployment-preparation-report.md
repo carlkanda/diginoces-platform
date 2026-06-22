@@ -73,6 +73,7 @@ returns a JSON list of findings; `[]` means no detector findings were reported.
 | `npm run redesign:check:approval` | Passed | 47 route rows, 47 browser verified, 0 blocked. |
 | `npm run redesign:design-system-check` | Passed | No blocked design-system patterns found. |
 | `npm run redesign:check` | Passed | 47 route rows, 47 browser verified, 0 blocked. |
+| Current all-page QA sweep | Passed | Fresh 2026-06-22 run generated dev-only QA users, checked 47 app page routes, 43 protected route materializations, 5 public/auth route states, French and English, and reported 0 failures. |
 | Impeccable detector | Passed | Detector returned `[]` for the design context, touched app files, i18n files, and QA docs. |
 | `npm run env:check-public` | Passed | Public environment variable check passed. |
 | `npm run secrets:scan` | Passed | Targeted secret scan passed. |

@@ -39,6 +39,7 @@ same browser sweeps unless a page changes again.
 | Bilingual UI copy        | Passed | French and English rendered sweeps covered public pages, protected pages, option labels, and route headings.                                |
 | MFA OTP verification     | Passed | Dev MFA QA user reached the OTP page, clamped input to six digits, submitted a fresh TOTP, and landed on `/platform`.                       |
 | Home-page launch review  | Passed | Final home-page audit covered colors, public copy, marketing tone, French/English rendering, and desktop/tablet/mobile screenshots.         |
+| Current all-page sweep   | Passed | Fresh 2026-06-22 run generated dev-only QA users, checked all 47 page routes in French and English, and reported zero failures.             |
 | Security hygiene         | Passed | Transient auth URLs and public guest tokens were removed from local temp files before final checks.                                         |
 
 ## Page Inventory Coverage
@@ -86,6 +87,7 @@ were treated as access-control coverage, not visual regressions.
 | `output/redesign-targeted-communications-templates-recheck.json`        | Passed, targeted EN communications-template route recheck after the soft timeout |
 | `output/homepage-ux-review-report.json`                                 | Passed, home page rendered in French/English at desktop, tablet, and mobile with zero copy, overflow, image, or non-hero contrast failures |
 | `output/homepage-final-*.png`                                            | Passed, final home-page screenshots for French/English desktop, tablet, and mobile visual review |
+| `output/redesign-all-pages-current-goal-report.json`                     | Passed, 47 app page routes, 43 protected routes, 5 public/auth routes, French and English, generated QA users, MFA checks clean, 0 failures |
 
 The soft navigation timeouts were not reproducible defects: direct targeted
 rechecks loaded the same pages, found expected headings, and reported no
@@ -133,6 +135,7 @@ framework overlay or horizontal overflow.
 | Home-page rendered audit                                                                          | Passed 6 renders: French/English at desktop, tablet, and mobile; zero forbidden public terms, mojibake, horizontal overflow, missing expected copy, missing hero image, or non-hero contrast failures.                                                        |
 | Hero control contrast check                                                                       | Passed; language options and hero CTA/sign-in controls meet AA contrast after the language switcher and hero surface fixes.                                                                                                                             |
 | Local CodeRabbit review                                                                       | Docs-scoped review corrected stale rows that still said final checks were pending. Source-scoped review corrected the shared `Input` component to use Base UI-derived event handler types, leave controlled/default values parent-owned, and apply IME-aware typed truncation. |
+| `QA_EVIDENCE_FILE=redesign-all-pages-current-goal-report.json node output/redesign-color-translation-mfa-qa.mjs` | Passed on 2026-06-22; generated fresh dev-only internal and MFA QA users, verified all current page routes in French and English, and reported 0 failures. |
 
 ## Remaining Notes
 
