@@ -34,6 +34,7 @@ import {
   pluralize,
 } from "@/lib/ui/format-helpers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -52,14 +53,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   Field,
   FieldDescription,
@@ -540,27 +533,26 @@ export default async function AuditLogsPage({
         </CardHeader>
         <CardContent>
           {logs.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <SearchIcon aria-hidden="true" />
-                </EmptyMedia>
-                <EmptyTitle>No matching activity</EmptyTitle>
-                <EmptyDescription>
-                  Adjust the filters to broaden the activity history results.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                {activeFilters ? (
+            <OperationalEmptyState
+              action={
+                activeFilters ? (
                   <Button
                     variant="outline"
                     render={<Link href="/platform/audit-logs" />}
                   >
                     Clear filters
                   </Button>
-                ) : null}
-              </EmptyContent>
-            </Empty>
+                ) : null
+              }
+              description="No activity records match the current filters and role scope."
+              icon={SearchIcon}
+              nextStep={
+                activeFilters
+                  ? "Clear filters or broaden the date, action, record type, and search fields."
+                  : "Use project pages for operational work; activity will appear here when auditable actions are visible to this role."
+              }
+              title="No matching activity"
+            />
           ) : (
             <>
               <div className="grid gap-3 md:hidden">

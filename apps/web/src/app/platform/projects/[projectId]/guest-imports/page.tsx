@@ -10,6 +10,7 @@ import {
   UploadIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -28,13 +29,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -365,16 +359,9 @@ export default async function GuestImportsPage({
           </CardHeader>
           <CardContent>
             {sessions.length === 0 ? (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyTitle>No imports yet</EmptyTitle>
-                  <EmptyDescription>
-                    Upload a CSV when you are ready to review guests from a
-                    spreadsheet.
-                  </EmptyDescription>
-                </EmptyHeader>
-                {canUpload ? (
-                  <EmptyContent>
+              <OperationalEmptyState
+                action={
+                  canUpload ? (
                     <Link
                       className={buttonVariants()}
                       href={`/platform/projects/${projectId}/guest-imports/new`}
@@ -382,9 +369,17 @@ export default async function GuestImportsPage({
                       <PlusIcon data-icon="inline-start" />
                       Upload CSV
                     </Link>
-                  </EmptyContent>
-                ) : null}
-              </Empty>
+                  ) : null
+                }
+                description="Imported spreadsheets appear here after upload, mapping, validation, and review."
+                icon={FileSpreadsheetIcon}
+                nextStep={
+                  canUpload
+                    ? "Upload a CSV when you have a guest spreadsheet ready for review."
+                    : "You can review import history only. Ask an operations lead to upload a new CSV for this wedding."
+                }
+                title="No imports yet"
+              />
             ) : (
               <div className="overflow-x-auto">
                 <Table>

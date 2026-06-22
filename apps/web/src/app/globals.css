@@ -32,6 +32,8 @@
   --shadow: 0 8px 16px rgba(16, 41, 46, 0.08);
   --focus-ring: 0 0 0 3px rgba(6, 52, 59, 0.18);
   --ease-state: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-fast: 160ms;
+  --motion-medium: 220ms;
   --background: #f6f8f7;
   --foreground: #10292e;
   --card: #ffffff;
@@ -113,6 +115,59 @@ body:has(:is(.auth-route, .public-route))
   > div {
   max-width: none;
   padding: 0;
+}
+
+[data-slot="button"],
+[data-slot="command-item"],
+[data-slot="sidebar-menu-button"],
+[data-slot="table-row"],
+.workflow-record,
+.workflow-tile,
+.workflow-callout,
+.guest-form-callout,
+.ops-ledger__record,
+.ops-ledger__inline,
+.ops-ledger__decision,
+.message-ops__checkpoint,
+.import-board__metric,
+.template-studio__tile,
+.feedback-review__metric,
+.partner-network__metric,
+.launchpad-map__item {
+  transition-duration: var(--motion-fast);
+  transition-property:
+    background-color, border-color, color, opacity, transform;
+  transition-timing-function: var(--ease-state);
+}
+
+[data-slot="table-row"]:focus-within {
+  outline: 2px solid color-mix(in oklab, var(--ring) 54%, transparent);
+  outline-offset: -2px;
+}
+
+.workflow-record:is(:hover, :focus-within),
+.workflow-tile:is(:hover, :focus-within),
+.ops-ledger__record:is(:hover, :focus-within),
+.ops-ledger__inline:is(:hover, :focus-within),
+.ops-ledger__decision:is(:hover, :focus-within),
+.message-ops__checkpoint:is(:hover, :focus-within),
+.import-board__metric:is(:hover, :focus-within),
+.template-studio__tile:is(:hover, :focus-within),
+.feedback-review__metric:is(:hover, :focus-within),
+.partner-network__metric:is(:hover, :focus-within),
+.launchpad-map__item:is(:hover, :focus-within) {
+  border-color: color-mix(in oklab, var(--primary) 28%, var(--border));
+  background: color-mix(in oklab, var(--card) 78%, var(--secondary));
+}
+
+.permission-scope-note {
+  background: color-mix(in oklab, var(--card) 86%, var(--secondary));
+}
+
+.permission-scope-note > svg {
+  margin-top: 1px;
+  flex: none;
+  color: var(--primary);
 }
 
 .seating-map {
@@ -1174,6 +1229,31 @@ body:has(:is(.auth-route, .public-route))
   .message-ops__checkpoint > * {
     flex: 1 1 100%;
   }
+
+  .workflow-record,
+  .workflow-tile,
+  .workflow-callout,
+  .guest-form-callout,
+  .ops-ledger__record,
+  .ops-ledger__inline,
+  .ops-ledger__decision,
+  .message-ops__checkpoint,
+  .template-studio__step,
+  .launchpad-map__item {
+    padding: 14px;
+  }
+
+  .ops-ledger__decision,
+  .template-studio__step,
+  .launchpad-map__item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  [data-slot="table-cell"],
+  [data-slot="table-head"] {
+    white-space: normal;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1201,6 +1281,17 @@ body:has(:is(.auth-route, .public-route))
 
   .seating-map-table span {
     font-size: 0.78rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
   }
 }
 

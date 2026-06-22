@@ -9,6 +9,7 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -28,13 +29,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   Field,
   FieldDescription,
@@ -617,18 +611,12 @@ export default async function MessageQueuePage({
         </CardHeader>
         <CardContent>
           {queueItems.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <ClipboardListIcon />
-                </EmptyMedia>
-                <EmptyTitle>No messages waiting</EmptyTitle>
-                <EmptyDescription>
-                  Prepared messages that need a manual send or follow-up will
-                  appear here.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <OperationalEmptyState
+              description="Prepared messages that need a manual send or follow-up appear here."
+              icon={ClipboardListIcon}
+              nextStep="Use the preparation form above when the guest, event, and wording context are ready."
+              title="No messages waiting"
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -712,17 +700,12 @@ export default async function MessageQueuePage({
         </CardHeader>
         <CardContent>
           {logs.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <MessageSquareTextIcon />
-                </EmptyMedia>
-                <EmptyTitle>No messages prepared yet</EmptyTitle>
-                <EmptyDescription>
-                  Use the form above to prepare the first guest message.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <OperationalEmptyState
+              description="Prepared messages create the review trail before the team opens WhatsApp and records the result."
+              icon={MessageSquareTextIcon}
+              nextStep="Use the form above to prepare the first guest message."
+              title="No messages prepared yet"
+            />
           ) : (
             <Table>
               <TableHeader>

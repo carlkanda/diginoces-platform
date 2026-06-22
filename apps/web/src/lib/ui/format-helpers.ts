@@ -6,6 +6,43 @@ export function pluralize(
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
+// MVP shell copy is authored in English, then translated by the static
+// localization layer where these normalized system labels appear in the UI.
+const defaultLabelOverrides: Record<string, string> = {
+  active: "Active",
+  applied: "Applied",
+  approved: "Approved",
+  archived: "Archived",
+  blocked: "Blocked",
+  cancelled: "Cancelled",
+  complete: "Complete",
+  completed: "Complete",
+  confirmed: "Confirmed",
+  digital: "Digital link",
+  draft: "Draft",
+  in_progress: "In progress",
+  inactive: "Inactive",
+  locked: "Locked",
+  manual_review: "Needs review",
+  maybe: "Maybe",
+  no: "No",
+  not_configured: "Not connected",
+  partial: "Partially ready",
+  payment_gate_locked: "Guest page locked",
+  pending: "Waiting",
+  printed_only: "Printed invitation",
+  ready: "Ready",
+  ready_for_review: "Ready for review",
+  recorded: "Recorded",
+  rejected: "Rejected",
+  sent: "Sent",
+  yes: "Yes",
+};
+
+function hasOwnLabel(labels: Record<string, string>, value: string) {
+  return Object.prototype.hasOwnProperty.call(labels, value);
+}
+
 export function formatLabel(
   value: string | null | undefined,
   {
@@ -20,8 +57,12 @@ export function formatLabel(
     return fallback;
   }
 
-  if (labels[value]) {
+  if (hasOwnLabel(labels, value)) {
     return labels[value];
+  }
+
+  if (hasOwnLabel(defaultLabelOverrides, value)) {
+    return defaultLabelOverrides[value];
   }
 
   const label = value

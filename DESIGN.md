@@ -294,4 +294,54 @@ A page passes only when an authorized first-time user can understand where they 
 
 If a page could be mistaken for a generic admin dashboard, decorative wedding template, demo component page, or internal build report, it is not done.
 
+## 13. Cross-Route Refinement Primitives
+
+Use these shared patterns before creating one-off route treatments.
+
+### Command Navigation
+
+The authenticated shell includes a shadcn `Command` inside `Dialog` through `WorkspaceCommandMenu`.
+
+- Trigger label: `Search workspace` / `Rechercher dans l'espace de travail`.
+- Keyboard shortcut: `Ctrl K` or `Cmd K`.
+- Global destinations are always available.
+- Wedding shortcuts appear only when the current route contains a valid wedding ID.
+- Event-day shortcuts appear only when the current route contains a valid event ID.
+- Permission copy must be explicit: opening a destination does not bypass role, MFA, or project access.
+
+### Status And Permission Language
+
+Status labels should describe the user's next interpretation, not database values.
+
+- Good: `Awaiting reply`, `Needs review`, `Ready for handoff`, `Payment access locked`, `Invitation approved`.
+- Avoid exposing raw values such as `ready_for_review`, `manual_review`, `payment_gate_locked`, or `is_active` unless the value is a real code the user must copy.
+- Permission-limited states should say what is available and who can unlock the next step. Do not imply data does not exist when the user simply lacks access.
+
+### Empty States
+
+Use shadcn `Empty` directly for tiny local gaps. Use the shared `OperationalEmptyState` wrapper for route-level,
+workflow-level, permission-limited, or filter-driven empty states.
+
+Every empty state should answer:
+
+- what is empty;
+- why that is expected or what caused it;
+- the safest next action;
+- whether the limit is caused by permissions, filters, waiting for review, or no records yet.
+
+When the user can act, put that action in the empty state. When they cannot act, name the role or workflow that can
+unlock it.
+
+### Dense Records
+
+Tables remain appropriate for comparison-heavy work. On narrow screens, prefer route-specific record summaries or allow table text to wrap instead of clipping values.
+
+Table headers are sticky by default for scanning long operational lists. Record rows and workflow surfaces should use
+the shared hover/focus treatment in `globals.css`. Do not add decorative shadows or one-off colored side borders.
+
+### Motion
+
+Motion is state feedback only. Shared route surfaces use short transitions through `--motion-fast` and `--ease-state`. Reduced-motion users get near-instant transitions through the global `prefers-reduced-motion` rule.
+
+
 The redesign passes only after the local app is reviewed route by route, browser-verified, approved, and then prepared for hosted deployment through the documented checks and hosted verification path.

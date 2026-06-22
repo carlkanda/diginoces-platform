@@ -21,6 +21,7 @@ import { getReportingPermissionSet } from "@/lib/reports/report-api";
 import { listReportExports } from "@/lib/reports/report-db";
 import { getReportCatalogForPermissions } from "@/lib/reports/report-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -40,14 +41,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -484,26 +477,20 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
         </CardHeader>
         <CardContent>
           {catalog.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <FileTextIcon aria-hidden="true" />
-                </EmptyMedia>
-                <EmptyTitle>No reports available</EmptyTitle>
-                <EmptyDescription>
-                  This role does not currently have a report for the selected
-                  workspace context.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
+            <OperationalEmptyState
+              action={
                 <Button
                   variant="outline"
                   render={<Link href="/platform/dashboard" />}
                 >
                   Return to operations
                 </Button>
-              </EmptyContent>
-            </Empty>
+              }
+              description="This role does not currently have a report for the selected workspace context."
+              icon={FileTextIcon}
+              nextStep="Return to operations, then open reports from a wedding or event when you need scoped exports."
+              title="No reports available"
+            />
           ) : (
             <>
               <div className="grid gap-3 md:hidden">
@@ -729,18 +716,12 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
         </CardHeader>
         <CardContent>
           {exports.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <HistoryIcon aria-hidden="true" />
-                </EmptyMedia>
-                <EmptyTitle>No exports yet</EmptyTitle>
-                <EmptyDescription>
-                  Generated CSV files will appear here with their status, row
-                  count, and generated time.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <OperationalEmptyState
+              description="Generated CSV files appear here with their status, row count, and generated time."
+              icon={HistoryIcon}
+              nextStep="Choose a report from the catalog above when you need an audit-friendly export."
+              title="No exports yet"
+            />
           ) : (
             <>
               <div className="grid gap-3 md:hidden">

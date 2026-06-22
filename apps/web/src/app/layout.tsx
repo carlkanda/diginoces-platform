@@ -13,6 +13,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { WorkspaceCommandMenu } from "@/components/workspace-command-menu";
 import { getPrimaryAuthNavigationState } from "@/lib/auth/auth-navigation";
 import { getAuthContext } from "@/lib/auth/auth-service";
 import { getLanguageHtmlLang, type SupportedLanguage } from "@/lib/i18n/config";
@@ -47,10 +48,18 @@ async function PrimaryNavigation({
       className="flex items-center gap-2"
       aria-label={copy.primaryNavigationLabel}
     >
-      <Button variant="ghost" render={<Link href="/platform" />}>
+      <Button
+        className="hidden lg:inline-flex"
+        variant="ghost"
+        render={<Link href="/platform" />}
+      >
         {copy.workspace}
       </Button>
-      <Button variant="ghost" render={<Link href="/platform/projects" />}>
+      <Button
+        className="hidden md:inline-flex"
+        variant="ghost"
+        render={<Link href="/platform/projects" />}
+      >
         <span className="sm:hidden">{copy.weddingProjectsCompact}</span>
         <span className="hidden sm:inline">{copy.weddingProjects}</span>
       </Button>
@@ -123,7 +132,10 @@ export default async function RootLayout({
                       {copy.productTagline}
                     </span>
                   </div>
-                  <PrimaryNavigation language={language} />
+                  <div className="flex min-w-0 items-center gap-2">
+                    <WorkspaceCommandMenu language={language} />
+                    <PrimaryNavigation language={language} />
+                  </div>
                 </div>
               </header>
               <main className="min-h-[calc(100svh-3.5rem)] bg-background">

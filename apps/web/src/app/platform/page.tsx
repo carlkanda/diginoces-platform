@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoHint } from "@/components/info-hint";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +21,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   buildLoginRedirectPath,
   getAuthContext,
@@ -493,23 +486,17 @@ export default async function PlatformPage({
             ))}
           </div>
         ) : (
-          <Empty className="border bg-card">
-            <EmptyMedia variant="icon">
-              <LockKeyholeIcon aria-hidden="true" />
-            </EmptyMedia>
-            <EmptyHeader>
-              <EmptyTitle>No workspace areas yet</EmptyTitle>
-              <EmptyDescription>
-                This account does not have an assigned work area. Ask an
-                administrator to add the right role or project access.
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent>
+          <OperationalEmptyState
+            action={
               <Button variant="outline" render={<Link href="/platform" />}>
                 Refresh workspace
               </Button>
-            </EmptyContent>
-          </Empty>
+            }
+            description="This account does not have an assigned workspace area yet."
+            icon={LockKeyholeIcon}
+            nextStep="Ask an administrator to add the right role or project membership, then refresh the workspace."
+            title="No workspace areas yet"
+          />
         )}
       </section>
 

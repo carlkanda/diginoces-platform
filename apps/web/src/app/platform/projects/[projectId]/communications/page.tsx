@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoHint } from "@/components/info-hint";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -29,13 +30,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -367,18 +361,26 @@ export default async function CommunicationsPage({
           </CardHeader>
           <CardContent>
             {queuePreview.length === 0 ? (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <SendIcon />
-                  </EmptyMedia>
-                  <EmptyTitle>No messages waiting</EmptyTitle>
-                  <EmptyDescription>
-                    Prepared messages that need a manual send or follow-up will
-                    appear here.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <OperationalEmptyState
+                action={
+                  canPrepare ? (
+                    <Link
+                      className={buttonVariants({ size: "sm" })}
+                      href={`/platform/projects/${projectId}/communications/queue`}
+                    >
+                      Prepare messages
+                    </Link>
+                  ) : null
+                }
+                description="Prepared messages that need a manual WhatsApp send or follow-up appear here."
+                icon={SendIcon}
+                nextStep={
+                  canPrepare
+                    ? "Prepare messages when guest pages, templates, and phone numbers are ready."
+                    : "You can read communication history only. Ask a project lead to prepare messages."
+                }
+                title="No messages waiting"
+              />
             ) : (
               <Table>
                 <TableHeader>
@@ -519,18 +521,26 @@ export default async function CommunicationsPage({
         </CardHeader>
         <CardContent>
           {logPreview.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <HistoryIcon />
-                </EmptyMedia>
-                <EmptyTitle>No messages prepared yet</EmptyTitle>
-                <EmptyDescription>
-                  Prepare a guest message to start building a clear sending
-                  trail for this wedding.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <OperationalEmptyState
+              action={
+                canPrepare ? (
+                  <Link
+                    className={buttonVariants({ size: "sm" })}
+                    href={`/platform/projects/${projectId}/communications/queue`}
+                  >
+                    Open message queue
+                  </Link>
+                ) : null
+              }
+              description="Prepared messages build the audit-friendly trail for manual WhatsApp communication."
+              icon={HistoryIcon}
+              nextStep={
+                canPrepare
+                  ? "Open the queue to prepare the first guest message for manual sending."
+                  : "When messages are prepared by an authorized teammate, the history will appear here."
+              }
+              title="No messages prepared yet"
+            />
           ) : (
             <Table>
               <TableHeader>

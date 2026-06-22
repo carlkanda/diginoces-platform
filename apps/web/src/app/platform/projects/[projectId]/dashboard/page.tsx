@@ -8,6 +8,7 @@ import {
   LockKeyholeIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -26,13 +27,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -198,18 +192,12 @@ function StatusList({
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <ClipboardListIcon />
-              </EmptyMedia>
-              <EmptyTitle>No records yet</EmptyTitle>
-              <EmptyDescription>
-                This workstream will show a summary as soon as activity is
-                recorded.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <OperationalEmptyState
+            description="This workstream will show a summary as soon as activity is recorded."
+            icon={ClipboardListIcon}
+            nextStep="Continue work in the matching project area; the dashboard will summarize it here."
+            title="No records yet"
+          />
         </CardContent>
       </Card>
     );
@@ -539,18 +527,12 @@ export default async function ProjectDashboardPage({ params }: PageProps) {
         </CardHeader>
         <CardContent>
           {overview.events.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <CalendarDaysIcon />
-                </EmptyMedia>
-                <EmptyTitle>No events yet</EmptyTitle>
-                <EmptyDescription>
-                  Event dashboards will appear here once this project has event
-                  records.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <OperationalEmptyState
+              description="Event dashboards appear here once this project has event records."
+              icon={CalendarDaysIcon}
+              nextStep="Create events from the wedding workspace before checking event dashboards."
+              title="No events yet"
+            />
           ) : (
             <Table>
               <TableHeader>

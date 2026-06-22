@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoHint } from "@/components/info-hint";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -19,14 +20,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -190,13 +183,15 @@ export default async function ProjectsPage() {
                     </p>
                   </>
                 ) : (
-                  <>
-                    <p className="text-lg font-semibold">No activity yet</p>
-                    <p className="text-sm text-muted-foreground">
-                      Assigned weddings will appear here once the team connects
-                      this account to a project.
+                  <div className="rounded-lg border bg-muted/35 p-3">
+                    <p className="text-sm font-medium">
+                      No assigned wedding activity yet
                     </p>
-                  </>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Once a wedding is connected to this account, the latest
+                      movement appears here.
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -270,18 +265,8 @@ export default async function ProjectsPage() {
             </CardHeader>
             <CardContent>
               {projects.length === 0 ? (
-                <Empty>
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <FolderKanbanIcon aria-hidden="true" />
-                    </EmptyMedia>
-                    <EmptyTitle>No wedding projects yet</EmptyTitle>
-                    <EmptyDescription>
-                      When a wedding is assigned to this account, it will appear
-                      here with its lifecycle state and workspace link.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <EmptyContent>
+                <OperationalEmptyState
+                  action={
                     <Link
                       className={buttonVariants({
                         variant: "outline",
@@ -291,8 +276,12 @@ export default async function ProjectsPage() {
                     >
                       Return to workspace
                     </Link>
-                  </EmptyContent>
-                </Empty>
+                  }
+                  description="Wedding projects assigned to this account appear here with lifecycle state and workspace links."
+                  icon={FolderKanbanIcon}
+                  nextStep="Ask a Diginoces administrator to connect this account to a wedding project."
+                  title="No wedding projects yet"
+                />
               ) : (
                 <Table>
                   <TableHeader>

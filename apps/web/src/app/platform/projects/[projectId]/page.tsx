@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoHint } from "@/components/info-hint";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -31,13 +32,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -527,18 +521,12 @@ export default async function ProjectDetailPage({
         </CardHeader>
         <CardContent>
           {visibleWorkAreaGroups.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <FolderKanbanIcon />
-                </EmptyMedia>
-                <EmptyTitle>No available work areas</EmptyTitle>
-                <EmptyDescription>
-                  This account can see the project but has no project work area
-                  available yet. Ask an administrator to review role assignment.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <OperationalEmptyState
+              description="This account can see the wedding, but no project work area is available to this role yet."
+              icon={FolderKanbanIcon}
+              nextStep="Ask a Diginoces administrator to review the project membership and role assignment."
+              title="No available work areas"
+            />
           ) : (
             <div className="grid gap-4 lg:grid-cols-3">
               {visibleWorkAreaGroups.map((group) => (
@@ -599,18 +587,12 @@ export default async function ProjectDetailPage({
           </CardHeader>
           <CardContent>
             {details.events.length === 0 ? (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <CalendarDaysIcon />
-                  </EmptyMedia>
-                  <EmptyTitle>No events configured</EmptyTitle>
-                  <EmptyDescription>
-                    Events linked to this wedding will appear here with date,
-                    venue, status, and event-day entry points.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <OperationalEmptyState
+                description="Events linked to this wedding appear here with date, venue, status, and event-day entry points."
+                icon={CalendarDaysIcon}
+                nextStep="Create the wedding events before configuring invitations, seating, check-in, and event files."
+                title="No events configured"
+              />
             ) : (
               <Table>
                 <TableHeader>
@@ -718,17 +700,12 @@ export default async function ProjectDetailPage({
             </CardHeader>
             <CardContent>
               {projectTasks.length === 0 ? (
-                <Empty>
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <CheckCircle2Icon />
-                    </EmptyMedia>
-                    <EmptyTitle>No readiness tasks</EmptyTitle>
-                    <EmptyDescription>
-                      No project-level readiness tasks are assigned right now.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
+                <OperationalEmptyState
+                  description="No project-level readiness tasks are assigned right now."
+                  icon={CheckCircle2Icon}
+                  nextStep="Use the visible work areas above to continue guest, RSVP, invitation, messaging, seating, or file work."
+                  title="No readiness tasks"
+                />
               ) : (
                 <Table>
                   <TableHeader>

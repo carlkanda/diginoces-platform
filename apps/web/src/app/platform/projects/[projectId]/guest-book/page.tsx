@@ -10,6 +10,7 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -29,13 +30,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -490,18 +484,12 @@ export default async function GuestBookPage({
             </CardHeader>
             <CardContent>
               {messages.length === 0 ? (
-                <Empty>
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <MessageSquareTextIcon />
-                    </EmptyMedia>
-                    <EmptyTitle>No messages yet</EmptyTitle>
-                    <EmptyDescription>
-                      Guest wishes will appear here after they are submitted
-                      from the public guest page.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
+                <OperationalEmptyState
+                  description="Guest wishes appear here after guests submit messages from their public page."
+                  icon={MessageSquareTextIcon}
+                  nextStep="Share guest pages through the approved communication flow, then review each submitted message before export."
+                  title="No keepsake messages yet"
+                />
               ) : (
                 <div className="review-board__message-list">
                   {messages.map((message, messageIndex) => {
@@ -700,18 +688,12 @@ export default async function GuestBookPage({
         </CardHeader>
         <CardContent>
           {exports.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <DownloadIcon />
-                </EmptyMedia>
-                <EmptyTitle>No export prepared</EmptyTitle>
-                <EmptyDescription>
-                  Once messages are approved, prepare a CSV for the keepsake
-                  design workflow.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <OperationalEmptyState
+              description="Approved guest-book messages can be packaged into a CSV for the keepsake design workflow."
+              icon={DownloadIcon}
+              nextStep="Approve the messages that belong in the final keepsake, then prepare the CSV export."
+              title="No export prepared"
+            />
           ) : (
             <Table>
               <TableHeader>
