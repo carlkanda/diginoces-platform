@@ -13,11 +13,13 @@ export const shellCopy: Record<
     languageLabel: string;
     operationsDashboard: string;
     partners: string;
+    primaryNavigationLabel: string;
     productTagline: string;
     reports: string;
     signIn: string;
     signOut: string;
     secureAccess: string;
+    toggleNavigationLabel: string;
     weddingOperations: string;
     weddingProjects: string;
     weddingProjectsCompact: string;
@@ -34,11 +36,13 @@ export const shellCopy: Record<
     languageLabel: "Language",
     operationsDashboard: "Operations dashboard",
     partners: "Partners",
+    primaryNavigationLabel: "Primary navigation",
     productTagline: "Event guest management",
     reports: "Reports",
     signIn: "Sign in",
     signOut: "Sign out",
     secureAccess: "Secure access",
+    toggleNavigationLabel: "Toggle navigation",
     weddingOperations: "Wedding operations",
     weddingProjects: "Wedding projects",
     weddingProjectsCompact: "Projects",
@@ -54,11 +58,13 @@ export const shellCopy: Record<
     languageLabel: "Langue",
     operationsDashboard: "Tableau de bord",
     partners: "Partenaires",
+    primaryNavigationLabel: "Navigation principale",
     productTagline: "Gestion des invités",
     reports: "Rapports",
     signIn: "Se connecter",
     signOut: "Se déconnecter",
     secureAccess: "Accès sécurisé",
+    toggleNavigationLabel: "Afficher ou masquer la navigation",
     weddingOperations: "Opérations de mariage",
     weddingProjects: "Mariages",
     weddingProjectsCompact: "Projets",

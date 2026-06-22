@@ -44,6 +44,43 @@ export function isFrench(language: SupportedLanguage) {
   return language === "fr";
 }
 
+const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+function parseLocalizedDateInput(value: Date | string) {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return new Date(NaN);
+  }
+
+  const normalizedValue = value.trim();
+  const dateOnlyMatch = dateOnlyPattern.exec(normalizedValue);
+
+  if (!dateOnlyMatch) {
+    return new Date(value);
+  }
+
+  const year = Number(dateOnlyMatch[1]);
+  const month = Number(dateOnlyMatch[2]);
+  const day = Number(dateOnlyMatch[3]);
+  const date = new Date(0);
+
+  date.setHours(0, 0, 0, 0);
+  date.setFullYear(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return new Date(NaN);
+  }
+
+  return date;
+}
+
 /**
  * Formats a date for the selected interface language.
  *
@@ -55,12 +92,7 @@ export function formatLocalizedDate(
   language: SupportedLanguage,
   options: Intl.DateTimeFormatOptions = { dateStyle: "medium" },
 ) {
-  const date =
-    typeof value === "string"
-      ? new Date(value)
-      : value instanceof Date
-        ? value
-        : new Date(NaN);
+  const date = parseLocalizedDateInput(value);
 
   if (Number.isNaN(date.getTime())) {
     const invalidValueDescription =

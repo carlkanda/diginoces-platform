@@ -43,7 +43,10 @@ async function PrimaryNavigation({
   const copy = getShellCopy(language);
 
   return (
-    <nav className="flex items-center gap-2" aria-label="Primary navigation">
+    <nav
+      className="flex items-center gap-2"
+      aria-label={copy.primaryNavigationLabel}
+    >
       <Button variant="ghost" render={<Link href="/platform" />}>
         {copy.workspace}
       </Button>
@@ -111,7 +114,7 @@ export default async function RootLayout({
               <header className="sticky top-0 z-20 border-b bg-background">
                 <div className="flex min-h-14 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
                   <div className="flex items-center gap-2">
-                    <SidebarTrigger aria-label="Toggle navigation" />
+                    <SidebarTrigger aria-label={copy.toggleNavigationLabel} />
                     <Separator
                       className="hidden h-5 sm:block"
                       orientation="vertical"

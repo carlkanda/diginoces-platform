@@ -113,6 +113,29 @@ describe("static UI translation helpers", () => {
     );
   });
 
+  it("formats date-only strings as local calendar dates", () => {
+    const originalTimeZone = process.env.TZ;
+
+    process.env.TZ = "America/Los_Angeles";
+
+    try {
+      expect(formatLocalizedDate("2026-01-01", "en")).toBe("Jan 1, 2026");
+    } finally {
+      if (originalTimeZone === undefined) {
+        delete process.env.TZ;
+      } else {
+        process.env.TZ = originalTimeZone;
+      }
+    }
+  });
+
+  it("rejects invalid date-only strings without rolling them over", () => {
+    expect(() => formatLocalizedDate("2026-02-29", "en")).toThrow(
+      "Invalid localized date value",
+    );
+    expect(formatLocalizedDate("2024-02-29", "en")).toBe("Feb 29, 2024");
+  });
+
   it("keeps home page section arrays aligned across languages", () => {
     expect(homeCopy.fr.audience.items).toHaveLength(
       homeCopy.en.audience.items.length,

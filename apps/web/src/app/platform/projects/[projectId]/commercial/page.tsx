@@ -572,7 +572,7 @@ export default async function ProjectCommercialPage({
           </Card>
 
           <Tabs defaultValue="pricing">
-            <TabsList className="!h-auto w-full flex-wrap justify-start gap-1">
+            <TabsList className="h-auto! w-full flex-wrap justify-start gap-1">
               <TabsTrigger className="flex-none" value="pricing">
                 <CircleDollarSignIcon
                   aria-hidden="true"
