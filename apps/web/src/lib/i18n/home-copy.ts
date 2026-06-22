@@ -43,7 +43,7 @@ export const homeCopy: Record<
 > = {
   en: {
     audience: {
-      body: "The public page should make the product feel trustworthy before anyone signs in. The workspace stays detailed only after a user enters the protected app.",
+      body: "See the wedding operation at a glance before protected work begins. Detailed records stay inside the secure workspace, where the right person sees the right next step.",
       items: [
         {
           body: "A simple place to understand where the wedding stands and what needs attention.",
@@ -64,7 +64,7 @@ export const homeCopy: Record<
       title: "Built for people who need calm, not complexity.",
     },
     footerNote:
-      "Production access stays protected by Diginoces roles, MFA-sensitive controls, and server-side checks.",
+      "Operational access stays protected by Diginoces roles, extra verification for sensitive controls, and server-side checks.",
     header: {
       discover: "Discover",
       languageLabel: "Language",
@@ -83,7 +83,7 @@ export const homeCopy: Record<
       trust: "French and English by design. Sensitive records stay role-aware.",
     },
     principles: {
-      body: "The experience now separates public confidence from protected daily work: visitors see the promise; signed-in users see only the next useful action.",
+      body: "Diginoces keeps the first impression simple, then keeps daily work focused: visitors understand the service; signed-in teams see the next useful action.",
       items: [
         {
           body: "The interface opens with one recommended path, then reveals details only when they help the current task.",
@@ -106,7 +106,7 @@ export const homeCopy: Record<
   },
   fr: {
     audience: {
-      body: "La page publique doit inspirer confiance avant la connexion. Les détails opérationnels restent dans l’application protégée, là où ils sont utiles.",
+      body: "Voyez l’organisation du mariage d’un coup d’œil avant d’ouvrir le travail protégé. Les dossiers détaillés restent dans l’espace sécurisé, où la bonne personne voit la bonne prochaine action.",
       items: [
         {
           body: "Un espace simple pour comprendre l’état du mariage et ce qui demande une attention.",
@@ -128,7 +128,7 @@ export const homeCopy: Record<
         "Pensé pour les personnes qui veulent du calme, pas de la complexité.",
     },
     footerNote:
-      "L’accès de production reste protégé par les rôles Diginoces, les contrôles sensibles à la MFA et les vérifications côté serveur.",
+      "L’accès opérationnel reste protégé par les rôles Diginoces, des vérifications renforcées pour les actions sensibles et les contrôles côté serveur.",
     header: {
       discover: "Découvrir",
       languageLabel: "Langue",
@@ -148,7 +148,7 @@ export const homeCopy: Record<
         "Français et anglais dès le départ. Les dossiers sensibles restent limités par rôle.",
     },
     principles: {
-      body: "L’expérience sépare désormais la promesse publique du travail quotidien protégé : les visiteurs voient la valeur, les utilisateurs connectés voient seulement l’action utile.",
+      body: "Diginoces garde la première impression simple, puis concentre le travail quotidien : les visiteurs comprennent le service, les équipes connectées voient la prochaine action utile.",
       items: [
         {
           body: "L’interface commence par un chemin recommandé, puis révèle les détails au moment où ils aident vraiment.",

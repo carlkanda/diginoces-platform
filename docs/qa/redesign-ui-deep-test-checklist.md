@@ -38,6 +38,7 @@ same browser sweeps unless a page changes again.
 | Color contrast           | Passed | Bilingual rendered sweep found no unresolved contrast failures after CTA variant fixes.                                                      |
 | Bilingual UI copy        | Passed | French and English rendered sweeps covered public pages, protected pages, option labels, and route headings.                                |
 | MFA OTP verification     | Passed | Dev MFA QA user reached the OTP page, clamped input to six digits, submitted a fresh TOTP, and landed on `/platform`.                       |
+| Home-page launch review  | Passed | Final home-page audit covered colors, public copy, marketing tone, French/English rendering, and desktop/tablet/mobile screenshots.         |
 | Security hygiene         | Passed | Transient auth URLs and public guest tokens were removed from local temp files before final checks.                                         |
 
 ## Page Inventory Coverage
@@ -83,6 +84,8 @@ were treated as access-control coverage, not visual regressions.
 | `output/ui-deep-qa-mfa-input-interaction.json`                         | Passed, MFA code input clamps typed values                     |
 | `output/redesign-color-translation-mfa-report.json`                     | Full bilingual rendered sweep covered 47 page routes; one soft EN route timeout was rechecked directly |
 | `output/redesign-targeted-communications-templates-recheck.json`        | Passed, targeted EN communications-template route recheck after the soft timeout |
+| `output/homepage-ux-review-report.json`                                 | Passed, home page rendered in French/English at desktop, tablet, and mobile with zero copy, overflow, image, or non-hero contrast failures |
+| `output/homepage-final-*.png`                                            | Passed, final home-page screenshots for French/English desktop, tablet, and mobile visual review |
 
 The soft navigation timeouts were not reproducible defects: direct targeted
 rechecks loaded the same pages, found expected headings, and reported no
@@ -98,6 +101,8 @@ framework overlay or horizontal overflow.
 | Fixed      | `/login` email-code form  | The email-code submit button combined default and outline button variants, producing white text on a pale background.                                                                  | `LoginSubmitButton` now accepts a real `variant` prop, and the login page passes variants without precomputed class collisions.                            |
 | Fixed      | `/platform` launchpad CTA | A CTA inside the primary launchpad card could inherit white text over a pale secondary background.                                                                                       | The CTA now uses an explicit inverse primary-foreground background with primary text.                                                                       |
 | Fixed      | Bilingual route copy      | Several redesigned page headings, route descriptions, and select options still rendered English text on French pages.                                                                   | Added page-level phrase translations, localized language-switcher aria labels, translated option text, and scheduled post-hydration localization passes.   |
+| Fixed      | `/` home page             | The inactive language option could inherit white text inside the image hero, and hero outline buttons were below AA contrast over bright image areas.                                  | The shared language switcher now sets foreground text explicitly, and hero outline buttons use a darker translucent surface.                               |
+| Fixed      | `/` home page             | The public body copy described the page itself and used the technical term `MFA`, which was not appropriate for first-time visitors.                                                   | Rewrote the copy around wedding operations value, secure workspace access, and extra verification for sensitive controls.                                  |
 | Verified   | MFA OTP flow              | The MFA page needed validation with a real dev TOTP factor, not only a typed mock value.                                                                                                | Generated a dev-only MFA QA user, verified a fresh TOTP code, confirmed six-digit clamping, and reached `/platform`.                                      |
 | Documented | Internal QA route batches | Four routes reported initial soft navigation timeouts while still rendering correctly on direct recheck.                                                                                | Targeted rechecks passed; no source change needed.                                                                                                         |
 | Documented | Bilingual full sweep      | The final bilingual sweep had one soft timeout on the EN communications-template route while all contrast, copy, and MFA checks passed.                                                | Targeted recheck of the same route passed with zero failures.                                                                                              |
@@ -124,6 +129,9 @@ framework overlay or horizontal overflow.
 | `npm run test -- --run src/lib/i18n/static-translations.test.ts src/app/login/submit-button.test.ts` | Passed, 20 focused tests after translation and login-button fixes. npm emitted a known argument warning from workspace forwarding.                                                                                              |
 | `node output/redesign-color-translation-mfa-qa.mjs`                                           | Completed full FR/EN browser sweep of 47 page routes, color checks, translation checks, public token route, generated QA users, and real MFA OTP. Final full run had one soft EN route timeout.                                                                 |
 | `QA_SCOPE=route QA_LANGUAGE=en QA_ROUTE_PATH=/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c/communications/templates node output/redesign-color-translation-mfa-qa.mjs` | Passed targeted recheck for the only soft timeout from the final full run.                                                                                                                                        |
+| `node .agents/skills/impeccable/scripts/detect.mjs --json apps/web/src/app/page.tsx apps/web/src/app/globals.css apps/web/src/lib/i18n/home-copy.ts apps/web/src/components/language-switcher.tsx` | Passed with no detector findings after the home-page contrast and copy fixes.                                                                                                                                    |
+| Home-page rendered audit                                                                          | Passed 6 renders: French/English at desktop, tablet, and mobile; zero forbidden public terms, mojibake, horizontal overflow, missing expected copy, missing hero image, or non-hero contrast failures.                                                        |
+| Hero control contrast check                                                                       | Passed; language options and hero CTA/sign-in controls meet AA contrast after the language switcher and hero surface fixes.                                                                                                                             |
 | Local CodeRabbit review                                                                       | Docs-scoped review corrected stale rows that still said final checks were pending. Source-scoped review corrected the shared `Input` component to use Base UI-derived event handler types, leave controlled/default values parent-owned, and apply IME-aware typed truncation. |
 
 ## Remaining Notes
@@ -133,5 +141,5 @@ framework overlay or horizontal overflow.
   output.
 - No API, database schema, or production configuration change is made by this
   checklist. Source changes are limited to UI contrast, localization timing,
-  static bilingual copy, option-label translation, language-switcher labels, and
-  the login submit-button variant API.
+  static bilingual copy, option-label translation, language-switcher labels,
+  home-page public copy, hero contrast, and the login submit-button variant API.

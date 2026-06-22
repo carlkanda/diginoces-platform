@@ -724,11 +724,11 @@ body:has(:is(.auth-route, .public-route))
   --home-hero-overlay-shadow: rgba(6, 37, 42, 0.62);
   --home-hero-surface: rgba(255, 255, 255, 0.08);
   --home-hero-surface-border: rgba(255, 255, 255, 0.18);
-  --home-hero-surface-hover: rgba(255, 255, 255, 0.2);
-  --home-hero-surface-soft: rgba(255, 255, 255, 0.12);
+  --home-hero-surface-hover: rgba(6, 37, 42, 0.78);
+  --home-hero-surface-soft: rgba(6, 37, 42, 0.68);
   --home-hero-surface-strong: #fff;
   --home-hero-surface-strong-ring: rgba(255, 255, 255, 0.42);
-  --home-hero-surface-outline: rgba(255, 255, 255, 0.36);
+  --home-hero-surface-outline: rgba(255, 255, 255, 0.46);
   position: relative;
   display: grid;
   min-height: min(880px, 88vh);
@@ -795,7 +795,7 @@ body:has(:is(.auth-route, .public-route))
 .home-hero__logo {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--home-hero-surface-strong);
 }
 

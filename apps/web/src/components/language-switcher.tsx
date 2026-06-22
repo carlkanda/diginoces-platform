@@ -117,7 +117,7 @@ export function LanguageSwitcher({
     <div
       aria-label={label}
       className={cn(
-        "inline-flex items-center gap-1 rounded-lg border bg-background p-1",
+        "inline-flex items-center gap-1 rounded-lg border bg-background p-1 text-foreground",
         className,
       )}
       data-no-translate
