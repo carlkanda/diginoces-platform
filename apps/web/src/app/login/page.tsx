@@ -12,7 +12,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { LoginSubmitButton } from "./submit-button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -222,7 +222,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </FieldGroup>
             </FieldSet>
             <LoginSubmitButton
-              className={buttonVariants({ className: "w-full" })}
+              className="w-full"
               disabled={!env.supabaseConfigured}
               pendingLabel={loginCopy.pendingSend}
             >
@@ -281,12 +281,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </FieldGroup>
             </FieldSet>
             <LoginSubmitButton
-              className={buttonVariants({
-                className: "w-full",
-                variant: "outline",
-              })}
+              className="w-full"
               disabled={!env.supabaseConfigured}
               pendingLabel={loginCopy.pendingVerify}
+              variant="outline"
             >
               {loginCopy.verifyEmailCode}
             </LoginSubmitButton>

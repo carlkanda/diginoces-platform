@@ -357,7 +357,10 @@ export default async function PlatformPage({
               <Badge variant="outline">Wedding workstreams</Badge>
             </div>
             <div className="flex flex-wrap gap-2 pt-2">
-              <Button render={<Link href="/platform/projects" />}>
+              <Button
+                className="!bg-primary !text-primary-foreground hover:!bg-primary/80 hover:!text-primary-foreground"
+                render={<Link href="/platform/projects" />}
+              >
                 Open wedding projects
                 <ArrowRightIcon aria-hidden="true" data-icon="inline-end" />
               </Button>
@@ -592,7 +595,7 @@ export default async function PlatformPage({
         </CardHeader>
         <CardContent>
           <Button
-            variant="secondary"
+            className="!bg-primary-foreground !text-primary hover:!bg-primary-foreground/90 hover:!text-primary"
             render={<Link href="/platform/projects" />}
           >
             Open wedding projects

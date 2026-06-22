@@ -35,6 +35,9 @@ same browser sweeps unless a page changes again.
 | Form controls            | Passed | Login email fields, email-code field, and MFA code field were exercised in browser sessions.                                                |
 | Redirect behavior        | Passed | Anonymous protected routes redirect to login with encoded `next` parameters.                                                                |
 | Design terminology       | Passed | Route sweeps did not find old internal planning terms in visible page content.                                                              |
+| Color contrast           | Passed | Bilingual rendered sweep found no unresolved contrast failures after CTA variant fixes.                                                      |
+| Bilingual UI copy        | Passed | French and English rendered sweeps covered public pages, protected pages, option labels, and route headings.                                |
+| MFA OTP verification     | Passed | Dev MFA QA user reached the OTP page, clamped input to six digits, submitted a fresh TOTP, and landed on `/platform`.                       |
 | Security hygiene         | Passed | Transient auth URLs and public guest tokens were removed from local temp files before final checks.                                         |
 
 ## Page Inventory Coverage
@@ -78,6 +81,8 @@ were treated as access-control coverage, not visual regressions.
 | `output/ui-deep-qa-role-partner.json`                                  | Passed, partner pages rendered safely                          |
 | `output/ui-deep-qa-email-code-input-interaction.json`                  | Passed, six-digit email-code input clamps typed values         |
 | `output/ui-deep-qa-mfa-input-interaction.json`                         | Passed, MFA code input clamps typed values                     |
+| `output/redesign-color-translation-mfa-report.json`                     | Full bilingual rendered sweep covered 47 page routes; one soft EN route timeout was rechecked directly |
+| `output/redesign-targeted-communications-templates-recheck.json`        | Passed, targeted EN communications-template route recheck after the soft timeout |
 
 The soft navigation timeouts were not reproducible defects: direct targeted
 rechecks loaded the same pages, found expected headings, and reported no
@@ -90,7 +95,12 @@ framework overlay or horizontal overflow.
 | Fixed      | `/login` email-code form  | The six-digit code field accepted nine typed digits, which made the field invalid after normal typing.                                                                                  | Fixed the shared `Input` component to clamp typed values to `maxLength`; browser retest passed.                                                            |
 | Fixed      | `/login/mfa` code form    | The same shared input behavior could affect MFA verification code entry.                                                                                                                | The shared `Input` fix covers MFA code entry; authenticated AAL1 browser retest clamped the value to six digits.                                           |
 | Fixed      | Shared input component    | During the final post-test CodeRabbit loop, local review noted that typed truncation should not interrupt active IME composition and that controlled values should remain parent-owned. | The shared `Input` component now clamps typed values only after composition is inactive, while leaving controlled/default values to the owning form state. |
+| Fixed      | `/login` email-code form  | The email-code submit button combined default and outline button variants, producing white text on a pale background.                                                                  | `LoginSubmitButton` now accepts a real `variant` prop, and the login page passes variants without precomputed class collisions.                            |
+| Fixed      | `/platform` launchpad CTA | A CTA inside the primary launchpad card could inherit white text over a pale secondary background.                                                                                       | The CTA now uses an explicit inverse primary-foreground background with primary text.                                                                       |
+| Fixed      | Bilingual route copy      | Several redesigned page headings, route descriptions, and select options still rendered English text on French pages.                                                                   | Added page-level phrase translations, localized language-switcher aria labels, translated option text, and scheduled post-hydration localization passes.   |
+| Verified   | MFA OTP flow              | The MFA page needed validation with a real dev TOTP factor, not only a typed mock value.                                                                                                | Generated a dev-only MFA QA user, verified a fresh TOTP code, confirmed six-digit clamping, and reached `/platform`.                                      |
 | Documented | Internal QA route batches | Four routes reported initial soft navigation timeouts while still rendering correctly on direct recheck.                                                                                | Targeted rechecks passed; no source change needed.                                                                                                         |
+| Documented | Bilingual full sweep      | The final bilingual sweep had one soft timeout on the EN communications-template route while all contrast, copy, and MFA checks passed.                                                | Targeted recheck of the same route passed with zero failures.                                                                                              |
 
 ## Commands And Checks
 
@@ -108,6 +118,12 @@ framework overlay or horizontal overflow.
 | `npm run env:check-public`                                                                    | Passed.                                                                                                                                                                                                                                                                        |
 | `npm run secrets:scan`                                                                        | Passed.                                                                                                                                                                                                                                                                        |
 | `git diff --check`                                                                            | Passed after final checklist update.                                                                                                                                                                                                                                           |
+| `npm run format`                                                                              | Passed after the contrast/localization fixes and checklist update.                                                                                                                                                                                                             |
+| `npm audit --omit=dev`                                                                        | Passed with 0 vulnerabilities.                                                                                                                                                                                                                                                 |
+| Final standard check set                                                                      | Passed `format:check`, `lint`, `typecheck`, full `test`, `redesign:check:approval`, `redesign:design-system-check`, `build`, `env:check-public`, `secrets:scan`, and `git diff --check`.                                                                                      |
+| `npm run test -- --run src/lib/i18n/static-translations.test.ts src/app/login/submit-button.test.ts` | Passed, 20 focused tests after translation and login-button fixes. npm emitted a known argument warning from workspace forwarding.                                                                                              |
+| `node output/redesign-color-translation-mfa-qa.mjs`                                           | Completed full FR/EN browser sweep of 47 page routes, color checks, translation checks, public token route, generated QA users, and real MFA OTP. Final full run had one soft EN route timeout.                                                                 |
+| `QA_SCOPE=route QA_LANGUAGE=en QA_ROUTE_PATH=/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c/communications/templates node output/redesign-color-translation-mfa-qa.mjs` | Passed targeted recheck for the only soft timeout from the final full run.                                                                                                                                        |
 | Local CodeRabbit review                                                                       | Docs-scoped review corrected stale rows that still said final checks were pending. Source-scoped review corrected the shared `Input` component to use Base UI-derived event handler types, leave controlled/default values parent-owned, and apply IME-aware typed truncation. |
 
 ## Remaining Notes
@@ -115,6 +131,7 @@ framework overlay or horizontal overflow.
 - The local dev server emitted a Turbopack cache-persistence warning caused by a
   Windows filesystem permission issue. It did not block page rendering or build
   output.
-- No app UI, API, database schema, or production configuration change is made by
-  this checklist. The only source fix from this QA pass is the shared input
-  `maxLength` hardening.
+- No API, database schema, or production configuration change is made by this
+  checklist. Source changes are limited to UI contrast, localization timing,
+  static bilingual copy, option-label translation, language-switcher labels, and
+  the login submit-button variant API.

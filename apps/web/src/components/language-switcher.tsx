@@ -36,6 +36,17 @@ function writeLanguageCookie(language: SupportedLanguage) {
   );
 }
 
+function getLanguageOptionLabel(
+  option: SupportedLanguage,
+  activeLanguage: SupportedLanguage,
+) {
+  if (activeLanguage === "fr") {
+    return option === "fr" ? "Français" : "Anglais";
+  }
+
+  return LANGUAGE_LABELS[option].name;
+}
+
 export function LanguageSwitcher({
   className,
   label,
@@ -123,7 +134,7 @@ export function LanguageSwitcher({
         return (
           <Button
             aria-checked={isSelected}
-            aria-label={LANGUAGE_LABELS[item].name}
+            aria-label={getLanguageOptionLabel(item, activeLanguage)}
             className={cn(
               "h-7 min-w-9 px-2",
               isSelected && "pointer-events-none",

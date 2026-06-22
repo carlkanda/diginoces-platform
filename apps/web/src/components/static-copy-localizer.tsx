@@ -8,7 +8,6 @@ const textExcludedTags = new Set([
   "CODE",
   "INPUT",
   "KBD",
-  "OPTION",
   "PRE",
   "SCRIPT",
   "SELECT",
@@ -20,7 +19,6 @@ const textExcludedTags = new Set([
 const attributeExcludedTags = new Set([
   "CODE",
   "KBD",
-  "OPTION",
   "PRE",
   "SCRIPT",
   "SELECT",
@@ -169,6 +167,7 @@ export function StaticCopyLocalizer({
   useEffect(() => {
     let activeLanguage = language;
     let frame = 0;
+    const hydrationTimers: number[] = [];
 
     const scheduleLocalization = () => {
       if (frame) {
@@ -187,6 +186,10 @@ export function StaticCopyLocalizer({
     const observer = new MutationObserver(scheduleLocalization);
 
     scheduleLocalization();
+    hydrationTimers.push(
+      window.setTimeout(scheduleLocalization, 0),
+      window.setTimeout(scheduleLocalization, 250),
+    );
     observer.observe(document.body, {
       attributeFilter: [...translatedAttributes],
       attributes: true,
@@ -212,6 +215,7 @@ export function StaticCopyLocalizer({
         "diginoces:language-change",
         handleLanguageChange,
       );
+      hydrationTimers.forEach((timer) => window.clearTimeout(timer));
 
       if (frame) {
         window.cancelAnimationFrame(frame);
