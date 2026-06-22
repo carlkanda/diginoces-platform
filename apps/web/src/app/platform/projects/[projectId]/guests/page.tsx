@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoHint } from "@/components/info-hint";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -28,14 +29,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -561,28 +554,26 @@ export default async function ProjectGuestsPage({
         </CardHeader>
         <CardContent>
           {guests.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <UsersRoundIcon />
-                </EmptyMedia>
-                <EmptyTitle>No guests match this view</EmptyTitle>
-                <EmptyDescription>
-                  Adjust the side or event filters, or add a guest if your role
-                  allows it.
-                </EmptyDescription>
-              </EmptyHeader>
-              {canCreateGuest ? (
-                <EmptyContent>
+            <OperationalEmptyState
+              action={
+                canCreateGuest ? (
                   <Link
                     className={buttonVariants({ size: "sm" })}
                     href={`/platform/projects/${projectId}/guests/new`}
                   >
                     Add guest
                   </Link>
-                </EmptyContent>
-              ) : null}
-            </Empty>
+                ) : null
+              }
+              description="This view has no guests after applying the current side and event filters."
+              icon={UsersRoundIcon}
+              nextStep={
+                canCreateGuest
+                  ? "Clear filters or add a guest manually when this is a real gap in the list."
+                  : "Clear filters first. If the list should contain guests, ask a project administrator for guest creation access."
+              }
+              title="No guests match this view"
+            />
           ) : (
             <Table>
               <TableHeader>

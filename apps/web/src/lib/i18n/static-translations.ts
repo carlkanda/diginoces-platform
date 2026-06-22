@@ -31,6 +31,7 @@ const exactEnglishToFrench = {
   Continue: "Continuer",
   Control: "Contrôle",
   "Controlled access": "Accès contrôlé",
+  "Control and evidence": "Contrôle et preuves",
   "Couple view": "Vue couple",
   "CSV imports": "Imports CSV",
   "CSV only": "CSV uniquement",
@@ -50,11 +51,16 @@ const exactEnglishToFrench = {
   English: "Anglais",
   "Enter workspace": "Entrer dans l’espace",
   Event: "Événement",
+  "Event dashboard": "Tableau événement",
   "Event day": "Jour de l’événement",
+  "Event files": "Fichiers événement",
   "Event guest management": "Gestion des invités",
+  "Event overview": "Vue événement",
   Events: "Événements",
   Files: "Fichiers",
   "Find a wedding": "Trouver un mariage",
+  "Find the right wedding, event, guest, invitation, message, report, or control area without learning the whole navigation first.":
+    "Trouvez le bon mariage, événement, invité, invitation, message, rapport ou contrôle sans connaître toute la navigation.",
   French: "Français",
   Guest: "Invité",
   "Guest actions": "Actions invité",
@@ -75,6 +81,7 @@ const exactEnglishToFrench = {
   Messages: "Messages",
   "No guests match this view": "Aucun invité ne correspond à cette vue",
   "No imports yet": "Aucun import pour le moment",
+  "No matching workspace area": "Aucune zone trouvée",
   "No messages waiting": "Aucun message en attente",
   "No review queue": "Aucune file de revue",
   "No workspace areas yet": "Aucun espace disponible",
@@ -112,7 +119,11 @@ const exactEnglishToFrench = {
   "Role-aware navigation": "Navigation par rôle",
   RSVP: "RSVP",
   Seating: "Placement",
+  "Seating map": "Plan de salle",
   "Secure access": "Accès sécurisé",
+  "Search Diginoces": "Rechercher dans Diginoces",
+  "Search workspace": "Rechercher",
+  "Search wedding operations...": "Rechercher dans les opérations...",
   "Send sign-in link": "Envoyer le lien de connexion",
   "Sending...": "Envoi...",
   "Sign in": "Se connecter",
@@ -122,7 +133,10 @@ const exactEnglishToFrench = {
   "Signed in as": "Connecté en tant que",
   "Six-digit code": "Code à six chiffres",
   Status: "Statut",
+  "Suggested next step": "Prochaine étape suggérée",
   "Team access": "Accès équipe",
+  "This event": "Cet événement",
+  "This wedding": "Ce mariage",
   "Traceable decisions": "Décisions traçables",
   "Upload CSV": "Importer un CSV",
   Venue: "Lieu",
@@ -158,6 +172,12 @@ const exactEnglishToFrench = {
     "Utilisez cette file pour voir ce qui demande une attention avant que l’équipe enregistre le résultat final.",
   "Open nearby workflows without losing the current project.":
     "Ouvrez les flux proches sans perdre le mariage en cours.",
+  "Open quick navigation with Ctrl or Command plus K":
+    "Ouvrir la navigation rapide avec Ctrl ou Commande plus K",
+  "Search opens the destination; sensitive records still follow your role, MFA, and project access.":
+    "La recherche ouvre la destination ; les dossiers sensibles restent limités par votre rôle, MFA et accès projet.",
+  "Try a workflow word such as guests, RSVP, imports, invitations, messages, seating, check-in, reports, or partners.":
+    "Essayez un mot de travail comme invités, RSVP, imports, invitations, messages, placement, accueil, rapports ou partenaires.",
   "You only see weddings connected to this account. Open one to continue inside its project workspace.":
     "Vous voyez seulement les mariages liés à ce compte. Ouvrez-en un pour continuer dans son espace de travail.",
 } as const;

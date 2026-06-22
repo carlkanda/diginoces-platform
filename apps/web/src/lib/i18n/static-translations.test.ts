@@ -57,6 +57,12 @@ describe("static UI translation helpers", () => {
       "This compact view shows wording readiness, prepared messages, and work waiting for a manual send.",
       "Use this queue to see what needs attention before the team records a final sending result.",
       "Open nearby workflows without losing the current project.",
+      "Search Diginoces",
+      "Search workspace",
+      "Find the right wedding, event, guest, invitation, message, report, or control area without learning the whole navigation first.",
+      "Try a workflow word such as guests, RSVP, imports, invitations, messages, seating, check-in, reports, or partners.",
+      "Search opens the destination; sensitive records still follow your role, MFA, and project access.",
+      "Suggested next step",
     ];
 
     translatedStrings.forEach((value) => {

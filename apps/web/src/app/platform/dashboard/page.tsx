@@ -10,6 +10,7 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -27,13 +28,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -419,18 +413,12 @@ export default async function GlobalDashboardPage() {
             </CardHeader>
             <CardContent>
               {overview.recentProjects.length === 0 ? (
-                <Empty className="border">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <CalendarClockIcon aria-hidden="true" />
-                    </EmptyMedia>
-                    <EmptyTitle>No recent weddings yet</EmptyTitle>
-                    <EmptyDescription>
-                      Updated wedding projects will appear here when the team
-                      starts working in the workspace.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
+                <OperationalEmptyState
+                  description="Recently updated weddings appear here when the team starts working in the workspace."
+                  icon={CalendarClockIcon}
+                  nextStep="Open wedding projects to review assigned workspaces, or connect this account to active projects."
+                  title="No recent weddings yet"
+                />
               ) : (
                 <>
                   <div className="grid gap-3 md:hidden">
@@ -567,19 +555,12 @@ export default async function GlobalDashboardPage() {
             </CardHeader>
             <CardContent>
               {overview.recentAuditLogs.length === 0 ? (
-                <Empty className="border">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <ActivityIcon aria-hidden="true" />
-                    </EmptyMedia>
-                    <EmptyTitle>No activity visible</EmptyTitle>
-                    <EmptyDescription>
-                      Activity appears here when your role can read the audit
-                      trail. Restricted roles should use project-level pages for
-                      their allowed work.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
+                <OperationalEmptyState
+                  description="Activity appears here when your role can read the audit trail."
+                  icon={ActivityIcon}
+                  nextStep="Restricted roles should continue through project-level pages. Audit readers can open the full activity history."
+                  title="No activity visible"
+                />
               ) : (
                 <>
                   <div className="grid gap-3 md:hidden">

@@ -10,6 +10,7 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -28,13 +29,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -344,23 +338,20 @@ export default async function ProjectRsvpSummaryPage({
           </CardHeader>
           <CardContent>
             {summary.length === 0 ? (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyTitle>No RSVP data yet</EmptyTitle>
-                  <EmptyDescription>
-                    Responses will appear here after guests receive public page
-                    links and submit their choices.
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent>
+              <OperationalEmptyState
+                action={
                   <Link
                     className={buttonVariants({ variant: "outline" })}
                     href={`/platform/projects/${projectId}/guests`}
                   >
                     Open guest list
                   </Link>
-                </EmptyContent>
-              </Empty>
+                }
+                description="Event-level response totals appear here after guests receive public page links and submit their choices."
+                icon={MessageCircleIcon}
+                nextStep="Open the guest list to confirm event assignments, then use guest pages and messages to collect replies."
+                title="No response data yet"
+              />
             ) : (
               <div className="overflow-x-auto">
                 <Table>
