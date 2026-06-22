@@ -2,7 +2,7 @@
 
 Date: 2026-06-21
 
-Branch: `codex/redesign-platform-shell`
+Branch: `codex/bilingual-ux-simplification-homepage`
 Status: Local review guide for the current redesign branch. Hosted deployment preparation is approved.
 
 ## Purpose

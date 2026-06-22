@@ -2,12 +2,10 @@ import type { AuthContext } from "@/lib/auth/auth-service";
 
 export type PrimaryAuthNavigationState =
   | {
-      loginLabel: "Sign in";
       showLoginLink: true;
       showSignOut: false;
     }
   | {
-      signOutLabel: "Sign out";
       showLoginLink: false;
       showSignOut: true;
     };
@@ -19,12 +17,10 @@ export function getPrimaryAuthNavigationState(
     return {
       showLoginLink: false,
       showSignOut: true,
-      signOutLabel: "Sign out",
     };
   }
 
   return {
-    loginLabel: "Sign in",
     showLoginLink: true,
     showSignOut: false,
   };

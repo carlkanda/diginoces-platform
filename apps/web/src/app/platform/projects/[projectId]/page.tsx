@@ -12,6 +12,7 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoHint } from "@/components/info-hint";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -433,8 +434,7 @@ export default async function ProjectDetailPage({
             </h1>
           </CardTitle>
           <CardDescription className="max-w-3xl">
-            Open the next area of work for this wedding. Your role determines
-            which records, event tools, and review queues appear here.
+            Open the next area of work for this wedding.
           </CardDescription>
           <CardAction className="col-start-1 row-start-auto mt-3 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
             <Badge variant={getProjectStatusVariant(details.project.status)}>
@@ -479,10 +479,13 @@ export default async function ProjectDetailPage({
           </dl>
           <div className="flex flex-col gap-3 rounded-lg border bg-background p-3">
             <div>
-              <p className="text-sm font-medium">Quick actions</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Start with the records most teams need first.
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium">Quick actions</p>
+                <InfoHint
+                  label="Quick action guidance"
+                  text="Start with the records most teams need first. Available actions still depend on your role."
+                />
+              </div>
             </div>
             <Separator />
             <Link
@@ -514,11 +517,13 @@ export default async function ProjectDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Work areas</CardTitle>
-          <CardDescription>
-            Move through this wedding by task. Each destination appears only
-            when your role can use it.
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <h2>Work areas</h2>
+            <InfoHint
+              label="Work area guidance"
+              text="Move through this wedding by task. Each destination appears only when your role can use it."
+            />
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {visibleWorkAreaGroups.length === 0 ? (
@@ -538,11 +543,12 @@ export default async function ProjectDetailPage({
             <div className="grid gap-4 lg:grid-cols-3">
               {visibleWorkAreaGroups.map((group) => (
                 <section className="flex flex-col gap-3" key={group.label}>
-                  <div>
-                    <h2 className="text-base font-semibold">{group.label}</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {group.description}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-medium">{group.label}</h2>
+                    <InfoHint
+                      label={`${group.label} guidance`}
+                      text={group.description}
+                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     {group.areas.map((area) => (

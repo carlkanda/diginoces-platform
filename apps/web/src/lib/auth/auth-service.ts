@@ -1,4 +1,5 @@
 import type { AuthError, EmailOtpType, User } from "@supabase/supabase-js";
+import { cache } from "react";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -22,6 +23,7 @@ export type MagicLinkResult =
       status: "sent";
     }
   | {
+      code: LoginAuthErrorCode;
       message: string;
       status: "failed";
     };
@@ -32,6 +34,7 @@ export type EmailOtpVerificationResult =
       status: "authenticated";
     }
   | {
+      code: LoginAuthErrorCode;
       message: string;
       status: "failed";
     };
@@ -73,6 +76,32 @@ const maxImplicitCallbackTokenLength = 8192;
 const emailOtpTokenPattern = /^[0-9]{6}$/;
 const mfaCodePattern = /^[0-9]{6}$/;
 
+export const LOGIN_AUTH_ERROR_CODES = {
+  AUTH_CODE_INVALID: "AUTH_CODE_INVALID",
+  AUTH_EMAIL_CODE_REQUIRED: "AUTH_EMAIL_CODE_REQUIRED",
+  AUTH_EMAIL_INVALID: "AUTH_EMAIL_INVALID",
+  AUTH_GENERIC_ERROR: "AUTH_GENERIC_ERROR",
+  AUTH_LINK_INVALID: "AUTH_LINK_INVALID",
+  AUTH_MAGIC_LINK_RATE_LIMITED: "AUTH_MAGIC_LINK_RATE_LIMITED",
+  AUTH_MAGIC_LINK_REQUEST_FAILED: "AUTH_MAGIC_LINK_REQUEST_FAILED",
+  AUTH_WORKSPACE_NOT_CONFIGURED: "AUTH_WORKSPACE_NOT_CONFIGURED",
+} as const;
+
+export type LoginAuthErrorCode =
+  (typeof LOGIN_AUTH_ERROR_CODES)[keyof typeof LOGIN_AUTH_ERROR_CODES];
+
+const loginAuthErrorMessages: Record<LoginAuthErrorCode, string> = {
+  AUTH_CODE_INVALID: invalidOrExpiredEmailCodeMessage,
+  AUTH_EMAIL_CODE_REQUIRED: "Enter the 6-digit code from the email.",
+  AUTH_EMAIL_INVALID: "Enter a valid email address.",
+  AUTH_GENERIC_ERROR: "Unable to complete sign-in. Try again.",
+  AUTH_LINK_INVALID: invalidOrExpiredMagicLinkMessage,
+  AUTH_MAGIC_LINK_RATE_LIMITED:
+    "Too many magic links requested. Wait a few minutes, then request a fresh link.",
+  AUTH_MAGIC_LINK_REQUEST_FAILED: "Unable to request a magic link.",
+  AUTH_WORKSPACE_NOT_CONFIGURED: "Missing Supabase configuration.",
+};
+
 type SupabaseServerClient = Awaited<
   ReturnType<typeof createSupabaseServerClient>
 >;
@@ -84,43 +113,45 @@ type MfaFactorCandidate = {
   status?: string | null;
 };
 
-export async function getAuthContext(): Promise<AuthContext> {
-  const env = getPublicEnvironment();
+export const getAuthContext = cache(
+  async function getAuthContext(): Promise<AuthContext> {
+    const env = getPublicEnvironment();
 
-  if (!env.supabaseConfigured) {
+    if (!env.supabaseConfigured) {
+      return {
+        missingSupabaseVariables: env.missingSupabaseVariables,
+        status: "not_configured",
+      };
+    }
+
+    const supabase = await createSupabaseServerClient();
+    const claimsResult = await supabase.auth.getClaims();
+
+    if (claimsResult.error || !claimsResult.data?.claims) {
+      return {
+        status: "anonymous",
+      };
+    }
+
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return {
+        status: "anonymous",
+      };
+    }
+
     return {
-      missingSupabaseVariables: env.missingSupabaseVariables,
-      status: "not_configured",
+      email: user.email ?? "unknown user",
+      status: "authenticated",
+      supabase,
+      user,
     };
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const claimsResult = await supabase.auth.getClaims();
-
-  if (claimsResult.error || !claimsResult.data?.claims) {
-    return {
-      status: "anonymous",
-    };
-  }
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return {
-      status: "anonymous",
-    };
-  }
-
-  return {
-    email: user.email ?? "unknown user",
-    status: "authenticated",
-    supabase,
-    user,
-  };
-}
+  },
+);
 
 export async function requestMagicLink(
   email: string,
@@ -133,17 +164,14 @@ export async function requestMagicLink(
   const env = getPublicEnvironment();
 
   if (!trimmedEmail || !trimmedEmail.includes("@")) {
-    return {
-      message: "Enter a valid email address.",
-      status: "failed",
-    };
+    return buildLoginAuthFailure("AUTH_EMAIL_INVALID");
   }
 
   if (!env.supabaseConfigured) {
-    return {
-      message: `Missing Supabase configuration: ${env.missingSupabaseVariables.join(", ")}`,
-      status: "failed",
-    };
+    return buildLoginAuthFailure(
+      "AUTH_WORKSPACE_NOT_CONFIGURED",
+      `Missing Supabase configuration: ${env.missingSupabaseVariables.join(", ")}`,
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -161,10 +189,9 @@ export async function requestMagicLink(
   });
 
   if (error) {
-    return {
-      message: getMagicLinkRequestErrorMessage(error),
-      status: "failed",
-    };
+    const code = getMagicLinkRequestErrorCode(error);
+
+    return buildLoginAuthFailure(code, getMagicLinkRequestErrorMessage(error));
   }
 
   return {
@@ -181,24 +208,18 @@ export async function verifyEmailOtp(
   const env = getPublicEnvironment();
 
   if (!trimmedEmail || !trimmedEmail.includes("@")) {
-    return {
-      message: "Enter a valid email address.",
-      status: "failed",
-    };
+    return buildLoginAuthFailure("AUTH_EMAIL_INVALID");
   }
 
   if (!normalizedToken) {
-    return {
-      message: "Enter the 6-digit code from the email.",
-      status: "failed",
-    };
+    return buildLoginAuthFailure("AUTH_EMAIL_CODE_REQUIRED");
   }
 
   if (!env.supabaseConfigured) {
-    return {
-      message: `Missing Supabase configuration: ${env.missingSupabaseVariables.join(", ")}`,
-      status: "failed",
-    };
+    return buildLoginAuthFailure(
+      "AUTH_WORKSPACE_NOT_CONFIGURED",
+      `Missing Supabase configuration: ${env.missingSupabaseVariables.join(", ")}`,
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -209,10 +230,7 @@ export async function verifyEmailOtp(
   });
 
   if (error) {
-    return {
-      message: invalidOrExpiredEmailCodeMessage,
-      status: "failed",
-    };
+    return buildLoginAuthFailure(getInvalidOrExpiredEmailCodeErrorCode());
   }
 
   const assurance = await getMfaAssuranceLevelForClient(supabase);
@@ -527,6 +545,14 @@ export function getInvalidOrExpiredMagicLinkMessage() {
   return invalidOrExpiredMagicLinkMessage;
 }
 
+export function getInvalidOrExpiredMagicLinkErrorCode(): LoginAuthErrorCode {
+  return "AUTH_LINK_INVALID";
+}
+
+export function getInvalidOrExpiredEmailCodeErrorCode(): LoginAuthErrorCode {
+  return "AUTH_CODE_INVALID";
+}
+
 export function normalizeEmailOtpToken(token: string) {
   const normalized = token.replace(/\s+/g, "");
 
@@ -582,7 +608,7 @@ export function buildImplicitAuthCallbackPage(nextPath: string) {
   const normalizedNext = normalizeInternalPath(nextPath);
   const loginErrorPath = buildLoginErrorRedirectPath(
     normalizedNext,
-    invalidOrExpiredMagicLinkMessage,
+    getInvalidOrExpiredMagicLinkErrorCode(),
   );
 
   return `<!doctype html>
@@ -671,11 +697,28 @@ export function parseImplicitAuthCallbackPayload(
 export function getMagicLinkRequestErrorMessage(
   error: Pick<AuthError, "code" | "status">,
 ) {
+  return loginAuthErrorMessages[getMagicLinkRequestErrorCode(error)];
+}
+
+export function getMagicLinkRequestErrorCode(
+  error: Pick<AuthError, "code" | "status">,
+): LoginAuthErrorCode {
   if (error.code === "over_email_send_rate_limit" || error.status === 429) {
-    return "Too many magic links requested. Wait a few minutes, then request a fresh link.";
+    return "AUTH_MAGIC_LINK_RATE_LIMITED";
   }
 
-  return "Unable to request a magic link.";
+  return "AUTH_MAGIC_LINK_REQUEST_FAILED";
+}
+
+function buildLoginAuthFailure(
+  code: LoginAuthErrorCode,
+  message = loginAuthErrorMessages[code],
+) {
+  return {
+    code,
+    message,
+    status: "failed" as const,
+  };
 }
 
 function getBoundedCallbackToken(value: unknown) {

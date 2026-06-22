@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 
@@ -9,14 +9,16 @@ export type LoginSubmitButtonProps = {
   className?: string;
   disabled?: boolean;
   pendingLabel?: string;
+  variant?: ComponentProps<typeof Button>["variant"];
 };
 
 // Keep auth submissions single-flight to avoid repeated email sends.
 export function LoginSubmitButton({
   children,
-  className = "button",
+  className,
   disabled = false,
   pendingLabel = "Processing...",
+  variant,
 }: LoginSubmitButtonProps) {
   const { pending } = useFormStatus();
 
@@ -26,6 +28,7 @@ export function LoginSubmitButton({
       className={className}
       disabled={disabled || pending}
       type="submit"
+      variant={variant}
     >
       {pending ? (
         <span role="status">

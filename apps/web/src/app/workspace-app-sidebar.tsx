@@ -29,6 +29,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import type { SupportedLanguage } from "@/lib/i18n/config";
+import { getShellCopy } from "@/lib/i18n/shell-copy";
 
 type WorkspaceNavigationGroup = {
   items: {
@@ -41,57 +43,63 @@ type WorkspaceNavigationGroup = {
   label: string;
 };
 
-const primaryNavGroups: WorkspaceNavigationGroup[] = [
-  {
-    items: [
-      {
-        href: "/platform",
-        icon: HomeIcon,
-        label: "Workspace",
-        match: "exact",
-        tooltip: "Workspace",
-      },
-      {
-        href: "/platform/projects",
-        icon: FolderKanbanIcon,
-        label: "Wedding projects",
-        tooltip: "Wedding projects",
-      },
-      {
-        href: "/platform/dashboard",
-        icon: LayoutDashboardIcon,
-        label: "Operations dashboard",
-        match: "exact",
-        tooltip: "Operations dashboard",
-      },
-      {
-        href: "/platform/reports",
-        icon: BarChart3Icon,
-        label: "Reports",
-        tooltip: "Reports",
-      },
-    ],
-    label: "Command",
-  },
-  {
-    items: [
-      {
-        href: "/platform/audit-logs",
-        icon: ActivityIcon,
-        label: "Activity trail",
-        match: "exact",
-        tooltip: "Activity trail",
-      },
-      {
-        href: "/platform/partners",
-        icon: Building2Icon,
-        label: "Partners",
-        tooltip: "Partners",
-      },
-    ],
-    label: "Control",
-  },
-];
+function getPrimaryNavGroups(
+  language: SupportedLanguage,
+): WorkspaceNavigationGroup[] {
+  const copy = getShellCopy(language);
+
+  return [
+    {
+      items: [
+        {
+          href: "/platform",
+          icon: HomeIcon,
+          label: copy.workspace,
+          match: "exact",
+          tooltip: copy.workspace,
+        },
+        {
+          href: "/platform/projects",
+          icon: FolderKanbanIcon,
+          label: copy.weddingProjects,
+          tooltip: copy.weddingProjects,
+        },
+        {
+          href: "/platform/dashboard",
+          icon: LayoutDashboardIcon,
+          label: copy.operationsDashboard,
+          match: "exact",
+          tooltip: copy.operationsDashboard,
+        },
+        {
+          href: "/platform/reports",
+          icon: BarChart3Icon,
+          label: copy.reports,
+          tooltip: copy.reports,
+        },
+      ],
+      label: copy.command,
+    },
+    {
+      items: [
+        {
+          href: "/platform/audit-logs",
+          icon: ActivityIcon,
+          label: copy.activityTrail,
+          match: "exact",
+          tooltip: copy.activityTrail,
+        },
+        {
+          href: "/platform/partners",
+          icon: Building2Icon,
+          label: copy.partners,
+          tooltip: copy.partners,
+        },
+      ],
+      label: copy.control,
+    },
+  ];
+}
 
 function isActivePath(
   pathname: string,
@@ -107,20 +115,22 @@ function isActivePath(
 
 export function WorkspaceAppSidebar({
   accountLabel,
+  language,
   showLoginLink,
-  signOutLabel,
 }: {
   accountLabel: string;
+  language: SupportedLanguage;
   showLoginLink: boolean;
-  signOutLabel: string;
 }) {
   const pathname = usePathname();
+  const copy = getShellCopy(language);
+  const primaryNavGroups = getPrimaryNavGroups(language);
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader>
         <Link
-          aria-label="Diginoces home"
+          aria-label={copy.homeAria}
           className="flex min-w-0 items-center gap-3 rounded-lg px-2 py-2 text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
           href="/"
         >
@@ -138,7 +148,7 @@ export function WorkspaceAppSidebar({
               Diginoces
             </strong>
             <small className="truncate text-xs text-sidebar-foreground/70">
-              Wedding operations
+              {copy.weddingOperations}
             </small>
           </span>
         </Link>
@@ -187,7 +197,7 @@ export function WorkspaceAppSidebar({
             {showLoginLink ? (
               <SidebarMenuButton render={<Link href="/login" />}>
                 <LogInIcon data-icon="inline-start" />
-                <span>Sign in</span>
+                <span>{copy.signIn}</span>
               </SidebarMenuButton>
             ) : (
               <form action={signOut}>
@@ -197,7 +207,7 @@ export function WorkspaceAppSidebar({
                   type="submit"
                 >
                   <LogOutIcon data-icon="inline-start" />
-                  {signOutLabel}
+                  {copy.signOut}
                 </Button>
               </form>
             )}

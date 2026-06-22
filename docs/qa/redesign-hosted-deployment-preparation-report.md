@@ -2,7 +2,7 @@
 
 Date: 2026-06-21
 
-Branch: `codex/redesign-platform-shell`
+Branch: `codex/bilingual-ux-simplification-homepage`
 Status: local approval recorded; hosted deployment PR prepared
 
 ## Approval
@@ -12,7 +12,7 @@ The local redesign direction was accepted in chat on 2026-06-21, and the user ex
 ## Pull Request
 
 - PR: `#129` — `Redesign Platform Experience for Hosted Deployment`
-- Branch: `codex/redesign-platform-shell`
+- Branch: `codex/bilingual-ux-simplification-homepage`
 - Vercel preview generation is handled by the GitHub/Vercel integration after each push.
 - The hosted preview may require Vercel authentication; this branch does not add or change preview-bypass secrets.
 

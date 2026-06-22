@@ -9,6 +9,7 @@ import {
   ShieldCheckIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoHint } from "@/components/info-hint";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -253,9 +254,7 @@ export default async function CommunicationsPage({
             <h1>Messages for {projectLabel}</h1>
           </CardTitle>
           <CardDescription className="max-w-3xl text-pretty">
-            Prepare invitation and follow-up wording, review messages before
-            anyone opens WhatsApp, and keep the team aligned on what still needs
-            to be sent.
+            Prepare guest messages, review them, and record manual sending.
           </CardDescription>
           <CardAction className="flex flex-wrap gap-2">
             <Link
@@ -291,21 +290,20 @@ export default async function CommunicationsPage({
         <ShieldCheckIcon data-icon="inline-start" />
         <AlertTitle>WhatsApp sending stays manual</AlertTitle>
         <AlertDescription>
-          Diginoces prepares and records messages, but the team still opens
-          WhatsApp manually and confirms the outcome. No automatic sending is
-          triggered from this page.
+          Diginoces prepares and records messages. The team still opens WhatsApp
+          and confirms the outcome.
         </AlertDescription>
       </Alert>
 
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="flex items-center gap-2">
             <h2>Communication state</h2>
+            <InfoHint
+              label="Communication state guidance"
+              text="This compact view shows wording readiness, prepared messages, and work waiting for a manual send."
+            />
           </CardTitle>
-          <CardDescription>
-            A compact view of wording readiness, prepared messages, and work
-            waiting for a manual send.
-          </CardDescription>
           <CardAction>
             <Badge variant="outline">Project channel</Badge>
           </CardAction>
@@ -354,13 +352,13 @@ export default async function CommunicationsPage({
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card>
           <CardHeader>
-            <CardTitle>
+            <CardTitle className="flex items-center gap-2">
               <h2>Messages waiting for manual action</h2>
+              <InfoHint
+                label="Queue guidance"
+                text="Use this queue to see what needs attention before the team records a final sending result."
+              />
             </CardTitle>
-            <CardDescription>
-              Use this queue to see what needs attention before the team records
-              a final sending result.
-            </CardDescription>
             <CardAction>
               <Badge variant="secondary">
                 {pluralize(overview.queueItems.length, "queue item")}
@@ -481,13 +479,13 @@ export default async function CommunicationsPage({
 
           <Card>
             <CardHeader>
-              <CardTitle>
+              <CardTitle className="flex items-center gap-2">
                 <h2>Good sending rhythm</h2>
+                <InfoHint
+                  label="Sending rhythm guidance"
+                  text="The safest flow is prepare, review, open WhatsApp, then record the result."
+                />
               </CardTitle>
-              <CardDescription>
-                The safest flow is prepare, review, open WhatsApp, then record
-                the result.
-              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
               <p>

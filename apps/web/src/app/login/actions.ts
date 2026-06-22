@@ -32,7 +32,7 @@ export async function signInWithMagicLink(formData: FormData) {
 
   redirect(
     `${buildLoginRedirectPath(next)}&${new URLSearchParams({
-      error: result.message,
+      error: result.code,
     }).toString()}`,
   );
 }
@@ -56,7 +56,7 @@ export async function signInWithEmailCode(formData: FormData) {
   redirect(
     `/login?${new URLSearchParams({
       email,
-      error: result.message,
+      error: result.code,
       next,
     }).toString()}`,
   );

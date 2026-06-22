@@ -2,7 +2,7 @@
 
 Date: 2026-06-21
 
-Branch: `codex/redesign-platform-shell`
+Branch: `codex/bilingual-ux-simplification-homepage`
 Status: Local redesign goal completion is proven. User acceptance has been recorded; hosted deployment preparation has been requested and approved.
 
 ## Objective Under Audit

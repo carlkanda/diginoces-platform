@@ -1,7 +1,7 @@
 # Local Redesign QA Evidence
 
 Date: 2026-06-18
-Branch: `codex/redesign-platform-shell`
+Branch: `codex/bilingual-ux-simplification-homepage`
 Status: local review accepted; hosted deployment preparation approved
 
 ## Objective
@@ -12,7 +12,7 @@ Redesign the Diginoces application locally, one page at a time, using Impeccable
 
 | Requirement | Evidence | Status |
 | --- | --- | --- |
-| Work locally before hosted deployment | All work is on `codex/redesign-platform-shell`; no hosted deployment was updated. | Satisfied |
+| Work locally before hosted deployment | All work is on `codex/bilingual-ux-simplification-homepage`; no hosted deployment was updated. | Satisfied |
 | Use Impeccable guidance | `PRODUCT.md`, `DESIGN.md`, and Impeccable detector checks document and validate the product UI direction. | Satisfied |
 | Start with authenticated `/platform` | `/platform` is browser verified and listed in the route checklist as the primary task launcher. | Satisfied |
 | Establish a cohesive event guest-management design system | `DESIGN.md` defines colors, typography, components, navigation, and product rules; `globals.css` applies the shared system across app routes. | Satisfied |
@@ -824,6 +824,12 @@ Latest focused message-wording library polish:
 - Replaced the remaining `guest-record-details` / `metadata-label` blocks on `/platform/projects/[projectId]/communications/templates` with structured saved-wording chips for language, version, and message type.
 - Browser verification covered `/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c/communications/templates`; the rendered route showed three saved-wording cards with chip rows, zero old metadata classes, no stale internal wording, and no horizontal overflow.
 - Reran `npm run format`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run test -- --run src/lib/messages/message-foundation.test.ts`, the Impeccable detector for the touched route plus CSS, and targeted stale-copy scans. Result: all passed; targeted messaging tests reported 1 file passed and 16 tests passed.
+
+Latest current-goal all-page QA sweep:
+
+- After the user explicitly asked that the work cover all pages and that QA users be generated when needed, ran a fresh full-page sweep through `output/redesign-color-translation-mfa-qa.mjs` with evidence written to `output/redesign-all-pages-current-goal-report.json`.
+- The sweep generated fresh dev-only internal operations/admin and MFA QA users, verified 47 current app page routes, 43 protected route materializations, and 5 public/auth route states in French and English, and reported `failureCount: 0` with no MFA failures.
+- This sweep supplements the earlier role-specific evidence for bride, groom, event staff, and partner sessions under `output/ui-deep-qa-role-*.json`; no new source defect was found, so no product code, route behavior, schema, RLS, permission, or server-action change was made.
 
 ## Copy And Internal-Term Scan
 

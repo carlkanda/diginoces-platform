@@ -8,10 +8,11 @@ import {
   ShieldCheckIcon,
 } from "lucide-react";
 import { signInWithEmailCode, signInWithMagicLink } from "./actions";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { LoginSubmitButton } from "./submit-button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -32,8 +33,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { getAuthenticatedLoginRedirectPath } from "@/lib/auth/auth-navigation";
-import { getAuthContext, normalizeInternalPath } from "@/lib/auth/auth-service";
+import {
+  getAuthContext,
+  LOGIN_AUTH_ERROR_CODES,
+  normalizeInternalPath,
+  type LoginAuthErrorCode,
+} from "@/lib/auth/auth-service";
 import { getPublicEnvironment } from "@/lib/env/public-env";
+import { getLoginCopy, getShellCopy } from "@/lib/i18n/shell-copy";
+import { getRequestLanguage } from "@/lib/i18n/server";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -44,13 +52,40 @@ type LoginPageProps = {
   }>;
 };
 
+const loginAuthErrorCodes = new Set<string>(
+  Object.values(LOGIN_AUTH_ERROR_CODES),
+);
+
+function isLoginAuthErrorCode(error: string): error is LoginAuthErrorCode {
+  return loginAuthErrorCodes.has(error);
+}
+
+function getLocalizedLoginError(
+  error: string,
+  loginCopy: ReturnType<typeof getLoginCopy>,
+) {
+  if (error.startsWith("Missing Supabase configuration:")) {
+    return loginCopy.workspaceConnectionDescription;
+  }
+
+  return isLoginAuthErrorCode(error)
+    ? loginCopy.errorMessages[error]
+    : loginCopy.errorMessages.AUTH_GENERIC_ERROR;
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const [params, authContext] = await Promise.all([
+  const [params, authContext, language] = await Promise.all([
     searchParams,
     getAuthContext(),
+    getRequestLanguage(),
   ]);
+  const shellCopy = getShellCopy(language);
+  const loginCopy = getLoginCopy(language);
   const env = getPublicEnvironment();
   const next = normalizeInternalPath(params.next ?? "/platform");
+  const loginError = params.error
+    ? getLocalizedLoginError(params.error, loginCopy)
+    : null;
 
   if (authContext.status === "authenticated") {
     redirect(getAuthenticatedLoginRedirectPath(next));
@@ -59,24 +94,28 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <div className="auth-route grid min-h-svh items-center gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,0.7fr)] lg:px-8">
       <section className="flex max-w-3xl flex-col gap-6">
-        <Button className="w-fit" variant="ghost" render={<Link href="/" />}>
-          <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-          Diginoces home
-        </Button>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Button className="w-fit" variant="ghost" render={<Link href="/" />}>
+            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
+            {shellCopy.homeAria}
+          </Button>
+          <LanguageSwitcher
+            label={shellCopy.languageLabel}
+            language={language}
+          />
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">Secure access</Badge>
-          <Badge variant="outline">Wedding operations</Badge>
+          <Badge variant="secondary">{loginCopy.secureAccess}</Badge>
+          <Badge variant="outline">{loginCopy.weddingOperations}</Badge>
         </div>
 
         <div className="flex flex-col gap-4">
           <h1 className="text-4xl leading-tight font-semibold tracking-normal text-balance md:text-5xl">
-            Sign in to the Diginoces workspace.
+            {loginCopy.title}
           </h1>
           <p className="max-w-2xl text-base leading-7 text-muted-foreground text-pretty">
-            Use your approved email address to open wedding projects, guest
-            lists, RSVP, invitations, messages, seating, check-in, reports,
-            files, and partner work.
+            {loginCopy.description}
           </p>
         </div>
 
@@ -84,30 +123,27 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldCheckIcon aria-hidden="true" />
-              Access stays role-aware
+              {loginCopy.roleTitle}
             </CardTitle>
-            <CardDescription>
-              Sensitive areas may request another verification step before
-              protected records are shown.
-            </CardDescription>
+            <CardDescription>{loginCopy.roleDescription}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-1">
-              <strong>Guests</strong>
+              <strong>{loginCopy.guests}</strong>
               <span className="text-sm text-muted-foreground">
-                Personal details stay permission limited.
+                {loginCopy.guestsDescription}
               </span>
             </div>
             <div className="flex flex-col gap-1">
-              <strong>Payments</strong>
+              <strong>{loginCopy.payments}</strong>
               <span className="text-sm text-muted-foreground">
-                Commercial records require approved access.
+                {loginCopy.paymentsDescription}
               </span>
             </div>
             <div className="flex flex-col gap-1">
-              <strong>Activity</strong>
+              <strong>{loginCopy.activity}</strong>
               <span className="text-sm text-muted-foreground">
-                Reviews and changes remain traceable.
+                {loginCopy.activityDescription}
               </span>
             </div>
           </CardContent>
@@ -116,10 +152,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Workspace access</CardTitle>
-          <CardDescription>
-            Request a secure link or enter the six-digit code from your email.
-          </CardDescription>
+          <CardTitle>{loginCopy.workspaceAccess}</CardTitle>
+          <CardDescription>{loginCopy.workspaceDescription}</CardDescription>
           <CardAction>
             <Image
               aria-hidden="true"
@@ -136,29 +170,28 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           {params.sent ? (
             <Alert>
               <MailCheckIcon aria-hidden="true" />
-              <AlertTitle>Check your inbox</AlertTitle>
+              <AlertTitle>{loginCopy.checkInbox}</AlertTitle>
               <AlertDescription>
-                A sign-in link was requested for {params.email}. Open the email
-                to continue.
+                {loginCopy.sentEmailPrefix} {params.email}
+                {loginCopy.sentEmailSuffix}
               </AlertDescription>
             </Alert>
           ) : null}
 
-          {params.error ? (
+          {loginError ? (
             <Alert variant="destructive">
               <KeyRoundIcon aria-hidden="true" />
-              <AlertTitle>Sign-in needs attention</AlertTitle>
-              <AlertDescription>{params.error}</AlertDescription>
+              <AlertTitle>{loginCopy.signInNeedsAttention}</AlertTitle>
+              <AlertDescription>{loginError}</AlertDescription>
             </Alert>
           ) : null}
 
           {!env.supabaseConfigured ? (
             <Alert>
               <ShieldCheckIcon aria-hidden="true" />
-              <AlertTitle>Workspace connection required</AlertTitle>
+              <AlertTitle>{loginCopy.workspaceConnectionRequired}</AlertTitle>
               <AlertDescription>
-                Ask an administrator to finish the workspace connection before
-                requesting access links.
+                {loginCopy.workspaceConnectionDescription}
               </AlertDescription>
             </Alert>
           ) : null}
@@ -166,59 +199,69 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <form action={signInWithMagicLink} className="flex flex-col gap-4">
             <input type="hidden" name="next" value={next} />
             <FieldSet>
-              <FieldLegend>Email link</FieldLegend>
+              <FieldLegend>{loginCopy.emailLink}</FieldLegend>
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="email">Email address</FieldLabel>
+                  <FieldLabel htmlFor="email">
+                    {loginCopy.emailAddress}
+                  </FieldLabel>
                   <Input
                     id="email"
                     name="email"
                     type="email"
                     autoComplete="email"
+                    data-no-translate
                     defaultValue={params.email ?? ""}
-                    placeholder="name@example.com"
+                    placeholder={loginCopy.emailPlaceholder}
                     required
                   />
                   <FieldDescription>
-                    Use the email address approved for this workspace.
+                    {loginCopy.approvedEmailDescription}
                   </FieldDescription>
                 </Field>
               </FieldGroup>
             </FieldSet>
             <LoginSubmitButton
-              className={buttonVariants({ className: "w-full" })}
+              className="w-full"
               disabled={!env.supabaseConfigured}
-              pendingLabel="Sending..."
+              pendingLabel={loginCopy.pendingSend}
             >
-              Send sign-in link
+              {loginCopy.sendSignInLink}
             </LoginSubmitButton>
           </form>
 
           <div className="flex items-center gap-3">
             <Separator className="flex-1" />
-            <span className="text-sm text-muted-foreground">or</span>
+            <span className="text-sm text-muted-foreground">
+              {loginCopy.divider}
+            </span>
             <Separator className="flex-1" />
           </div>
 
           <form action={signInWithEmailCode} className="flex flex-col gap-4">
             <input type="hidden" name="next" value={next} />
             <FieldSet>
-              <FieldLegend>Email code</FieldLegend>
+              <FieldLegend>{loginCopy.emailCode}</FieldLegend>
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="code-email">Email address</FieldLabel>
+                  <FieldLabel htmlFor="code-email">
+                    {loginCopy.emailAddress}
+                  </FieldLabel>
                   <Input
                     id="code-email"
                     name="email"
                     type="email"
                     autoComplete="email"
+                    data-no-translate
                     defaultValue={params.email ?? ""}
-                    placeholder="name@example.com"
+                    placeholder={loginCopy.emailPlaceholder}
                     required
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="token">Six-digit code</FieldLabel>
+                  <FieldLabel htmlFor="token">
+                    {loginCopy.sixDigitCode}
+                  </FieldLabel>
                   <Input
                     id="token"
                     name="token"
@@ -227,31 +270,29 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                     inputMode="numeric"
                     maxLength={6}
                     pattern="[0-9]{6}"
-                    placeholder="123456"
+                    data-no-translate
+                    placeholder={loginCopy.tokenPlaceholder}
                     required
                   />
                   <FieldDescription>
-                    Enter the latest code sent to your inbox.
+                    {loginCopy.latestCodeDescription}
                   </FieldDescription>
                 </Field>
               </FieldGroup>
             </FieldSet>
             <LoginSubmitButton
-              className={buttonVariants({
-                className: "w-full",
-                variant: "outline",
-              })}
+              className="w-full"
               disabled={!env.supabaseConfigured}
-              pendingLabel="Verifying..."
+              pendingLabel={loginCopy.pendingVerify}
+              variant="outline"
             >
-              Verify email code
+              {loginCopy.verifyEmailCode}
             </LoginSubmitButton>
           </form>
         </CardContent>
         <CardFooter>
           <p className="text-sm text-muted-foreground">
-            Repeated requests may be rate limited. Use the newest email if you
-            request more than one link or code.
+            {loginCopy.rateLimitDescription}
           </p>
         </CardFooter>
       </Card>

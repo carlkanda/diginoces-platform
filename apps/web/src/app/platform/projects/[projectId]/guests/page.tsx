@@ -9,6 +9,7 @@ import {
   UsersRoundIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoHint } from "@/components/info-hint";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -381,8 +382,7 @@ export default async function ProjectGuestsPage({
             </h1>
           </CardTitle>
           <CardDescription className="max-w-3xl">
-            Keep names, family sides, contact routes, invitation readiness, and
-            event assignments in one controlled place.
+            Keep guest names, sides, contacts, and event assignments together.
           </CardDescription>
           <CardAction className="col-start-1 row-start-auto mt-3 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
             <Badge variant="outline">
@@ -406,10 +406,13 @@ export default async function ProjectGuestsPage({
           </dl>
           <div className="flex flex-col gap-3 rounded-lg border bg-background p-3">
             <div>
-              <p className="text-sm font-medium">Guest actions</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Open nearby workflows without losing the current project.
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium">Guest actions</p>
+                <InfoHint
+                  label="Guest action guidance"
+                  text="Open nearby workflows without losing the current project."
+                />
+              </div>
             </div>
             <Separator />
             <Link
@@ -455,12 +458,13 @@ export default async function ProjectGuestsPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            <h2 className="text-base font-semibold">Focus the list</h2>
+          <CardTitle className="flex items-center gap-2">
+            <h2 className="text-base">Focus the list</h2>
+            <InfoHint
+              label="Filter guidance"
+              text="Narrow by family side or event without leaving the project."
+            />
           </CardTitle>
-          <CardDescription>
-            Narrow by family side or event without leaving the project.
-          </CardDescription>
           <CardAction>
             <Badge variant="secondary">{activeFilterSummary}</Badge>
           </CardAction>
@@ -537,11 +541,11 @@ export default async function ProjectGuestsPage({
           <CardTitle className="flex items-center gap-2">
             <UsersRoundIcon aria-hidden="true" />
             <h2 className="text-base font-semibold">Guests</h2>
+            <InfoHint
+              label="Guest table guidance"
+              text="Review contact routes, family sides, invitation readiness, and profile status."
+            />
           </CardTitle>
-          <CardDescription>
-            Review contact routes, family sides, invitation readiness, and
-            profile status.
-          </CardDescription>
           {canCreateGuest ? (
             <CardAction>
               <Link

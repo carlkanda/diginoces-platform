@@ -1,7 +1,7 @@
 # Local Redesign Route Checklist
 
 Date: 2026-06-18
-Branch: `codex/redesign-platform-shell`
+Branch: `codex/bilingual-ux-simplification-homepage`
 Scope: local visual redesign evidence before hosted deployment
 
 ## Legend

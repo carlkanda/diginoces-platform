@@ -10,12 +10,17 @@ import {
   getAuthCallbackOtpType,
   getAuthCallbackOtpTypeCandidates,
   getAuthCallbackTokenHash,
+  getInvalidOrExpiredEmailCodeErrorCode,
+  getInvalidOrExpiredMagicLinkErrorCode,
+  getMagicLinkRequestErrorCode,
   getMagicLinkRequestErrorMessage,
+  LOGIN_AUTH_ERROR_CODES,
   normalizeEmailOtpToken,
   normalizeMfaCode,
   parseImplicitAuthCallbackPayload,
   normalizeInternalPath,
   selectVerifiedTotpFactor,
+  verifyEmailOtp,
 } from "@/lib/auth/auth-service";
 
 describe("auth redirect helpers", () => {
@@ -69,7 +74,7 @@ describe("auth redirect helpers", () => {
   it("preserves safe next paths when building login error redirects", () => {
     const loginPath = buildLoginErrorRedirectPath(
       "/platform/audit-logs?actor=diginoces",
-      "Authentication link is invalid or expired. Request a fresh magic link.",
+      LOGIN_AUTH_ERROR_CODES.AUTH_LINK_INVALID,
     );
     const parsed = new URL(loginPath, "https://diginoces.test");
 
@@ -78,7 +83,7 @@ describe("auth redirect helpers", () => {
       "/platform/audit-logs?actor=diginoces",
     );
     expect(parsed.searchParams.get("error")).toBe(
-      "Authentication link is invalid or expired. Request a fresh magic link.",
+      LOGIN_AUTH_ERROR_CODES.AUTH_LINK_INVALID,
     );
     expect(parsed.searchParams.get("actor")).toBeNull();
   });
@@ -272,6 +277,68 @@ describe("auth redirect helpers", () => {
     );
   });
 
+  it("uses stable login error codes for magic-link auth failures", () => {
+    expect(getInvalidOrExpiredMagicLinkErrorCode()).toBe(
+      LOGIN_AUTH_ERROR_CODES.AUTH_LINK_INVALID,
+    );
+    expect(
+      getMagicLinkRequestErrorCode({
+        code: "over_email_send_rate_limit",
+        status: 429,
+      }),
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_MAGIC_LINK_RATE_LIMITED);
+    expect(
+      getMagicLinkRequestErrorCode({
+        code: "unexpected_failure",
+        status: 500,
+      }),
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_MAGIC_LINK_REQUEST_FAILED);
+  });
+
+  it("uses stable login error codes for email OTP failures", async () => {
+    await expect(
+      verifyEmailOtp("not-an-email", "123456"),
+    ).resolves.toMatchObject({
+      code: LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_INVALID,
+      status: "failed",
+    });
+    await expect(
+      verifyEmailOtp("person@example.com", ""),
+    ).resolves.toMatchObject({
+      code: LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_CODE_REQUIRED,
+      status: "failed",
+    });
+
+    const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const previousPublishableKey =
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    const previousAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    try {
+      await expect(
+        verifyEmailOtp("person@example.com", "123456"),
+      ).resolves.toMatchObject({
+        code: LOGIN_AUTH_ERROR_CODES.AUTH_WORKSPACE_NOT_CONFIGURED,
+        status: "failed",
+      });
+    } finally {
+      restoreProcessEnvValue("NEXT_PUBLIC_SUPABASE_URL", previousUrl);
+      restoreProcessEnvValue(
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        previousPublishableKey,
+      );
+      restoreProcessEnvValue("NEXT_PUBLIC_SUPABASE_ANON_KEY", previousAnonKey);
+    }
+
+    expect(getInvalidOrExpiredEmailCodeErrorCode()).toBe(
+      LOGIN_AUTH_ERROR_CODES.AUTH_CODE_INVALID,
+    );
+  });
+
   it("normalizes email OTP codes without accepting malformed tokens", () => {
     expect(normalizeEmailOtpToken("625846")).toBe("625846");
     expect(normalizeEmailOtpToken("625 846")).toBe("625846");
@@ -441,6 +508,7 @@ describe("auth redirect helpers", () => {
     expect(html).toContain('params.get("access_token")');
     expect(html).toContain('params.get("refresh_token")');
     expect(html).toContain('fetch("/auth/callback/implicit"');
+    expect(html).toContain(LOGIN_AUTH_ERROR_CODES.AUTH_LINK_INVALID);
     expect(html).not.toContain("example-access-token");
     expect(html).not.toContain("example-refresh-token");
   });
@@ -486,3 +554,12 @@ describe("auth redirect helpers", () => {
     ).toThrow("Authentication callback payload is missing tokens.");
   });
 });
+
+function restoreProcessEnvValue(key: string, value: string | undefined) {
+  if (value === undefined) {
+    delete process.env[key];
+    return;
+  }
+
+  process.env[key] = value;
+}
