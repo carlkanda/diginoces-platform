@@ -32,14 +32,14 @@ export function maskLoginEmail(email: string) {
   const atIndex = trimmedEmail.indexOf("@");
 
   if (atIndex <= 0) {
-    return "this email";
+    return "";
   }
 
   const local = trimmedEmail.slice(0, atIndex);
   const domain = trimmedEmail.slice(atIndex + 1);
 
   if (!domain) {
-    return "this email";
+    return "";
   }
 
   return `${local.slice(0, 1)}***@${domain}`;

@@ -34,6 +34,9 @@ const translatedAttributes = [
   "title",
 ] as const;
 type TranslatedAttribute = (typeof translatedAttributes)[number];
+const translatedAttributeSelector = translatedAttributes
+  .map((name) => `[${name}]`)
+  .join(",");
 export type LocalizedValueState = {
   localized: string;
   source: string;
@@ -113,6 +116,30 @@ function shouldSkipAttributeElement(element: Element | null) {
   );
 }
 
+function isElementRoot(root: ParentNode): root is Element {
+  if (typeof Element !== "undefined") {
+    return root instanceof Element;
+  }
+
+  return (
+    typeof (root as Element).getAttribute === "function" &&
+    typeof (root as Element).setAttribute === "function" &&
+    typeof (root as Element).tagName === "string"
+  );
+}
+
+function getAttributeLocalizationElements(root: ParentNode) {
+  const descendants = Array.from(
+    root.querySelectorAll(translatedAttributeSelector),
+  );
+
+  if (!isElementRoot(root)) {
+    return descendants;
+  }
+
+  return [root, ...descendants.filter((element) => element !== root)];
+}
+
 export function getStableLocalizationSource(
   currentValue: string,
   state: LocalizedValueState | undefined,
@@ -152,40 +179,45 @@ export function localizeAttributes(
   root: ParentNode,
   language: SupportedLanguage,
 ) {
-  root
-    .querySelectorAll(translatedAttributes.map((name) => `[${name}]`).join(","))
-    .forEach((element) => {
-      if (shouldSkipAttributeElement(element)) {
+  getAttributeLocalizationElements(root).forEach((element) => {
+    if (shouldSkipAttributeElement(element)) {
+      return;
+    }
+
+    translatedAttributes.forEach((attribute) => {
+      const currentValue = element.getAttribute(attribute);
+      const existingAttributeState = attributeLocalizationState.get(element);
+
+      if (!currentValue) {
+        existingAttributeState?.delete(attribute);
+
+        if (existingAttributeState?.size === 0) {
+          attributeLocalizationState.delete(element);
+        }
+
         return;
       }
 
-      translatedAttributes.forEach((attribute) => {
-        const currentValue = element.getAttribute(attribute);
+      const attributeState =
+        existingAttributeState ??
+        new Map<TranslatedAttribute, LocalizedValueState>();
+      const sourceValue = getStableLocalizationSource(
+        currentValue,
+        attributeState.get(attribute),
+      );
+      const nextValue = safeTranslateStaticCopy(sourceValue, language);
 
-        if (!currentValue) {
-          return;
-        }
-
-        const attributeState =
-          attributeLocalizationState.get(element) ??
-          new Map<TranslatedAttribute, LocalizedValueState>();
-        const sourceValue = getStableLocalizationSource(
-          currentValue,
-          attributeState.get(attribute),
-        );
-        const nextValue = safeTranslateStaticCopy(sourceValue, language);
-
-        attributeState.set(attribute, {
-          localized: nextValue,
-          source: sourceValue,
-        });
-        attributeLocalizationState.set(element, attributeState);
-
-        if (nextValue !== currentValue) {
-          element.setAttribute(attribute, nextValue);
-        }
+      attributeState.set(attribute, {
+        localized: nextValue,
+        source: sourceValue,
       });
+      attributeLocalizationState.set(element, attributeState);
+
+      if (nextValue !== currentValue) {
+        element.setAttribute(attribute, nextValue);
+      }
     });
+  });
 }
 
 function localizeDocument(language: SupportedLanguage) {
@@ -238,7 +270,19 @@ export function StaticCopyLocalizer({
     // requestAnimationFrame coalesces bursts of mutations, but pages with
     // very frequent DOM changes should still prefer narrower no-translate
     // boundaries around high-churn regions.
-    const observer = new MutationObserver(scheduleLocalization);
+    const handleMutations: MutationCallback = (mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.type === "attributes" &&
+          isElementRoot(mutation.target as ParentNode)
+        ) {
+          localizeAttributes(mutation.target as Element, activeLanguage);
+        }
+      });
+
+      scheduleLocalization();
+    };
+    const observer = new MutationObserver(handleMutations);
 
     scheduleLocalization();
     hydrationTimers.push(

@@ -80,6 +80,7 @@ describe("login step flow", () => {
   it("masks login email addresses before rendering them in visible status copy", () => {
     expect(maskLoginEmail("person@example.com")).toBe("p***@example.com");
     expect(maskLoginEmail(" a@example.com ")).toBe("a***@example.com");
-    expect(maskLoginEmail("not-an-email")).toBe("this email");
+    expect(maskLoginEmail("not-an-email")).toBe("");
+    expect(maskLoginEmail("person@")).toBe("");
   });
 });

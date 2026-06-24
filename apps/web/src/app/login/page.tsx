@@ -119,7 +119,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     queryEmail: emailParam,
     sentEmail: showEmailCodeStep ? storedEmail : "",
   });
-  const maskedRequestedEmail = maskLoginEmail(requestedEmail);
+  const maskedRequestedEmail =
+    maskLoginEmail(requestedEmail) || loginCopy.sentCodeRecipientFallback;
   const loginError = errorParam
     ? getLocalizedLoginError(errorParam, loginCopy)
     : null;

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   getStableLocalizationSource,
   localizeAttributes,
@@ -151,5 +151,54 @@ describe("StaticCopyLocalizer source tracking", () => {
     expect(attributes.get("title")).toBe(
       "Commercial: Review packages, contract status, payments, and guest-page gates.",
     );
+  });
+
+  it("clears stale attribute state when an attribute is temporarily missing", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/i18n/static-translations", () => ({
+      translateStaticCopy: (value: string, language: "en" | "fr") => {
+        if (language === "fr" && value === "Old source") {
+          return "Translated old source";
+        }
+
+        if (language === "en" && value === "Old source") {
+          return "English from old source";
+        }
+
+        return value;
+      },
+    }));
+
+    try {
+      const { localizeAttributes: localizeAttributesWithMock } =
+        await import("@/components/static-copy-localizer");
+      const attributes = new Map<string, string>([
+        ["aria-label", "Old source"],
+      ]);
+      const element = {
+        closest: () => null,
+        getAttribute: (name: string) => attributes.get(name) ?? null,
+        querySelectorAll: () => [],
+        setAttribute: (name: string, value: string) => {
+          attributes.set(name, value);
+        },
+        tagName: "BUTTON",
+      };
+      const root = element as unknown as ParentNode;
+
+      localizeAttributesWithMock(root, "fr");
+      expect(attributes.get("aria-label")).toBe("Translated old source");
+
+      attributes.delete("aria-label");
+      localizeAttributesWithMock(root, "en");
+
+      attributes.set("aria-label", "Translated old source");
+      localizeAttributesWithMock(root, "en");
+
+      expect(attributes.get("aria-label")).toBe("Translated old source");
+    } finally {
+      vi.doUnmock("@/lib/i18n/static-translations");
+      vi.resetModules();
+    }
   });
 });

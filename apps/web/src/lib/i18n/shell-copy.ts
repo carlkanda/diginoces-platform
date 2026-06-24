@@ -101,6 +101,7 @@ type LoginCopy = {
   secureAccess: string;
   sendEmailCode: string;
   sentCodePrefix: string;
+  sentCodeRecipientFallback: string;
   sentEmailSuffix: string;
   signInNeedsAttention: string;
   sixDigitCode: string;
@@ -163,6 +164,7 @@ const loginCopy: Record<SupportedLanguage, LoginCopy> = {
     secureAccess: "Secure access",
     sendEmailCode: "Send email code",
     sentCodePrefix: "A six-digit code was sent to",
+    sentCodeRecipientFallback: "this email address",
     sentEmailSuffix: ". Enter it below to continue.",
     signInNeedsAttention: "Sign-in needs attention",
     sixDigitCode: "Six-digit code",
@@ -230,6 +232,7 @@ const loginCopy: Record<SupportedLanguage, LoginCopy> = {
     secureAccess: "Accès sécurisé",
     sendEmailCode: "Envoyer le code e-mail",
     sentCodePrefix: "Un code à six chiffres a été envoyé à",
+    sentCodeRecipientFallback: "cette adresse e-mail",
     sentEmailSuffix: ". Saisissez-le ci-dessous pour continuer.",
     signInNeedsAttention: "La connexion demande une attention",
     sixDigitCode: "Code à six chiffres",
