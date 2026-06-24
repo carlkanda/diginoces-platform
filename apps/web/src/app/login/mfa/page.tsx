@@ -14,6 +14,7 @@ import {
   getMfaAssuranceLevelForClient,
   normalizeInternalPath,
 } from "@/lib/auth/auth-service";
+import { OTP_DIGITS_INPUT_PATTERN } from "@/lib/auth/otp-input-patterns";
 import { getPublicEnvironment } from "@/lib/env/public-env";
 import { verifyMfaAction } from "./actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -164,9 +165,10 @@ export default async function MfaPage({ searchParams }: MfaPageProps) {
                           id="mfa-code"
                           name="code"
                           maxLength={6}
+                          minLength={6}
                           autoComplete="one-time-code"
                           inputMode="numeric"
-                          pattern="[0-9]{6}"
+                          pattern={OTP_DIGITS_INPUT_PATTERN}
                           required
                         >
                           <InputOTPGroup>

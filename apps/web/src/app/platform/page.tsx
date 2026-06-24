@@ -302,7 +302,7 @@ export default async function PlatformPage({
         {
           description:
             "Review commercial controls, pricing exceptions, approvals, and project delivery evidence.",
-          label: "Commercial work",
+          label: "Commercial",
           status: "Inside a project",
         },
         {

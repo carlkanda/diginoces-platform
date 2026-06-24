@@ -43,6 +43,80 @@ describe("static UI translation helpers", () => {
     );
   });
 
+  it("localizes generated count labels in both directions", () => {
+    expect(translateStaticCopy("2 events", "fr")).toBe("2 événements");
+    expect(translateStaticCopy("1 guest", "fr")).toBe("1 invité");
+    expect(translateStaticCopy("3 lignes", "en")).toBe("3 rows");
+    expect(translateStaticCopy("Field 1", "fr")).toBe("Champ 1");
+    expect(translateStaticCopy("Champ 2", "en")).toBe("Field 2");
+    expect(translateStaticCopy("1 open", "fr")).toBe("1 libre");
+    expect(translateStaticCopy("2 open", "fr")).toBe("2 libres");
+    expect(translateStaticCopy("1 open.", "fr")).toBe("1 libre.");
+    expect(translateStaticCopy("1 libre", "en")).toBe("1 open");
+    expect(translateStaticCopy("1 libre.", "en")).toBe("1 open.");
+    expect(
+      translateStaticCopy("1 / 2 active seats assigned, 1 open.", "fr"),
+    ).toBe("1 / 2 places actives attribuées, 1 libre.");
+    expect(
+      translateStaticCopy("1 / 2 places actives attribuées, 1 libre.", "en"),
+    ).toBe("1 / 2 active seats assigned, 1 open.");
+    expect(translateStaticCopy("1 prepared message", "fr")).toBe(
+      "1 message préparé",
+    );
+    expect(translateStaticCopy("2 prepared messages", "fr")).toBe(
+      "2 messages préparés",
+    );
+    expect(translateStaticCopy("1 recent message", "fr")).toBe(
+      "1 message récent",
+    );
+    expect(translateStaticCopy("2 recent messages", "fr")).toBe(
+      "2 messages récents",
+    );
+    expect(translateStaticCopy("1 invited event", "fr")).toBe(
+      "1 événement invité",
+    );
+    expect(translateStaticCopy("2 invited events", "fr")).toBe(
+      "2 événements invités",
+    );
+    expect(translateStaticCopy("1 table positioned", "fr")).toBe(
+      "1 table positionnée",
+    );
+    expect(translateStaticCopy("2 tables positioned", "fr")).toBe(
+      "2 tables positionnées",
+    );
+    expect(translateStaticCopy("1 linked account", "fr")).toBe("1 compte lié");
+    expect(translateStaticCopy("2 linked accounts", "fr")).toBe(
+      "2 comptes liés",
+    );
+    expect(translateStaticCopy("1 approved row", "fr")).toBe(
+      "1 ligne approuvée",
+    );
+    expect(translateStaticCopy("2 approved rows", "fr")).toBe(
+      "2 lignes approuvées",
+    );
+    expect(translateStaticCopy("1 message préparé", "en")).toBe(
+      "1 prepared message",
+    );
+    expect(translateStaticCopy("2 messages préparés", "en")).toBe(
+      "2 prepared messages",
+    );
+    expect(translateStaticCopy("1 compte lié", "en")).toBe("1 linked account");
+    expect(translateStaticCopy("2 comptes liés", "en")).toBe(
+      "2 linked accounts",
+    );
+    expect(translateStaticCopy("1 ligne approuvée", "en")).toBe(
+      "1 approved row",
+    );
+    expect(translateStaticCopy("2 lignes approuvées", "en")).toBe(
+      "2 approved rows",
+    );
+  });
+
+  it("does not translate inherited object property names", () => {
+    expect(translateStaticCopy("constructor", "fr")).toBe("constructor");
+    expect(translateStaticCopy("toString", "fr")).toBe("toString");
+  });
+
   it("reports whether text has a French translation", () => {
     expect(hasStaticTranslation("Guest list")).toBe(true);
     expect(hasStaticTranslation("Custom wedding name")).toBe(false);
@@ -51,7 +125,12 @@ describe("static UI translation helpers", () => {
   it("covers login and hover guidance strings used by the simplified UI", () => {
     const translatedStrings = [
       "Sign in to the Diginoces workspace.",
-      "Request a secure link or enter the six-digit code from your email.",
+      "Enter your approved email address. Then use the six-digit code sent to your inbox.",
+      "Request email code",
+      "Send email code",
+      "Enter the code from your email",
+      "A six-digit code was sent to",
+      "Use a different email",
       "You only see weddings connected to this account. Open one to continue inside its project workspace.",
       "Start with the records most teams need first. Available actions still depend on your role.",
       "This compact view shows wording readiness, prepared messages, and work waiting for a manual send.",
@@ -93,6 +172,315 @@ describe("static UI translation helpers", () => {
       `Rows must pass validation and approval before guests are created.${customSuffix}`,
     );
     expect(translated).toContain(customSuffix);
+  });
+
+  it("keeps commercial labels stable across repeated English localization passes", () => {
+    const label =
+      "Commercial: Review packages, contract status, payments, and guest-page gates.";
+
+    expect(translateStaticCopy("Commercial", "en")).toBe("Commercial");
+    expect(
+      translateStaticCopy(
+        translateStaticCopy(translateStaticCopy(label, "en"), "en"),
+        "en",
+      ),
+    ).toBe(label);
+  });
+
+  it("keeps commercial work-area copy stable across repeated language cycles", () => {
+    const label =
+      "Commercial: Review packages, contract status, payments, and guest-page gates.";
+    let current = label;
+
+    for (let index = 0; index < 4; index += 1) {
+      current = translateStaticCopy(current, "fr");
+      expect(current).toBe(
+        "Contrats et paiements : Vérifiez les forfaits, contrats, paiements et accès aux pages invités.",
+      );
+
+      current = translateStaticCopy(current, "en");
+      expect(current).toBe(label);
+    }
+  });
+
+  it("covers common project detail labels and helper copy", () => {
+    const projectDetailCopy = [
+      "Open the next area of work for this wedding.",
+      "Use dashboards and reports to understand where this wedding stands.",
+      "Build the guest list, review imports, collect responses, and prepare messages.",
+      "Keep the project moving with files, commercial controls, partner comments, and post-event work.",
+      "Open an event for invitations, seating, check-in, files, and event-level dashboards.",
+      "Project tasks that keep guest, invitation, seating, and event-day work on track.",
+      "Use the visible work areas above to continue guest, RSVP, invitation, messaging, seating, or file work.",
+      "Work areas, events, and actions are limited to what your role can access.",
+      "Missing destinations usually mean the project membership or role assignment needs review.",
+      "Start with guest list readiness when available, then move into RSVP, invitations, messages, seating, and check-in as the event approaches.",
+      "Not set",
+      "Venue not set",
+      "Permission-scoped workspace",
+      "Readiness tasks",
+      "Not Started",
+      "Task",
+      "Feedback",
+      "Commercial",
+      "Find a wedding, check its state, and open the next work area.",
+      "Guest-list access opens after the project contract is approved in the app.",
+      "Contract approval required",
+    ];
+
+    projectDetailCopy.forEach((value) => {
+      expect(hasStaticTranslation(value)).toBe(true);
+    });
+  });
+
+  it("covers route-family labels found during the French UI audit", () => {
+    // This array is a regression manifest: every value below must be backed by
+    // static-translations.ts, and the assertions verify both detection and the
+    // actual French output.
+    const auditedCopy = [
+      ["View operations dashboard", "Voir le tableau des opérations"],
+      ["Confirmed payment total", "Total des paiements confirmés"],
+      ["No deadline set", "Aucune échéance définie"],
+      ["Access readiness", "Préparation de l’accès"],
+      ["Save selection", "Enregistrer la sélection"],
+      ["No estimate yet", "Aucune estimation pour le moment"],
+      ["Wedding context", "Contexte du mariage"],
+      ["Expected amount", "Montant attendu"],
+      ["File register", "Registre des fichiers"],
+      ["Register a protected file", "Enregistrer un fichier protégé"],
+      [
+        "What is live in this wedding right now.",
+        "Ce qui est actif dans ce mariage en ce moment.",
+      ],
+      [
+        "Explain why this retention action is being recorded.",
+        "Expliquez pourquoi cette action de conservation est enregistrée.",
+      ],
+      [
+        "Bring spreadsheet guest lists into the project, validate rows, review decisions, and add only approved guests to the active list.",
+        "Importez les listes d’invités depuis un tableur, validez les lignes, revoyez les décisions et ajoutez seulement les invités approuvés à la liste active.",
+      ],
+      [
+        "Rows that need correction before use.",
+        "Lignes à corriger avant utilisation.",
+      ],
+      [
+        "Open an import to confirm mapping, review rows, or apply approved guests.",
+        "Ouvrez un import pour confirmer les colonnes, relire les lignes ou ajouter les invités approuvés.",
+      ],
+      [
+        "Guest import remains controlled before guests are added.",
+        "L’import d’invités reste contrôlé avant tout ajout à la liste.",
+      ],
+      [
+        "Include the header row so Diginoces can suggest column matches. Paste rows only when you are not uploading a file.",
+        "Incluez la ligne d’en-tête pour que Diginoces suggère les correspondances. Collez des lignes seulement si vous n’importez pas de fichier.",
+      ],
+      ["Source file handling", "Gestion du fichier source"],
+      ["Before saving", "Avant l’enregistrement"],
+      ["Available setup", "Configuration disponible"],
+      ["Check digital readiness", "Vérifier la préparation numérique"],
+      ["Available downloads", "Téléchargements disponibles"],
+      ["Not submitted", "Non envoyé"],
+      [
+        "This preview is available only to authorized users.",
+        "Cet aperçu est disponible seulement pour les utilisateurs autorisés.",
+      ],
+      ["Template library", "Bibliothèque de modèles"],
+      ["Available recipients", "Destinataires disponibles"],
+      [
+        "A quick check before the team starts manual sending work.",
+        "Une vérification rapide avant que l’équipe commence les envois manuels.",
+      ],
+      ["Eligible for keepsake work", "Éligible au travail souvenir"],
+      ["Protect the keepsake", "Protéger le souvenir"],
+      ["Export readiness", "Préparation de l’export"],
+      [
+        "Request a correction when wording, names, or tone need a careful adjustment before export.",
+        "Demandez une correction quand le texte, les noms ou le ton nécessitent un ajustement avant l’export.",
+      ],
+      [
+        "Couple decisions shape the final keepsake",
+        "Les décisions du couple façonnent le souvenir final",
+      ],
+      [
+        "Partner-visible updates may be seen by authorized partner users. Team-only updates stay internal.",
+        "Les mises à jour visibles par les partenaires peuvent être vues par les partenaires autorisés. Les mises à jour équipe restent internes.",
+      ],
+      ["Post comment", "Publier le commentaire"],
+      ["Submit feedback", "Envoyer le retour"],
+      [
+        "Private feedback helps improve operations and is not public testimonial copy.",
+        "Les retours privés aident à améliorer les opérations et ne sont pas des témoignages publics.",
+      ],
+      ["Not rated", "Non noté"],
+      [
+        "Partner records are not connected",
+        "Les dossiers partenaires ne sont pas connectés",
+      ],
+      [
+        "Partner work becomes available after this account is linked to a partner profile.",
+        "Le travail partenaire devient disponible après liaison de ce compte à un profil partenaire.",
+      ],
+      [
+        "Use the best estimate available today.",
+        "Utilisez la meilleure estimation disponible aujourd’hui.",
+      ],
+      [
+        "Partner profiles can prepare or receive work, but final project control stays with Diginoces.",
+        "Les profils partenaires peuvent préparer ou recevoir du travail, mais le contrôle final du mariage reste chez Diginoces.",
+      ],
+      [
+        "Review partner-submitted wedding projects before they become active Diginoces operations.",
+        "Revoyez les mariages soumis par les partenaires avant leur passage en opérations Diginoces actives.",
+      ],
+      [
+        "Approve only submissions that are ready to move into Diginoces operations.",
+        "Approuvez seulement les soumissions prêtes à passer en opérations Diginoces.",
+      ],
+      [
+        "Guest lists waiting for validation or approval.",
+        "Listes d’invités en attente de validation ou d’approbation.",
+      ],
+      [
+        "Use the overview to choose the right operational surface.",
+        "Utilisez la vue d’ensemble pour choisir la bonne zone opérationnelle.",
+      ],
+      ["Report catalog", "Catalogue des rapports"],
+      ["Report export is ready", "L’export de rapport est prêt"],
+      ["Available reports", "Rapports disponibles"],
+      ["Ready in this context", "Disponible dans ce contexte"],
+      ["Event reporting context", "Contexte de rapport événement"],
+      [
+        "Review the latest matching records before exporting an activity CSV.",
+        "Revoyez les derniers enregistrements correspondants avant d’exporter un CSV d’activité.",
+      ],
+      [
+        "Use one or more filters to narrow the activity history.",
+        "Utilisez un ou plusieurs filtres pour réduire l’historique d’activité.",
+      ],
+      [
+        "Use a team member ID when available.",
+        "Utilisez l’ID du membre d’équipe quand il est disponible.",
+      ],
+      [
+        "Event details will appear after the workspace connection is ready.",
+        "Les détails de l’événement apparaîtront quand la connexion de l’espace sera prête.",
+      ],
+      [
+        "Event data stays closed until the secure workspace connection is ready.",
+        "Les données de l’événement restent fermées jusqu’à ce que la connexion sécurisée soit prête.",
+      ],
+      [
+        "Guest page fields are not check-in credentials",
+        "Les champs de page invité ne sont pas des identifiants d’accueil",
+      ],
+      [
+        "Use values from 0 to 1 for left-to-right and top-to-bottom placement.",
+        "Utilisez des valeurs de 0 à 1 pour le placement gauche-droite et haut-bas.",
+      ],
+      [
+        "Save fields before generating a preview.",
+        "Enregistrez les champs avant de générer un aperçu.",
+      ],
+      [
+        "Generate a technical preview, inspect field placement, then approve it before batch generation.",
+        "Générez un aperçu technique, vérifiez le placement des champs, puis approuvez-le avant la génération par lot.",
+      ],
+      [
+        "Guest files linked to this design after generation.",
+        "Fichiers invités liés à ce design après génération.",
+      ],
+      ["Global workspace", "Espace global"],
+      ["Workspace signals", "Signaux de l’espace"],
+      ["Confirmed payment volume", "Volume de paiements confirmés"],
+      ["Imports needing review", "Imports à revoir"],
+      ["Messages needing action", "Messages à traiter"],
+      ["Unexpected guest requests", "Demandes d’invités imprévus"],
+      ["Activity export was created", "L’export d’activité a été créé"],
+      [
+        "Activity export needs attention",
+        "L’export d’activité demande une attention",
+      ],
+      [
+        "Activity records are operational evidence",
+        "Les dossiers d’activité servent de preuve opérationnelle",
+      ],
+      ["Team-only access", "Accès réservé à l’équipe"],
+      ["Sensitive details redacted", "Détails sensibles expurgés"],
+      [
+        "Two-step verification is not ready",
+        "La vérification en deux étapes n’est pas prête",
+      ],
+      [
+        "Verification status unavailable",
+        "Statut de vérification indisponible",
+      ],
+      [
+        "Wedding and event reports unlock when this page is opened from the matching workspace.",
+        "Les rapports mariage et événement se déverrouillent quand cette page est ouverte depuis l’espace correspondant.",
+      ],
+      [
+        "Each export is scoped to the current workspace, wedding, or event context.",
+        "Chaque export est limité au contexte actuel de l’espace, du mariage ou de l’événement.",
+      ],
+      [
+        "Open dashboard for Wedding project 1",
+        "Ouvrir le tableau de bord de Wedding project 1",
+      ],
+      [
+        "Review queue, Partner dashboard, Create partner",
+        "File de revue, espace partenaire, création de partenaire",
+      ],
+      [
+        "Partner work becomes available after this account is linked to a profile.",
+        "Le travail partenaire devient disponible après liaison de ce compte à un profil.",
+      ],
+    ] as const;
+
+    auditedCopy.forEach(([value, expectedFrench]) => {
+      expect(hasStaticTranslation(value)).toBe(true);
+      expect(translateStaticCopy(value, "fr")).toBe(expectedFrench);
+    });
+
+    expect(translateStaticCopy("Open CSV import 2", "fr")).toBe(
+      "Ouvrir l’import CSV 2",
+    );
+    expect(translateStaticCopy("Operational: 1 wedding.", "fr")).toBe(
+      "Opérationnel : 1 mariage.",
+    );
+  });
+
+  it("covers representative labels from the 48-surface French QA audit", () => {
+    const auditedTranslations = [
+      ["Diginoces RSVP", "Réponse Diginoces"],
+      [
+        "Enter your authenticator code",
+        "Saisissez votre code d’authentification",
+      ],
+      ["Connection required", "Connexion requise"],
+      [
+        "Apply activity history filters",
+        "Appliquer les filtres de l’historique d’activité",
+      ],
+      ["QR scanning is disabled", "Le scan QR est désactivé"],
+      ["No keepsake messages yet", "Aucun message souvenir pour le moment"],
+      ["Decision for row", "Décision pour la ligne"],
+      [
+        "Ratings help the team understand what went well and what needs improvement.",
+        "Les évaluations aident l’équipe à comprendre ce qui a bien fonctionné et ce qui doit être amélioré.",
+      ],
+      [
+        "Visible to authorized Diginoces users only.",
+        "Visible uniquement par les utilisateurs Diginoces autorisés.",
+      ],
+      ["Displays the mobile sidebar.", "Affiche la barre latérale mobile."],
+      ["Tables", "Tables"],
+    ] as const;
+
+    auditedTranslations.forEach(([english, french]) => {
+      expect(translateStaticCopy(english, "fr")).toBe(french);
+    });
   });
 
   it("treats case variations as custom copy unless explicitly mapped", () => {

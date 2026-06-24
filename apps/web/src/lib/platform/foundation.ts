@@ -34,7 +34,7 @@ export function getPlatformFoundationStatus() {
     },
     {
       description:
-        "Supabase SSR clients, magic-link action, callback route, and proxy token refresh.",
+        "Supabase SSR clients, email-code sign-in action, callback route, and proxy token refresh.",
       name: "Authentication foundation",
       requirementIds: ["PV-001", "PV-002", "ROLE-001"],
     },

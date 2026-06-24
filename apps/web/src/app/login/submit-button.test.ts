@@ -34,7 +34,7 @@ function renderSubmitButton(props: {
   pendingLabel?: string;
 }) {
   const buttonProps = {
-    children: "Send magic link",
+    children: "Send email code",
     className: props.className,
     disabled: props.disabled,
     pendingLabel: props.pendingLabel ?? "Sending...",
@@ -82,7 +82,7 @@ describe("LoginSubmitButton", () => {
     expect(button.props.className).toBe("button primary");
     expect(button.props.disabled).toBe(false);
     expect(button.props.type).toBe("submit");
-    expect(button.props.children).toBe("Send magic link");
+    expect(button.props.children).toBe("Send email code");
   });
 
   it("renders the pending label, status region, and disabled state while pending", () => {
@@ -109,7 +109,7 @@ describe("LoginSubmitButton", () => {
     expect(hiddenEllipsis?.props["aria-hidden"]).toBe(true);
     expect(hiddenEllipsis?.props.children).toBe("...");
     expect(statusChildren).toContain("Sending...");
-    expect(statusChildren).not.toContain("Send magic link");
+    expect(statusChildren).not.toContain("Send email code");
   });
 
   it("respects an explicit disabled prop without changing the idle label", () => {
@@ -122,14 +122,14 @@ describe("LoginSubmitButton", () => {
     expect(button.props["aria-busy"]).toBe(false);
     expect(button.props.className).toBe("button secondary");
     expect(button.props.disabled).toBe(true);
-    expect(button.props.children).toBe("Send magic link");
+    expect(button.props.children).toBe("Send email code");
   });
 
   it("uses the default pending label when one is not provided", () => {
     formStatus.pending = true;
 
     const buttonProps = {
-      children: "Send magic link",
+      children: "Send email code",
     } satisfies LoginSubmitButtonProps;
     const button = LoginSubmitButton(buttonProps);
 

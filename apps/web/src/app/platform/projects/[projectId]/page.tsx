@@ -365,7 +365,7 @@ export default async function ProjectDetailPage({
           description:
             "Review packages, contract status, payments, and guest-page gates.",
           href: `/platform/projects/${projectId}/commercial`,
-          label: "Commercial work",
+          label: "Commercial",
           show: canReadCommercial,
         },
         {
