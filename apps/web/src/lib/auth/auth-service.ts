@@ -18,7 +18,7 @@ export type AuthContext =
       status: "anonymous";
     };
 
-export type MagicLinkResult =
+export type EmailCodeRequestResult =
   | {
       status: "sent";
     }
@@ -67,9 +67,9 @@ export type ImplicitCallbackPayload = {
 };
 
 const invalidOrExpiredMagicLinkMessage =
-  "Authentication link is invalid or expired. Request a fresh magic link.";
+  "Sign-in link is invalid or expired. Request a fresh sign-in email.";
 const invalidOrExpiredEmailCodeMessage =
-  "Authentication code is invalid or expired. Request a fresh email.";
+  "Authentication code is invalid or expired. Request a fresh code.";
 const invalidMfaCodeMessage =
   "MFA code is invalid or expired. Enter the current 6-digit authenticator code.";
 const maxImplicitCallbackTokenLength = 8192;
@@ -78,10 +78,14 @@ const mfaCodePattern = /^[0-9]{6}$/;
 
 export const LOGIN_AUTH_ERROR_CODES = {
   AUTH_CODE_INVALID: "AUTH_CODE_INVALID",
+  AUTH_EMAIL_CODE_DISABLED: "AUTH_EMAIL_CODE_DISABLED",
   AUTH_EMAIL_CODE_REQUIRED: "AUTH_EMAIL_CODE_REQUIRED",
+  AUTH_EMAIL_CODE_RATE_LIMITED: "AUTH_EMAIL_CODE_RATE_LIMITED",
+  AUTH_EMAIL_CODE_REQUEST_FAILED: "AUTH_EMAIL_CODE_REQUEST_FAILED",
   AUTH_EMAIL_INVALID: "AUTH_EMAIL_INVALID",
   AUTH_GENERIC_ERROR: "AUTH_GENERIC_ERROR",
   AUTH_LINK_INVALID: "AUTH_LINK_INVALID",
+  // Legacy error codes remain accepted for stale redirects and old auth emails.
   AUTH_MAGIC_LINK_RATE_LIMITED: "AUTH_MAGIC_LINK_RATE_LIMITED",
   AUTH_MAGIC_LINK_REQUEST_FAILED: "AUTH_MAGIC_LINK_REQUEST_FAILED",
   AUTH_WORKSPACE_NOT_CONFIGURED: "AUTH_WORKSPACE_NOT_CONFIGURED",
@@ -92,13 +96,18 @@ export type LoginAuthErrorCode =
 
 const loginAuthErrorMessages: Record<LoginAuthErrorCode, string> = {
   AUTH_CODE_INVALID: invalidOrExpiredEmailCodeMessage,
-  AUTH_EMAIL_CODE_REQUIRED: "Enter the 6-digit code from the email.",
+  AUTH_EMAIL_CODE_DISABLED:
+    "Email codes are not enabled for this workspace. Ask a Diginoces administrator to update Supabase Auth settings.",
+  AUTH_EMAIL_CODE_REQUIRED: "Enter the six-digit code from the email.",
+  AUTH_EMAIL_CODE_RATE_LIMITED:
+    "Too many email codes requested. Wait a few minutes, then request a fresh code.",
+  AUTH_EMAIL_CODE_REQUEST_FAILED: "Unable to send an email code.",
   AUTH_EMAIL_INVALID: "Enter a valid email address.",
   AUTH_GENERIC_ERROR: "Unable to complete sign-in. Try again.",
   AUTH_LINK_INVALID: invalidOrExpiredMagicLinkMessage,
   AUTH_MAGIC_LINK_RATE_LIMITED:
-    "Too many magic links requested. Wait a few minutes, then request a fresh link.",
-  AUTH_MAGIC_LINK_REQUEST_FAILED: "Unable to request a magic link.",
+    "Too many sign-in links requested. Wait a few minutes, then request a fresh link.",
+  AUTH_MAGIC_LINK_REQUEST_FAILED: "Unable to send a sign-in link.",
   AUTH_WORKSPACE_NOT_CONFIGURED: "Missing Supabase configuration.",
 };
 
@@ -153,13 +162,13 @@ export const getAuthContext = cache(
   },
 );
 
-export async function requestMagicLink(
+export async function requestEmailSignInCode(
   email: string,
   nextPath = "/platform",
   options: {
     requestOrigin?: string | null;
   } = {},
-): Promise<MagicLinkResult> {
+): Promise<EmailCodeRequestResult> {
   const trimmedEmail = email.trim().toLowerCase();
   const env = getPublicEnvironment();
 
@@ -185,13 +194,19 @@ export async function requestMagicLink(
     email: trimmedEmail,
     options: {
       emailRedirectTo: redirectTo.toString(),
+      shouldCreateUser: false,
     },
   });
 
   if (error) {
-    const code = getMagicLinkRequestErrorCode(error);
+    if (shouldSuppressEmailCodeRequestError(error)) {
+      return {
+        status: "sent",
+      };
+    }
 
-    return buildLoginAuthFailure(code, getMagicLinkRequestErrorMessage(error));
+    const code = getEmailCodeRequestErrorCode(error);
+    return buildLoginAuthFailure(code, getEmailCodeRequestErrorMessage(error));
   }
 
   return {
@@ -694,20 +709,57 @@ export function parseImplicitAuthCallbackPayload(
   };
 }
 
-export function getMagicLinkRequestErrorMessage(
-  error: Pick<AuthError, "code" | "status">,
-) {
-  return loginAuthErrorMessages[getMagicLinkRequestErrorCode(error)];
+export type EmailCodeRequestError = Pick<AuthError, "code" | "status"> &
+  Partial<Pick<AuthError, "message">>;
+
+export function getEmailCodeRequestErrorMessage(error: EmailCodeRequestError) {
+  return loginAuthErrorMessages[getEmailCodeRequestErrorCode(error)];
 }
 
-export function getMagicLinkRequestErrorCode(
-  error: Pick<AuthError, "code" | "status">,
+export function getEmailCodeRequestErrorCode(
+  error: EmailCodeRequestError,
 ): LoginAuthErrorCode {
-  if (error.code === "over_email_send_rate_limit" || error.status === 429) {
-    return "AUTH_MAGIC_LINK_RATE_LIMITED";
+  if (
+    error.code === "over_request_rate_limit" ||
+    error.code === "over_email_send_rate_limit" ||
+    error.status === 429
+  ) {
+    return "AUTH_EMAIL_CODE_RATE_LIMITED";
   }
 
-  return "AUTH_MAGIC_LINK_REQUEST_FAILED";
+  if (
+    error.code === "otp_disabled" ||
+    error.code === "email_provider_disabled"
+  ) {
+    return "AUTH_EMAIL_CODE_DISABLED";
+  }
+
+  if (error.code === "email_provider_rate_limited") {
+    return "AUTH_EMAIL_CODE_RATE_LIMITED";
+  }
+
+  if (error.code === "email_address_invalid") {
+    return "AUTH_EMAIL_INVALID";
+  }
+
+  return "AUTH_EMAIL_CODE_REQUEST_FAILED";
+}
+
+export function shouldSurfaceEmailCodeRequestError(
+  error: EmailCodeRequestError,
+) {
+  return !shouldSuppressEmailCodeRequestError(error);
+}
+
+export function shouldSuppressEmailCodeRequestError(
+  error: EmailCodeRequestError,
+) {
+  return (
+    error.code === "user_not_found" ||
+    error.code === "email_not_confirmed" ||
+    error.code === "identity_not_found" ||
+    error.code === "invalid_credentials"
+  );
 }
 
 function buildLoginAuthFailure(

@@ -37,6 +37,8 @@ tmp/
 
 # Generated local files
 .agents/
+.codex/
+.impeccable/critique/
 uploads/
 exports/
 output/

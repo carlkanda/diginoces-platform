@@ -10,16 +10,17 @@ import {
   getAuthCallbackOtpType,
   getAuthCallbackOtpTypeCandidates,
   getAuthCallbackTokenHash,
+  getEmailCodeRequestErrorCode,
+  getEmailCodeRequestErrorMessage,
   getInvalidOrExpiredEmailCodeErrorCode,
   getInvalidOrExpiredMagicLinkErrorCode,
-  getMagicLinkRequestErrorCode,
-  getMagicLinkRequestErrorMessage,
   LOGIN_AUTH_ERROR_CODES,
   normalizeEmailOtpToken,
   normalizeMfaCode,
   parseImplicitAuthCallbackPayload,
   normalizeInternalPath,
   selectVerifiedTotpFactor,
+  shouldSurfaceEmailCodeRequestError,
   verifyEmailOtp,
 } from "@/lib/auth/auth-service";
 
@@ -173,7 +174,7 @@ describe("auth redirect helpers", () => {
     ).toEqual(["invite"]);
   });
 
-  it("uses the current loopback origin for magic-link callbacks", () => {
+  it("uses the current loopback origin for email-code callbacks", () => {
     expect(
       getAuthRedirectOrigin("http://127.0.0.1:3000", "http://localhost:3000"),
     ).toBe("http://127.0.0.1:3000");
@@ -238,64 +239,183 @@ describe("auth redirect helpers", () => {
     ).toBe("/platform");
   });
 
-  it("surfaces a retry delay when Supabase rate limits magic links", () => {
+  it("surfaces a retry delay when Supabase rate-limits email-code requests", () => {
     expect(
-      getMagicLinkRequestErrorMessage({
-        code: "over_email_send_rate_limit",
+      getEmailCodeRequestErrorMessage({
+        code: "over_request_rate_limit",
         status: 429,
       }),
     ).toBe(
-      "Too many magic links requested. Wait a few minutes, then request a fresh link.",
+      "Too many email codes requested. Wait a few minutes, then request a fresh code.",
     );
     expect(
-      getMagicLinkRequestErrorMessage({
+      getEmailCodeRequestErrorMessage({
         code: "unexpected_failure",
         status: 500,
       }),
-    ).toBe("Unable to request a magic link.");
+    ).toBe("Unable to send an email code.");
   });
 
-  it("surfaces a retry delay when Supabase sends the rate-limit error code", () => {
+  it("surfaces a retry delay when Supabase sends the email-code rate-limit error code", () => {
     expect(
-      getMagicLinkRequestErrorMessage({
-        code: "over_email_send_rate_limit",
+      getEmailCodeRequestErrorMessage({
+        code: "over_request_rate_limit",
         status: 400,
       }),
     ).toBe(
-      "Too many magic links requested. Wait a few minutes, then request a fresh link.",
+      "Too many email codes requested. Wait a few minutes, then request a fresh code.",
     );
   });
 
-  it("surfaces a retry delay when Supabase sends a 429 status", () => {
+  it("keeps the legacy Supabase email-code rate-limit code compatible", () => {
     expect(
-      getMagicLinkRequestErrorMessage({
+      getEmailCodeRequestErrorCode({
+        code: "over_email_send_rate_limit",
+        status: 400,
+      }),
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_CODE_RATE_LIMITED);
+  });
+
+  it("surfaces a retry delay when Supabase sends a 429 status for email-code requests", () => {
+    expect(
+      getEmailCodeRequestErrorMessage({
         code: "unexpected_failure",
         status: 429,
       }),
     ).toBe(
-      "Too many magic links requested. Wait a few minutes, then request a fresh link.",
+      "Too many email codes requested. Wait a few minutes, then request a fresh code.",
     );
   });
 
-  it("uses stable login error codes for magic-link auth failures", () => {
+  it("surfaces a setup message when Supabase email codes are disabled", () => {
+    expect(
+      getEmailCodeRequestErrorMessage({
+        code: "otp_disabled",
+        message: "Signups not allowed for otp",
+        status: 400,
+      }),
+    ).toBe(
+      "Email codes are not enabled for this workspace. Ask a Diginoces administrator to update Supabase Auth settings.",
+    );
+    expect(
+      getEmailCodeRequestErrorCode({
+        code: "otp_disabled",
+        message: "Signups not allowed for otp",
+        status: 400,
+      }),
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_CODE_DISABLED);
+    expect(
+      getEmailCodeRequestErrorCode({
+        code: "unexpected_failure",
+        message: "Signups not allowed for otp",
+        status: 400,
+      }),
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_CODE_REQUEST_FAILED);
+  });
+
+  it("maps direct Supabase email-code request errors explicitly", () => {
+    expect(
+      getEmailCodeRequestErrorCode({
+        code: "otp_disabled",
+        status: 500,
+      }),
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_CODE_DISABLED);
+    expect(
+      getEmailCodeRequestErrorCode({
+        code: "email_address_invalid",
+        status: 400,
+      }),
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_INVALID);
+    expect(
+      getEmailCodeRequestErrorCode({
+        code: "email_provider_disabled",
+        status: 500,
+      }),
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_CODE_DISABLED);
+    expect(
+      getEmailCodeRequestErrorCode({
+        code: "email_provider_rate_limited",
+        status: 500,
+      }),
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_CODE_RATE_LIMITED);
+  });
+
+  it("surfaces only operational email-code request errors", () => {
+    expect(
+      shouldSurfaceEmailCodeRequestError({
+        code: "over_request_rate_limit",
+        status: 400,
+      }),
+    ).toBe(true);
+    expect(
+      shouldSurfaceEmailCodeRequestError({
+        code: "otp_disabled",
+        status: 400,
+      }),
+    ).toBe(true);
+    expect(
+      shouldSurfaceEmailCodeRequestError({
+        code: "email_provider_disabled",
+        status: 500,
+      }),
+    ).toBe(true);
+    expect(
+      shouldSurfaceEmailCodeRequestError({
+        code: "email_provider_rate_limited",
+        status: 429,
+      }),
+    ).toBe(true);
+    expect(
+      shouldSurfaceEmailCodeRequestError({
+        code: "user_not_found",
+        status: 400,
+      }),
+    ).toBe(false);
+    expect(
+      shouldSurfaceEmailCodeRequestError({
+        code: "email_not_confirmed",
+        status: 400,
+      }),
+    ).toBe(false);
+    expect(
+      shouldSurfaceEmailCodeRequestError({
+        code: "invalid_credentials",
+        status: 400,
+      }),
+    ).toBe(false);
+    expect(
+      shouldSurfaceEmailCodeRequestError({
+        code: "email_address_invalid",
+        status: 400,
+      }),
+    ).toBe(true);
+    expect(
+      shouldSurfaceEmailCodeRequestError({
+        code: "unexpected_failure",
+        status: 500,
+      }),
+    ).toBe(true);
+  });
+
+  it("uses stable login error codes across magic-link and email-code request flows", () => {
     expect(getInvalidOrExpiredMagicLinkErrorCode()).toBe(
       LOGIN_AUTH_ERROR_CODES.AUTH_LINK_INVALID,
     );
     expect(
-      getMagicLinkRequestErrorCode({
-        code: "over_email_send_rate_limit",
+      getEmailCodeRequestErrorCode({
+        code: "over_request_rate_limit",
         status: 429,
       }),
-    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_MAGIC_LINK_RATE_LIMITED);
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_CODE_RATE_LIMITED);
     expect(
-      getMagicLinkRequestErrorCode({
+      getEmailCodeRequestErrorCode({
         code: "unexpected_failure",
         status: 500,
       }),
-    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_MAGIC_LINK_REQUEST_FAILED);
+    ).toBe(LOGIN_AUTH_ERROR_CODES.AUTH_EMAIL_CODE_REQUEST_FAILED);
   });
 
-  it("uses stable login error codes for email OTP failures", async () => {
+  it("uses stable login error codes for email-code verification failures", async () => {
     await expect(
       verifyEmailOtp("not-an-email", "123456"),
     ).resolves.toMatchObject({
@@ -339,7 +459,7 @@ describe("auth redirect helpers", () => {
     );
   });
 
-  it("normalizes email OTP codes without accepting malformed tokens", () => {
+  it("normalizes email-code values without accepting malformed tokens", () => {
     expect(normalizeEmailOtpToken("625846")).toBe("625846");
     expect(normalizeEmailOtpToken("625 846")).toBe("625846");
     expect(normalizeEmailOtpToken(" 625846 ")).toBe("625846");

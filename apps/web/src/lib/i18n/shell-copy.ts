@@ -80,13 +80,13 @@ type LoginCopy = {
   activity: string;
   activityDescription: string;
   approvedEmailDescription: string;
-  checkInbox: string;
+  changeEmailAddress: string;
+  codeSentTitle: string;
   description: string;
-  divider: string;
   emailAddress: string;
   emailPlaceholder: string;
   emailCode: string;
-  emailLink: string;
+  emailRequest: string;
   errorMessages: Record<LoginAuthErrorCode, string>;
   guests: string;
   guestsDescription: string;
@@ -99,8 +99,9 @@ type LoginCopy = {
   roleDescription: string;
   roleTitle: string;
   secureAccess: string;
-  sendSignInLink: string;
-  sentEmailPrefix: string;
+  sendEmailCode: string;
+  sentCodePrefix: string;
+  sentCodeRecipientFallback: string;
   sentEmailSuffix: string;
   signInNeedsAttention: string;
   sixDigitCode: string;
@@ -120,27 +121,33 @@ const loginCopy: Record<SupportedLanguage, LoginCopy> = {
     activityDescription: "Reviews and changes remain traceable.",
     approvedEmailDescription:
       "Use the email address approved for this workspace.",
-    checkInbox: "Check your inbox",
+    changeEmailAddress: "Use a different email",
+    codeSentTitle: "Enter the code from your email",
     description:
       "Use your approved email address to open wedding projects, guest lists, RSVP, invitations, messages, seating, check-in, reports, files, and partner work.",
-    divider: "or",
     emailAddress: "Email address",
     emailPlaceholder: "name@example.com",
     emailCode: "Email code",
-    emailLink: "Email link",
+    emailRequest: "Request email code",
     errorMessages: {
       AUTH_CODE_INVALID:
-        "Authentication code is invalid or expired. Request a fresh email.",
-      AUTH_EMAIL_CODE_REQUIRED: "Enter the 6-digit code from the email.",
+        "Authentication code is invalid or expired. Request a fresh code.",
+      AUTH_EMAIL_CODE_DISABLED:
+        "Email codes are not enabled for this workspace. Ask a Diginoces administrator to update Supabase Auth settings.",
+      AUTH_EMAIL_CODE_REQUIRED: "Enter the six-digit code from the email.",
+      AUTH_EMAIL_CODE_RATE_LIMITED:
+        "Too many email codes requested. Wait a few minutes, then request a fresh code.",
+      AUTH_EMAIL_CODE_REQUEST_FAILED: "Unable to send an email code.",
       AUTH_EMAIL_INVALID: "Enter a valid email address.",
       AUTH_GENERIC_ERROR: "Unable to complete sign-in. Try again.",
+      // Legacy link code remains for stale redirects and old auth emails.
       AUTH_LINK_INVALID:
-        "Authentication link is invalid or expired. Request a fresh magic link.",
+        "Sign-in link is invalid or expired. Request a fresh sign-in email.",
       AUTH_MAGIC_LINK_RATE_LIMITED:
-        "Too many magic links requested. Wait a few minutes, then request a fresh link.",
-      AUTH_MAGIC_LINK_REQUEST_FAILED: "Unable to request a magic link.",
+        "Too many sign-in links requested. Wait a few minutes, then request a fresh link.",
+      AUTH_MAGIC_LINK_REQUEST_FAILED: "Unable to send a sign-in link.",
       AUTH_WORKSPACE_NOT_CONFIGURED:
-        "Ask an administrator to finish the workspace connection before requesting access links.",
+        "Ask an administrator to finish the workspace connection before requesting access codes.",
     },
     guests: "Guests",
     guestsDescription: "Personal details stay permission limited.",
@@ -150,14 +157,15 @@ const loginCopy: Record<SupportedLanguage, LoginCopy> = {
     pendingSend: "Sending...",
     pendingVerify: "Verifying...",
     rateLimitDescription:
-      "Repeated requests may be rate limited. Use the newest email if you request more than one link or code.",
+      "Repeated requests may be rate limited. Use the newest one-time code if you request more than one.",
     roleDescription:
       "Sensitive areas may request another verification step before protected records are shown.",
     roleTitle: "Access stays role-aware",
     secureAccess: "Secure access",
-    sendSignInLink: "Send sign-in link",
-    sentEmailPrefix: "A sign-in link was requested for",
-    sentEmailSuffix: ". Open the email to continue.",
+    sendEmailCode: "Send email code",
+    sentCodePrefix: "A six-digit code was sent to",
+    sentCodeRecipientFallback: "this email address",
+    sentEmailSuffix: ". Enter it below to continue.",
     signInNeedsAttention: "Sign-in needs attention",
     sixDigitCode: "Six-digit code",
     tokenPlaceholder: "123456",
@@ -166,39 +174,45 @@ const loginCopy: Record<SupportedLanguage, LoginCopy> = {
     weddingOperations: "Wedding operations",
     workspaceAccess: "Workspace access",
     workspaceConnectionDescription:
-      "Ask an administrator to finish the workspace connection before requesting access links.",
+      "Ask an administrator to finish the workspace connection before requesting access codes.",
     workspaceConnectionRequired: "Workspace connection required",
     workspaceDescription:
-      "Request a secure link or enter the six-digit code from your email.",
+      "Enter your approved email address. Then use the six-digit code sent to your inbox.",
   },
   fr: {
     activity: "Activité",
     activityDescription: "Les revues et modifications restent traçables.",
     approvedEmailDescription:
       "Utilisez l’adresse e-mail approuvée pour cet espace.",
-    checkInbox: "Vérifiez votre boîte mail",
+    changeEmailAddress: "Utiliser une autre adresse",
+    codeSentTitle: "Saisissez le code reçu par e-mail",
     description:
       "Utilisez votre adresse e-mail approuvée pour ouvrir les mariages, listes d’invités, RSVP, invitations, messages, placement, accueil, rapports, fichiers et tâches partenaires.",
-    divider: "ou",
     emailAddress: "Adresse e-mail",
     emailPlaceholder: "name@example.com",
     emailCode: "Code e-mail",
-    emailLink: "Lien e-mail",
+    emailRequest: "Demander un code e-mail",
     errorMessages: {
       AUTH_CODE_INVALID:
-        "Le code de connexion est invalide ou expiré. Demandez un nouvel e-mail.",
+        "Le code de connexion est invalide ou expiré. Demandez un nouveau code.",
+      AUTH_EMAIL_CODE_DISABLED:
+        "Les codes e-mail ne sont pas activés pour cet espace. Demandez à un administrateur Diginoces de mettre à jour Supabase Auth.",
       AUTH_EMAIL_CODE_REQUIRED:
         "Saisissez le code à six chiffres reçu par e-mail.",
+      AUTH_EMAIL_CODE_RATE_LIMITED:
+        "Trop de codes e-mail ont été demandés. Attendez quelques minutes, puis demandez un nouveau code.",
+      AUTH_EMAIL_CODE_REQUEST_FAILED: "Impossible d’envoyer un code e-mail.",
       AUTH_EMAIL_INVALID: "Saisissez une adresse e-mail valide.",
       AUTH_GENERIC_ERROR: "Impossible de terminer la connexion. Réessayez.",
+      // Code lien conservé pour les anciennes redirections et anciens e-mails d’authentification.
       AUTH_LINK_INVALID:
-        "Le lien de connexion est invalide ou expiré. Demandez un nouveau lien.",
+        "Le lien de connexion est invalide ou expiré. Demandez un nouvel e-mail de connexion.",
       AUTH_MAGIC_LINK_RATE_LIMITED:
         "Trop de liens de connexion ont été demandés. Attendez quelques minutes, puis demandez un nouveau lien.",
       AUTH_MAGIC_LINK_REQUEST_FAILED:
-        "Impossible de demander un lien de connexion.",
+        "Impossible d’envoyer un lien de connexion.",
       AUTH_WORKSPACE_NOT_CONFIGURED:
-        "Demandez à un administrateur de terminer la connexion de l’espace avant de demander des liens d’accès.",
+        "Demandez à un administrateur de terminer la connexion de l’espace avant de demander des codes d’accès.",
     },
     guests: "Invités",
     guestsDescription:
@@ -211,14 +225,15 @@ const loginCopy: Record<SupportedLanguage, LoginCopy> = {
     pendingSend: "Envoi...",
     pendingVerify: "Vérification...",
     rateLimitDescription:
-      "Les demandes répétées peuvent être limitées. Utilisez le dernier e-mail si vous demandez plus d’un lien ou code.",
+      "Les demandes répétées peuvent être limitées. Utilisez le dernier code à usage unique si vous en demandez plusieurs.",
     roleDescription:
       "Les zones sensibles peuvent demander une vérification supplémentaire avant d’afficher les dossiers protégés.",
     roleTitle: "L’accès reste limité par rôle",
     secureAccess: "Accès sécurisé",
-    sendSignInLink: "Envoyer le lien de connexion",
-    sentEmailPrefix: "Un lien de connexion a été demandé pour",
-    sentEmailSuffix: ". Ouvrez l’e-mail pour continuer.",
+    sendEmailCode: "Envoyer le code e-mail",
+    sentCodePrefix: "Un code à six chiffres a été envoyé à",
+    sentCodeRecipientFallback: "cette adresse e-mail",
+    sentEmailSuffix: ". Saisissez-le ci-dessous pour continuer.",
     signInNeedsAttention: "La connexion demande une attention",
     sixDigitCode: "Code à six chiffres",
     tokenPlaceholder: "123456",
@@ -227,10 +242,10 @@ const loginCopy: Record<SupportedLanguage, LoginCopy> = {
     weddingOperations: "Opérations de mariage",
     workspaceAccess: "Accès à l’espace",
     workspaceConnectionDescription:
-      "Demandez à un administrateur de terminer la connexion de l’espace avant de demander des liens d’accès.",
+      "Demandez à un administrateur de terminer la connexion de l’espace avant de demander des codes d’accès.",
     workspaceConnectionRequired: "Connexion de l’espace requise",
     workspaceDescription:
-      "Demandez un lien sécurisé ou saisissez le code à six chiffres reçu par e-mail.",
+      "Saisissez votre adresse approuvée. Utilisez ensuite le code à six chiffres reçu par e-mail.",
   },
 };
 

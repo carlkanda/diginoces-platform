@@ -117,6 +117,173 @@ body:has(:is(.auth-route, .public-route))
   padding: 0;
 }
 
+.auth-access-card {
+  --card-spacing: 1rem;
+  position: relative;
+  align-self: center;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--card) 92%, var(--secondary)),
+      var(--card) 42%
+    ),
+    var(--card);
+}
+
+.auth-access-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--primary);
+  content: "";
+}
+
+.auth-access-card__header {
+  gap: 14px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 82%, var(--secondary));
+  padding-block: 16px;
+}
+
+.auth-access-card__heading {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.auth-access-card__mark {
+  display: inline-grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.auth-access-card__mark svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.auth-access-card__heading-copy {
+  min-width: 0;
+}
+
+.auth-access-card__title {
+  font-size: 1.05rem;
+  font-weight: 740;
+  letter-spacing: 0;
+}
+
+.auth-access-card__description {
+  max-width: 54ch;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.auth-access-card__action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-access-card__logo {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+}
+
+.auth-access-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-access-card__notice {
+  border-color: color-mix(in oklab, var(--primary) 16%, var(--border));
+  background: color-mix(in oklab, var(--card) 78%, var(--secondary));
+}
+
+.auth-access-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-access-card__fieldset {
+  gap: 14px;
+}
+
+.auth-access-card__legend {
+  color: var(--foreground);
+  font-size: 0.98rem;
+  font-weight: 740;
+  letter-spacing: 0;
+}
+
+.auth-access-card__field-group {
+  gap: 14px;
+}
+
+.auth-access-card__field {
+  gap: 10px;
+}
+
+.auth-access-card__otp {
+  display: flex;
+  width: 100%;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.auth-access-card__otp-group [data-slot="input-otp-slot"] {
+  width: 2.55rem;
+  height: 2.9rem;
+  background: var(--card);
+  font-size: 1.08rem;
+  font-weight: 740;
+  line-height: 1;
+}
+
+.auth-access-card__otp-separator {
+  color: var(--muted-foreground);
+}
+
+.auth-access-card__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.auth-access-card__actions [data-slot="button"],
+.auth-access-card__primary-action {
+  min-height: 2.75rem;
+}
+
+.auth-access-card__primary-action {
+  width: 100%;
+}
+
+.auth-access-card__footer {
+  background: color-mix(in oklab, var(--card) 72%, var(--muted));
+  color: var(--muted-foreground);
+}
+
+.auth-access-card__footer p {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
 [data-slot="button"],
 [data-slot="command-item"],
 [data-slot="sidebar-menu-button"],
@@ -1216,6 +1383,24 @@ body:has(:is(.auth-route, .public-route))
 
   .home-hero__cta > * {
     flex: 1 1 100%;
+  }
+
+  .auth-access-card__action {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .auth-access-card__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-access-card__otp {
+    justify-content: center;
+  }
+
+  .auth-access-card__otp-group [data-slot="input-otp-slot"] {
+    width: 2.25rem;
+    height: 2.75rem;
   }
 
   .review-board__actions {

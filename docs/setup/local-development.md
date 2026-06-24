@@ -44,23 +44,92 @@ SUPABASE_SECRET_KEY=
 
 The web app intentionally uses the Supabase publishable key for browser and SSR user-session access. `SUPABASE_SERVICE_ROLE_KEY` is server-only and is used only after backend authorization checks for private Supabase Storage signed URLs, including public-token-scoped guest file downloads. Keep `SUPABASE_SECRET_KEY` empty unless it contains a JWT-compatible legacy key; opaque `sb_secret_...` keys are not accepted by the current Supabase Storage signed URL path. Do not expose a Supabase secret or legacy service-role key through any `NEXT_PUBLIC_` variable.
 
-## Supabase Auth Magic Links
+## Supabase Auth Email Codes
 
-For SSR cookie-based auth, configure Supabase Auth email templates to send token-hash links to the app callback route. In the Supabase Dashboard, update the Magic Link template to use this link shape:
+The Diginoces sign-in screen uses email one-time passwords: users enter an
+approved email address, receive a six-digit code, then enter that code in the
+same sign-in card. Supabase decides whether `signInWithOtp` sends a link or a
+code from the auth email template. To keep the app code-only, configure the
+Supabase Auth email template to include `{{ .Token }}` and do not use
+`{{ .ConfirmationURL }}` as the primary sign-in action.
+
+The email body should include copy similar to:
+
+```text
+Your Diginoces sign-in code is {{ .Token }}.
+```
+
+Supabase Auth owns code expiry and send-rate limits. In Supabase, confirm the
+current values under Auth email/OTP settings and Auth rate-limit settings before
+QA. For linked-dev troubleshooting, assume a conservative retry rhythm of one
+email-code request per address per minute and wait 3-5 minutes after a
+rate-limit response before requesting another code; record the exact project
+settings if they differ. Supabase hosted defaults and project settings can
+also cap the total number of email messages per address over a longer
+hour-scale window. The Diginoces app treats Supabase's
+`over_email_send_rate_limit` error code or HTTP `429` status as
+`AUTH_EMAIL_CODE_RATE_LIMITED`. In the UI this appears as:
+
+```text
+Too many email codes requested. Wait a few minutes, then request a fresh code.
+```
+
+If Supabase returns the unambiguous `otp_disabled` error code, email codes are
+not enabled for the project and the app shows a setup-focused message instead
+of a generic send failure. A `Signups not allowed` message can also happen when
+`shouldCreateUser` is false and the submitted email address is not an approved
+Auth user, so the app does not treat that message alone as proof that OTP is
+disabled.
+
+For older token-hash link compatibility, the callback route still accepts this
+link shape if an operator needs to test or recover an existing template:
 
 ```text
 {{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email
 ```
 
-`{{ .RedirectTo }}` preserves the app-generated callback origin and `next` path, and the Diginoces sign-in action always includes a query string, so the token parameters are appended with `&`. Keep `NEXT_PUBLIC_APP_URL` and the Supabase Auth Site URL aligned with the local app origin, usually `http://localhost:3000`. Add the same origin to Supabase Auth redirect URLs. For local browser QA, also allow the loopback origins you actually open in Chrome, such as `http://127.0.0.1:3000/**` and `http://localhost:3000/**` or exact callback entries if your Supabase project does not use wildcard redirect rules. The app preserves safe loopback origins when requesting magic links so PKCE verifier cookies stay on the same host as the callback.
+`{{ .RedirectTo }}` preserves the app-generated callback origin and `next` path,
+and the Diginoces sign-in action always includes a query string, so token
+parameters are appended with `&`. Keep `NEXT_PUBLIC_APP_URL` and the Supabase
+Auth Site URL aligned with the local app origin, usually
+`http://localhost:3000`. Add the same origin to Supabase Auth redirect URLs.
+For local browser QA, also allow the loopback origins you actually open in
+Chrome, such as `http://127.0.0.1:3000/**` and `http://localhost:3000/**` or
+exact callback entries if your Supabase project does not use wildcard redirect
+rules. The app preserves safe loopback origins when requesting email codes so
+PKCE verifier cookies stay on the same host as any callback link still present
+in a legacy template.
 
-The app also includes a local compatibility bridge for older implicit-flow magic links that redirect to `/auth/callback#access_token=...`. The bridge clears the URL fragment from browser history, posts the tokens to a same-origin callback endpoint, validates the session with Supabase, and sets SSR cookies. Prefer the token-hash email-template configuration for production readiness. The callback also accepts Supabase's `token=` query alias. `token_hash=` and `type=email` are the preferred template parameters, and the callback will try the paired `email`/`magiclink` verification fallback if Supabase rejects the received type.
+The app also includes a local compatibility bridge for older implicit-flow links
+that redirect to `/auth/callback#access_token=...`. The bridge clears the URL
+fragment from browser history, posts the tokens to a same-origin callback
+endpoint, validates the session with Supabase, and sets SSR cookies. Prefer the
+six-digit code template for normal sign-in. The callback also accepts
+Supabase's `token=` query alias. `token_hash=` and `type=email` remain the
+preferred link-template parameters when testing the legacy callback path, and
+the callback will try the paired `email`/`magiclink` verification fallback if
+Supabase rejects the received type.
 
 If a local sign-in ends at an authentication callback error:
 
 - make sure the app is running at the same origin configured in `NEXT_PUBLIC_APP_URL`;
-- make sure the linked Supabase Auth Site URL and redirect allow-list include the callback origin shown in the magic-link URL, including `localhost` versus `127.0.0.1`;
-- request a fresh magic link after any rate-limit window, because Supabase magic links are single-use and expire quickly.
+- make sure the linked Supabase Auth Site URL and redirect allow-list include the callback origin shown in any legacy callback URL, including `localhost` versus `127.0.0.1`;
+- request a fresh email code after the Supabase Auth rate-limit window clears, because one-time codes are single-use and expire according to the project OTP expiry setting. Rate-limit errors usually show `over_email_send_rate_limit`, HTTP `429`, or the UI message about too many email codes.
+
+### Local email-code testing
+
+For local QA, use the linked Supabase development project rather than real
+production users:
+
+- In Supabase Auth, use the email template preview/testing tools to confirm the
+  body contains `{{ .Token }}` and not only `{{ .ConfirmationURL }}`.
+- Inspect Supabase Auth logs for `signInWithOtp` send attempts, rate-limit
+  responses, and template errors when a code is not delivered.
+- If delivery needs to be isolated from external email providers, configure a
+  local SMTP capture tool such as Mailpit or MailHog in the Supabase project or
+  local Supabase stack, then test the six-digit token from that mailbox.
+- Keep retries deliberate: repeated requests from the same address can trigger
+  Supabase Auth rate limits even when the app code is working correctly.
 
 ## Web App
 
