@@ -169,34 +169,69 @@ describe("StaticCopyLocalizer source tracking", () => {
       },
     }));
 
+    const testGlobal = globalThis as typeof globalThis & {
+      Element?: typeof Element;
+    };
+    const originalElement = testGlobal.Element;
+
+    class TestElement {
+      private readonly attributes = new Map<string, string>([
+        ["aria-label", "Old source"],
+      ]);
+      readonly tagName = "BUTTON";
+
+      closest() {
+        return null;
+      }
+
+      getAttribute(name: string) {
+        return this.attributes.get(name) ?? null;
+      }
+
+      querySelectorAll() {
+        return [] as Element[];
+      }
+
+      removeAttribute(name: string) {
+        this.attributes.delete(name);
+      }
+
+      setAttribute(name: string, value: string) {
+        this.attributes.set(name, value);
+      }
+    }
+
+    Object.defineProperty(testGlobal, "Element", {
+      configurable: true,
+      value: TestElement,
+    });
+
     try {
       const { localizeAttributes: localizeAttributesWithMock } =
         await import("@/components/static-copy-localizer");
-      const attributes = new Map<string, string>([
-        ["aria-label", "Old source"],
-      ]);
-      const element = {
-        closest: () => null,
-        getAttribute: (name: string) => attributes.get(name) ?? null,
-        querySelectorAll: () => [],
-        setAttribute: (name: string, value: string) => {
-          attributes.set(name, value);
-        },
-        tagName: "BUTTON",
-      };
+      const element = new TestElement();
       const root = element as unknown as ParentNode;
 
       localizeAttributesWithMock(root, "fr");
-      expect(attributes.get("aria-label")).toBe("Translated old source");
+      expect(element.getAttribute("aria-label")).toBe("Translated old source");
 
-      attributes.delete("aria-label");
+      element.removeAttribute("aria-label");
       localizeAttributesWithMock(root, "en");
 
-      attributes.set("aria-label", "Translated old source");
+      element.setAttribute("aria-label", "Translated old source");
       localizeAttributesWithMock(root, "en");
 
-      expect(attributes.get("aria-label")).toBe("Translated old source");
+      expect(element.getAttribute("aria-label")).toBe("Translated old source");
     } finally {
+      if (originalElement) {
+        Object.defineProperty(testGlobal, "Element", {
+          configurable: true,
+          value: originalElement,
+        });
+      } else {
+        Reflect.deleteProperty(testGlobal, "Element");
+      }
+
       vi.doUnmock("@/lib/i18n/static-translations");
       vi.resetModules();
     }
