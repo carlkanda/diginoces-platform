@@ -1,5 +1,289 @@
 import { DEFAULT_LANGUAGE, type SupportedLanguage } from "@/lib/i18n/config";
 const baseExactEnglishToFrenchEntries = [
+  ["Access action was not completed", "Action d'accès non finalisée"],
+  ["Access control", "Gestion des accès"],
+  [
+    "Access controls will appear after the workspace connection is ready.",
+    "Les contrôles d'accès apparaîtront lorsque la connexion de l'espace sera prête.",
+  ],
+  [
+    "Access management is unavailable until the workspace connection is ready.",
+    "La gestion des accès est indisponible tant que la connexion de l'espace n'est pas prête.",
+  ],
+  ["Access updated", "Accès mis à jour"],
+  [
+    "Active and previously revoked global role assignments.",
+    "Attributions de rôles globaux actives ou déjà révoquées.",
+  ],
+  ["Add event member", "Ajouter un membre à l'événement"],
+  [
+    "Add ceremonies, receptions, brunches, or other event workspaces inside this wedding.",
+    "Ajoutez cérémonies, réceptions, brunchs ou autres espaces événementiels dans ce mariage.",
+  ],
+  [
+    "Add staff accounts that should run or supervise this event.",
+    "Ajoutez les comptes équipe qui doivent piloter ou superviser cet événement.",
+  ],
+  ["Add project member", "Ajouter un membre au mariage"],
+  [
+    "Add the bride, groom, or operator accounts that should open this wedding.",
+    "Ajoutez les comptes mariée, marié ou opérateur qui doivent ouvrir ce mariage.",
+  ],
+  [
+    "Adjust the filters or clear them to see every global access record.",
+    "Ajustez les filtres ou effacez-les pour afficher toutes les attributions de rôles globaux.",
+  ],
+  ["All roles", "Tous les rôles"],
+  ["All statuses", "Tous les statuts"],
+  ["Approved", "Approuvé"],
+  ["Assign global role", "Attribuer un rôle global"],
+  [
+    "Assign event staff or check-in supervisors who should access this event workspace.",
+    "Attribuez l'accès aux équipes événement ou responsables accueil qui doivent ouvrir cet espace événement.",
+  ],
+  [
+    "Assign bride, groom, couple, or project operator access to users who already have a Diginoces login.",
+    "Attribuez l'accès mariée, marié, couple ou opérateur aux utilisateurs qui ont déjà un compte Diginoces.",
+  ],
+  ["Assign role", "Attribuer le rôle"],
+  [
+    "Assign sensitive platform roles to existing Diginoces users. Wedding and event access stays inside each project or event setup page.",
+    "Attribuez les rôles sensibles de la plateforme aux utilisateurs Diginoces existants. Les accès aux mariages et aux événements se gèrent dans leurs pages de configuration respectives.",
+  ],
+  ["Back to event", "Retour à l'événement"],
+  [
+    "Check the email and selected role, then try again.",
+    "Vérifiez l'e-mail et le rôle sélectionné, puis réessayez.",
+  ],
+  [
+    "Check the entered event details, then try again.",
+    "Vérifiez les détails de l'événement, puis réessayez.",
+  ],
+  [
+    "Check the entered setup details, then try again.",
+    "Vérifiez les informations de configuration, puis réessayez.",
+  ],
+  ["Clear", "Effacer"],
+  ["Couple and status", "Couple et statut"],
+  ["Cancelled", "Annulé"],
+  ["Civil", "Civil"],
+  ["Completed", "Terminé"],
+  ["Create an event", "Créer un événement"],
+  ["Create event", "Créer l'événement"],
+  ["Customary", "Coutumier"],
+  ["End time", "Heure de fin"],
+  ["Event operations", "Opérations événement"],
+  ["Event access", "Accès à l'événement"],
+  ["Event access was updated.", "L'accès à l'événement a été mis à jour."],
+  [
+    "Event details were saved.",
+    "Les détails de l'événement ont été enregistrés.",
+  ],
+  ["Event identity", "Identité de l'événement"],
+  [
+    "Event member status was updated.",
+    "Le statut du membre événement a été mis à jour.",
+  ],
+  ["Event role", "Rôle événement"],
+  ["Event scoped", "Limité à l'événement"],
+  ["Event status", "Statut de l'événement"],
+  ["Event type", "Type d'événement"],
+  ["Event setup", "Configuration de l'événement"],
+  [
+    "Event setup controls will appear after the workspace connection is ready.",
+    "Les contrôles de configuration événement apparaîtront lorsque la connexion de l'espace sera prête.",
+  ],
+  [
+    "Event setup is unavailable until the workspace connection is ready.",
+    "La configuration événement est indisponible tant que la connexion de l'espace n'est pas prête.",
+  ],
+  [
+    "Event setup stays closed until the secure workspace connection is configured.",
+    "La configuration événement reste fermée jusqu'à ce que la connexion sécurisée de l'espace soit configurée.",
+  ],
+  ["Event setup updated", "Configuration événement mise à jour"],
+  ["Event setup was not completed", "Configuration événement non finalisée"],
+  ["Event was created.", "L'événement a été créé."],
+  ["Filter", "Filtrer"],
+  ["Filter assignments", "Filtrer les attributions"],
+  [
+    "Find a user, role, or status before changing access.",
+    "Recherchez un utilisateur, un rôle ou un statut avant de modifier les accès.",
+  ],
+  ["Audit Viewer", "Lecteur d’audit"],
+  ["Diginoces Admin", "Admin Diginoces"],
+  ["File Manager", "Gestionnaire de fichiers"],
+  ["Operations Manager", "Responsable opérations"],
+  ["Role Manager", "Gestionnaire de rôles"],
+  [
+    "Can review and export foundation audit records.",
+    "Peut consulter et exporter les journaux d’audit de la plateforme.",
+  ],
+  [
+    "Reviews foundation audit records.",
+    "Consulte les journaux d’audit de la plateforme.",
+  ],
+  [
+    "Internal administrator with foundation-level access.",
+    "Administrateur interne avec accès complet à la plateforme.",
+  ],
+  [
+    "Can manage app-owned operational files through approved services.",
+    "Peut gérer les fichiers opérationnels de l’application via les services approuvés.",
+  ],
+  [
+    "Manages app-owned operational files through approved services.",
+    "Gère les fichiers opérationnels de l’application via les services approuvés.",
+  ],
+  [
+    "Can operate foundation services without sensitive admin controls.",
+    "Peut piloter les services opérationnels sans les contrôles administrateur sensibles.",
+  ],
+  [
+    "Operates foundation services without sensitive admin controls.",
+    "Pilote les services opérationnels sans les contrôles administrateur sensibles.",
+  ],
+  ["Can manage roles and permissions.", "Peut gérer les rôles et permissions."],
+  [
+    "Manages roles and permissions through approved backend services.",
+    "Gère les rôles et permissions via les services backend approuvés.",
+  ],
+  ["Global role", "Rôle global"],
+  [
+    "Global role access was revoked.",
+    "L'attribution du rôle global a été révoquée.",
+  ],
+  [
+    "Global role access was updated.",
+    "L'attribution du rôle global a été mise à jour.",
+  ],
+  ["Global role assignments", "Attributions de rôles globaux"],
+  ["Invited", "Invitation envoyée"],
+  ["In progress", "En cours"],
+  [
+    "Jump directly to the event details or event access area.",
+    "Allez directement aux détails de l'événement ou à l'accès événement.",
+  ],
+  [
+    "Jump directly to the part of the wedding setup you need to adjust.",
+    "Allez directement à la partie de configuration du mariage à ajuster.",
+  ],
+  [
+    "Keep the couple record, events, and access assignments ready before daily project work begins.",
+    "Gardez le dossier couple, les événements et les accès prêts avant le travail quotidien.",
+  ],
+  [
+    "Keep the event schedule, venue, status, and event-day staff access ready for handoff.",
+    "Gardez l'horaire, le lieu, le statut et l'accès équipe prêts pour la transmission.",
+  ],
+  ["Lead", "Prospect"],
+  ["MFA required", "MFA requise"],
+  ["No event members assigned", "Aucun membre événement attribué"],
+  ["No global roles assigned", "Aucun rôle global attribué"],
+  ["No matching role assignments", "Aucune attribution de rôle correspondante"],
+  ["No project members assigned", "Aucun membre du mariage attribué"],
+  ["Other", "Autre"],
+  ["Planning notes", "Notes de planification"],
+  ["Preferred language", "Langue préférée"],
+  ["Primary navigation", "Navigation principale"],
+  ["Project access", "Accès au mariage"],
+  ["Project access was updated.", "L'accès au mariage a été mis à jour."],
+  [
+    "Project member status was updated.",
+    "Le statut du membre mariage a été mis à jour.",
+  ],
+  ["Project role", "Rôle mariage"],
+  ["Project scoped", "Limité au mariage"],
+  [
+    "Project setup stays closed until the secure workspace connection is configured.",
+    "La configuration du mariage reste fermée jusqu'à ce que la connexion sécurisée de l'espace soit configurée.",
+  ],
+  ["Project setup", "Paramètres du mariage"],
+  ["Project status", "Statut du mariage"],
+  ["Public navigation", "Navigation publique"],
+  ["Religious", "Religieux"],
+  ["Removed", "Retiré"],
+  ["Revoke", "Révoquer"],
+  ["Revoked", "Révoqué"],
+  ["Role assignment", "Attribution de rôle"],
+  ["Role filter", "Filtre par rôle"],
+  [
+    "Role management stays closed until the secure workspace connection is configured.",
+    "La gestion des rôles reste fermée jusqu'à ce que la connexion sécurisée de l'espace soit configurée.",
+  ],
+  ["Save event setup", "Enregistrer la configuration événement"],
+  ["Save wedding setup", "Enregistrer la configuration du mariage"],
+  ["Search by name or email", "Rechercher par nom ou e-mail"],
+  ["Select a global role", "Sélectionner un rôle global"],
+  [
+    "Setup is unavailable until the workspace connection is ready.",
+    "La configuration est indisponible tant que la connexion de l'espace n'est pas prête.",
+  ],
+  ["Setup action was not completed", "Configuration non finalisée"],
+  ["Setup sections", "Sections de configuration"],
+  ["Setup updated", "Configuration mise à jour"],
+  ["Standard sign-in", "Connexion standard"],
+  ["Start time", "Heure de début"],
+  ["Status filter", "Filtre par statut"],
+  ["Submitted", "Soumis"],
+  ["Suspended", "Suspendu"],
+  ["Toggle navigation", "Afficher ou masquer la navigation"],
+  [
+    "The access change could not be completed. Confirm the request is still valid, then try again.",
+    "La modification des accès n'a pas pu être effectuée. Vérifiez que la demande est toujours valide, puis réessayez.",
+  ],
+  [
+    "The event setup action could not be completed. Confirm the user exists and the selected role is valid.",
+    "L'action de configuration événement n'a pas pu être effectuée. Confirmez que l'utilisateur existe et que le rôle sélectionné est valide.",
+  ],
+  [
+    "The setup action could not be completed. Confirm the user exists and the selected role is valid.",
+    "L'action de configuration n'a pas pu être effectuée. Confirmez que l'utilisateur existe et que le rôle sélectionné est valide.",
+  ],
+  [
+    "The user must already be able to sign in.",
+    "L'utilisateur doit déjà pouvoir se connecter.",
+  ],
+  [
+    "This account is not allowed to manage global access.",
+    "Ce compte n'est pas autorisé à gérer les accès globaux.",
+  ],
+  [
+    "This account is not allowed to perform that event setup action.",
+    "Ce compte n'est pas autorisé à effectuer cette action de configuration événement.",
+  ],
+  [
+    "This account is not allowed to perform that setup action.",
+    "Ce compte n'est pas autorisé à effectuer cette action de configuration.",
+  ],
+  [
+    "Update the couple record, language, contact details, and project lifecycle status.",
+    "Mettez à jour le dossier couple, la langue, les contacts et le statut du mariage.",
+  ],
+  [
+    "Update the event identity, date/time, venue, and lifecycle status.",
+    "Mettez à jour l'identité, la date, l'heure, le lieu et le statut de l'événement.",
+  ],
+  ["User email", "E-mail utilisateur"],
+  ["Venue address", "Adresse du lieu"],
+  [
+    "Use this for Diginoces administrators, operations managers, role managers, and other platform-level roles.",
+    "Utilisez ce formulaire pour les administrateurs Diginoces, responsables opérations, gestionnaires de rôles et autres rôles de plateforme.",
+  ],
+  [
+    "Visible only to authorized Diginoces users.",
+    "Visible seulement par les utilisateurs Diginoces autorisés.",
+  ],
+  ["Wedding identity", "Identité du mariage"],
+  [
+    "Wedding project details were saved.",
+    "Les détails du mariage ont été enregistrés.",
+  ],
+  ["Wedding setup", "Configuration du mariage"],
+  [
+    "Setup controls will appear after the workspace connection is ready.",
+    "Les contrôles de configuration apparaîtront lorsque la connexion de l'espace sera prête.",
+  ],
   ["Access setup needed", "Configuration d’accès requise"],
   ["Access stays role-aware", "L’accès reste limité par rôle"],
   ["Access", "Accès"],
@@ -346,7 +630,8 @@ const baseExactEnglishToFrenchEntries = [
   ["This wedding", "Ce mariage"],
   ["Task", "Tâche"],
   ["Traceable decisions", "Décisions traçables"],
-  ["Toggle Sidebar", "Afficher/masquer la navigation"],
+  ["Toggle Sidebar", "Afficher ou masquer le panneau de navigation"],
+  ["Breadcrumb", "Fil d'Ariane"],
   ["Upload CSV", "Importer un CSV"],
   ["Use", "Utilité"],
   ["Use a different email", "Utiliser une autre adresse"],
@@ -493,7 +778,7 @@ const baseExactEnglishToFrenchEntries = [
   ["Messages needing action", "Messages à traiter"],
   ["Unexpected guest requests", "Demandes d’invités imprévus"],
   ["Draft events", "Événements brouillons"],
-  ["Source", "Source"],
+  ["Source", "Origine"],
   ["Rows", "Lignes"],
   ["Wedding project", "Projet de mariage"],
   ["Guest Public Pages Previewed", "Aperçus de pages invitées publiques"],
@@ -505,7 +790,7 @@ const baseExactEnglishToFrenchEntries = [
   ["Activity entries", "Entrées d’activité"],
   [
     "Activity export needs attention",
-    "L’export d’activité demande une attention",
+    "L’export d’activité nécessite une attention",
   ],
   ["Activity export was created", "L’export d’activité a été créé"],
   [
@@ -1682,6 +1967,151 @@ const baseExactEnglishToFrench = defineExactTranslations(
   baseExactEnglishToFrenchEntries,
 );
 const supplementalExactEnglishToFrenchEntries = [
+  ["Add", "Ajouter"],
+  ["Added", "Ajouté"],
+  [
+    "Add dates, venues, or delivery context that helps the operations team start cleanly.",
+    "Ajoutez les dates, lieux ou éléments de livraison utiles à l’équipe opérations pour démarrer proprement.",
+  ],
+  ["Addendum", "Avenant"],
+  ["Addendums", "Avenants"],
+  ["Admin", "Administrateur"],
+  ["Admin action", "Action administrateur"],
+  ["Alignment", "Alignement"],
+  ["Amount", "Montant"],
+  ["Attempts", "Tentatives"],
+  [
+    "Assign a role to an existing user before they can open protected platform areas.",
+    "Attribuez un rôle à un utilisateur existant avant qu’il puisse ouvrir les zones protégées de la plateforme.",
+  ],
+  [
+    "Assign or revoke sensitive platform roles for existing Diginoces users.",
+    "Attribuez ou révoquez les rôles sensibles de plateforme pour les utilisateurs Diginoces existants.",
+  ],
+  [
+    "Assign platform roles to existing users, then keep wedding and event roles scoped inside the right workspace.",
+    "Attribuez les rôles de plateforme aux utilisateurs existants, puis gardez les rôles mariage et événement dans le bon espace.",
+  ],
+  ["Assigned", "Assigné"],
+  ["Approvals", "Approbations"],
+  ["Archive", "Archiver"],
+  ["Area", "Zone"],
+  ["Areas", "Zones"],
+  ["Arrival", "Arrivée"],
+  ["Arrivals", "Arrivées"],
+  ["Category", "Catégorie"],
+  ["Center", "Centre"],
+  ["Channel", "Canal"],
+  ["Checkpoint", "Point de contrôle"],
+  [
+    "Choose the new retention end date.",
+    "Choisissez la nouvelle date de fin de conservation.",
+  ],
+  ["Complete", "Terminer"],
+  ["Confirm", "Confirmer"],
+  ["Contact name", "Nom du contact"],
+  ["Context", "Contexte"],
+  ["Count", "Nombre"],
+  ["Create a wedding project", "Créer un dossier de mariage"],
+  ["Create first event", "Créer le premier événement"],
+  ["Create wedding", "Créer un mariage"],
+  ["Create wedding project", "Créer le dossier mariage"],
+  ["Design", "Création"],
+  ["Designs", "Créations"],
+  ["Detail", "Détail"],
+  ["Device", "Appareil"],
+  ["Disabled", "Désactivé"],
+  ["Diginoces Platform", "Plateforme Diginoces"],
+  ["Enabled", "Activé"],
+  ["Evidence", "Preuves"],
+  ["Exclude", "Exclure"],
+  ["Excluded", "Exclu"],
+  ["Existing users only", "Utilisateurs existants uniquement"],
+  ["Extend retention date", "Prolonger la date de conservation"],
+  ["Extend retention through", "Prolonger la conservation jusqu’au"],
+  ["Field", "Champ"],
+  ["Fields", "Champs"],
+  ["Flat", "Fixe"],
+  ["From", "Du"],
+  ["Gate", "Contrôle d’accès"],
+  ["Generated", "Généré"],
+  ["Guest list summary", "Résumé de la liste d’invités"],
+  ["Headers", "En-têtes"],
+  ["Height", "Hauteur"],
+  ["Horizontal", "Position horizontale"],
+  ["Inactive", "Inactif"],
+  ["Item", "Élément"],
+  ["Label", "Libellé"],
+  ["Left", "Gauche"],
+  ["Manage access control", "Gérer les accès"],
+  ["Mark retention complete", "Marquer la conservation terminée"],
+  ["Member", "Membre"],
+  ["Method", "Méthode"],
+  ["Name", "Nom"],
+  ["None", "Aucun"],
+  ["Organization", "Organisation"],
+  ["Overall", "Global"],
+  ["Payment", "Paiement"],
+  ["Percentage", "Pourcentage"],
+  ["Prepared", "Préparé"],
+  ["Purpose", "Objectif"],
+  ["Reason", "Raison"],
+  ["Record", "Dossier"],
+  ["Reference", "Référence"],
+  ["Reject", "Rejeter"],
+  ["Remaining", "Restant"],
+  ["Responses", "Réponses"],
+  ["Result", "Résultat"],
+  ["Retention action", "Action de conservation"],
+  ["Reviewed", "Relu"],
+  ["Right", "Droite"],
+  ["Run", "Lot"],
+  ["Runs", "Lots"],
+  ["Save", "Enregistrer"],
+  ["Scope", "Périmètre"],
+  ["Session verification", "Contrôle de session"],
+  ["Settings", "Paramètres"],
+  ["Showing", "Affichage"],
+  ["Signal", "Indicateur"],
+  ["Size", "Taille"],
+  ["State", "État"],
+  ["Station", "Poste"],
+  ["Submissions", "Soumissions"],
+  ["Sync", "Synchronisation"],
+  ["Thread", "Fil"],
+  ["Time", "Heure"],
+  ["Timezone", "Fuseau horaire"],
+  ["Title", "Titre"],
+  ["To", "Au"],
+  ["Unknown", "Inconnu"],
+  ["Update", "Mettre à jour"],
+  ["User", "Utilisateur"],
+  ["Value", "Valeur"],
+  ["Vertical", "Position verticale"],
+  ["Versions", "Versions"],
+  [
+    "Wedding guest operations workspace for Diginoces.",
+    "Espace Diginoces de pilotage des invités de mariage.",
+  ],
+  ["Wedding project was not created", "Le mariage n’a pas été créé"],
+  ["Width", "Largeur"],
+  ["Wording", "Texte"],
+  [
+    "Start the secure workspace for a couple. Events, guests, invitations, and delivery work stay inside the project after it is created.",
+    "Démarrez l’espace sécurisé du couple. Les événements, invités, invitations et opérations de livraison resteront dans le dossier après sa création.",
+  ],
+  [
+    ". Scan again or use manual guest search from check-in.",
+    ". Scannez à nouveau ou utilisez la recherche manuelle d’invité depuis l’accueil.",
+  ],
+  [
+    ". Open the event workspace when you need seating, check-in, files, or the event status dashboard.",
+    ". Ouvrez l’espace événement si vous avez besoin du placement, de l’accueil, des fichiers ou du tableau de bord de l’événement.",
+  ],
+  [
+    ". Download and archive actions still require server-side permission.",
+    ". Le téléchargement et l’archivage restent réservés aux rôles autorisés.",
+  ],
   ["0 is left, 1 is right.", "0 correspond à gauche, 1 à droite."],
   ["0 is top, 1 is bottom.", "0 correspond au haut, 1 au bas."],
   [
@@ -4736,8 +5166,8 @@ const phraseEnglishToFrench = [
     "Keep this link private. It opens only the guest details connected to this invitation.",
     "Gardez ce lien privé. Il ouvre seulement les détails invités liés à cette invitation.",
   ],
-  ["Invited events", "Événements invités"],
-  ["invited events", "événements invités"],
+  ["Invited events", "Événements inclus"],
+  ["invited events", "événements inclus"],
   [
     "Staff preview access is permission-based. The guest still needs a separate secure public page token to open their own page.",
     "L’accès aperçu équipe dépend des permissions. L’invité a toujours besoin d’un jeton public sécurisé séparé pour ouvrir sa propre page.",
@@ -4973,6 +5403,12 @@ function translateCountLikeCopy(value: string, language: SupportedLanguage) {
       return `Champ ${fieldMatch[1]}`;
     }
 
+    const filteredRecordMatch = value.match(/^(\d+) of (\d+) records$/);
+
+    if (filteredRecordMatch) {
+      return `${filteredRecordMatch[1]} dossiers affichés sur ${filteredRecordMatch[2]}`;
+    }
+
     const preparedMessageMatch = value.match(/^(\d+) prepared messages?$/);
 
     if (preparedMessageMatch) {
@@ -4995,8 +5431,8 @@ function translateCountLikeCopy(value: string, language: SupportedLanguage) {
 
     if (invitedEventMatch) {
       return formatCountedLabel(invitedEventMatch[1], [
-        "événement invité",
-        "événements invités",
+        "événement inclus",
+        "événements inclus",
       ]);
     }
 
@@ -5130,6 +5566,14 @@ function translateCountLikeCopy(value: string, language: SupportedLanguage) {
       return `Field ${fieldMatch[1]}`;
     }
 
+    const filteredRecordMatch = value.match(
+      /^(\d+) dossiers affichés sur (\d+)$/,
+    );
+
+    if (filteredRecordMatch) {
+      return `${filteredRecordMatch[1]} of ${filteredRecordMatch[2]} records`;
+    }
+
     const preparedMessageMatch = value.match(/^(\d+) messages? préparés?$/);
 
     if (preparedMessageMatch) {
@@ -5148,7 +5592,7 @@ function translateCountLikeCopy(value: string, language: SupportedLanguage) {
       ]);
     }
 
-    const invitedEventMatch = value.match(/^(\d+) événements? invités?$/);
+    const invitedEventMatch = value.match(/^(\d+) événements? inclus?$/);
 
     if (invitedEventMatch) {
       return formatCountedLabel(invitedEventMatch[1], [

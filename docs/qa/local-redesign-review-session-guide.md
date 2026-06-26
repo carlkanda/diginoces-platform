@@ -58,6 +58,7 @@ Message detail and partner detail pages depend on whichever QA records are visib
 | `/platform` | `http://127.0.0.1:3000/platform` |
 | `/platform/projects` | `http://127.0.0.1:3000/platform/projects` |
 | `/platform/projects/[projectId]` | `http://127.0.0.1:3000/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c` |
+| `/platform/projects/[projectId]/settings` | `http://127.0.0.1:3000/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c/settings` |
 | `/platform/projects/[projectId]/dashboard` | `http://127.0.0.1:3000/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c/dashboard` |
 | `/platform/projects/[projectId]/couple-dashboard` | `http://127.0.0.1:3000/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c/couple-dashboard` |
 | `/platform/dashboard` | `http://127.0.0.1:3000/platform/dashboard` |
@@ -101,6 +102,7 @@ Message detail and partner detail pages depend on whichever QA records are visib
 | Route | Local review URL |
 | --- | --- |
 | `/platform/events/[eventId]` | `http://127.0.0.1:3000/platform/events/088aebc4-05d9-45c2-b73a-803f73706163` |
+| `/platform/events/[eventId]/settings` | `http://127.0.0.1:3000/platform/events/088aebc4-05d9-45c2-b73a-803f73706163/settings` |
 | `/platform/events/[eventId]/dashboard` | `http://127.0.0.1:3000/platform/events/088aebc4-05d9-45c2-b73a-803f73706163/dashboard` |
 | `/platform/events/[eventId]/seating` | `http://127.0.0.1:3000/platform/events/088aebc4-05d9-45c2-b73a-803f73706163/seating` |
 | `/platform/events/[eventId]/seating/map` | `http://127.0.0.1:3000/platform/events/088aebc4-05d9-45c2-b73a-803f73706163/seating/map` |
@@ -111,6 +113,7 @@ Message detail and partner detail pages depend on whichever QA records are visib
 
 | Route | Local review URL |
 | --- | --- |
+| `/platform/access` | `http://127.0.0.1:3000/platform/access` |
 | `/platform/reports` | `http://127.0.0.1:3000/platform/reports` |
 | `/platform/audit-logs` | `http://127.0.0.1:3000/platform/audit-logs` |
 | `/platform/projects/[projectId]/commercial` | `http://127.0.0.1:3000/platform/projects/de3378cd-ea21-4982-b507-a178eb88a34c/commercial` |

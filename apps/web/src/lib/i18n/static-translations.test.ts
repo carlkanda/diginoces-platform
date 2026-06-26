@@ -73,10 +73,19 @@ describe("static UI translation helpers", () => {
       "2 messages récents",
     );
     expect(translateStaticCopy("1 invited event", "fr")).toBe(
-      "1 événement invité",
+      "1 événement inclus",
     );
     expect(translateStaticCopy("2 invited events", "fr")).toBe(
-      "2 événements invités",
+      "2 événements inclus",
+    );
+    expect(translateStaticCopy("2 of 5 records", "fr")).toBe(
+      "2 dossiers affichés sur 5",
+    );
+    expect(translateStaticCopy("60 of 60 records", "fr")).toBe(
+      "60 dossiers affichés sur 60",
+    );
+    expect(translateStaticCopy("2 dossiers affichés sur 5", "en")).toBe(
+      "2 of 5 records",
     );
     expect(translateStaticCopy("1 table positioned", "fr")).toBe(
       "1 table positionnée",
@@ -400,7 +409,7 @@ describe("static UI translation helpers", () => {
       ["Activity export was created", "L’export d’activité a été créé"],
       [
         "Activity export needs attention",
-        "L’export d’activité demande une attention",
+        "L’export d’activité nécessite une attention",
       ],
       [
         "Activity records are operational evidence",
@@ -449,6 +458,256 @@ describe("static UI translation helpers", () => {
     expect(translateStaticCopy("Operational: 1 wedding.", "fr")).toBe(
       "Opérationnel : 1 mariage.",
     );
+  });
+
+  it("covers labels from the deep translation review", () => {
+    const reviewedLabels = [
+      ["Diginoces Platform", "Plateforme Diginoces"],
+      [
+        "Wedding guest operations workspace for Diginoces.",
+        "Espace Diginoces de pilotage des invités de mariage.",
+      ],
+      ["Session verification", "Contrôle de session"],
+      ["Approvals", "Approbations"],
+      ["Evidence", "Preuves"],
+      ["Access control", "Gestion des accès"],
+      ["Primary navigation", "Navigation principale"],
+      ["Public navigation", "Navigation publique"],
+      ["Toggle navigation", "Afficher ou masquer la navigation"],
+      [
+        "Active and previously revoked global role assignments.",
+        "Attributions de rôles globaux actives ou déjà révoquées.",
+      ],
+      [
+        "Adjust the filters or clear them to see every global access record.",
+        "Ajustez les filtres ou effacez-les pour afficher toutes les attributions de rôles globaux.",
+      ],
+      [
+        "Assign sensitive platform roles to existing Diginoces users. Wedding and event access stays inside each project or event setup page.",
+        "Attribuez les rôles sensibles de la plateforme aux utilisateurs Diginoces existants. Les accès aux mariages et aux événements se gèrent dans leurs pages de configuration respectives.",
+      ],
+      ["Existing users only", "Utilisateurs existants uniquement"],
+      ["Audit Viewer", "Lecteur d’audit"],
+      ["Diginoces Admin", "Admin Diginoces"],
+      ["File Manager", "Gestionnaire de fichiers"],
+      ["Operations Manager", "Responsable opérations"],
+      ["Role Manager", "Gestionnaire de rôles"],
+      ["Select a global role", "Sélectionner un rôle global"],
+      [
+        "Can review and export foundation audit records.",
+        "Peut consulter et exporter les journaux d’audit de la plateforme.",
+      ],
+      [
+        "Reviews foundation audit records.",
+        "Consulte les journaux d’audit de la plateforme.",
+      ],
+      [
+        "Internal administrator with foundation-level access.",
+        "Administrateur interne avec accès complet à la plateforme.",
+      ],
+      [
+        "Can manage app-owned operational files through approved services.",
+        "Peut gérer les fichiers opérationnels de l’application via les services approuvés.",
+      ],
+      [
+        "Manages app-owned operational files through approved services.",
+        "Gère les fichiers opérationnels de l’application via les services approuvés.",
+      ],
+      [
+        "Can operate foundation services without sensitive admin controls.",
+        "Peut piloter les services opérationnels sans les contrôles administrateur sensibles.",
+      ],
+      [
+        "Operates foundation services without sensitive admin controls.",
+        "Pilote les services opérationnels sans les contrôles administrateur sensibles.",
+      ],
+      [
+        "Can manage roles and permissions.",
+        "Peut gérer les rôles et permissions.",
+      ],
+      [
+        "Manages roles and permissions through approved backend services.",
+        "Gère les rôles et permissions via les services backend approuvés.",
+      ],
+      [
+        "Assign a role to an existing user before they can open protected platform areas.",
+        "Attribuez un rôle à un utilisateur existant avant qu’il puisse ouvrir les zones protégées de la plateforme.",
+      ],
+      [
+        "Find a user, role, or status before changing access.",
+        "Recherchez un utilisateur, un rôle ou un statut avant de modifier les accès.",
+      ],
+      [
+        "Global role access was revoked.",
+        "L'attribution du rôle global a été révoquée.",
+      ],
+      [
+        "Global role access was updated.",
+        "L'attribution du rôle global a été mise à jour.",
+      ],
+      [
+        "The access change could not be completed. Confirm the request is still valid, then try again.",
+        "La modification des accès n'a pas pu être effectuée. Vérifiez que la demande est toujours valide, puis réessayez.",
+      ],
+      [
+        "Use this for Diginoces administrators, operations managers, role managers, and other platform-level roles.",
+        "Utilisez ce formulaire pour les administrateurs Diginoces, responsables opérations, gestionnaires de rôles et autres rôles de plateforme.",
+      ],
+      ["User", "Utilisateur"],
+      ["Assigned", "Assigné"],
+      ["From", "Du"],
+      ["To", "Au"],
+      ["Record", "Dossier"],
+      ["Time", "Heure"],
+      ["Signal", "Indicateur"],
+      ["Source", "Origine"],
+      ["Prepared", "Préparé"],
+      ["Generated", "Généré"],
+      ["Value", "Valeur"],
+      ["Toggle Sidebar", "Afficher ou masquer le panneau de navigation"],
+      ["Breadcrumb", "Fil d'Ariane"],
+      ["Count", "Nombre"],
+      ["Scope", "Périmètre"],
+      ["Areas", "Zones"],
+      ["Checkpoint", "Point de contrôle"],
+      ["Detail", "Détail"],
+      ["Category", "Catégorie"],
+      ["Run", "Lot"],
+      ["Runs", "Lots"],
+      ["Fields", "Champs"],
+      ["Field", "Champ"],
+      ["Label", "Libellé"],
+      ["Horizontal", "Position horizontale"],
+      ["Vertical", "Position verticale"],
+      ["Width", "Largeur"],
+      ["Height", "Hauteur"],
+      ["Alignment", "Alignement"],
+      ["Left", "Gauche"],
+      ["Center", "Centre"],
+      ["Right", "Droite"],
+      ["Designs", "Créations"],
+      ["Design", "Création"],
+      ["Area", "Zone"],
+      ["Purpose", "Objectif"],
+      ["State", "État"],
+      ["Complete", "Terminer"],
+      ["Reject", "Rejeter"],
+      ["Remaining", "Restant"],
+      ["Arrivals", "Arrivées"],
+      ["Settings", "Paramètres"],
+      ["Arrival", "Arrivée"],
+      ["Enabled", "Activé"],
+      ["Timezone", "Fuseau horaire"],
+      ["Disabled", "Désactivé"],
+      ["Name", "Nom"],
+      ["Unknown", "Inconnu"],
+      ["Reason", "Raison"],
+      ["Station", "Poste"],
+      ["Device", "Appareil"],
+      ["Sync", "Synchronisation"],
+      ["Add", "Ajouter"],
+      ["Update", "Mettre à jour"],
+      ["Save", "Enregistrer"],
+      ["Submissions", "Soumissions"],
+      ["Reference", "Référence"],
+      ["Inactive", "Inactif"],
+      ["Member", "Membre"],
+      ["Admin", "Administrateur"],
+      ["Added", "Ajouté"],
+      ["Organization", "Organisation"],
+      ["Archive", "Archiver"],
+      ["Thread", "Fil"],
+      ["Amount", "Montant"],
+      ["Percentage", "Pourcentage"],
+      ["Method", "Méthode"],
+      ["Confirm", "Confirmer"],
+      ["Payment", "Paiement"],
+      ["Flat", "Fixe"],
+      ["Item", "Élément"],
+      ["Addendums", "Avenants"],
+      ["Addendum", "Avenant"],
+      ["Gate", "Contrôle d’accès"],
+      ["Channel", "Canal"],
+      ["Wording", "Texte"],
+      ["None", "Aucun"],
+      ["Context", "Contexte"],
+      ["Attempts", "Tentatives"],
+      ["Title", "Titre"],
+      ["Overall", "Global"],
+      ["Responses", "Réponses"],
+      ["Size", "Taille"],
+      ["Versions", "Versions"],
+      ["Result", "Résultat"],
+      ["Showing", "Affichage"],
+      ["Excluded", "Exclu"],
+      ["Exclude", "Exclure"],
+      ["Headers", "En-têtes"],
+      ["Reviewed", "Relu"],
+      ["Guest list summary", "Résumé de la liste d’invités"],
+      ["Create first event", "Créer le premier événement"],
+      ["Create wedding", "Créer un mariage"],
+      ["Wedding project was not created", "Le mariage n’a pas été créé"],
+      ["Create a wedding project", "Créer un dossier de mariage"],
+      [
+        "Start the secure workspace for a couple. Events, guests, invitations, and delivery work stay inside the project after it is created.",
+        "Démarrez l’espace sécurisé du couple. Les événements, invités, invitations et opérations de livraison resteront dans le dossier après sa création.",
+      ],
+      ["Admin action", "Action administrateur"],
+      ["Contact name", "Nom du contact"],
+      [
+        "Add dates, venues, or delivery context that helps the operations team start cleanly.",
+        "Ajoutez les dates, lieux ou éléments de livraison utiles à l’équipe opérations pour démarrer proprement.",
+      ],
+      ["Create wedding project", "Créer le dossier mariage"],
+      ["Retention action", "Action de conservation"],
+      ["Mark retention complete", "Marquer la conservation terminée"],
+      ["Extend retention date", "Prolonger la date de conservation"],
+      ["Extend retention through", "Prolonger la conservation jusqu’au"],
+      [
+        "Choose the new retention end date.",
+        "Choisissez la nouvelle date de fin de conservation.",
+      ],
+      [
+        "Assign or revoke sensitive platform roles for existing Diginoces users.",
+        "Attribuez ou révoquez les rôles sensibles de plateforme pour les utilisateurs Diginoces existants.",
+      ],
+      ["Manage access control", "Gérer les accès"],
+      [
+        "Assign platform roles to existing users, then keep wedding and event roles scoped inside the right workspace.",
+        "Attribuez les rôles de plateforme aux utilisateurs existants, puis gardez les rôles mariage et événement dans le bon espace.",
+      ],
+      [
+        "Access management is unavailable until the workspace connection is ready.",
+        "La gestion des accès est indisponible tant que la connexion de l'espace n'est pas prête.",
+      ],
+      [
+        "Setup is unavailable until the workspace connection is ready.",
+        "La configuration est indisponible tant que la connexion de l'espace n'est pas prête.",
+      ],
+      ["Event was created.", "L'événement a été créé."],
+      [
+        "Event details were saved.",
+        "Les détails de l'événement ont été enregistrés.",
+      ],
+      ["Invited events", "Événements inclus"],
+      ["invited events", "événements inclus"],
+      [
+        ". Scan again or use manual guest search from check-in.",
+        ". Scannez à nouveau ou utilisez la recherche manuelle d’invité depuis l’accueil.",
+      ],
+      [
+        ". Open the event workspace when you need seating, check-in, files, or the event status dashboard.",
+        ". Ouvrez l’espace événement si vous avez besoin du placement, de l’accueil, des fichiers ou du tableau de bord de l’événement.",
+      ],
+      [
+        ". Download and archive actions still require server-side permission.",
+        ". Le téléchargement et l’archivage restent réservés aux rôles autorisés.",
+      ],
+    ] as const;
+
+    reviewedLabels.forEach(([english, french]) => {
+      expect(translateStaticCopy(english, "fr")).toBe(french);
+    });
   });
 
   it("covers representative labels from the 48-surface French QA audit", () => {

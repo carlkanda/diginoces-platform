@@ -10,17 +10,17 @@ Redesign the Diginoces application locally, one page at a time, using Impeccable
 
 ## Requirement Audit
 
-| Requirement | Evidence | Status |
-| --- | --- | --- |
-| Work locally before hosted deployment | All work is on `codex/bilingual-ux-simplification-homepage`; no hosted deployment was updated. | Satisfied |
-| Use Impeccable guidance | `PRODUCT.md`, `DESIGN.md`, and Impeccable detector checks document and validate the product UI direction. | Satisfied |
-| Start with authenticated `/platform` | `/platform` is browser verified and listed in the route checklist as the primary task launcher. | Satisfied |
-| Establish a cohesive event guest-management design system | `DESIGN.md` defines colors, typography, components, navigation, and product rules; `globals.css` applies the shared system across app routes. | Satisfied |
-| Use the Diginoces logo | The global shell and home visual panel use `apps/web/public/diginoces-logo.png`, sourced from the logo asset under `apps/assets`. | Satisfied |
-| Redesign each screen according to purpose | Route checklist covers public/auth, workspace, project, event, guest, import, RSVP, invitation, communication, seating, check-in, dashboard, report, file, commercial, guest-book, feedback, comments, and partner surfaces. | Satisfied; final user approval recorded |
-| Replace internal implementation wording with user-facing text | Copy scans found no visible old internal wording; remaining matches are display masks for seeded/internal data. | Satisfied |
-| Use generated imagery where needed | Image generation was attempted; the tool did not persist a reusable bitmap asset in this environment. The app currently uses a logo/UI-shaped visual panel instead. | Open decision |
-| Verify locally | Impeccable detector, format, lint, typecheck, tests, build, screenshots, and route sweeps are documented below. | Satisfied |
+| Requirement                                                   | Traceability                                                                                                                                                                             | Evidence                                                                                                                                                                                                                     | Status                                  |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Work locally before hosted deployment                         | Requirement `UX-REDESIGN-001`; backlog `master-requirements-register.csv` row `UX-REDESIGN-001`; plan `AGENTS.md` approved out-of-band UX work; issue `#131`.                           | All work is on `codex/bilingual-ux-simplification-homepage`; no hosted deployment was updated.                                                                                                                               | Satisfied                               |
+| Use Impeccable guidance                                       | Requirement `UX-REDESIGN-001`; backlog `master-requirements-register.csv` row `UX-REDESIGN-001`; plan `AGENTS.md` approved out-of-band UX work; issue `#131`.                           | `PRODUCT.md`, `DESIGN.md`, and Impeccable detector checks document and validate the product UI direction.                                                                                                                    | Satisfied                               |
+| Start with authenticated `/platform`                          | Requirement `UX-REDESIGN-001`; backlog `master-requirements-register.csv` row `UX-REDESIGN-001`; plan `AGENTS.md` approved out-of-band UX work; issue `#131`.                           | `/platform` is browser verified and listed in the route checklist as the primary task launcher.                                                                                                                              | Satisfied                               |
+| Establish a cohesive event guest-management design system     | Requirement `UX-REDESIGN-001`; backlog `master-requirements-register.csv` row `UX-REDESIGN-001`; plan `AGENTS.md` approved out-of-band UX work; issue `#131`.                           | `DESIGN.md` defines colors, typography, components, navigation, and product rules; `globals.css` applies the shared system across app routes.                                                                                | Satisfied                               |
+| Use the Diginoces logo                                        | Requirement `UX-REDESIGN-001`; backlog `master-requirements-register.csv` row `UX-REDESIGN-001`; plan `AGENTS.md` approved out-of-band UX work; issue `#131`.                           | The global shell and home visual panel use `apps/web/public/diginoces-logo.png`, sourced from the logo asset under `apps/assets`.                                                                                            | Satisfied                               |
+| Redesign each screen according to purpose                     | Requirement `UX-REDESIGN-001`; backlog `master-requirements-register.csv` row `UX-REDESIGN-001`; plan `AGENTS.md` approved out-of-band UX work; issue `#131`.                           | Route checklist covers public/auth, workspace, project, event, guest, import, RSVP, invitation, communication, seating, check-in, dashboard, report, file, commercial, guest-book, feedback, comments, and partner surfaces. | Satisfied; final user approval recorded |
+| Replace internal implementation wording with user-facing text | Requirement `UX-REDESIGN-001`; backlog `master-requirements-register.csv` row `UX-REDESIGN-001`; plan `AGENTS.md` approved out-of-band UX work; issue `#131`.                           | Copy scans found no visible old internal wording; remaining matches are display masks for seeded/internal data.                                                                                                              | Satisfied                               |
+| Use generated imagery where needed                            | Requirement `UX-REDESIGN-001`; backlog `master-requirements-register.csv` row `UX-REDESIGN-001`; plan `AGENTS.md` approved out-of-band UX work; issue `#131`; asset decision pending.   | Image generation was attempted; the tool did not persist a reusable bitmap asset in this environment. The app currently uses a logo/UI-shaped visual panel instead.                                                          | Open decision                           |
+| Verify locally                                                | Requirement `UX-REDESIGN-001`; backlog `master-requirements-register.csv` row `UX-REDESIGN-001`; plan `AGENTS.md` approved out-of-band UX work; issue `#131`; checks documented below.   | Impeccable detector, format, lint, typecheck, tests, build, screenshots, and route sweeps are documented below.                                                                                                              | Satisfied                               |
 
 ## Design Direction
 
@@ -848,6 +848,38 @@ Remaining matches are internal masking regexes and display-label maps used to pr
 - `apps/web/src/app/platform/projects/[projectId]/files/page.tsx`
 - `apps/web/src/app/platform/projects/[projectId]/files/[fileId]/page.tsx`
 - `apps/web/src/app/platform/projects/[projectId]/guest-book/page.tsx`
+
+## Deep Translation Review
+
+Date: 2026-06-25
+
+- Ran a static TypeScript/JSX copy audit over `apps/web/src/app` and `apps/web/src/components`, then checked representative findings against the real `translateStaticCopy` helper rather than relying only on raw source matching.
+- Added audited French coverage for high-frequency route labels, table headers, action labels, metadata labels, and placeholders used across authentication, access management, dashboard, activity, event-day, invitation-design, seating, partner, commercial, communication, file, import, and guest-book surfaces.
+- Corrected generated French count grammar from `dossiers affiches` to `dossiers affichés`.
+- Replaced the awkward `événement invité` / `événements invités` wording with the clearer guest-facing `événement inclus` / `événements inclus`, including phrase and reverse count handling.
+- Replaced `L’export d’activité demande une attention` with `L’export d’activité nécessite une attention`.
+- Added a focused regression manifest in `apps/web/src/lib/i18n/static-translations.test.ts` so the reviewed labels, count rules, and wording corrections stay covered.
+- Re-ran the residual multi-word unchanged-copy scan after fixes; the only remaining findings are four already-French command-menu source strings in `workspace-command-menu.tsx`.
+- Added a branch-created page translation review for:
+  - `/platform/access`
+  - `/platform/projects/[projectId]/settings`
+  - `/platform/events/[eventId]/settings`
+- The page-specific TypeScript/JSX audit reviewed 140 copy-like strings from those three new `page.tsx` files and found 0 real untranslated French copy after fixes. Expected identity values were route templates, the `- MFA` suffix, and English confirmation-template branches that already have French branches.
+- Added missing static translations for setup/access status copy: `Access management is unavailable until the workspace connection is ready.`, `Setup is unavailable until the workspace connection is ready.`, `Event was created.`, and `Event details were saved.`.
+- Polished the French access/status confirmation messages on the new access/setup pages so they render accented French for `rôle`, `accès`, and `événement`.
+
+Commands/checks run:
+
+- Branch-created page TypeScript/JSX copy audit over `/platform/access`, `/platform/projects/[projectId]/settings`, and `/platform/events/[eventId]/settings` passed with 140 reviewed strings and 0 real untranslated strings.
+- `npm run test --workspace @diginoces/web -- --run src/lib/i18n/static-translations.test.ts` passed with 26 tests.
+- `npm run format --workspace @diginoces/web -- src/lib/i18n/static-translations.ts src/lib/i18n/static-translations.test.ts` completed; Prettier reported only the two i18n files changed.
+- `npm run format:check` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run test` passed with 34 files and 354 tests.
+- `npm run build` passed.
+- Impeccable detector over the new access/setup pages, touched i18n files, and QA evidence files returned `[]`.
+- `git diff --check` passed with existing CRLF warnings only.
 
 ## Remaining Deployment Items
 

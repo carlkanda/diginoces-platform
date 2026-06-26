@@ -6,20 +6,36 @@ import {
   GaugeIcon,
   HistoryIcon,
   LockKeyholeIcon,
+  PlusIcon,
 } from "lucide-react";
+import { createProjectAction } from "@/app/platform/projects/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoHint } from "@/components/info-hint";
 import { OperationalEmptyState } from "@/components/operational-empty-state";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardAction,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import {
   Table,
   TableBody,
@@ -28,20 +44,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { serverLogger } from "@/lib/logging";
 import {
   formatProjectCoupleDisplayName,
   formatProjectDisplayReference,
   getProjectLifecycleLabel,
 } from "@/lib/projects/project-foundation";
+import { hasGlobalPermission } from "@/lib/projects/project-api";
 import { listProjects } from "@/lib/projects/project-service";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+
+type ProjectsPageProps = {
+  searchParams?: Promise<{
+    projectError?: string;
+  }>;
+};
+
+const emptyProjectsSearchParams: Promise<{ projectError?: string }> =
+  Promise.resolve({});
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {
@@ -98,17 +125,57 @@ function getProjectStatusVariant(
   return "outline";
 }
 
-export default async function ProjectsPage() {
-  const authContext = await getAuthContext();
+function projectErrorMessage(error: string | undefined) {
+  switch (error) {
+    case "invalid_project_request":
+      return "Check the couple names and project year, then try again.";
+    case "permission_denied":
+      return "This account is not allowed to create wedding projects.";
+    case "project_create_failed":
+      return "The wedding project could not be created. Try again or ask operations to review the workspace.";
+    case "supabase_not_configured":
+      return "Project creation is unavailable until the workspace connection is ready.";
+    default:
+      return null;
+  }
+}
+
+export default async function ProjectsPage({
+  searchParams,
+}: ProjectsPageProps) {
+  const [authContext, params] = await Promise.all([
+    getAuthContext(),
+    searchParams ?? emptyProjectsSearchParams,
+  ]);
 
   if (authContext.status === "anonymous") {
     redirect(buildLoginRedirectPath("/platform/projects"));
   }
 
-  const projects =
-    authContext.status === "authenticated"
-      ? await listProjects(await createSupabaseServerClient())
-      : [];
+  let projects: ProjectListItem[] = [];
+  let canCreateProjects = false;
+
+  if (authContext.status === "authenticated") {
+    const context = {
+      supabase: authContext.supabase,
+      user: authContext.user,
+    };
+
+    [projects, canCreateProjects] = await Promise.all([
+      listProjects(context.supabase),
+      hasGlobalPermission(context, "projects.create").catch(
+        (error: unknown) => {
+          serverLogger.error("Project create permission check failed.", {
+            error,
+          });
+
+          return false;
+        },
+      ),
+    ]);
+  }
+
+  const projectError = projectErrorMessage(params.projectError);
   const setupCount = projects.filter((project) =>
     setupStatuses.has(project.status),
   ).length;
@@ -116,6 +183,7 @@ export default async function ProjectsPage() {
     activeStatuses.has(project.status),
   ).length;
   const recentProject = projects[0];
+  const defaultProjectYear = new Date().getFullYear();
 
   return (
     <main className="flex flex-col gap-6">
@@ -127,7 +195,16 @@ export default async function ProjectsPage() {
           <CardDescription className="max-w-3xl">
             Find a wedding, check its state, and open the next work area.
           </CardDescription>
-          <CardAction className="col-start-1 row-start-auto mt-3 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
+          <CardAction className="col-start-1 row-start-auto mt-3 flex flex-wrap gap-2 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
+            {canCreateProjects ? (
+              <Link
+                className={buttonVariants({ variant: "default", size: "sm" })}
+                href="#create-wedding-project"
+              >
+                <PlusIcon aria-hidden="true" data-icon="inline-start" />
+                Create wedding
+              </Link>
+            ) : null}
             <Link
               className={buttonVariants({ variant: "outline", size: "sm" })}
               href="/platform"
@@ -149,6 +226,14 @@ export default async function ProjectsPage() {
         </Alert>
       ) : (
         <>
+          {projectError ? (
+            <Alert>
+              <GaugeIcon aria-hidden="true" />
+              <AlertTitle>Wedding project was not created</AlertTitle>
+              <AlertDescription>{projectError}</AlertDescription>
+            </Alert>
+          ) : null}
+
           <section
             aria-label="Project desk summary"
             className="grid gap-3 lg:grid-cols-[1.1fr_repeat(3,minmax(0,0.65fr))]"
@@ -248,6 +333,139 @@ export default async function ProjectsPage() {
             </Card>
           </section>
 
+          {canCreateProjects ? (
+            <Card id="create-wedding-project">
+              <CardHeader>
+                <CardTitle>
+                  <h2>Create a wedding project</h2>
+                </CardTitle>
+                <CardDescription>
+                  Start the secure workspace for a couple. Events, guests,
+                  invitations, and delivery work stay inside the project after
+                  it is created.
+                </CardDescription>
+                <CardAction>
+                  <Badge variant="secondary">Admin action</Badge>
+                </CardAction>
+              </CardHeader>
+              <form action={createProjectAction}>
+                <CardContent>
+                  <FieldSet>
+                    <FieldLegend>Wedding identity</FieldLegend>
+                    <FieldGroup className="md:grid md:grid-cols-2">
+                      <Field>
+                        <FieldLabel htmlFor="brideName">Bride name</FieldLabel>
+                        <Input id="brideName" name="brideName" required />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="groomName">Groom name</FieldLabel>
+                        <Input id="groomName" name="groomName" required />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="projectYear">
+                          Wedding year
+                        </FieldLabel>
+                        <Input
+                          defaultValue={defaultProjectYear}
+                          id="projectYear"
+                          max={2100}
+                          min={2020}
+                          name="projectYear"
+                          type="number"
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="preferredLanguage">
+                          Preferred language
+                        </FieldLabel>
+                        <NativeSelect
+                          className="w-full"
+                          defaultValue="fr"
+                          id="preferredLanguage"
+                          name="preferredLanguage"
+                        >
+                          <NativeSelectOption value="fr">
+                            French
+                          </NativeSelectOption>
+                          <NativeSelectOption value="en">
+                            English
+                          </NativeSelectOption>
+                        </NativeSelect>
+                      </Field>
+                    </FieldGroup>
+                  </FieldSet>
+
+                  <FieldSet className="mt-6">
+                    <FieldLegend>Primary contact</FieldLegend>
+                    <FieldGroup className="md:grid md:grid-cols-3">
+                      <Field>
+                        <FieldLabel htmlFor="primaryContactName">
+                          Contact name
+                        </FieldLabel>
+                        <Input
+                          id="primaryContactName"
+                          name="primaryContactName"
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="primaryContactEmail">
+                          Contact email
+                        </FieldLabel>
+                        <Input
+                          id="primaryContactEmail"
+                          name="primaryContactEmail"
+                          type="email"
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor="primaryContactPhone">
+                          Contact phone
+                        </FieldLabel>
+                        <Input
+                          id="primaryContactPhone"
+                          name="primaryContactPhone"
+                        />
+                      </Field>
+                      <Field className="md:col-span-3">
+                        <FieldLabel htmlFor="timelineNotes">
+                          Planning notes
+                        </FieldLabel>
+                        <Textarea
+                          id="timelineNotes"
+                          name="timelineNotes"
+                          rows={3}
+                        />
+                        <FieldDescription>
+                          Add dates, venues, or delivery context that helps the
+                          operations team start cleanly.
+                        </FieldDescription>
+                      </Field>
+                      <Field className="md:col-span-3">
+                        <FieldLabel htmlFor="internalNotes">
+                          Private team notes
+                        </FieldLabel>
+                        <Textarea
+                          id="internalNotes"
+                          name="internalNotes"
+                          rows={3}
+                        />
+                        <FieldDescription>
+                          Visible only to authorized Diginoces users.
+                        </FieldDescription>
+                      </Field>
+                    </FieldGroup>
+                  </FieldSet>
+                </CardContent>
+                <CardFooter className="justify-end">
+                  <Button type="submit">
+                    <PlusIcon aria-hidden="true" data-icon="inline-start" />
+                    Create wedding project
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          ) : null}
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -269,17 +487,27 @@ export default async function ProjectsPage() {
                   action={
                     <Link
                       className={buttonVariants({
-                        variant: "outline",
+                        variant: canCreateProjects ? "default" : "outline",
                         size: "sm",
                       })}
-                      href="/platform"
+                      href={
+                        canCreateProjects
+                          ? "#create-wedding-project"
+                          : "/platform"
+                      }
                     >
-                      Return to workspace
+                      {canCreateProjects
+                        ? "Create first wedding"
+                        : "Return to workspace"}
                     </Link>
                   }
                   description="Wedding projects assigned to this account appear here with lifecycle state and workspace links."
                   icon={FolderKanbanIcon}
-                  nextStep="Ask a Diginoces administrator to connect this account to a wedding project."
+                  nextStep={
+                    canCreateProjects
+                      ? "Create the first wedding project from this page."
+                      : "Ask a Diginoces administrator to connect this account to a wedding project."
+                  }
                   title="No wedding projects yet"
                 />
               ) : (

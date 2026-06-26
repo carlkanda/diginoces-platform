@@ -190,6 +190,15 @@ export async function requireGlobalPermission(
   context: ProjectApiContext,
   permission: PermissionSlug,
 ) {
+  if (!(await hasGlobalPermission(context, permission))) {
+    throw new ProjectAccessError("Permission denied.", 403);
+  }
+}
+
+export async function hasGlobalPermission(
+  context: ProjectApiContext,
+  permission: PermissionSlug,
+) {
   const { data, error } = await context.supabase.rpc(
     "current_user_has_permission",
     {
@@ -202,9 +211,7 @@ export async function requireGlobalPermission(
     throw error;
   }
 
-  if (!data) {
-    throw new ProjectAccessError("Permission denied.", 403);
-  }
+  return Boolean(data);
 }
 
 export async function hasProjectPermission(

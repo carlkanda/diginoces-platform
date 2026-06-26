@@ -8,7 +8,7 @@ Status: Local redesign is accepted. Hosted deployment preparation is approved.
 ## Current Status
 
 - The authoritative checklist is `docs/qa/redesign-rebuild-checklist.md`.
-- Route table status: 47 browser-verified routes, 0 blocked routes.
+- Route table status: 50 browser-verified routes, 0 blocked routes.
 - Latest full local sweep passed after the MFA/public guest blockers, readiness-check hardening, and copy refinements were resolved.
 - Remaining gate: clean branch packaging, hosted build, and hosted verification before production promotion.
 

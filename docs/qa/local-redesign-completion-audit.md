@@ -22,7 +22,7 @@ Redo the Diginoces application redesign from scratch locally, page by page, usin
 | Preserve route behavior, permissions, forms, and server actions | Existing route files, server actions, permission helpers, and test/build checks remain in place. No schema, RLS, API, or hosted deployment behavior changed during the approval-evidence pass. | Locally evidenced through source inspection and checks. |
 | Improve user-facing text and remove internal delivery wording from product screens | `scripts/check-redesign-readiness.mjs` scans route-facing source for blocked internal wording, and `npm run redesign:check` passed. | Locally evidenced. |
 | Maintain a Markdown checklist to prevent repetitive work | `docs/qa/redesign-rebuild-checklist.md` is the source-of-truth route checklist; `docs/qa/local-redesign-route-review-pack.md` provides the route-family review path; `docs/qa/local-redesign-review-session-guide.md` provides concrete local URLs; `docs/qa/local-redesign-user-acceptance-checklist.md` records user review decisions. | Locally evidenced. |
-| Browser-review local pages before approval | `docs/qa/redesign-rebuild-checklist.md` records 47 route rows, all marked `Browser verified`, with 0 blocked routes; `scripts/check-redesign-readiness.mjs` compares the route table against `apps/web/src/app/**/page.tsx` and verifies every cited `output/playwright/...` screenshot exists. | Locally evidenced for the current route table. |
+| Browser-review local pages before approval | `docs/qa/redesign-rebuild-checklist.md` records 50 route rows, all marked `Browser verified`, with 0 blocked routes; `scripts/check-redesign-readiness.mjs` compares the route table against `apps/web/src/app/**/page.tsx` and verifies every cited `output/playwright/...` screenshot exists. | Locally evidenced for the current route table. |
 | Keep hosted deployment separate from local approval | `docs/qa/local-redesign-post-approval-runbook.md` requires local approval first and records the separate hosted-deployment approval now granted by the user. | Complete for local redesign; deployment preparation is in progress. |
 | Do not claim completion until every requirement is proven | This file records that final local acceptance was received and the strict approval gate passed. | Complete. |
 
@@ -33,22 +33,22 @@ The page-by-page review pass is complete for the current local branch. After the
 - `npm run format:check`: passed.
 - `npm run lint`: passed.
 - `npm run typecheck`: passed.
-- `npm run test`: passed with 26 test files and 281 tests.
+- `npm run test`: passed with 34 test files and 354 tests.
 - `npm run build`: passed with Next.js production build output.
 - `npm run redesign:design-system-check`: passed with no blocked patterns.
-- `npm run redesign:check`: passed with 47 route rows, 47 browser verified, and 0 blocked.
+- `npm run redesign:check`: passed with 50 route rows, 50 browser verified, and 0 blocked.
 - Impeccable detector over product/design context, QA artifacts, readiness scripts, and shared route design files: returned `[]`.
 - Targeted route-facing scan for generic muted/plain tile classes and visible `Sprint` wording: no route-facing UI matches. The remaining `sprint` matches are API health payload fields, not user-facing route copy.
 - `git diff --check`: reported only LF/CRLF line-ending warnings.
-- `npm run redesign:check:approval`: previously failed for expected pending-approval reasons before approval was recorded. After user approval was recorded, this gate must pass before hosted deployment preparation.
+- `npm run redesign:check:approval`: passed with 50 route rows, 50 browser verified, and 0 blocked.
 
 ## Current Proof State
 
 - `npm run redesign:check` verifies required redesign artifacts, route-table counts, route coverage against app page files, route-row evidence quality, cited screenshot artifacts, shadcn context, Impeccable context, product-copy scan, design-system scan, user-approval gate, and local QA role evidence.
 - `docs/qa/local-redesign-review-session-guide.md` is checked for route coverage, safe linked-dev IDs, the dev review account, dev-only `diginoces_admin` access, and the rule not to record public guest token values.
-- `docs/qa/local-redesign-qa-evidence.md` is checked for stale browser-verification blocker wording so older evidence cannot contradict the authoritative 47-route table.
+- `docs/qa/local-redesign-qa-evidence.md` is checked for stale browser-verification blocker wording so older evidence cannot contradict the authoritative 50-route table.
 - `npm run redesign:design-system-check` passed with no blocked patterns; its only intentional allowlist is the functional seating-map grid in `apps/web/src/app/globals.css`.
-- The route table currently records 47 browser-verified routes and 0 blocked routes.
+- The route table currently records 50 browser-verified routes and 0 blocked routes.
 - `docs/qa/local-redesign-user-acceptance-checklist.md` records final local approval from the user.
 - No hosted deployment has been made from this branch yet in this deployment-preparation step.
 

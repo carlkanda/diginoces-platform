@@ -29,6 +29,7 @@ Record acceptance or requested changes in `docs/qa/local-redesign-user-acceptanc
 | `/platform` | Role-aware launchpad, operating map, and first safe action. |
 | `/platform/projects` | Wedding project desk and project-opening flow. |
 | `/platform/projects/[projectId]` | Project command center, event table, and readiness navigation. |
+| `/platform/projects/[projectId]/settings` | Wedding identity, event creation, project access, and member-status safety. |
 | `/platform/projects/[projectId]/dashboard` | Project status signals and workstream summaries. |
 | `/platform/projects/[projectId]/couple-dashboard` | Couple-facing progress summary with limited operational noise. |
 | `/platform/dashboard` | Cross-wedding operations dashboard, review queue, and activity summary. |
@@ -72,6 +73,7 @@ Record acceptance or requested changes in `docs/qa/local-redesign-user-acceptanc
 | Route | Review focus |
 | --- | --- |
 | `/platform/events/[eventId]` | Event command center and safe navigation to event work. |
+| `/platform/events/[eventId]/settings` | Event details, event access, staff assignments, and member-status safety. |
 | `/platform/events/[eventId]/dashboard` | Event-level RSVP, invitation, seating, and arrival signals. |
 | `/platform/events/[eventId]/seating` | Table planning, assignment, capacity, and CSV handoff. |
 | `/platform/events/[eventId]/seating/map` | Table placement, occupancy, and capacity alerts. |
@@ -82,6 +84,7 @@ Record acceptance or requested changes in `docs/qa/local-redesign-user-acceptanc
 
 | Route | Review focus |
 | --- | --- |
+| `/platform/access` | Platform role assignment, revoke safety, filters, and role guidance. |
 | `/platform/reports` | Report library, exports, and permission-limited evidence. |
 | `/platform/audit-logs` | Activity history, redaction, and export controls. |
 | `/platform/projects/[projectId]/commercial` | Packages, pricing, contract approval, payments, and access gates. |

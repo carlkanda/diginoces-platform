@@ -7,6 +7,7 @@ import {
   CompassIcon,
   LockKeyholeIcon,
   ShieldCheckIcon,
+  UserCogIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoHint } from "@/components/info-hint";
@@ -28,6 +29,7 @@ import {
 import { serverLogger } from "@/lib/logging";
 import { getPlatformEntryActionVisibility } from "@/lib/platform/foundation";
 import { listPartners } from "@/lib/partners/partner-db";
+import { hasGlobalPermission } from "@/lib/projects/project-api";
 import { getReportingPermissionSet } from "@/lib/reports/report-api";
 import { getDashboardVisibility } from "@/lib/reports/report-service";
 import type { PermissionSlug } from "@/lib/security/permissions";
@@ -82,19 +84,27 @@ async function getAuthenticatedPlatformActionVisibility(
   const supabase = authContext.supabase;
   const context = { supabase, user: authContext.user };
 
-  const permissions = await getReportingPermissionSet(context).catch(
-    (error: unknown) => {
+  const [permissions, canManageAccess] = await Promise.all([
+    getReportingPermissionSet(context).catch((error: unknown) => {
       serverLogger.error("Platform reporting permission check failed.", {
         error,
       });
 
       return new Set<PermissionSlug>();
-    },
-  );
+    }),
+    hasGlobalPermission(context, "roles.manage").catch((error: unknown) => {
+      serverLogger.error("Platform access-control check failed.", {
+        error,
+      });
+
+      return false;
+    }),
+  ]);
   const dashboardVisibility = getDashboardVisibility(permissions);
 
   if (dashboardVisibility.canReadPartnerDashboard) {
     return getPlatformEntryActionVisibility({
+      canManageAccess,
       canOpenPartnerDashboard: true,
       canReadGlobalDashboard: dashboardVisibility.canReadGlobalDashboard,
       canReadReports: dashboardVisibility.canReadReports,
@@ -127,6 +137,7 @@ async function getAuthenticatedPlatformActionVisibility(
   );
 
   return getPlatformEntryActionVisibility({
+    canManageAccess,
     canOpenPartnerDashboard:
       dashboardVisibility.canReadPartnerDashboard ||
       partnerDashboardAccess.some(Boolean),
@@ -150,6 +161,7 @@ export default async function PlatformPage({
   const actionVisibility =
     authContext.status === "not_configured"
       ? getPlatformEntryActionVisibility({
+          canManageAccess: true,
           canOpenPartnerDashboard: true,
           canReadGlobalDashboard: true,
           canReadReports: true,
@@ -188,6 +200,14 @@ export default async function PlatformPage({
       label: "Manage partners",
       meta: "Operations area",
       show: actionVisibility.showPartners,
+    },
+    {
+      description:
+        "Assign or revoke sensitive platform roles for existing Diginoces users.",
+      href: "/platform/access",
+      label: "Manage access control",
+      meta: "Admin control",
+      show: actionVisibility.showAccessControl,
     },
     {
       description:
@@ -311,6 +331,17 @@ export default async function PlatformPage({
           href: actionVisibility.showReports ? "/platform/reports" : undefined,
           label: "Reports",
           status: actionVisibility.showReports
+            ? "Open directly"
+            : "For approved roles",
+        },
+        {
+          description:
+            "Assign platform roles to existing users, then keep wedding and event roles scoped inside the right workspace.",
+          href: actionVisibility.showAccessControl
+            ? "/platform/access"
+            : undefined,
+          label: "Access control",
+          status: actionVisibility.showAccessControl
             ? "Open directly"
             : "For approved roles",
         },
@@ -571,7 +602,11 @@ export default async function PlatformPage({
       <Card className="border-primary/15 bg-primary text-primary-foreground shadow-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ClipboardListIcon aria-hidden="true" data-icon="inline-start" />
+            {actionVisibility.showAccessControl ? (
+              <UserCogIcon aria-hidden="true" data-icon="inline-start" />
+            ) : (
+              <ClipboardListIcon aria-hidden="true" data-icon="inline-start" />
+            )}
             <h2>Ready for the next wedding task</h2>
           </CardTitle>
           <CardDescription className="text-primary-foreground/80">

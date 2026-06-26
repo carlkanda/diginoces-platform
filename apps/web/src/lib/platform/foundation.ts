@@ -5,17 +5,20 @@ export type FoundationModule = {
 };
 
 export type PlatformEntryActionVisibilityInput = {
+  canManageAccess?: boolean;
   canOpenPartnerDashboard: boolean;
   canReadGlobalDashboard: boolean;
   canReadReports: boolean;
 };
 
 export function getPlatformEntryActionVisibility({
+  canManageAccess = false,
   canOpenPartnerDashboard,
   canReadGlobalDashboard,
   canReadReports,
 }: PlatformEntryActionVisibilityInput) {
   return {
+    showAccessControl: canManageAccess,
     showGlobalDashboard: canReadGlobalDashboard,
     showPartnerDashboard: canOpenPartnerDashboard,
     showPartners: true,

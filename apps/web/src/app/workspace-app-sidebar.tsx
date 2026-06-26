@@ -14,6 +14,7 @@ import {
   LogInIcon,
   LogOutIcon,
   SparklesIcon,
+  UserCogIcon,
 } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
@@ -82,6 +83,13 @@ function getPrimaryNavGroups(
     },
     {
       items: [
+        {
+          href: "/platform/access",
+          icon: UserCogIcon,
+          label: copy.accessControl,
+          match: "exact",
+          tooltip: copy.accessControl,
+        },
         {
           href: "/platform/audit-logs",
           icon: ActivityIcon,
