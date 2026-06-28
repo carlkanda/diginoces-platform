@@ -614,7 +614,7 @@ export default async function ProjectDetailPage({
                   canCreateEvents ? (
                     <Link
                       className={buttonVariants({ size: "sm" })}
-                      href={`/platform/projects/${projectId}/settings`}
+                      href={`/platform/projects/${projectId}/settings#create-event`}
                     >
                       Create first event
                     </Link>
