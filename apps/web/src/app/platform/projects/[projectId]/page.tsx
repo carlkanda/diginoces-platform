@@ -244,6 +244,7 @@ export default async function ProjectDetailPage({
     canReadFiles,
     canUpdateProject,
     canCreateEvents,
+    canReadProjectMembers,
     canManageProjectMembers,
     guestBookPermissions,
     feedbackPermissions,
@@ -269,6 +270,7 @@ export default async function ProjectDetailPage({
     hasAnyProjectFileCapability(permissionContext, projectId),
     hasProjectPermission(permissionContext, projectId, "projects.update"),
     hasProjectPermission(permissionContext, projectId, "events.create"),
+    hasProjectPermission(permissionContext, projectId, "project_members.read"),
     hasProjectPermission(
       permissionContext,
       projectId,
@@ -281,7 +283,10 @@ export default async function ProjectDetailPage({
   const canReadPostEventFeedback =
     Object.values(feedbackPermissions).some(Boolean);
   const canOpenProjectSetup =
-    canUpdateProject || canCreateEvents || canManageProjectMembers;
+    canUpdateProject ||
+    canCreateEvents ||
+    canReadProjectMembers ||
+    canManageProjectMembers;
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",
   );
