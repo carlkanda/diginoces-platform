@@ -63,6 +63,10 @@ const baseExactEnglishToFrenchEntries = [
     "Check the entered setup details, then try again.",
     "Vérifiez les informations de configuration, puis réessayez.",
   ],
+  [
+    "Check the submitted setup data, then try again.",
+    "Vérifiez les données de configuration envoyées, puis réessayez.",
+  ],
   ["Clear", "Effacer"],
   ["Couple and status", "Couple et statut"],
   ["Cancelled", "Annulé"],
@@ -226,7 +230,9 @@ const baseExactEnglishToFrenchEntries = [
   ["Save event setup", "Enregistrer la configuration événement"],
   ["Save wedding setup", "Enregistrer la configuration du mariage"],
   ["Search by name or email", "Rechercher par nom ou e-mail"],
+  ["Select an event role", "Sélectionner un rôle événement"],
   ["Select a global role", "Sélectionner un rôle plateforme"],
+  ["Select a project role", "Sélectionner un rôle mariage"],
   [
     "Setup is unavailable until the workspace connection is ready.",
     "La configuration est indisponible tant que la connexion de l'espace n'est pas prête.",
@@ -249,8 +255,16 @@ const baseExactEnglishToFrenchEntries = [
     "L'action de configuration événement n'a pas pu être effectuée. Confirmez que l'utilisateur existe et que le rôle sélectionné est valide.",
   ],
   [
+    "The event setup action could not be completed. Review the submitted data and try again.",
+    "L'action de configuration événement n'a pas pu être effectuée. Vérifiez les données envoyées, puis réessayez.",
+  ],
+  [
     "The setup action could not be completed. Confirm the user exists and the selected role is valid.",
     "L'action de configuration n'a pas pu être effectuée. Confirmez que l'utilisateur existe et que le rôle sélectionné est valide.",
+  ],
+  [
+    "The setup action could not be completed. Review the submitted data and try again.",
+    "L'action de configuration n'a pas pu être effectuée. Vérifiez les données envoyées, puis réessayez.",
   ],
   [
     "The user must already be able to sign in.",

@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import type { ComponentType, SVGProps } from "react";
 import {
   ActivityIcon,
@@ -141,64 +140,7 @@ export function WorkspaceAppSidebar({
 }) {
   const pathname = usePathname();
   const copy = getShellCopy(language);
-  const [accessControlLookup, setAccessControlLookup] = useState<{
-    baseVisibility: boolean;
-    visible: boolean;
-  } | null>(null);
-  const accessControlVisible = showLoginLink
-    ? false
-    : accessControlLookup?.baseVisibility === showAccessControl
-      ? accessControlLookup.visible
-      : showAccessControl;
-  const primaryNavGroups = getPrimaryNavGroups(language, accessControlVisible);
-
-  useEffect(() => {
-    let isCurrent = true;
-
-    if (showLoginLink) {
-      return () => {
-        isCurrent = false;
-      };
-    }
-
-    const baseVisibility = showAccessControl;
-
-    fetch("/api/platform/access-control/visibility", {
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    })
-      .then((response) =>
-        response.ok
-          ? response.json()
-          : Promise.reject(
-              new Error("Access-control visibility lookup failed"),
-            ),
-      )
-      .then((payload: unknown) => {
-        if (!isCurrent) {
-          return;
-        }
-
-        setAccessControlLookup({
-          baseVisibility,
-          visible: Boolean(
-            payload &&
-            typeof payload === "object" &&
-            "showAccessControl" in payload &&
-            payload.showAccessControl === true,
-          ),
-        });
-      })
-      .catch(() => {
-        // Keep the server-derived/default visibility on transport failures.
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [showAccessControl, showLoginLink]);
+  const primaryNavGroups = getPrimaryNavGroups(language, showAccessControl);
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">

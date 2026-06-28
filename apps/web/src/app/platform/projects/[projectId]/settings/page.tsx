@@ -170,7 +170,7 @@ function setupErrorMessage(error: string | undefined) {
     case "permission_denied":
       return "This account is not allowed to perform that setup action.";
     case "setup_action_failed":
-      return "The setup action could not be completed. Confirm the user exists and the selected role is valid.";
+      return "The setup action could not be completed. Review the submitted data and try again.";
     case "supabase_not_configured":
       return "Setup is unavailable until the workspace connection is ready.";
     default:
@@ -745,10 +745,14 @@ export default async function ProjectSettingsPage({
                       </FieldLabel>
                       <NativeSelect
                         className="w-full"
+                        defaultValue=""
                         id="roleSlug"
                         name="roleSlug"
                         required
                       >
+                        <NativeSelectOption disabled value="">
+                          {t("Select a project role")}
+                        </NativeSelectOption>
                         {projectRoles.map((role) => (
                           <NativeSelectOption key={role.slug} value={role.slug}>
                             {formatRoleText(role, "name", language)}

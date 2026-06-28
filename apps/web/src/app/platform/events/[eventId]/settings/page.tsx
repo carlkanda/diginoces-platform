@@ -165,11 +165,11 @@ async function loadAccessData<T>(
 function setupErrorMessage(error: string | undefined) {
   switch (error) {
     case "invalid_setup_request":
-      return "Check the entered event details, then try again.";
+      return "Check the submitted setup data, then try again.";
     case "permission_denied":
       return "This account is not allowed to perform that event setup action.";
     case "setup_action_failed":
-      return "The event setup action could not be completed. Confirm the user exists and the selected role is valid.";
+      return "The event setup action could not be completed. Review the submitted data and try again.";
     case "supabase_not_configured":
       return "Event setup is unavailable until the workspace connection is ready.";
     default:
@@ -631,10 +631,14 @@ export default async function EventSettingsPage({
                       </FieldLabel>
                       <NativeSelect
                         className="w-full"
+                        defaultValue=""
                         id="roleSlug"
                         name="roleSlug"
                         required
                       >
+                        <NativeSelectOption disabled value="">
+                          {t("Select an event role")}
+                        </NativeSelectOption>
                         {eventRoles.map((role) => (
                           <NativeSelectOption key={role.slug} value={role.slug}>
                             {formatRoleText(role, "name", language)}
