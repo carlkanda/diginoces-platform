@@ -68,11 +68,7 @@ import {
   getProjectLifecycleLabel,
   projectLifecycleOptions,
 } from "@/lib/projects/project-foundation";
-import {
-  hasProjectPermission,
-  ProjectAccessError,
-  requireProjectPermission,
-} from "@/lib/projects/project-api";
+import { hasProjectPermission } from "@/lib/projects/project-api";
 import {
   listAssignableProjectRoles,
   listProjectMembersForAdmin,
@@ -273,22 +269,6 @@ export default async function ProjectSettingsPage({
     user: authContext.user,
   };
 
-  try {
-    await requireProjectPermission(context, projectId, "projects.read");
-  } catch (error) {
-    if (error instanceof ProjectAccessError) {
-      notFound();
-    }
-
-    throw error;
-  }
-
-  const details = await getProjectDetails(authContext.supabase, projectId);
-
-  if (!details) {
-    notFound();
-  }
-
   const [
     canUpdateProject,
     canCreateEvents,
@@ -307,6 +287,12 @@ export default async function ProjectSettingsPage({
     !canReadProjectMembers &&
     !canManageProjectMembers
   ) {
+    notFound();
+  }
+
+  const details = await getProjectDetails(authContext.supabase, projectId);
+
+  if (!details) {
     notFound();
   }
 
