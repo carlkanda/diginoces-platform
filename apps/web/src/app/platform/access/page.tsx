@@ -59,6 +59,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { formatDiginocesDateTime } from "@/lib/dates/format-date";
 import {
   listAssignableGlobalRoles,
   listGlobalRoleAssignmentsForAdmin,
@@ -70,6 +71,7 @@ import {
 } from "@/lib/projects/project-api";
 import { getRequestLanguage } from "@/lib/i18n/server";
 import { translateStaticCopy } from "@/lib/i18n/static-translations";
+import { serverLogger } from "@/lib/logging";
 import type { SupportedLanguage } from "@/lib/i18n/config";
 
 export const dynamic = "force-dynamic";
@@ -86,14 +88,19 @@ type AccessPageProps = {
   searchParams?: Promise<AccessPageSearchParams>;
 };
 
+type AccessLoadResult<T> = {
+  data: T;
+  error: string | null;
+};
+
 const emptySearchParams: Promise<AccessPageSearchParams> = Promise.resolve({});
 
 type AccessPageQueryValue = string | string[] | undefined;
 
 const accessPageTemplates = {
   recordCount: {
-    en: "{visibleCount} of {totalCount} records",
-    fr: "{visibleCount} dossiers affichés sur {totalCount}",
+    en: "{visibleCount} of {totalCount} access records",
+    fr: "{visibleCount} / {totalCount} accès",
   },
 } as const;
 
@@ -144,10 +151,7 @@ function normalizeAccessPageSearchParams(params: AccessPageSearchParams) {
 }
 
 function formatDateTime(value: string, language: SupportedLanguage) {
-  return new Intl.DateTimeFormat(language === "fr" ? "fr-FR" : "en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return formatDiginocesDateTime(value, language === "fr" ? "fr-FR" : "en");
 }
 
 function formatMemberName(displayName: string | null, email: string) {
@@ -170,6 +174,27 @@ function formatAccessRecordCount(
 
 function formatRoleCopy(value: string, language: SupportedLanguage) {
   return formatAccessCopy(value, language);
+}
+
+async function loadAccessData<T>(
+  loader: () => Promise<T>,
+  fallback: T,
+  logMessage: string,
+  userMessage: string,
+): Promise<AccessLoadResult<T>> {
+  try {
+    return {
+      data: await loader(),
+      error: null,
+    };
+  } catch (error) {
+    serverLogger.error(logMessage, { error });
+
+    return {
+      data: fallback,
+      error: userMessage,
+    };
+  }
 }
 
 function isActiveAssignment(expiresAt: string | null) {
@@ -245,7 +270,7 @@ function revokeConfirmMessage(
   const roleName = formatRoleCopy(assignment.roleName, language);
 
   if (language === "fr") {
-    return `Retirer le rôle ${roleName} de ${memberName} ? Cette personne perdra cet accès plateforme jusqu’à une nouvelle attribution.`;
+    return `Retirer le rôle ${roleName} de ${memberName} ? Cette personne perdra cet accès à la plateforme jusqu’à une nouvelle attribution.`;
   }
 
   return `Revoke ${roleName} access for ${memberName}? They will lose this platform access until it is assigned again.`;
@@ -329,10 +354,27 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
     throw error;
   }
 
-  const [globalRoles, assignments] = await Promise.all([
-    listAssignableGlobalRoles(authContext.supabase),
-    listGlobalRoleAssignmentsForAdmin(authContext.supabase),
+  const [globalRolesLoad, assignmentsLoad] = await Promise.all([
+    loadAccessData(
+      () => listAssignableGlobalRoles(authContext.supabase),
+      [],
+      "Global role option listing failed.",
+      "Role options could not be loaded safely. Adding new access is paused until the data can be verified.",
+    ),
+    loadAccessData(
+      () => listGlobalRoleAssignmentsForAdmin(authContext.supabase),
+      [],
+      "Global role assignment listing failed.",
+      "Access assignments could not be loaded safely. Management controls are paused until the data can be verified.",
+    ),
   ]);
+  const globalRoles = globalRolesLoad.data;
+  const assignments = assignmentsLoad.data;
+  const globalRolesLoadError = globalRolesLoad.error;
+  const assignmentsLoadError = assignmentsLoad.error;
+  const hasAssignableGlobalRoles = globalRoles.length > 0;
+  const canAssignGlobalRoles =
+    !globalRolesLoadError && !assignmentsLoadError && hasAssignableGlobalRoles;
   const accessError = accessErrorMessage(normalizedQuery.accessError);
   const accessStatus = accessStatusMessage(normalizedQuery.accessStatus);
   const roleFilter = normalizeRoleFilter(
@@ -418,84 +460,120 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
           </CardAction>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          <form action={assignGlobalRoleAction}>
-            <FieldSet>
-              <FieldLegend>{t("Role assignment")}</FieldLegend>
-              <FieldGroup>
-                <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)] md:items-start">
-                  <Field>
-                    <FieldLabel htmlFor="accessEmail">
-                      {t("User email")}
-                    </FieldLabel>
-                    <Input
-                      aria-describedby="assign-global-role-note"
-                      id="accessEmail"
-                      name="email"
-                      placeholder="admin@example.com"
-                      required
-                      type="email"
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="roleSlug">
-                      {t("Global role")}
-                    </FieldLabel>
-                    <NativeSelect
-                      className="w-full"
-                      defaultValue=""
-                      id="roleSlug"
-                      name="roleSlug"
-                      required
-                    >
-                      <NativeSelectOption disabled value="">
-                        {t("Select a global role")}
-                      </NativeSelectOption>
-                      {globalRoles.map((role) => (
-                        <NativeSelectOption key={role.slug} value={role.slug}>
-                          {formatRoleCopy(role.name, language)}
-                          {role.requiresMfa ? " - MFA" : ""}
+          {globalRolesLoadError ? (
+            <Alert>
+              <ShieldCheckIcon aria-hidden="true" />
+              <AlertTitle>{t("Role options unavailable")}</AlertTitle>
+              <AlertDescription>{t(globalRolesLoadError)}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          {!globalRolesLoadError && !hasAssignableGlobalRoles ? (
+            <Alert>
+              <ShieldCheckIcon aria-hidden="true" />
+              <AlertTitle>{t("No assignable platform roles")}</AlertTitle>
+              <AlertDescription>
+                {t(
+                  "Global role assignment is paused until at least one assignable platform role is available.",
+                )}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {!globalRolesLoadError && assignmentsLoadError ? (
+            <Alert>
+              <ShieldCheckIcon aria-hidden="true" />
+              <AlertTitle>{t("Access assignments unavailable")}</AlertTitle>
+              <AlertDescription>{t(assignmentsLoadError)}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          {canAssignGlobalRoles ? (
+            <form action={assignGlobalRoleAction}>
+              <FieldSet>
+                <FieldLegend>{t("Role assignment")}</FieldLegend>
+                <FieldGroup>
+                  <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)] md:items-start">
+                    <Field>
+                      <FieldLabel htmlFor="accessEmail">
+                        {t("User email")}
+                      </FieldLabel>
+                      <Input
+                        aria-describedby="assign-global-role-note"
+                        id="accessEmail"
+                        name="email"
+                        placeholder="admin@example.com"
+                        required
+                        type="email"
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="roleSlug">
+                        {t("Global role")}
+                      </FieldLabel>
+                      <NativeSelect
+                        className="w-full"
+                        defaultValue=""
+                        id="roleSlug"
+                        name="roleSlug"
+                        required
+                      >
+                        <NativeSelectOption disabled value="">
+                          {t("Select a global role")}
                         </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                </div>
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <FieldDescription
-                    className="max-w-xl"
-                    id="assign-global-role-note"
-                  >
-                    {t("The user must already be able to sign in.")}
-                  </FieldDescription>
-                  <Button className="md:shrink-0" type="submit">
-                    <UserPlusIcon aria-hidden="true" data-icon="inline-start" />
-                    {t("Assign role")}
-                  </Button>
-                </div>
-              </FieldGroup>
-            </FieldSet>
-          </form>
-          <div className="grid gap-3 md:grid-cols-2">
-            {globalRoles.map((role) => (
-              <div
-                className="rounded-lg border border-border bg-muted/30 p-4"
-                key={role.slug}
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium">
-                    {formatRoleCopy(role.name, language)}
+                        {globalRoles.map((role) => (
+                          <NativeSelectOption key={role.slug} value={role.slug}>
+                            {formatRoleCopy(role.name, language)}
+                            {role.requiresMfa ? " - MFA" : ""}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                    </Field>
+                  </div>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <FieldDescription
+                      className="max-w-xl"
+                      id="assign-global-role-note"
+                    >
+                      {t("The user must already be able to sign in.")}
+                    </FieldDescription>
+                    <Button className="md:shrink-0" type="submit">
+                      <UserPlusIcon
+                        aria-hidden="true"
+                        data-icon="inline-start"
+                      />
+                      {t("Assign role")}
+                    </Button>
+                  </div>
+                </FieldGroup>
+              </FieldSet>
+            </form>
+          ) : null}
+
+          {!globalRolesLoadError && hasAssignableGlobalRoles ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              {globalRoles.map((role) => (
+                <div
+                  className="rounded-lg border border-border bg-muted/30 p-4"
+                  key={role.slug}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium">
+                      {formatRoleCopy(role.name, language)}
+                    </p>
+                    {role.requiresMfa ? (
+                      <Badge variant="secondary">{t("MFA required")}</Badge>
+                    ) : (
+                      <Badge variant="outline">{t("Standard sign-in")}</Badge>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {formatRoleCopy(role.description, language)}
                   </p>
-                  {role.requiresMfa ? (
-                    <Badge variant="secondary">{t("MFA required")}</Badge>
-                  ) : (
-                    <Badge variant="outline">{t("Standard sign-in")}</Badge>
-                  )}
                 </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {formatRoleCopy(role.description, language)}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -506,90 +584,102 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
             {t("Active and previously revoked global role assignments.")}
           </CardDescription>
           <CardAction>
-            <Badge variant="outline">
-              {formatAccessRecordCount(
-                filteredAssignments.length,
-                assignments.length,
-                language,
-              )}
-            </Badge>
+            {assignmentsLoadError ? (
+              <Badge variant="outline">{t("Access unavailable")}</Badge>
+            ) : (
+              <Badge variant="outline">
+                {formatAccessRecordCount(
+                  filteredAssignments.length,
+                  assignments.length,
+                  language,
+                )}
+              </Badge>
+            )}
           </CardAction>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          <form action="/platform/access" method="get">
-            <FieldSet>
-              <FieldLegend>{t("Filter assignments")}</FieldLegend>
-              <FieldDescription>
-                {t("Find a user, role, or status before changing access.")}
-              </FieldDescription>
-              <FieldGroup className="md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(11rem,0.7fr)_minmax(10rem,0.7fr)_auto_auto] md:items-end">
-                <Field>
-                  <FieldLabel htmlFor="accessSearch">
-                    {t("Search by name or email")}
-                  </FieldLabel>
-                  <Input
-                    defaultValue={normalizedQuery.accessSearch ?? ""}
-                    id="accessSearch"
-                    name="accessSearch"
-                    placeholder="name@example.com"
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="accessRole">
-                    {t("Role filter")}
-                  </FieldLabel>
-                  <NativeSelect
-                    className="w-full"
-                    defaultValue={roleFilter}
-                    id="accessRole"
-                    name="accessRole"
-                  >
-                    <NativeSelectOption value="all">
-                      {t("All roles")}
-                    </NativeSelectOption>
-                    {globalRoles.map((role) => (
-                      <NativeSelectOption key={role.slug} value={role.slug}>
-                        {formatRoleCopy(role.name, language)}
+          {assignmentsLoadError ? (
+            <Alert>
+              <ShieldCheckIcon aria-hidden="true" />
+              <AlertTitle>{t("Access assignments unavailable")}</AlertTitle>
+              <AlertDescription>{t(assignmentsLoadError)}</AlertDescription>
+            </Alert>
+          ) : (
+            <form action="/platform/access" method="get">
+              <FieldSet>
+                <FieldLegend>{t("Filter assignments")}</FieldLegend>
+                <FieldDescription>
+                  {t("Find a user, role, or status before changing access.")}
+                </FieldDescription>
+                <FieldGroup className="md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(11rem,0.7fr)_minmax(10rem,0.7fr)_auto_auto] md:items-end">
+                  <Field>
+                    <FieldLabel htmlFor="accessSearch">
+                      {t("Search by name or email")}
+                    </FieldLabel>
+                    <Input
+                      defaultValue={normalizedQuery.accessSearch ?? ""}
+                      id="accessSearch"
+                      name="accessSearch"
+                      placeholder="name@example.com"
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="accessRole">
+                      {t("Role filter")}
+                    </FieldLabel>
+                    <NativeSelect
+                      className="w-full"
+                      defaultValue={roleFilter}
+                      id="accessRole"
+                      name="accessRole"
+                    >
+                      <NativeSelectOption value="all">
+                        {t("All roles")}
                       </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="accessState">
-                    {t("Status filter")}
-                  </FieldLabel>
-                  <NativeSelect
-                    className="w-full"
-                    defaultValue={stateFilter}
-                    id="accessState"
-                    name="accessState"
+                      {globalRoles.map((role) => (
+                        <NativeSelectOption key={role.slug} value={role.slug}>
+                          {formatRoleCopy(role.name, language)}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="accessState">
+                      {t("Status filter")}
+                    </FieldLabel>
+                    <NativeSelect
+                      className="w-full"
+                      defaultValue={stateFilter}
+                      id="accessState"
+                      name="accessState"
+                    >
+                      {assignmentStateFilters.map((filter) => (
+                        <NativeSelectOption
+                          key={filter.value}
+                          value={filter.value}
+                        >
+                          {t(filter.label)}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                  </Field>
+                  <Button type="submit" variant="outline">
+                    <SearchIcon aria-hidden="true" data-icon="inline-start" />
+                    {t("Filter")}
+                  </Button>
+                  <Button
+                    render={<Link href="/platform/access" />}
+                    variant="ghost"
                   >
-                    {assignmentStateFilters.map((filter) => (
-                      <NativeSelectOption
-                        key={filter.value}
-                        value={filter.value}
-                      >
-                        {t(filter.label)}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </Field>
-                <Button type="submit" variant="outline">
-                  <SearchIcon aria-hidden="true" data-icon="inline-start" />
-                  {t("Filter")}
-                </Button>
-                <Button
-                  render={<Link href="/platform/access" />}
-                  variant="ghost"
-                >
-                  <XIcon aria-hidden="true" data-icon="inline-start" />
-                  {t("Clear")}
-                </Button>
-              </FieldGroup>
-            </FieldSet>
-          </form>
+                    <XIcon aria-hidden="true" data-icon="inline-start" />
+                    {t("Clear")}
+                  </Button>
+                </FieldGroup>
+              </FieldSet>
+            </form>
+          )}
 
-          {assignments.length === 0 ? (
+          {!assignmentsLoadError && assignments.length === 0 ? (
             <Alert>
               <UserCogIcon aria-hidden="true" />
               <AlertTitle>{t("No global roles assigned")}</AlertTitle>
@@ -599,7 +689,7 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
                 )}
               </AlertDescription>
             </Alert>
-          ) : filteredAssignments.length === 0 ? (
+          ) : !assignmentsLoadError && filteredAssignments.length === 0 ? (
             <Alert>
               <SlidersHorizontalIcon aria-hidden="true" />
               <AlertTitle>{t("No matching role assignments")}</AlertTitle>
@@ -609,7 +699,7 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
                 )}
               </AlertDescription>
             </Alert>
-          ) : (
+          ) : !assignmentsLoadError ? (
             <div className="overflow-x-auto">
               <Table className="min-w-[44rem]">
                 <TableHeader>
@@ -618,7 +708,7 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
                     <TableHead>{t("Role")}</TableHead>
                     <TableHead>{t("Status")}</TableHead>
                     <TableHead className="hidden md:table-cell">
-                      {t("Assigned")}
+                      {t("Assigned on")}
                     </TableHead>
                     <TableHead className="text-right">{t("Action")}</TableHead>
                   </TableRow>
@@ -690,7 +780,7 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
                 </TableBody>
               </Table>
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </main>

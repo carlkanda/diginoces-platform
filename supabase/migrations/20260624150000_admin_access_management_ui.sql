@@ -184,6 +184,11 @@ begin
   end if;
 
   perform app_private.ensure_auth_user_profile(target_user_id);
+  perform pg_advisory_xact_lock(
+    hashtext(
+      'project_member:' || p_project_id::text || ':' || target_user_id::text
+    )
+  );
 
   select pm.id into existing_member_id
   from public.project_members pm
@@ -364,6 +369,11 @@ begin
   end if;
 
   perform app_private.ensure_auth_user_profile(target_user_id);
+  perform pg_advisory_xact_lock(
+    hashtext(
+      'event_member:' || p_event_id::text || ':' || target_user_id::text
+    )
+  );
 
   select em.id into existing_member_id
   from public.event_members em

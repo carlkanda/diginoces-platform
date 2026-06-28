@@ -346,6 +346,10 @@ export function parseUpdateEventPayload(payload: unknown): UpdateEventInput {
   }
 
   if (body.eventCode !== undefined) {
+    if (body.eventCode === null) {
+      throw new ProjectValidationError("eventCode cannot be cleared.");
+    }
+
     input.eventCode = requiredText(body.eventCode, "eventCode").toUpperCase();
   }
 

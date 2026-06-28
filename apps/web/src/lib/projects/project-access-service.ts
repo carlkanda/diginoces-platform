@@ -36,6 +36,7 @@ export type GlobalRoleAssignment = {
   requiresMfa: boolean;
   roleId: string;
   roleName: string;
+  roleScope: RoleScope;
   roleSlug: string;
   userId: string;
 };
@@ -67,6 +68,17 @@ const membershipStatuses = new Set<MembershipStatus>([
   "removed",
   "suspended",
 ]);
+const roleScopeLookup: Record<RoleScope, true> = {
+  custom: true,
+  event: true,
+  global: true,
+  project: true,
+};
+const roleScopes = new Set<RoleScope>(
+  Object.keys(roleScopeLookup) as RoleScope[],
+);
+const rpcTimestampPattern =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/;
 
 function requiredText(value: unknown, fieldName: string) {
   if (typeof value !== "string" || value.trim().length === 0) {
@@ -86,50 +98,236 @@ function membershipStatus(value: unknown) {
   return status as MembershipStatus;
 }
 
-function memberRows(data: unknown): AccessMember[] {
+function rpcRows(data: unknown, context: string): Record<string, unknown>[] {
   if (!Array.isArray(data)) {
-    return [];
+    throw new Error(`Unexpected ${context} RPC response.`);
   }
 
-  return data.map((row) => {
-    const value = row as Record<string, unknown>;
+  return data.map((row, index) => {
+    if (!row || typeof row !== "object" || Array.isArray(row)) {
+      throw new Error(`Unexpected ${context} RPC row at index ${index}.`);
+    }
 
+    return row as Record<string, unknown>;
+  });
+}
+
+function rpcText(value: unknown, fieldName: string, context: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`Unexpected ${context} RPC response: ${fieldName}.`);
+  }
+
+  return value;
+}
+
+function rpcNullableText(
+  value: unknown,
+  fieldName: string,
+  context: string,
+): string | null {
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    throw new Error(`Unexpected ${context} RPC response: ${fieldName}.`);
+  }
+
+  return value;
+}
+
+function rpcTimestamp(value: unknown, fieldName: string, context: string) {
+  const timestamp = rpcText(value, fieldName, context);
+
+  if (!isStrictRpcTimestamp(timestamp)) {
+    throw new Error(`Unexpected ${context} RPC response: ${fieldName}.`);
+  }
+
+  return timestamp;
+}
+
+function rpcNullableTimestamp(
+  value: unknown,
+  fieldName: string,
+  context: string,
+) {
+  const timestamp = rpcNullableText(value, fieldName, context);
+
+  if (timestamp !== null && !isStrictRpcTimestamp(timestamp)) {
+    throw new Error(`Unexpected ${context} RPC response: ${fieldName}.`);
+  }
+
+  return timestamp;
+}
+
+function isStrictRpcTimestamp(value: string) {
+  const match = rpcTimestampPattern.exec(value);
+
+  if (!match) {
+    return false;
+  }
+
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText] =
+    match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    month < 1 ||
+    month > 12 ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59 ||
+    second < 0 ||
+    second > 59
+  ) {
+    return false;
+  }
+
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+  return day >= 1 && day <= daysInMonth && !Number.isNaN(Date.parse(value));
+}
+
+function rpcBoolean(
+  value: unknown,
+  fieldName: string,
+  context: string,
+): boolean {
+  if (typeof value !== "boolean") {
+    throw new Error(`Unexpected ${context} RPC response: ${fieldName}.`);
+  }
+
+  return value;
+}
+
+function rpcMembershipStatus(
+  value: unknown,
+  fieldName: string,
+  context: string,
+): MembershipStatus {
+  const status = rpcText(value, fieldName, context);
+
+  if (!membershipStatuses.has(status as MembershipStatus)) {
+    throw new Error(`Unexpected ${context} RPC response: ${fieldName}.`);
+  }
+
+  return status as MembershipStatus;
+}
+
+function rpcRoleScope(
+  value: unknown,
+  fieldName: string,
+  context: string,
+): RoleScope {
+  const scope = rpcText(value, fieldName, context);
+
+  if (!roleScopes.has(scope as RoleScope)) {
+    throw new Error(`Unexpected ${context} RPC response: ${fieldName}.`);
+  }
+
+  return scope as RoleScope;
+}
+
+function memberRows(data: unknown): AccessMember[] {
+  const rows = rpcRows(data, "member listing");
+
+  return rows.map((value) => {
     return {
-      assignedAt: String(value.assigned_at ?? ""),
-      displayName:
-        typeof value.display_name === "string" ? value.display_name : null,
-      email: String(value.email ?? ""),
-      memberId: String(value.member_id ?? ""),
-      roleId: String(value.role_id ?? ""),
-      roleName: String(value.role_name ?? ""),
-      roleScope: String(value.role_scope ?? "project") as RoleScope,
-      roleSlug: String(value.role_slug ?? ""),
-      status: String(value.status ?? "active") as MembershipStatus,
-      userId: String(value.user_id ?? ""),
+      assignedAt: rpcTimestamp(
+        value.assigned_at,
+        "assigned_at",
+        "member listing",
+      ),
+      displayName: rpcNullableText(
+        value.display_name,
+        "display_name",
+        "member listing",
+      ),
+      email: rpcText(value.email, "email", "member listing"),
+      memberId: rpcText(value.member_id, "member_id", "member listing"),
+      roleId: rpcText(value.role_id, "role_id", "member listing"),
+      roleName: rpcText(value.role_name, "role_name", "member listing"),
+      roleScope: rpcRoleScope(value.role_scope, "role_scope", "member listing"),
+      roleSlug: rpcText(value.role_slug, "role_slug", "member listing"),
+      status: rpcMembershipStatus(value.status, "status", "member listing"),
+      userId: rpcText(value.user_id, "user_id", "member listing"),
     };
   });
 }
 
 function globalRoleRows(data: unknown): GlobalRoleAssignment[] {
-  if (!Array.isArray(data)) {
-    return [];
-  }
+  const rows = rpcRows(data, "global role assignment listing");
 
-  return data.map((row) => {
-    const value = row as Record<string, unknown>;
+  return rows.map((value) => {
+    const roleScope = rpcRoleScope(
+      value.role_scope,
+      "role_scope",
+      "global role assignment listing",
+    );
+
+    if (roleScope !== "global") {
+      throw new Error(
+        "Unexpected global role assignment listing RPC response: role_scope.",
+      );
+    }
 
     return {
-      assignedAt: String(value.assigned_at ?? ""),
-      assignmentId: String(value.assignment_id ?? ""),
-      displayName:
-        typeof value.display_name === "string" ? value.display_name : null,
-      email: String(value.email ?? ""),
-      expiresAt: typeof value.expires_at === "string" ? value.expires_at : null,
-      requiresMfa: value.requires_mfa === true,
-      roleId: String(value.role_id ?? ""),
-      roleName: String(value.role_name ?? ""),
-      roleSlug: String(value.role_slug ?? ""),
-      userId: String(value.user_id ?? ""),
+      assignedAt: rpcTimestamp(
+        value.assigned_at,
+        "assigned_at",
+        "global role assignment listing",
+      ),
+      assignmentId: rpcText(
+        value.assignment_id,
+        "assignment_id",
+        "global role assignment listing",
+      ),
+      displayName: rpcNullableText(
+        value.display_name,
+        "display_name",
+        "global role assignment listing",
+      ),
+      email: rpcText(value.email, "email", "global role assignment listing"),
+      expiresAt: rpcNullableTimestamp(
+        value.expires_at,
+        "expires_at",
+        "global role assignment listing",
+      ),
+      requiresMfa: rpcBoolean(
+        value.requires_mfa,
+        "requires_mfa",
+        "global role assignment listing",
+      ),
+      roleId: rpcText(
+        value.role_id,
+        "role_id",
+        "global role assignment listing",
+      ),
+      roleName: rpcText(
+        value.role_name,
+        "role_name",
+        "global role assignment listing",
+      ),
+      roleScope,
+      roleSlug: rpcText(
+        value.role_slug,
+        "role_slug",
+        "global role assignment listing",
+      ),
+      userId: rpcText(
+        value.user_id,
+        "user_id",
+        "global role assignment listing",
+      ),
     };
   });
 }

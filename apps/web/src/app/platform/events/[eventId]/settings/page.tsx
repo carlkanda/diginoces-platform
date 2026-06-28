@@ -59,6 +59,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { formatDiginocesDateTime } from "@/lib/dates/format-date";
 import {
   eventLifecycleOptions,
   eventTypeOptions,
@@ -66,20 +67,20 @@ import {
   formatProjectEventDisplayName,
   getEventLifecycleLabel,
 } from "@/lib/projects/project-foundation";
-import {
-  hasEventPermission,
-  ProjectAccessError,
-  requireEventPermission,
-} from "@/lib/projects/project-api";
+import { hasEventPermission } from "@/lib/projects/project-api";
 import {
   listAssignableEventRoles,
   listEventMembersForAdmin,
   type AccessMember,
+  type AssignableRole,
   type MembershipStatus,
 } from "@/lib/projects/project-access-service";
 import { getEventDetails } from "@/lib/projects/project-service";
 import { getRequestLanguage } from "@/lib/i18n/server";
+import { translateStaticCopy } from "@/lib/i18n/static-translations";
 import type { SupportedLanguage } from "@/lib/i18n/config";
+import { serverLogger } from "@/lib/logging";
+import { roleDefinitions } from "@/lib/security/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,11 @@ type EventSettingsPageProps = {
     setupError?: string;
     setupStatus?: string;
   }>;
+};
+
+type AccessLoadResult<T> = {
+  data: T;
+  error: string | null;
 };
 
 const emptySearchParams: Promise<{
@@ -113,6 +119,47 @@ function membershipStatusLabel(status: MembershipStatus) {
     membershipStatusOptions.find((option) => option.value === status)?.label ??
     status
   );
+}
+
+function formatSettingsCopy(value: string, language: SupportedLanguage) {
+  return translateStaticCopy(value, language);
+}
+
+function isBuiltInRoleSlug(slug: string) {
+  return Object.prototype.hasOwnProperty.call(roleDefinitions, slug);
+}
+
+function formatRoleText(
+  role: Pick<AssignableRole, "description" | "name" | "slug">,
+  field: "description" | "name",
+  language: SupportedLanguage,
+) {
+  const value = role[field];
+
+  return isBuiltInRoleSlug(role.slug)
+    ? formatSettingsCopy(value, language)
+    : value;
+}
+
+async function loadAccessData<T>(
+  loader: () => Promise<T>,
+  fallback: T,
+  logMessage: string,
+  userMessage: string,
+): Promise<AccessLoadResult<T>> {
+  try {
+    return {
+      data: await loader(),
+      error: null,
+    };
+  } catch (error) {
+    serverLogger.error(logMessage, { error });
+
+    return {
+      data: fallback,
+      error: userMessage,
+    };
+  }
 }
 
 function setupErrorMessage(error: string | undefined) {
@@ -146,14 +193,19 @@ function setupStatusMessage(status: string | undefined) {
 }
 
 function formatDateTime(value: string, language: SupportedLanguage) {
-  return new Intl.DateTimeFormat(language === "fr" ? "fr-FR" : "en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return formatDiginocesDateTime(value, language === "fr" ? "fr-FR" : "en");
 }
 
 function formatMemberName(displayName: string | null, email: string) {
   return displayName && displayName.trim().length > 0 ? displayName : email;
+}
+
+function formatAssignedCount(count: number, language: SupportedLanguage) {
+  if (language === "fr") {
+    return `${count} attribution${count === 1 ? "" : "s"}`;
+  }
+
+  return `${count} assigned`;
 }
 
 function eventStatusChangeConfirmMessage(
@@ -183,6 +235,7 @@ export default async function EventSettingsPage({
     getAuthContext(),
     getRequestLanguage(),
   ]);
+  const t = (value: string) => formatSettingsCopy(value, language);
 
   if (authContext.status === "anonymous") {
     redirect(buildLoginRedirectPath(`/platform/events/${eventId}/settings`));
@@ -193,19 +246,21 @@ export default async function EventSettingsPage({
       <main className="flex flex-col gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Event setup</CardTitle>
+            <CardTitle>{t("Event setup")}</CardTitle>
             <CardDescription>
-              Event setup controls will appear after the workspace connection is
-              ready.
+              {t(
+                "Event setup controls will appear after the workspace connection is ready.",
+              )}
             </CardDescription>
           </CardHeader>
         </Card>
         <Alert>
           <LockKeyholeIcon aria-hidden="true" />
-          <AlertTitle>Workspace connection pending</AlertTitle>
+          <AlertTitle>{t("Workspace connection pending")}</AlertTitle>
           <AlertDescription>
-            Event setup stays closed until the secure workspace connection is
-            configured.
+            {t(
+              "Event setup stays closed until the secure workspace connection is configured.",
+            )}
           </AlertDescription>
         </Alert>
       </main>
@@ -217,14 +272,14 @@ export default async function EventSettingsPage({
     user: authContext.user,
   };
 
-  try {
-    await requireEventPermission(context, eventId, "events.read");
-  } catch (error) {
-    if (error instanceof ProjectAccessError) {
-      notFound();
-    }
-
-    throw error;
+  const [canUpdateEvent, canReadEventMembers, canManageEventMembers] =
+    await Promise.all([
+      hasEventPermission(context, eventId, "events.update"),
+      hasEventPermission(context, eventId, "event_members.read"),
+      hasEventPermission(context, eventId, "event_members.manage"),
+    ]);
+  if (!canUpdateEvent && !canReadEventMembers && !canManageEventMembers) {
+    notFound();
   }
 
   const details = await getEventDetails(authContext.supabase, eventId);
@@ -233,24 +288,36 @@ export default async function EventSettingsPage({
     notFound();
   }
 
-  const [canUpdateEvent, canReadEventMembers, canManageEventMembers] =
-    await Promise.all([
-      hasEventPermission(context, eventId, "events.update"),
-      hasEventPermission(context, eventId, "event_members.read"),
-      hasEventPermission(context, eventId, "event_members.manage"),
-    ]);
-  if (!canUpdateEvent && !canReadEventMembers) {
-    notFound();
-  }
-
-  const [eventRoles, eventMembers] = await Promise.all([
+  const canLoadEventMembers = canReadEventMembers || canManageEventMembers;
+  const [eventRolesLoad, eventMembersLoad] = await Promise.all([
     canManageEventMembers
-      ? listAssignableEventRoles(authContext.supabase)
-      : Promise.resolve([]),
-    canReadEventMembers
-      ? listEventMembersForAdmin(authContext.supabase, eventId)
-      : Promise.resolve([]),
+      ? loadAccessData(
+          () => listAssignableEventRoles(authContext.supabase),
+          [],
+          "Event role listing failed.",
+          "Role options could not be loaded safely. Adding new access is paused until the data can be verified.",
+        )
+      : Promise.resolve({ data: [], error: null }),
+    canLoadEventMembers
+      ? loadAccessData(
+          () => listEventMembersForAdmin(authContext.supabase, eventId),
+          [],
+          "Event member listing failed.",
+          "Access assignments could not be loaded safely. Management controls are paused until the data can be verified.",
+        )
+      : Promise.resolve({ data: [], error: null }),
   ]);
+  const eventRoles = eventRolesLoad.data;
+  const eventMembers = eventMembersLoad.data;
+  const eventRolesLoadError = eventRolesLoad.error;
+  const eventMembersLoadError = eventMembersLoad.error;
+  const canAssignEventMembers =
+    canManageEventMembers &&
+    !eventRolesLoadError &&
+    !eventMembersLoadError &&
+    eventRoles.length > 0;
+  const canUpdateEventMemberStatuses =
+    canManageEventMembers && !eventMembersLoadError;
   const projectName = formatProjectCoupleDisplayName(details.project, 0);
   const eventName = formatProjectEventDisplayName(details.event, 0);
   const updateEvent = updateEventSettingsAction.bind(null, eventId);
@@ -258,9 +325,11 @@ export default async function EventSettingsPage({
   const setupError = setupErrorMessage(query.setupError);
   const setupStatus = setupStatusMessage(query.setupStatus);
   const setupSections = [
-    canUpdateEvent ? { href: "#event-details", label: "Event details" } : null,
-    canReadEventMembers
-      ? { href: "#event-access", label: "Event access" }
+    canUpdateEvent
+      ? { href: "#event-details", label: t("Event details") }
+      : null,
+    canLoadEventMembers
+      ? { href: "#event-access", label: t("Event access") }
       : null,
   ].filter((section): section is { href: string; label: string } =>
     Boolean(section),
@@ -272,13 +341,13 @@ export default async function EventSettingsPage({
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink render={<Link href="/platform" />}>
-              Workspace
+              {t("Workspace")}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink render={<Link href="/platform/projects" />}>
-              Weddings
+              {t("Weddings")}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -301,7 +370,7 @@ export default async function EventSettingsPage({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>Setup</BreadcrumbPage>
+            <BreadcrumbPage>{t("Setup")}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -310,12 +379,13 @@ export default async function EventSettingsPage({
         <CardHeader className="has-data-[slot=card-action]:grid-cols-1 sm:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
           <CardTitle>
             <h1 className="text-2xl leading-tight font-semibold">
-              Event setup
+              {t("Event setup")}
             </h1>
           </CardTitle>
           <CardDescription className="max-w-3xl">
-            Keep the event schedule, venue, status, and event-day staff access
-            ready for handoff.
+            {t(
+              "Keep the event schedule, venue, status, and event-day staff access ready for handoff.",
+            )}
           </CardDescription>
           <CardAction className="col-start-1 row-start-auto mt-3 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
             <Button
@@ -323,7 +393,7 @@ export default async function EventSettingsPage({
               variant="outline"
             >
               <ArrowLeftIcon aria-hidden="true" data-icon="inline-start" />
-              Back to event
+              {t("Back to event")}
             </Button>
           </CardAction>
         </CardHeader>
@@ -332,25 +402,25 @@ export default async function EventSettingsPage({
       {setupError ? (
         <Alert>
           <ShieldCheckIcon aria-hidden="true" />
-          <AlertTitle>Event setup was not completed</AlertTitle>
-          <AlertDescription>{setupError}</AlertDescription>
+          <AlertTitle>{t("Event setup was not completed")}</AlertTitle>
+          <AlertDescription>{t(setupError)}</AlertDescription>
         </Alert>
       ) : null}
 
       {setupStatus ? (
         <Alert>
           <ShieldCheckIcon aria-hidden="true" />
-          <AlertTitle>Event setup updated</AlertTitle>
-          <AlertDescription>{setupStatus}</AlertDescription>
+          <AlertTitle>{t("Event setup updated")}</AlertTitle>
+          <AlertDescription>{t(setupStatus)}</AlertDescription>
         </Alert>
       ) : null}
 
       {setupSections.length > 1 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Setup sections</CardTitle>
+            <CardTitle>{t("Setup sections")}</CardTitle>
             <CardDescription>
-              Jump directly to the event details or event access area.
+              {t("Jump directly to the event details or event access area.")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -372,23 +442,27 @@ export default async function EventSettingsPage({
       {canUpdateEvent ? (
         <Card id="event-details">
           <CardHeader>
-            <CardTitle>Event details</CardTitle>
+            <CardTitle>{t("Event details")}</CardTitle>
             <CardDescription>
-              Update the event identity, date/time, venue, and lifecycle status.
+              {t(
+                "Update the event identity, date/time, venue, and lifecycle status.",
+              )}
             </CardDescription>
             <CardAction>
               <Badge variant="outline">
-                {getEventLifecycleLabel(details.event.status)}
+                {t(getEventLifecycleLabel(details.event.status))}
               </Badge>
             </CardAction>
           </CardHeader>
           <form action={updateEvent}>
             <CardContent>
               <FieldSet>
-                <FieldLegend>Event identity</FieldLegend>
+                <FieldLegend>{t("Event identity")}</FieldLegend>
                 <FieldGroup className="md:grid md:grid-cols-2">
                   <Field>
-                    <FieldLabel htmlFor="eventType">Event type</FieldLabel>
+                    <FieldLabel htmlFor="eventType">
+                      {t("Event type")}
+                    </FieldLabel>
                     <NativeSelect
                       className="w-full"
                       defaultValue={details.event.event_type}
@@ -400,13 +474,13 @@ export default async function EventSettingsPage({
                           key={option.value}
                           value={option.value}
                         >
-                          {option.label}
+                          {t(option.label)}
                         </NativeSelectOption>
                       ))}
                     </NativeSelect>
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="name">Event name</FieldLabel>
+                    <FieldLabel htmlFor="name">{t("Event name")}</FieldLabel>
                     <Input
                       defaultValue={details.event.name}
                       id="name"
@@ -415,7 +489,9 @@ export default async function EventSettingsPage({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="status">Event status</FieldLabel>
+                    <FieldLabel htmlFor="status">
+                      {t("Event status")}
+                    </FieldLabel>
                     <NativeSelect
                       className="w-full"
                       defaultValue={details.event.status}
@@ -427,13 +503,13 @@ export default async function EventSettingsPage({
                           key={option.value}
                           value={option.value}
                         >
-                          {option.label}
+                          {t(option.label)}
                         </NativeSelectOption>
                       ))}
                     </NativeSelect>
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="eventDate">Date</FieldLabel>
+                    <FieldLabel htmlFor="eventDate">{t("Date")}</FieldLabel>
                     <Input
                       defaultValue={details.event.event_date ?? ""}
                       id="eventDate"
@@ -442,7 +518,9 @@ export default async function EventSettingsPage({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="startsAt">Start time</FieldLabel>
+                    <FieldLabel htmlFor="startsAt">
+                      {t("Start time")}
+                    </FieldLabel>
                     <Input
                       defaultValue={timeValue(details.event.starts_at)}
                       id="startsAt"
@@ -451,7 +529,7 @@ export default async function EventSettingsPage({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="endsAt">End time</FieldLabel>
+                    <FieldLabel htmlFor="endsAt">{t("End time")}</FieldLabel>
                     <Input
                       defaultValue={timeValue(details.event.ends_at)}
                       id="endsAt"
@@ -460,7 +538,7 @@ export default async function EventSettingsPage({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="venueName">Venue</FieldLabel>
+                    <FieldLabel htmlFor="venueName">{t("Venue")}</FieldLabel>
                     <Input
                       defaultValue={details.event.venue_name ?? ""}
                       id="venueName"
@@ -469,7 +547,7 @@ export default async function EventSettingsPage({
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="venueAddress">
-                      Venue address
+                      {t("Venue address")}
                     </FieldLabel>
                     <Textarea
                       defaultValue={details.event.venue_address ?? ""}
@@ -484,34 +562,58 @@ export default async function EventSettingsPage({
             <CardFooter className="justify-end">
               <Button type="submit">
                 <SaveIcon aria-hidden="true" data-icon="inline-start" />
-                Save event setup
+                {t("Save event setup")}
               </Button>
             </CardFooter>
           </form>
         </Card>
       ) : null}
 
-      {canReadEventMembers ? (
+      {canLoadEventMembers ? (
         <Card id="event-access">
           <CardHeader>
-            <CardTitle>Event access</CardTitle>
+            <CardTitle>{t("Event access")}</CardTitle>
             <CardDescription>
-              {
-                "Assign event staff or check-in supervisors who should access this event workspace."
-              }
+              {t(
+                "Assign event staff or check-in supervisors who should access this event workspace.",
+              )}
             </CardDescription>
             <CardAction>
-              <Badge variant="outline">{eventMembers.length} assigned</Badge>
+              {eventMembersLoadError ? (
+                <Badge variant="destructive">{t("Access unavailable")}</Badge>
+              ) : (
+                <Badge variant="outline">
+                  {formatAssignedCount(eventMembers.length, language)}
+                </Badge>
+              )}
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
-            {canManageEventMembers ? (
+            {eventRolesLoadError ? (
+              <Alert variant="destructive">
+                <LockKeyholeIcon aria-hidden="true" />
+                <AlertTitle>{t("Role options unavailable")}</AlertTitle>
+                <AlertDescription>{t(eventRolesLoadError)}</AlertDescription>
+              </Alert>
+            ) : null}
+
+            {eventMembersLoadError ? (
+              <Alert variant="destructive">
+                <LockKeyholeIcon aria-hidden="true" />
+                <AlertTitle>{t("Access assignments unavailable")}</AlertTitle>
+                <AlertDescription>{t(eventMembersLoadError)}</AlertDescription>
+              </Alert>
+            ) : null}
+
+            {canAssignEventMembers ? (
               <form action={assignMember}>
                 <FieldSet>
-                  <FieldLegend>Add event member</FieldLegend>
+                  <FieldLegend>{t("Add event member")}</FieldLegend>
                   <FieldGroup className="md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(12rem,0.8fr)_10rem_auto] md:items-end">
                     <Field>
-                      <FieldLabel htmlFor="memberEmail">User email</FieldLabel>
+                      <FieldLabel htmlFor="memberEmail">
+                        {t("User email")}
+                      </FieldLabel>
                       <Input
                         id="memberEmail"
                         name="email"
@@ -520,11 +622,13 @@ export default async function EventSettingsPage({
                         type="email"
                       />
                       <FieldDescription>
-                        The user must already be able to sign in.
+                        {t("The user must already be able to sign in.")}
                       </FieldDescription>
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="roleSlug">Event role</FieldLabel>
+                      <FieldLabel htmlFor="roleSlug">
+                        {t("Event role")}
+                      </FieldLabel>
                       <NativeSelect
                         className="w-full"
                         id="roleSlug"
@@ -533,13 +637,15 @@ export default async function EventSettingsPage({
                       >
                         {eventRoles.map((role) => (
                           <NativeSelectOption key={role.slug} value={role.slug}>
-                            {role.name}
+                            {formatRoleText(role, "name", language)}
                           </NativeSelectOption>
                         ))}
                       </NativeSelect>
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="memberStatus">Status</FieldLabel>
+                      <FieldLabel htmlFor="memberStatus">
+                        {t("Status")}
+                      </FieldLabel>
                       <NativeSelect
                         className="w-full"
                         defaultValue="active"
@@ -547,10 +653,10 @@ export default async function EventSettingsPage({
                         name="status"
                       >
                         <NativeSelectOption value="active">
-                          Active
+                          {t("Active")}
                         </NativeSelectOption>
                         <NativeSelectOption value="invited">
-                          Invited
+                          {t("Invited")}
                         </NativeSelectOption>
                       </NativeSelect>
                     </Field>
@@ -559,14 +665,14 @@ export default async function EventSettingsPage({
                         aria-hidden="true"
                         data-icon="inline-start"
                       />
-                      Add
+                      {t("Add")}
                     </Button>
                   </FieldGroup>
                 </FieldSet>
               </form>
             ) : null}
 
-            {canManageEventMembers && eventRoles.length > 0 ? (
+            {canAssignEventMembers && eventRoles.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2">
                 {eventRoles.map((role) => (
                   <div
@@ -574,27 +680,31 @@ export default async function EventSettingsPage({
                     key={role.slug}
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium">{role.name}</p>
+                      <p className="font-medium">
+                        {formatRoleText(role, "name", language)}
+                      </p>
                       {role.requiresMfa ? (
-                        <Badge variant="secondary">MFA required</Badge>
+                        <Badge variant="secondary">{t("MFA required")}</Badge>
                       ) : (
-                        <Badge variant="outline">Event scoped</Badge>
+                        <Badge variant="outline">{t("Event scoped")}</Badge>
                       )}
                     </div>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      {role.description}
+                      {formatRoleText(role, "description", language)}
                     </p>
                   </div>
                 ))}
               </div>
             ) : null}
 
-            {eventMembers.length === 0 ? (
+            {eventMembersLoadError ? null : eventMembers.length === 0 ? (
               <Alert>
                 <ShieldCheckIcon aria-hidden="true" />
-                <AlertTitle>No event members assigned</AlertTitle>
+                <AlertTitle>{t("No event members assigned")}</AlertTitle>
                 <AlertDescription>
-                  Add staff accounts that should run or supervise this event.
+                  {t(
+                    "Add staff accounts that should run or supervise this event.",
+                  )}
                 </AlertDescription>
               </Alert>
             ) : (
@@ -602,14 +712,16 @@ export default async function EventSettingsPage({
                 <Table className="min-w-[42rem]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t("User")}</TableHead>
+                      <TableHead>{t("Role")}</TableHead>
+                      <TableHead>{t("Status")}</TableHead>
                       <TableHead className="hidden md:table-cell">
-                        Assigned
+                        {t("Assigned")}
                       </TableHead>
-                      {canManageEventMembers ? (
-                        <TableHead className="text-right">Update</TableHead>
+                      {canUpdateEventMemberStatuses ? (
+                        <TableHead className="text-right">
+                          {t("Update")}
+                        </TableHead>
                       ) : null}
                     </TableRow>
                   </TableHeader>
@@ -624,16 +736,20 @@ export default async function EventSettingsPage({
                             {member.email}
                           </span>
                         </TableCell>
-                        <TableCell>{member.roleName}</TableCell>
+                        <TableCell>
+                          {isBuiltInRoleSlug(member.roleSlug)
+                            ? t(member.roleName)
+                            : member.roleName}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {membershipStatusLabel(member.status)}
+                            {t(membershipStatusLabel(member.status))}
                           </Badge>
                         </TableCell>
                         <TableCell className="hidden text-muted-foreground md:table-cell">
                           {formatDateTime(member.assignedAt, language)}
                         </TableCell>
-                        {canManageEventMembers ? (
+                        {canUpdateEventMemberStatuses ? (
                           <TableCell className="text-right">
                             <form
                               action={updateEventMemberStatusAction.bind(
@@ -644,6 +760,10 @@ export default async function EventSettingsPage({
                               className="flex justify-end gap-2"
                             >
                               <NativeSelect
+                                aria-label={`${t("New event access status for")} ${formatMemberName(
+                                  member.displayName,
+                                  member.email,
+                                )}`}
                                 className="w-36"
                                 defaultValue={member.status}
                                 name="status"
@@ -654,7 +774,7 @@ export default async function EventSettingsPage({
                                     key={option.value}
                                     value={option.value}
                                   >
-                                    {option.label}
+                                    {t(option.label)}
                                   </NativeSelectOption>
                                 ))}
                               </NativeSelect>
@@ -664,10 +784,14 @@ export default async function EventSettingsPage({
                                   member,
                                 )}
                                 size="sm"
+                                aria-label={`${t("Save event access status for")} ${formatMemberName(
+                                  member.displayName,
+                                  member.email,
+                                )}`}
                                 type="submit"
                                 variant="outline"
                               >
-                                Save
+                                {t("Save")}
                               </ConfirmSubmitButton>
                             </form>
                           </TableCell>

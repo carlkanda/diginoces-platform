@@ -13,6 +13,7 @@ returns table (
   display_name text,
   role_id uuid,
   role_slug text,
+  role_scope public.role_scope_type,
   role_name text,
   requires_mfa boolean,
   assigned_at timestamptz,
@@ -42,6 +43,7 @@ begin
     ) as display_name,
     r.id as role_id,
     r.slug as role_slug,
+    r.scope as role_scope,
     r.name as role_name,
     r.requires_mfa,
     ra.assigned_at,
@@ -51,6 +53,7 @@ begin
   left join public.app_users au on au.id = ra.user_id
   left join auth.users u on u.id = ra.user_id
   where ra.scope = 'global'
+    and r.scope = 'global'
   order by
     case when ra.expires_at is null or ra.expires_at > now() then 0 else 1 end,
     ra.assigned_at desc,
@@ -106,6 +109,9 @@ begin
   end if;
 
   perform app_private.ensure_auth_user_profile(target_user_id);
+  perform pg_advisory_xact_lock(
+    hashtext('global_role:' || target_user_id::text || ':' || target_role_id::text)
+  );
 
   select ra.id into existing_assignment_id
   from public.role_assignments ra
@@ -174,6 +180,28 @@ begin
 
   if not app_private.user_has_permission(actor_user_id, 'roles.manage', 'global', null) then
     raise exception 'Permission denied.' using errcode = '42501';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('global_roles_manage_revoke'));
+
+  if exists (
+    select 1
+    from public.role_assignments ra
+    join public.role_permissions rp on rp.role_id = ra.role_id
+    where ra.id = p_assignment_id
+      and ra.scope = 'global'
+      and ra.expires_at is null
+      and rp.permission_slug = 'roles.manage'
+  ) and not exists (
+    select 1
+    from public.role_assignments ra
+    join public.role_permissions rp on rp.role_id = ra.role_id
+    where ra.id <> p_assignment_id
+      and ra.scope = 'global'
+      and ra.expires_at is null
+      and rp.permission_slug = 'roles.manage'
+  ) then
+    raise exception 'Cannot revoke the final active role-management assignment.' using errcode = '22023';
   end if;
 
   update public.role_assignments

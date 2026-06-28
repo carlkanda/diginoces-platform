@@ -61,6 +61,7 @@ import {
   buildLoginRedirectPath,
   getAuthContext,
 } from "@/lib/auth/auth-service";
+import { formatDiginocesDateTime } from "@/lib/dates/format-date";
 import {
   eventTypeOptions,
   formatProjectCoupleDisplayName,
@@ -76,11 +77,15 @@ import {
   listAssignableProjectRoles,
   listProjectMembersForAdmin,
   type AccessMember,
+  type AssignableRole,
   type MembershipStatus,
 } from "@/lib/projects/project-access-service";
 import { getProjectDetails } from "@/lib/projects/project-service";
 import { getRequestLanguage } from "@/lib/i18n/server";
+import { translateStaticCopy } from "@/lib/i18n/static-translations";
 import type { SupportedLanguage } from "@/lib/i18n/config";
+import { serverLogger } from "@/lib/logging";
+import { roleDefinitions } from "@/lib/security/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +97,11 @@ type ProjectSettingsPageProps = {
     setupError?: string;
     setupStatus?: string;
   }>;
+};
+
+type AccessLoadResult<T> = {
+  data: T;
+  error: string | null;
 };
 
 const emptySearchParams: Promise<{
@@ -114,6 +124,47 @@ function membershipStatusLabel(status: MembershipStatus) {
     membershipStatusOptions.find((option) => option.value === status)?.label ??
     status
   );
+}
+
+function formatSettingsCopy(value: string, language: SupportedLanguage) {
+  return translateStaticCopy(value, language);
+}
+
+function isBuiltInRoleSlug(slug: string) {
+  return Object.prototype.hasOwnProperty.call(roleDefinitions, slug);
+}
+
+function formatRoleText(
+  role: Pick<AssignableRole, "description" | "name" | "slug">,
+  field: "description" | "name",
+  language: SupportedLanguage,
+) {
+  const value = role[field];
+
+  return isBuiltInRoleSlug(role.slug)
+    ? formatSettingsCopy(value, language)
+    : value;
+}
+
+async function loadAccessData<T>(
+  loader: () => Promise<T>,
+  fallback: T,
+  logMessage: string,
+  userMessage: string,
+): Promise<AccessLoadResult<T>> {
+  try {
+    return {
+      data: await loader(),
+      error: null,
+    };
+  } catch (error) {
+    serverLogger.error(logMessage, { error });
+
+    return {
+      data: fallback,
+      error: userMessage,
+    };
+  }
 }
 
 function setupErrorMessage(error: string | undefined) {
@@ -145,14 +196,19 @@ function setupStatusMessage(status: string | undefined) {
 }
 
 function formatDateTime(value: string, language: SupportedLanguage) {
-  return new Intl.DateTimeFormat(language === "fr" ? "fr-FR" : "en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return formatDiginocesDateTime(value, language === "fr" ? "fr-FR" : "en");
 }
 
 function formatMemberName(displayName: string | null, email: string) {
   return displayName && displayName.trim().length > 0 ? displayName : email;
+}
+
+function formatAssignedCount(count: number, language: SupportedLanguage) {
+  if (language === "fr") {
+    return `${count} attribution${count === 1 ? "" : "s"}`;
+  }
+
+  return `${count} assigned`;
 }
 
 function projectStatusChangeConfirmMessage(
@@ -178,6 +234,7 @@ export default async function ProjectSettingsPage({
     getAuthContext(),
     getRequestLanguage(),
   ]);
+  const t = (value: string) => formatSettingsCopy(value, language);
 
   if (authContext.status === "anonymous") {
     redirect(
@@ -190,19 +247,21 @@ export default async function ProjectSettingsPage({
       <main className="flex flex-col gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Wedding setup</CardTitle>
+            <CardTitle>{t("Wedding setup")}</CardTitle>
             <CardDescription>
-              Setup controls will appear after the workspace connection is
-              ready.
+              {t(
+                "Setup controls will appear after the workspace connection is ready.",
+              )}
             </CardDescription>
           </CardHeader>
         </Card>
         <Alert>
           <LockKeyholeIcon aria-hidden="true" />
-          <AlertTitle>Workspace connection pending</AlertTitle>
+          <AlertTitle>{t("Workspace connection pending")}</AlertTitle>
           <AlertDescription>
-            Project setup stays closed until the secure workspace connection is
-            configured.
+            {t(
+              "Project setup stays closed until the secure workspace connection is configured.",
+            )}
           </AlertDescription>
         </Alert>
       </main>
@@ -242,18 +301,46 @@ export default async function ProjectSettingsPage({
     hasProjectPermission(context, projectId, "project_members.manage"),
   ]);
 
-  if (!canUpdateProject && !canCreateEvents && !canManageProjectMembers) {
+  if (
+    !canUpdateProject &&
+    !canCreateEvents &&
+    !canReadProjectMembers &&
+    !canManageProjectMembers
+  ) {
     notFound();
   }
 
-  const [projectRoles, projectMembers] = await Promise.all([
+  const canLoadProjectMembers =
+    canReadProjectMembers || canManageProjectMembers;
+  const [projectRolesLoad, projectMembersLoad] = await Promise.all([
     canManageProjectMembers
-      ? listAssignableProjectRoles(authContext.supabase)
-      : Promise.resolve([]),
-    canReadProjectMembers
-      ? listProjectMembersForAdmin(authContext.supabase, projectId)
-      : Promise.resolve([]),
+      ? loadAccessData(
+          () => listAssignableProjectRoles(authContext.supabase),
+          [],
+          "Project role listing failed.",
+          "Role options could not be loaded safely. Adding new access is paused until the data can be verified.",
+        )
+      : Promise.resolve({ data: [], error: null }),
+    canLoadProjectMembers
+      ? loadAccessData(
+          () => listProjectMembersForAdmin(authContext.supabase, projectId),
+          [],
+          "Project member listing failed.",
+          "Access assignments could not be loaded safely. Management controls are paused until the data can be verified.",
+        )
+      : Promise.resolve({ data: [], error: null }),
   ]);
+  const projectRoles = projectRolesLoad.data;
+  const projectMembers = projectMembersLoad.data;
+  const projectRolesLoadError = projectRolesLoad.error;
+  const projectMembersLoadError = projectMembersLoad.error;
+  const canAssignProjectMembers =
+    canManageProjectMembers &&
+    !projectRolesLoadError &&
+    !projectMembersLoadError &&
+    projectRoles.length > 0;
+  const canUpdateProjectMemberStatuses =
+    canManageProjectMembers && !projectMembersLoadError;
   const projectName = formatProjectCoupleDisplayName(details.project, 0);
   const updateProject = updateProjectSettingsAction.bind(null, projectId);
   const createEvent = createProjectEventAction.bind(null, projectId);
@@ -262,13 +349,13 @@ export default async function ProjectSettingsPage({
   const setupStatus = setupStatusMessage(query.setupStatus);
   const setupSections = [
     canUpdateProject
-      ? { href: "#wedding-identity", label: "Wedding identity" }
+      ? { href: "#wedding-identity", label: t("Wedding identity") }
       : null,
     canCreateEvents
-      ? { href: "#create-event", label: "Create an event" }
+      ? { href: "#create-event", label: t("Create an event") }
       : null,
-    canReadProjectMembers
-      ? { href: "#project-access", label: "Project access" }
+    canLoadProjectMembers
+      ? { href: "#project-access", label: t("Project access") }
       : null,
   ].filter((section): section is { href: string; label: string } =>
     Boolean(section),
@@ -280,13 +367,13 @@ export default async function ProjectSettingsPage({
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink render={<Link href="/platform" />}>
-              Workspace
+              {t("Workspace")}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink render={<Link href="/platform/projects" />}>
-              Weddings
+              {t("Weddings")}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -299,7 +386,7 @@ export default async function ProjectSettingsPage({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>Setup</BreadcrumbPage>
+            <BreadcrumbPage>{t("Setup")}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -308,12 +395,13 @@ export default async function ProjectSettingsPage({
         <CardHeader className="has-data-[slot=card-action]:grid-cols-1 sm:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
           <CardTitle>
             <h1 className="text-2xl leading-tight font-semibold">
-              Wedding setup
+              {t("Wedding setup")}
             </h1>
           </CardTitle>
           <CardDescription className="max-w-3xl">
-            Keep the couple record, events, and access assignments ready before
-            daily project work begins.
+            {t(
+              "Keep the couple record, events, and access assignments ready before daily project work begins.",
+            )}
           </CardDescription>
           <CardAction className="col-start-1 row-start-auto mt-3 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
             <Button
@@ -321,7 +409,7 @@ export default async function ProjectSettingsPage({
               variant="outline"
             >
               <ArrowLeftIcon aria-hidden="true" data-icon="inline-start" />
-              Back to wedding
+              {t("Return to wedding")}
             </Button>
           </CardAction>
         </CardHeader>
@@ -330,25 +418,27 @@ export default async function ProjectSettingsPage({
       {setupError ? (
         <Alert>
           <ShieldCheckIcon aria-hidden="true" />
-          <AlertTitle>Setup action was not completed</AlertTitle>
-          <AlertDescription>{setupError}</AlertDescription>
+          <AlertTitle>{t("Setup action was not completed")}</AlertTitle>
+          <AlertDescription>{t(setupError)}</AlertDescription>
         </Alert>
       ) : null}
 
       {setupStatus ? (
         <Alert>
           <ShieldCheckIcon aria-hidden="true" />
-          <AlertTitle>Setup updated</AlertTitle>
-          <AlertDescription>{setupStatus}</AlertDescription>
+          <AlertTitle>{t("Setup updated")}</AlertTitle>
+          <AlertDescription>{t(setupStatus)}</AlertDescription>
         </Alert>
       ) : null}
 
       {setupSections.length > 1 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Setup sections</CardTitle>
+            <CardTitle>{t("Setup sections")}</CardTitle>
             <CardDescription>
-              Jump directly to the part of the wedding setup you need to adjust.
+              {t(
+                "Jump directly to the part of the wedding setup you need to adjust.",
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -370,24 +460,27 @@ export default async function ProjectSettingsPage({
       {canUpdateProject ? (
         <Card id="wedding-identity">
           <CardHeader>
-            <CardTitle>Wedding identity</CardTitle>
+            <CardTitle>{t("Wedding identity")}</CardTitle>
             <CardDescription>
-              Update the couple record, language, contact details, and project
-              lifecycle status.
+              {t(
+                "Update the couple record, language, contact details, and project lifecycle status.",
+              )}
             </CardDescription>
             <CardAction>
               <Badge variant="outline">
-                {getProjectLifecycleLabel(details.project.status)}
+                {t(getProjectLifecycleLabel(details.project.status))}
               </Badge>
             </CardAction>
           </CardHeader>
           <form action={updateProject}>
             <CardContent>
               <FieldSet>
-                <FieldLegend>Couple and status</FieldLegend>
+                <FieldLegend>{t("Couple and status")}</FieldLegend>
                 <FieldGroup className="md:grid md:grid-cols-2">
                   <Field>
-                    <FieldLabel htmlFor="brideName">Bride name</FieldLabel>
+                    <FieldLabel htmlFor="brideName">
+                      {t("Bride name")}
+                    </FieldLabel>
                     <Input
                       defaultValue={details.project.bride_name}
                       id="brideName"
@@ -396,7 +489,9 @@ export default async function ProjectSettingsPage({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="groomName">Groom name</FieldLabel>
+                    <FieldLabel htmlFor="groomName">
+                      {t("Groom name")}
+                    </FieldLabel>
                     <Input
                       defaultValue={details.project.groom_name}
                       id="groomName"
@@ -405,7 +500,9 @@ export default async function ProjectSettingsPage({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="projectYear">Wedding year</FieldLabel>
+                    <FieldLabel htmlFor="projectYear">
+                      {t("Wedding year")}
+                    </FieldLabel>
                     <Input
                       defaultValue={details.project.project_year ?? ""}
                       id="projectYear"
@@ -416,7 +513,9 @@ export default async function ProjectSettingsPage({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="status">Project status</FieldLabel>
+                    <FieldLabel htmlFor="status">
+                      {t("Project status")}
+                    </FieldLabel>
                     <NativeSelect
                       className="w-full"
                       defaultValue={details.project.status}
@@ -428,14 +527,14 @@ export default async function ProjectSettingsPage({
                           key={option.value}
                           value={option.value}
                         >
-                          {option.label}
+                          {t(option.label)}
                         </NativeSelectOption>
                       ))}
                     </NativeSelect>
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="preferredLanguage">
-                      Preferred language
+                      {t("Preferred language")}
                     </FieldLabel>
                     <NativeSelect
                       className="w-full"
@@ -443,15 +542,17 @@ export default async function ProjectSettingsPage({
                       id="preferredLanguage"
                       name="preferredLanguage"
                     >
-                      <NativeSelectOption value="fr">French</NativeSelectOption>
+                      <NativeSelectOption value="fr">
+                        {t("French")}
+                      </NativeSelectOption>
                       <NativeSelectOption value="en">
-                        English
+                        {t("English")}
                       </NativeSelectOption>
                     </NativeSelect>
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="primaryContactName">
-                      Primary contact
+                      {t("Primary contact")}
                     </FieldLabel>
                     <Input
                       defaultValue={details.project.primary_contact_name ?? ""}
@@ -461,7 +562,7 @@ export default async function ProjectSettingsPage({
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="primaryContactEmail">
-                      Contact email
+                      {t("Contact email")}
                     </FieldLabel>
                     <Input
                       defaultValue={details.project.primary_contact_email ?? ""}
@@ -472,7 +573,7 @@ export default async function ProjectSettingsPage({
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="primaryContactPhone">
-                      Contact phone
+                      {t("Contact phone")}
                     </FieldLabel>
                     <Input
                       defaultValue={details.project.primary_contact_phone ?? ""}
@@ -482,7 +583,7 @@ export default async function ProjectSettingsPage({
                   </Field>
                   <Field className="md:col-span-2">
                     <FieldLabel htmlFor="timelineNotes">
-                      Planning notes
+                      {t("Planning notes")}
                     </FieldLabel>
                     <Textarea
                       defaultValue={details.project.timeline_notes ?? ""}
@@ -493,7 +594,7 @@ export default async function ProjectSettingsPage({
                   </Field>
                   <Field className="md:col-span-2">
                     <FieldLabel htmlFor="internalNotes">
-                      Private team notes
+                      {t("Private team notes")}
                     </FieldLabel>
                     <Textarea
                       defaultValue={details.project.internal_notes ?? ""}
@@ -502,7 +603,7 @@ export default async function ProjectSettingsPage({
                       rows={3}
                     />
                     <FieldDescription>
-                      Visible only to authorized Diginoces users.
+                      {t("Visible only to authorized Diginoces users.")}
                     </FieldDescription>
                   </Field>
                 </FieldGroup>
@@ -511,7 +612,7 @@ export default async function ProjectSettingsPage({
             <CardFooter className="justify-end">
               <Button type="submit">
                 <SaveIcon aria-hidden="true" data-icon="inline-start" />
-                Save wedding setup
+                {t("Save wedding setup")}
               </Button>
             </CardFooter>
           </form>
@@ -521,19 +622,22 @@ export default async function ProjectSettingsPage({
       {canCreateEvents ? (
         <Card id="create-event">
           <CardHeader>
-            <CardTitle>Create an event</CardTitle>
+            <CardTitle>{t("Create an event")}</CardTitle>
             <CardDescription>
-              Add ceremonies, receptions, brunches, or other event workspaces
-              inside this wedding.
+              {t(
+                "Add ceremonies, receptions, brunches, or other event workspaces inside this wedding.",
+              )}
             </CardDescription>
           </CardHeader>
           <form action={createEvent}>
             <CardContent>
               <FieldSet>
-                <FieldLegend>Event details</FieldLegend>
+                <FieldLegend>{t("Event details")}</FieldLegend>
                 <FieldGroup className="md:grid md:grid-cols-2">
                   <Field>
-                    <FieldLabel htmlFor="eventType">Event type</FieldLabel>
+                    <FieldLabel htmlFor="eventType">
+                      {t("Event type")}
+                    </FieldLabel>
                     <NativeSelect
                       className="w-full"
                       defaultValue="reception"
@@ -545,34 +649,36 @@ export default async function ProjectSettingsPage({
                           key={option.value}
                           value={option.value}
                         >
-                          {option.label}
+                          {t(option.label)}
                         </NativeSelectOption>
                       ))}
                     </NativeSelect>
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="name">Event name</FieldLabel>
+                    <FieldLabel htmlFor="name">{t("Event name")}</FieldLabel>
                     <Input id="name" name="name" required />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="eventDate">Date</FieldLabel>
+                    <FieldLabel htmlFor="eventDate">{t("Date")}</FieldLabel>
                     <Input id="eventDate" name="eventDate" type="date" />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="startsAt">Start time</FieldLabel>
+                    <FieldLabel htmlFor="startsAt">
+                      {t("Start time")}
+                    </FieldLabel>
                     <Input id="startsAt" name="startsAt" type="time" />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="endsAt">End time</FieldLabel>
+                    <FieldLabel htmlFor="endsAt">{t("End time")}</FieldLabel>
                     <Input id="endsAt" name="endsAt" type="time" />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="venueName">Venue</FieldLabel>
+                    <FieldLabel htmlFor="venueName">{t("Venue")}</FieldLabel>
                     <Input id="venueName" name="venueName" />
                   </Field>
                   <Field className="md:col-span-2">
                     <FieldLabel htmlFor="venueAddress">
-                      Venue address
+                      {t("Venue address")}
                     </FieldLabel>
                     <Textarea id="venueAddress" name="venueAddress" rows={2} />
                   </Field>
@@ -582,34 +688,60 @@ export default async function ProjectSettingsPage({
             <CardFooter className="justify-end">
               <Button type="submit">
                 <CalendarPlusIcon aria-hidden="true" data-icon="inline-start" />
-                Create event
+                {t("Create event")}
               </Button>
             </CardFooter>
           </form>
         </Card>
       ) : null}
 
-      {canReadProjectMembers ? (
+      {canLoadProjectMembers ? (
         <Card id="project-access">
           <CardHeader>
-            <CardTitle>Project access</CardTitle>
+            <CardTitle>{t("Project access")}</CardTitle>
             <CardDescription>
-              {
-                "Assign bride, groom, couple, or project operator access to users who already have a Diginoces login."
-              }
+              {t(
+                "Assign bride, groom, couple, or project operator access to users who already have a Diginoces login.",
+              )}
             </CardDescription>
             <CardAction>
-              <Badge variant="outline">{projectMembers.length} assigned</Badge>
+              {projectMembersLoadError ? (
+                <Badge variant="destructive">{t("Access unavailable")}</Badge>
+              ) : (
+                <Badge variant="outline">
+                  {formatAssignedCount(projectMembers.length, language)}
+                </Badge>
+              )}
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
-            {canManageProjectMembers ? (
+            {projectRolesLoadError ? (
+              <Alert variant="destructive">
+                <LockKeyholeIcon aria-hidden="true" />
+                <AlertTitle>{t("Role options unavailable")}</AlertTitle>
+                <AlertDescription>{t(projectRolesLoadError)}</AlertDescription>
+              </Alert>
+            ) : null}
+
+            {projectMembersLoadError ? (
+              <Alert variant="destructive">
+                <LockKeyholeIcon aria-hidden="true" />
+                <AlertTitle>{t("Access assignments unavailable")}</AlertTitle>
+                <AlertDescription>
+                  {t(projectMembersLoadError)}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
+            {canAssignProjectMembers ? (
               <form action={assignMember}>
                 <FieldSet>
-                  <FieldLegend>Add project member</FieldLegend>
+                  <FieldLegend>{t("Add project member")}</FieldLegend>
                   <FieldGroup className="md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(12rem,0.8fr)_10rem_auto] md:items-end">
                     <Field>
-                      <FieldLabel htmlFor="memberEmail">User email</FieldLabel>
+                      <FieldLabel htmlFor="memberEmail">
+                        {t("User email")}
+                      </FieldLabel>
                       <Input
                         id="memberEmail"
                         name="email"
@@ -618,11 +750,13 @@ export default async function ProjectSettingsPage({
                         type="email"
                       />
                       <FieldDescription>
-                        The user must already be able to sign in.
+                        {t("The user must already be able to sign in.")}
                       </FieldDescription>
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="roleSlug">Project role</FieldLabel>
+                      <FieldLabel htmlFor="roleSlug">
+                        {t("Project role")}
+                      </FieldLabel>
                       <NativeSelect
                         className="w-full"
                         id="roleSlug"
@@ -631,13 +765,15 @@ export default async function ProjectSettingsPage({
                       >
                         {projectRoles.map((role) => (
                           <NativeSelectOption key={role.slug} value={role.slug}>
-                            {role.name}
+                            {formatRoleText(role, "name", language)}
                           </NativeSelectOption>
                         ))}
                       </NativeSelect>
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="memberStatus">Status</FieldLabel>
+                      <FieldLabel htmlFor="memberStatus">
+                        {t("Status")}
+                      </FieldLabel>
                       <NativeSelect
                         className="w-full"
                         defaultValue="active"
@@ -645,10 +781,10 @@ export default async function ProjectSettingsPage({
                         name="status"
                       >
                         <NativeSelectOption value="active">
-                          Active
+                          {t("Active")}
                         </NativeSelectOption>
                         <NativeSelectOption value="invited">
-                          Invited
+                          {t("Invited")}
                         </NativeSelectOption>
                       </NativeSelect>
                     </Field>
@@ -657,14 +793,14 @@ export default async function ProjectSettingsPage({
                         aria-hidden="true"
                         data-icon="inline-start"
                       />
-                      Add
+                      {t("Add")}
                     </Button>
                   </FieldGroup>
                 </FieldSet>
               </form>
             ) : null}
 
-            {canManageProjectMembers && projectRoles.length > 0 ? (
+            {canAssignProjectMembers && projectRoles.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2">
                 {projectRoles.map((role) => (
                   <div
@@ -672,28 +808,30 @@ export default async function ProjectSettingsPage({
                     key={role.slug}
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium">{role.name}</p>
+                      <p className="font-medium">
+                        {formatRoleText(role, "name", language)}
+                      </p>
+                      <Badge variant="outline">{t("Project scoped")}</Badge>
                       {role.requiresMfa ? (
-                        <Badge variant="secondary">MFA required</Badge>
-                      ) : (
-                        <Badge variant="outline">Project scoped</Badge>
-                      )}
+                        <Badge variant="secondary">{t("MFA required")}</Badge>
+                      ) : null}
                     </div>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      {role.description}
+                      {formatRoleText(role, "description", language)}
                     </p>
                   </div>
                 ))}
               </div>
             ) : null}
 
-            {projectMembers.length === 0 ? (
+            {projectMembersLoadError ? null : projectMembers.length === 0 ? (
               <Alert>
                 <ShieldCheckIcon aria-hidden="true" />
-                <AlertTitle>No project members assigned</AlertTitle>
+                <AlertTitle>{t("No project members assigned")}</AlertTitle>
                 <AlertDescription>
-                  Add the bride, groom, or operator accounts that should open
-                  this wedding.
+                  {t(
+                    "Add the bride, groom, or operator accounts that should open this wedding.",
+                  )}
                 </AlertDescription>
               </Alert>
             ) : (
@@ -701,14 +839,16 @@ export default async function ProjectSettingsPage({
                 <Table className="min-w-[42rem]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t("User")}</TableHead>
+                      <TableHead>{t("Role")}</TableHead>
+                      <TableHead>{t("Status")}</TableHead>
                       <TableHead className="hidden md:table-cell">
-                        Assigned
+                        {t("Assigned")}
                       </TableHead>
-                      {canManageProjectMembers ? (
-                        <TableHead className="text-right">Update</TableHead>
+                      {canUpdateProjectMemberStatuses ? (
+                        <TableHead className="text-right">
+                          {t("Update")}
+                        </TableHead>
                       ) : null}
                     </TableRow>
                   </TableHeader>
@@ -723,16 +863,20 @@ export default async function ProjectSettingsPage({
                             {member.email}
                           </span>
                         </TableCell>
-                        <TableCell>{member.roleName}</TableCell>
+                        <TableCell>
+                          {isBuiltInRoleSlug(member.roleSlug)
+                            ? t(member.roleName)
+                            : member.roleName}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {membershipStatusLabel(member.status)}
+                            {t(membershipStatusLabel(member.status))}
                           </Badge>
                         </TableCell>
                         <TableCell className="hidden text-muted-foreground md:table-cell">
                           {formatDateTime(member.assignedAt, language)}
                         </TableCell>
-                        {canManageProjectMembers ? (
+                        {canUpdateProjectMemberStatuses ? (
                           <TableCell className="text-right">
                             <form
                               action={updateProjectMemberStatusAction.bind(
@@ -743,6 +887,10 @@ export default async function ProjectSettingsPage({
                               className="flex justify-end gap-2"
                             >
                               <NativeSelect
+                                aria-label={`${t("New project access status for")} ${formatMemberName(
+                                  member.displayName,
+                                  member.email,
+                                )}`}
                                 className="w-36"
                                 defaultValue={member.status}
                                 name="status"
@@ -753,7 +901,7 @@ export default async function ProjectSettingsPage({
                                     key={option.value}
                                     value={option.value}
                                   >
-                                    {option.label}
+                                    {t(option.label)}
                                   </NativeSelectOption>
                                 ))}
                               </NativeSelect>
@@ -763,10 +911,14 @@ export default async function ProjectSettingsPage({
                                   member,
                                 )}
                                 size="sm"
+                                aria-label={`${t("Save project access status for")} ${formatMemberName(
+                                  member.displayName,
+                                  member.email,
+                                )}`}
                                 type="submit"
                                 variant="outline"
                               >
-                                Save
+                                {t("Save")}
                               </ConfirmSubmitButton>
                             </form>
                           </TableCell>
