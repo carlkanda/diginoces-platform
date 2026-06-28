@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   formatEventCode,
   formatProjectCode,
@@ -19,11 +19,16 @@ import {
 } from "@/lib/projects/project-foundation";
 import { hasScopedPermission } from "@/lib/projects/project-permissions";
 import {
+  parseCreateEventFormPayload,
   parseCreateEventPayload,
+  parseCreateProjectFormPayload,
   parseCreateProjectPayload,
+  parseUpdateEventFormPayload,
   parseUpdateEventPayload,
+  parseUpdateProjectFormPayload,
   parseUpdateProjectPayload,
   ProjectValidationError,
+  updateEvent,
 } from "@/lib/projects/project-service";
 import type { RoleAssignment } from "@/lib/security/permissions";
 
@@ -270,6 +275,20 @@ describe("Sprint 2 projects and events foundation", () => {
     });
 
     expect(
+      parseCreateProjectFormPayload({
+        brideName: "Ada",
+        groomName: "Nico",
+        preferredLanguage: "fr",
+        projectYear: "2027",
+      }),
+    ).toMatchObject({
+      brideName: "Ada",
+      groomName: "Nico",
+      preferredLanguage: "fr",
+      projectYear: 2027,
+    });
+
+    expect(
       parseCreateEventPayload({
         eventType: "civil",
         name: "Civil ceremony",
@@ -282,6 +301,13 @@ describe("Sprint 2 projects and events foundation", () => {
     expect(() => parseCreateProjectPayload({ brideName: "Ada" })).toThrow(
       ProjectValidationError,
     );
+    expect(() =>
+      parseCreateProjectFormPayload({
+        brideName: "Ada",
+        groomName: "Nico",
+        projectYear: "2019",
+      }),
+    ).toThrow(ProjectValidationError);
     expect(() =>
       parseCreateEventPayload({ eventType: "banquet", name: "Banquet" }),
     ).toThrow(ProjectValidationError);
@@ -309,6 +335,114 @@ describe("Sprint 2 projects and events foundation", () => {
       startsAt: "09:30",
       venueName: null,
     });
+
+    expect(
+      parseUpdateProjectFormPayload({
+        brideName: "Ada",
+        groomName: "Nico",
+        primaryContactEmail: "",
+        projectCode: "",
+        projectYear: "2028",
+        timelineNotes: "",
+      }),
+    ).toStrictEqual({
+      brideName: "Ada",
+      groomName: "Nico",
+      primaryContactEmail: null,
+      projectYear: 2028,
+      timelineNotes: null,
+    });
+
+    expect(
+      parseCreateEventFormPayload({
+        endsAt: "",
+        eventDate: "",
+        eventType: "reception",
+        name: "Reception",
+        startsAt: "",
+        venueAddress: "",
+        venueName: "",
+      }),
+    ).toStrictEqual({
+      endsAt: undefined,
+      eventDate: undefined,
+      eventType: "reception",
+      name: "Reception",
+      startsAt: undefined,
+      venueAddress: undefined,
+      venueName: undefined,
+    });
+
+    const blankEventCodeUpdate = parseUpdateEventFormPayload({
+      eventCode: "",
+    });
+
+    expect(blankEventCodeUpdate).not.toHaveProperty("eventCode");
+    expect(() => parseUpdateEventPayload({ eventCode: null })).toThrow(
+      ProjectValidationError,
+    );
+
+    expect(
+      parseUpdateEventFormPayload({
+        eventDate: "",
+        eventType: "civil",
+        endsAt: "",
+        name: "Civil ceremony",
+        startsAt: "",
+        status: "scheduled",
+        venueAddress: "",
+        venueName: "",
+      }),
+    ).toStrictEqual({
+      eventDate: null,
+      eventType: "civil",
+      endsAt: null,
+      name: "Civil ceremony",
+      startsAt: null,
+      status: "scheduled",
+      venueAddress: null,
+      venueName: null,
+    });
+  });
+
+  it("does not persist empty generated event-code form values", async () => {
+    const updatePayloads: unknown[] = [];
+    const supabase = {
+      from: vi.fn(() => ({
+        update: vi.fn((payload: unknown) => {
+          updatePayloads.push(payload);
+
+          return {
+            eq: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: "event-id",
+                  },
+                  error: null,
+                }),
+              })),
+            })),
+          };
+        }),
+      })),
+    };
+    const input = parseUpdateEventFormPayload({
+      eventCode: "",
+      name: "Civil ceremony",
+    });
+
+    await expect(
+      updateEvent(supabase as never, "event-id", input, "actor-id"),
+    ).resolves.toMatchObject({
+      id: "event-id",
+    });
+    expect(updatePayloads).toStrictEqual([
+      {
+        name: "Civil ceremony",
+        updated_by: "actor-id",
+      },
+    ]);
   });
 
   it("rejects invalid event date and time payloads before database writes", () => {
@@ -358,6 +492,40 @@ describe("Sprint 2 projects and events foundation", () => {
     expect(migration).toContain("'guest_event_assignments.manage'");
     expect(migration).toContain("'guest_tags.manage'");
     expect(migration).toContain("public.guest_event_assignments.status");
+  });
+
+  it("adds permission-gated admin access-management functions for project and event members", () => {
+    const migration = readRepoFile(
+      "supabase/migrations/20260624150000_admin_access_management_ui.sql",
+    );
+
+    expect(migration).toContain("public.assign_project_member_by_email");
+    expect(migration).toContain("public.assign_event_member_by_email");
+    expect(migration).toContain("public.list_project_members_for_admin");
+    expect(migration).toContain("public.list_event_members_for_admin");
+    expect(migration).toContain("'project_members.manage'");
+    expect(migration).toContain("'event_members.manage'");
+    expect(migration).toContain("auth.users");
+    expect(migration).toContain("audit_project_members_insert");
+    expect(migration).toContain("audit_event_members_insert");
+  });
+
+  it("adds permission-gated global access-management functions for existing users", () => {
+    const migration = readRepoFile(
+      "supabase/migrations/20260624162000_global_access_management_ui.sql",
+    );
+
+    expect(migration).toContain(
+      "public.list_global_role_assignments_for_admin",
+    );
+    expect(migration).toContain("public.assign_global_role_by_email");
+    expect(migration).toContain(
+      "public.revoke_global_role_assignment_for_admin",
+    );
+    expect(migration).toContain("'roles.manage'");
+    expect(migration).toContain("auth.users");
+    expect(migration).toContain("audit_role_assignments_insert");
+    expect(migration).toContain("audit_role_assignments_update");
   });
 
   it("keeps the project list API aligned with page-level RLS visibility", () => {

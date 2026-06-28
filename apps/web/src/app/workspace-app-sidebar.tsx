@@ -14,6 +14,7 @@ import {
   LogInIcon,
   LogOutIcon,
   SparklesIcon,
+  UserCogIcon,
 } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
@@ -45,8 +46,35 @@ type WorkspaceNavigationGroup = {
 
 function getPrimaryNavGroups(
   language: SupportedLanguage,
+  showAccessControl: boolean,
 ): WorkspaceNavigationGroup[] {
   const copy = getShellCopy(language);
+  const controlItems: WorkspaceNavigationGroup["items"] = [
+    ...(showAccessControl
+      ? [
+          {
+            href: "/platform/access",
+            icon: UserCogIcon,
+            label: copy.accessControl,
+            match: "exact" as const,
+            tooltip: copy.accessControl,
+          },
+        ]
+      : []),
+    {
+      href: "/platform/audit-logs",
+      icon: ActivityIcon,
+      label: copy.activityTrail,
+      match: "exact",
+      tooltip: copy.activityTrail,
+    },
+    {
+      href: "/platform/partners",
+      icon: Building2Icon,
+      label: copy.partners,
+      tooltip: copy.partners,
+    },
+  ];
 
   return [
     {
@@ -81,21 +109,7 @@ function getPrimaryNavGroups(
       label: copy.command,
     },
     {
-      items: [
-        {
-          href: "/platform/audit-logs",
-          icon: ActivityIcon,
-          label: copy.activityTrail,
-          match: "exact",
-          tooltip: copy.activityTrail,
-        },
-        {
-          href: "/platform/partners",
-          icon: Building2Icon,
-          label: copy.partners,
-          tooltip: copy.partners,
-        },
-      ],
+      items: controlItems,
       label: copy.control,
     },
   ];
@@ -116,15 +130,17 @@ function isActivePath(
 export function WorkspaceAppSidebar({
   accountLabel,
   language,
+  showAccessControl,
   showLoginLink,
 }: {
   accountLabel: string;
   language: SupportedLanguage;
+  showAccessControl: boolean;
   showLoginLink: boolean;
 }) {
   const pathname = usePathname();
   const copy = getShellCopy(language);
-  const primaryNavGroups = getPrimaryNavGroups(language);
+  const primaryNavGroups = getPrimaryNavGroups(language, showAccessControl);
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">

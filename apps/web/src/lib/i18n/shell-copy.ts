@@ -6,6 +6,7 @@ export const shellCopy: Record<
   {
     accountFallback: string;
     activityTrail: string;
+    accessControl: string;
     command: string;
     control: string;
     checkInbox: string;
@@ -29,6 +30,7 @@ export const shellCopy: Record<
   en: {
     accountFallback: "Workspace access",
     activityTrail: "Activity trail",
+    accessControl: "Access control",
     command: "Command",
     control: "Control",
     checkInbox: "Check your inbox",
@@ -51,6 +53,7 @@ export const shellCopy: Record<
   fr: {
     accountFallback: "Accès à l’espace",
     activityTrail: "Historique",
+    accessControl: "Gestion des accès",
     command: "Pilotage",
     control: "Contrôle",
     checkInbox: "Vérifiez votre boîte mail",

@@ -73,10 +73,19 @@ describe("static UI translation helpers", () => {
       "2 messages récents",
     );
     expect(translateStaticCopy("1 invited event", "fr")).toBe(
-      "1 événement invité",
+      "1 événement inclus",
     );
     expect(translateStaticCopy("2 invited events", "fr")).toBe(
-      "2 événements invités",
+      "2 événements inclus",
+    );
+    expect(translateStaticCopy("2 of 5 records", "fr")).toBe(
+      "2 dossiers affichés sur 5",
+    );
+    expect(translateStaticCopy("60 of 60 records", "fr")).toBe(
+      "60 dossiers affichés sur 60",
+    );
+    expect(translateStaticCopy("2 dossiers affichés sur 5", "en")).toBe(
+      "2 of 5 records",
     );
     expect(translateStaticCopy("1 table positioned", "fr")).toBe(
       "1 table positionnée",
@@ -400,7 +409,7 @@ describe("static UI translation helpers", () => {
       ["Activity export was created", "L’export d’activité a été créé"],
       [
         "Activity export needs attention",
-        "L’export d’activité demande une attention",
+        "L’export d’activité nécessite une attention",
       ],
       [
         "Activity records are operational evidence",
@@ -449,6 +458,310 @@ describe("static UI translation helpers", () => {
     expect(translateStaticCopy("Operational: 1 wedding.", "fr")).toBe(
       "Opérationnel : 1 mariage.",
     );
+  });
+
+  const reviewedLabels = [
+    ["Diginoces Platform", "Plateforme Diginoces"],
+    [
+      "Wedding guest operations workspace for Diginoces.",
+      "Espace Diginoces de pilotage des invités de mariage.",
+    ],
+    ["Session verification", "Contrôle de session"],
+    ["Approvals", "Approbations"],
+    ["Evidence", "Preuves"],
+    ["Access control", "Gestion des accès"],
+    ["Primary navigation", "Navigation principale"],
+    ["Public navigation", "Navigation publique"],
+    ["Toggle navigation", "Afficher ou masquer la navigation"],
+    [
+      "Active and previously revoked global role assignments.",
+      "Accès plateforme actifs ou déjà révoqués.",
+    ],
+    [
+      "Adjust the filters or clear them to see every global access record.",
+      "Ajustez les filtres ou effacez-les pour afficher tous les accès plateforme attribués.",
+    ],
+    [
+      "Assign sensitive platform roles to existing Diginoces users. Wedding and event access stays inside each project or event setup page.",
+      "Attribuez les rôles sensibles de plateforme aux utilisateurs Diginoces existants. Les accès mariage et événement se gèrent dans leurs pages de configuration respectives.",
+    ],
+    ["Assign global role", "Attribuer un rôle plateforme"],
+    ["Existing users only", "Utilisateurs existants uniquement"],
+    ["Audit Viewer", "Lecteur d’audit"],
+    ["Diginoces Admin", "Admin Diginoces"],
+    ["File Manager", "Gestionnaire de fichiers"],
+    ["Operations Manager", "Responsable des opérations"],
+    ["Role Manager", "Gestionnaire de rôles"],
+    ["Global role", "Rôle plateforme"],
+    ["Global role assignments", "Accès plateforme attribués"],
+    [
+      "Global role assignment is paused until at least one assignable platform role is available.",
+      "L'attribution des rôles plateforme est suspendue jusqu'à ce qu'au moins un rôle plateforme attribuable soit disponible.",
+    ],
+    ["No assignable platform roles", "Aucun rôle plateforme attribuable"],
+    ["No global roles assigned", "Aucun rôle plateforme attribué"],
+    [
+      "No matching role assignments",
+      "Aucune attribution d'accès correspondante",
+    ],
+    ["Select a global role", "Sélectionner un rôle plateforme"],
+    ["Select a project role", "Sélectionner un rôle mariage"],
+    ["Select an event role", "Sélectionner un rôle événement"],
+    [
+      "Can review and export foundation audit records.",
+      "Peut consulter et exporter les journaux d’audit de la plateforme.",
+    ],
+    [
+      "Reviews foundation audit records.",
+      "Consulte les journaux d’audit de la plateforme.",
+    ],
+    [
+      "Internal administrator with foundation-level access.",
+      "Administrateur interne avec accès complet à la plateforme.",
+    ],
+    [
+      "Can manage app-owned operational files through approved services.",
+      "Peut gérer les fichiers opérationnels de l’application via les services approuvés.",
+    ],
+    [
+      "Manages app-owned operational files through approved services.",
+      "Gère les fichiers opérationnels de l’application via les services approuvés.",
+    ],
+    [
+      "Can operate foundation services without sensitive admin controls.",
+      "Peut piloter les services opérationnels sans les contrôles administrateur sensibles.",
+    ],
+    [
+      "Operates foundation services without sensitive admin controls.",
+      "Pilote les services opérationnels sans les contrôles administrateur sensibles.",
+    ],
+    [
+      "Can manage roles and permissions.",
+      "Peut gérer les rôles et permissions.",
+    ],
+    [
+      "Manages roles and permissions through approved backend services.",
+      "Gère les rôles et permissions via les services backend approuvés.",
+    ],
+    [
+      "Assign a role to an existing user before they can open protected platform areas.",
+      "Attribuez un rôle à un utilisateur existant avant qu’il puisse ouvrir les zones protégées de la plateforme.",
+    ],
+    [
+      "Find a user, role, or status before changing access.",
+      "Recherchez un utilisateur, un rôle ou un statut avant de modifier les accès.",
+    ],
+    ["Global role access was revoked.", "L'accès plateforme a été révoqué."],
+    ["Global role access was updated.", "L'accès plateforme a été mis à jour."],
+    [
+      "The access change could not be completed. Confirm the request is still valid, then try again.",
+      "La modification des accès n'a pas pu être effectuée. Vérifiez que la demande est toujours valide, puis réessayez.",
+    ],
+    [
+      "Use this for Diginoces administrators, operations managers, role managers, and other platform-level roles.",
+      "Utilisez ce formulaire pour les administrateurs Diginoces, responsables des opérations, gestionnaires de rôles et autres rôles plateforme.",
+    ],
+    [
+      "The user must already be able to sign in.",
+      "L'utilisateur doit déjà pouvoir se connecter.",
+    ],
+    ["User email", "E-mail de l'utilisateur"],
+    ["User", "Utilisateur"],
+    [
+      "Visible only to authorized Diginoces users.",
+      "Visible seulement par les utilisateurs Diginoces autorisés.",
+    ],
+    ["Assigned", "Assigné"],
+    ["Assigned on", "Attribué le"],
+    ["From", "Du"],
+    ["To", "Au"],
+    ["Record", "Dossier"],
+    ["Time", "Heure"],
+    ["Signal", "Indicateur"],
+    ["Source", "Origine"],
+    ["Prepared", "Préparé"],
+    ["Generated", "Généré"],
+    ["Value", "Valeur"],
+    ["Toggle Sidebar", "Afficher ou masquer le panneau de navigation"],
+    ["Breadcrumb", "Fil d'Ariane"],
+    ["Count", "Nombre"],
+    ["Scope", "Périmètre"],
+    ["Areas", "Zones"],
+    ["Checkpoint", "Point de contrôle"],
+    ["Detail", "Détail"],
+    ["Category", "Catégorie"],
+    ["Run", "Lot"],
+    ["Runs", "Lots"],
+    ["Fields", "Champs"],
+    ["Field", "Champ"],
+    ["Label", "Libellé"],
+    ["Horizontal", "Position horizontale"],
+    ["Vertical", "Position verticale"],
+    ["Width", "Largeur"],
+    ["Height", "Hauteur"],
+    ["Alignment", "Alignement"],
+    ["Left", "Gauche"],
+    ["Center", "Centre"],
+    ["Right", "Droite"],
+    ["Designs", "Créations"],
+    ["Design", "Création"],
+    ["Area", "Zone"],
+    ["Purpose", "Objectif"],
+    ["State", "État"],
+    ["Complete", "Terminer"],
+    ["Reject", "Rejeter"],
+    ["Remaining", "Restant"],
+    ["Arrivals", "Arrivées"],
+    ["Settings", "Paramètres"],
+    ["Arrival", "Arrivée"],
+    ["Enabled", "Activé"],
+    ["Timezone", "Fuseau horaire"],
+    ["Disabled", "Désactivé"],
+    ["Name", "Nom"],
+    ["Unknown", "Inconnu"],
+    ["Reason", "Raison"],
+    ["Station", "Poste"],
+    ["Device", "Appareil"],
+    ["Sync", "Synchronisation"],
+    ["Add", "Ajouter"],
+    ["Update", "Mettre à jour"],
+    ["Save", "Enregistrer"],
+    ["Access unavailable", "Accès indisponible"],
+    ["Access assignments unavailable", "Attributions d'accès indisponibles"],
+    [
+      "Access assignments could not be loaded safely. Management controls are paused until the data can be verified.",
+      "Les attributions d'accès n'ont pas pu être chargées de façon sûre. Les contrôles de gestion sont suspendus jusqu'à vérification des données.",
+    ],
+    [
+      "Check the submitted setup data, then try again.",
+      "Vérifiez les données de configuration envoyées, puis réessayez.",
+    ],
+    ["Role options unavailable", "Options de rôle indisponibles"],
+    [
+      "Role options could not be loaded safely. Adding new access is paused until the data can be verified.",
+      "Les options de rôle n'ont pas pu être chargées de façon sûre. L'ajout d'un nouvel accès est suspendu jusqu'à vérification des données.",
+    ],
+    [
+      "The event setup action could not be completed. Review the submitted data and try again.",
+      "L'action de configuration événement n'a pas pu être effectuée. Vérifiez les données envoyées, puis réessayez.",
+    ],
+    [
+      "The setup action could not be completed. Review the submitted data and try again.",
+      "L'action de configuration n'a pas pu être effectuée. Vérifiez les données envoyées, puis réessayez.",
+    ],
+    [
+      "New event access status for",
+      "Nouveau statut d'accès à l'événement pour",
+    ],
+    ["New project access status for", "Nouveau statut d'accès au mariage pour"],
+    [
+      "Save event access status for",
+      "Enregistrer le statut d'accès à l'événement pour",
+    ],
+    [
+      "Save project access status for",
+      "Enregistrer le statut d'accès au mariage pour",
+    ],
+    ["Setup", "Configuration"],
+    ["Submissions", "Soumissions"],
+    ["Reference", "Référence"],
+    ["Inactive", "Inactif"],
+    ["Member", "Membre"],
+    ["Admin", "Administrateur"],
+    ["Added", "Ajouté"],
+    ["Organization", "Organisation"],
+    ["Archive", "Archiver"],
+    ["Thread", "Fil"],
+    ["Amount", "Montant"],
+    ["Percentage", "Pourcentage"],
+    ["Method", "Méthode"],
+    ["Confirm", "Confirmer"],
+    ["Payment", "Paiement"],
+    ["Flat", "Fixe"],
+    ["Item", "Élément"],
+    ["Addendums", "Avenants"],
+    ["Addendum", "Avenant"],
+    ["Gate", "Contrôle d’accès"],
+    ["Channel", "Canal"],
+    ["Wording", "Texte"],
+    ["None", "Aucun"],
+    ["Context", "Contexte"],
+    ["Attempts", "Tentatives"],
+    ["Title", "Titre"],
+    ["Overall", "Global"],
+    ["Responses", "Réponses"],
+    ["Size", "Taille"],
+    ["Versions", "Versions"],
+    ["Result", "Résultat"],
+    ["Showing", "Affichage"],
+    ["Excluded", "Exclu"],
+    ["Exclude", "Exclure"],
+    ["Headers", "En-têtes"],
+    ["Reviewed", "Relu"],
+    ["Guest list summary", "Résumé de la liste d’invités"],
+    ["Create first event", "Créer le premier événement"],
+    ["Create wedding", "Créer un mariage"],
+    ["Wedding project was not created", "Le mariage n’a pas été créé"],
+    ["Create a wedding project", "Créer un dossier de mariage"],
+    [
+      "Start the secure workspace for a couple. Events, guests, invitations, and delivery work stay inside the project after it is created.",
+      "Démarrez l’espace sécurisé du couple. Les événements, invités, invitations et opérations de livraison resteront dans le dossier après sa création.",
+    ],
+    ["Admin action", "Action administrateur"],
+    ["Contact name", "Nom du contact"],
+    [
+      "Add dates, venues, or delivery context that helps the operations team start cleanly.",
+      "Ajoutez les dates, lieux ou éléments de livraison utiles à l’équipe opérations pour démarrer proprement.",
+    ],
+    ["Create wedding project", "Créer le dossier mariage"],
+    ["Retention action", "Action de conservation"],
+    ["Mark retention complete", "Marquer la conservation terminée"],
+    ["Extend retention date", "Prolonger la date de conservation"],
+    ["Extend retention through", "Prolonger la conservation jusqu’au"],
+    [
+      "Choose the new retention end date.",
+      "Choisissez la nouvelle date de fin de conservation.",
+    ],
+    [
+      "Assign or revoke sensitive platform roles for existing Diginoces users.",
+      "Attribuez ou révoquez les rôles sensibles de plateforme pour les utilisateurs Diginoces existants.",
+    ],
+    ["Manage access control", "Gérer les accès"],
+    [
+      "Assign platform roles to existing users, then keep wedding and event roles scoped inside the right workspace.",
+      "Attribuez les rôles de plateforme aux utilisateurs existants, puis gardez les rôles mariage et événement dans le bon espace.",
+    ],
+    [
+      "Access management is unavailable until the workspace connection is ready.",
+      "La gestion des accès est indisponible tant que la connexion de l'espace n'est pas prête.",
+    ],
+    [
+      "Setup is unavailable until the workspace connection is ready.",
+      "La configuration est indisponible tant que la connexion de l'espace n'est pas prête.",
+    ],
+    ["Event was created.", "L'événement a été créé."],
+    [
+      "Event details were saved.",
+      "Les détails de l'événement ont été enregistrés.",
+    ],
+    ["Invited events", "Événements inclus"],
+    ["invited events", "événements inclus"],
+    [
+      ". Scan again or use manual guest search from check-in.",
+      ". Scannez à nouveau ou utilisez la recherche manuelle d’invité depuis l’accueil.",
+    ],
+    [
+      ". Open the event workspace when you need seating, check-in, files, or the event status dashboard.",
+      ". Ouvrez l’espace événement si vous avez besoin du placement, de l’accueil, des fichiers ou du tableau de bord de l’événement.",
+    ],
+    [
+      ". Download and archive actions still require server-side permission.",
+      ". Le téléchargement et l’archivage restent réservés aux rôles autorisés.",
+    ],
+  ] as const;
+
+  it.each(reviewedLabels)("translates reviewed label %s", (english, french) => {
+    expect(translateStaticCopy(english, "fr")).toBe(french);
   });
 
   it("covers representative labels from the 48-surface French QA audit", () => {

@@ -19,6 +19,8 @@ import { getAuthContext } from "@/lib/auth/auth-service";
 import { getLanguageHtmlLang, type SupportedLanguage } from "@/lib/i18n/config";
 import { getShellCopy } from "@/lib/i18n/shell-copy";
 import { getRequestLanguage } from "@/lib/i18n/server";
+import { serverLogger } from "@/lib/logging";
+import { hasGlobalPermission } from "@/lib/projects/project-api";
 import { cn } from "@/lib/utils";
 import { WorkspaceAppSidebar } from "./workspace-app-sidebar";
 import "./globals.css";
@@ -91,11 +93,27 @@ async function AppSidebar({ language }: { language: SupportedLanguage }) {
     authContext.status === "authenticated"
       ? authContext.email
       : copy.accountFallback;
+  const showAccessControl =
+    authContext.status === "not_configured"
+      ? true
+      : authContext.status === "authenticated"
+        ? await hasGlobalPermission(
+            { supabase: authContext.supabase, user: authContext.user },
+            "roles.manage",
+          ).catch((error: unknown) => {
+            serverLogger.error("Sidebar access-control check failed.", {
+              error,
+            });
+
+            return false;
+          })
+        : false;
 
   return (
     <WorkspaceAppSidebar
       accountLabel={accountLabel}
       language={language}
+      showAccessControl={showAccessControl}
       showLoginLink={authNav.showLoginLink}
     />
   );

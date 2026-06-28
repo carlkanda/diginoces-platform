@@ -121,13 +121,7 @@ body:has(:is(.auth-route, .public-route))
   --card-spacing: 1rem;
   position: relative;
   align-self: center;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--card) 92%, var(--secondary)),
-      var(--card) 42%
-    ),
-    var(--card);
+  background: var(--card);
 }
 
 .auth-access-card::before {

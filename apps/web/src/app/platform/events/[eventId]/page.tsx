@@ -8,6 +8,7 @@ import {
   FileTextIcon,
   MapIcon,
   PackageCheckIcon,
+  SettingsIcon,
   ShieldCheckIcon,
   TicketIcon,
   UsersRoundIcon,
@@ -216,6 +217,8 @@ export default async function EventDetailPage({
     canReadCheckIn,
     canReadEventDashboard,
     canReadFiles,
+    canUpdateEvent,
+    canManageEventMembers,
   ] = await Promise.all([
     hasProjectPermission(
       permissionContext,
@@ -226,6 +229,8 @@ export default async function EventDetailPage({
     hasEventPermission(permissionContext, eventId, "check_in.read"),
     hasEventPermission(permissionContext, eventId, "dashboards.event.read"),
     hasEventPermission(permissionContext, eventId, "files.read"),
+    hasEventPermission(permissionContext, eventId, "events.update"),
+    hasEventPermission(permissionContext, eventId, "event_members.manage"),
   ]);
   const projectName = formatProjectCoupleDisplayName(details.project, 0);
   const eventTypeLabel = getEventTypeLabel(details.event.event_type);
@@ -298,6 +303,7 @@ export default async function EventDetailPage({
   const primaryWorkArea =
     eventWorkAreas.find((area) => area.label === "Event dashboard") ??
     eventWorkAreas[0];
+  const canOpenEventSetup = canUpdateEvent || canManageEventMembers;
   const eventDetailRows = [
     {
       label: eventReference.label,
@@ -382,6 +388,15 @@ export default async function EventDetailPage({
               <ArrowLeftIcon aria-hidden="true" data-icon="inline-start" />
               Back to wedding
             </Button>
+            {canOpenEventSetup ? (
+              <Button
+                render={<Link href={`/platform/events/${eventId}/settings`} />}
+                variant="outline"
+              >
+                <SettingsIcon aria-hidden="true" data-icon="inline-start" />
+                Event setup
+              </Button>
+            ) : null}
             {primaryWorkArea ? (
               <Button render={<Link href={primaryWorkArea.href} />}>
                 {primaryWorkArea.actionLabel}

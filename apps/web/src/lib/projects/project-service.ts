@@ -179,6 +179,18 @@ function optionalYear(value: unknown) {
   return value;
 }
 
+function optionalFormYear(value: unknown) {
+  if (
+    value === undefined ||
+    value === null ||
+    (typeof value === "string" && value.trim().length === 0)
+  ) {
+    return undefined;
+  }
+
+  return optionalYear(typeof value === "string" ? Number(value) : value);
+}
+
 export function parseCreateProjectPayload(
   payload: unknown,
 ): CreateProjectInput {
@@ -195,6 +207,48 @@ export function parseCreateProjectPayload(
     projectYear: optionalYear(body.projectYear),
     timelineNotes: optionalText(body.timelineNotes),
   };
+}
+
+export function parseCreateProjectFormPayload(
+  payload: unknown,
+): CreateProjectInput {
+  const body = asRecord(payload);
+
+  return parseCreateProjectPayload({
+    ...body,
+    projectYear: optionalFormYear(body.projectYear),
+  });
+}
+
+export function parseUpdateProjectFormPayload(
+  payload: unknown,
+): UpdateProjectInput {
+  const body = asRecord(payload);
+  const nullableTextFields = [
+    "internalNotes",
+    "preferredLanguage",
+    "primaryContactEmail",
+    "primaryContactName",
+    "primaryContactPhone",
+    "timelineNotes",
+  ] as const;
+  const normalized = { ...body };
+
+  for (const field of nullableTextFields) {
+    if (normalized[field] === "") {
+      normalized[field] = null;
+    }
+  }
+
+  if (normalized.projectYear !== undefined) {
+    normalized.projectYear = optionalFormYear(normalized.projectYear);
+  }
+
+  if (normalized.projectCode === "") {
+    delete normalized.projectCode;
+  }
+
+  return parseUpdateProjectPayload(normalized);
 }
 
 export function parseUpdateProjectPayload(
@@ -277,6 +331,12 @@ export function parseCreateEventPayload(payload: unknown): CreateEventInput {
   };
 }
 
+export function parseCreateEventFormPayload(
+  payload: unknown,
+): CreateEventInput {
+  return parseCreateEventPayload(payload);
+}
+
 export function parseUpdateEventPayload(payload: unknown): UpdateEventInput {
   const body = asRecord(payload);
   const input: UpdateEventInput = {};
@@ -286,6 +346,10 @@ export function parseUpdateEventPayload(payload: unknown): UpdateEventInput {
   }
 
   if (body.eventCode !== undefined) {
+    if (body.eventCode === null) {
+      throw new ProjectValidationError("eventCode cannot be cleared.");
+    }
+
     input.eventCode = requiredText(body.eventCode, "eventCode").toUpperCase();
   }
 
@@ -340,6 +404,32 @@ export function parseUpdateEventPayload(payload: unknown): UpdateEventInput {
   }
 
   return input;
+}
+
+export function parseUpdateEventFormPayload(
+  payload: unknown,
+): UpdateEventInput {
+  const body = asRecord(payload);
+  const nullableTextFields = [
+    "endsAt",
+    "eventDate",
+    "startsAt",
+    "venueAddress",
+    "venueName",
+  ] as const;
+  const normalized = { ...body };
+
+  for (const field of nullableTextFields) {
+    if (normalized[field] === "") {
+      normalized[field] = null;
+    }
+  }
+
+  if (normalized.eventCode === "") {
+    delete normalized.eventCode;
+  }
+
+  return parseUpdateEventPayload(normalized);
 }
 
 export async function listProjects(

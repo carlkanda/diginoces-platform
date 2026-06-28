@@ -20,7 +20,7 @@ Status: Local redesign is accepted. Hosted deployment preparation is approved.
 
 ## Current Route Evidence
 
-- `docs/qa/redesign-rebuild-checklist.md` records 47 browser-verified routes and 0 route-level blockers.
+- `docs/qa/redesign-rebuild-checklist.md` records 50 browser-verified routes and 0 route-level blockers.
 - `docs/qa/local-redesign-route-review-pack.md` mirrors the route table as a user-facing review pack.
 - `docs/qa/local-redesign-review-session-guide.md` maps every route template to local review URLs or safe route-opening instructions without recording public guest token values.
 - Public, auth, authenticated workspace, project, guest, RSVP, import, guest book, invitation, communication, file, commercial, seating, check-in, report, audit, and partner route families are represented.
@@ -36,7 +36,7 @@ The latest full local quality gate after the readiness-check and copy refinement
 - `npm run format:check`
 - `npm run lint`
 - `npm run typecheck`
-- `npm run test` with 26 files and 281 tests
+- `npm run test` with 34 files and 354 tests
 - `npm run build`
 - Impeccable detector over the product/design context, app routes, and checklist
 - route-table consistency parser

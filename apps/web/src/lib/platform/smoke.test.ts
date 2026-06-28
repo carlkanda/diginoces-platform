@@ -36,6 +36,7 @@ describe("Sprint 1 platform foundation smoke test", () => {
         canReadReports: false,
       }),
     ).toEqual({
+      showAccessControl: false,
       showGlobalDashboard: false,
       showPartnerDashboard: false,
       showPartners: true,
@@ -45,11 +46,13 @@ describe("Sprint 1 platform foundation smoke test", () => {
 
     expect(
       getPlatformEntryActionVisibility({
+        canManageAccess: true,
         canOpenPartnerDashboard: true,
         canReadGlobalDashboard: true,
         canReadReports: true,
       }),
     ).toMatchObject({
+      showAccessControl: true,
       showGlobalDashboard: true,
       showPartnerDashboard: true,
       showReports: true,

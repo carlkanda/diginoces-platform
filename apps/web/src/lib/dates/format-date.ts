@@ -21,6 +21,8 @@ function format(
   }).format(date);
 }
 
+export const DIGINOCES_OPERATING_TIME_ZONE = "Africa/Kinshasa";
+
 export function formatDate(
   value: string | null | undefined,
   locale?: string,
@@ -81,4 +83,25 @@ export function formatDateTimeInTimeZone(
       "UTC",
     );
   }
+}
+
+export function formatDiginocesDateTime(
+  value: string | null | undefined,
+  locale?: string,
+  fallback?: string,
+) {
+  return format(
+    value,
+    {
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      month: "short",
+      timeZoneName: "short",
+      year: "numeric",
+    },
+    locale,
+    fallback,
+    DIGINOCES_OPERATING_TIME_ZONE,
+  );
 }

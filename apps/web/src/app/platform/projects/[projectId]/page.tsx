@@ -9,6 +9,7 @@ import {
   LanguagesIcon,
   LockKeyholeIcon,
   MailCheckIcon,
+  SettingsIcon,
   UsersRoundIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -241,6 +242,10 @@ export default async function ProjectDetailPage({
     canReadReports,
     canReadProjectComments,
     canReadFiles,
+    canUpdateProject,
+    canCreateEvents,
+    canReadProjectMembers,
+    canManageProjectMembers,
     guestBookPermissions,
     feedbackPermissions,
   ] = await Promise.all([
@@ -263,12 +268,25 @@ export default async function ProjectDetailPage({
     hasProjectPermission(permissionContext, projectId, "reports.catalog.read"),
     hasProjectPermission(permissionContext, projectId, "project_comments.read"),
     hasAnyProjectFileCapability(permissionContext, projectId),
+    hasProjectPermission(permissionContext, projectId, "projects.update"),
+    hasProjectPermission(permissionContext, projectId, "events.create"),
+    hasProjectPermission(permissionContext, projectId, "project_members.read"),
+    hasProjectPermission(
+      permissionContext,
+      projectId,
+      "project_members.manage",
+    ),
     getGuestBookPagePermissions(permissionContext, projectId),
     getPostEventFeedbackPagePermissions(permissionContext, projectId),
   ]);
   const canReadGuestBook = Object.values(guestBookPermissions).some(Boolean);
   const canReadPostEventFeedback =
     Object.values(feedbackPermissions).some(Boolean);
+  const canOpenProjectSetup =
+    canUpdateProject ||
+    canCreateEvents ||
+    canReadProjectMembers ||
+    canManageProjectMembers;
   const projectTasks = details.workflowTasks.filter(
     (task) => task.scope === "project",
   );
@@ -488,6 +506,15 @@ export default async function ProjectDetailPage({
             >
               Back to projects
             </Link>
+            {canOpenProjectSetup ? (
+              <Link
+                className={buttonVariants({ variant: "outline" })}
+                href={`/platform/projects/${projectId}/settings`}
+              >
+                <SettingsIcon aria-hidden="true" data-icon="inline-start" />
+                Project setup
+              </Link>
+            ) : null}
             {canReadProjectDashboard ? (
               <Link
                 className={buttonVariants({ variant: "outline" })}
@@ -588,9 +615,23 @@ export default async function ProjectDetailPage({
           <CardContent>
             {details.events.length === 0 ? (
               <OperationalEmptyState
+                action={
+                  canCreateEvents ? (
+                    <Link
+                      className={buttonVariants({ size: "sm" })}
+                      href={`/platform/projects/${projectId}/settings#create-event`}
+                    >
+                      Create first event
+                    </Link>
+                  ) : undefined
+                }
                 description="Events linked to this wedding appear here with date, venue, status, and event-day entry points."
                 icon={CalendarDaysIcon}
-                nextStep="Create the wedding events before configuring invitations, seating, check-in, and event files."
+                nextStep={
+                  canCreateEvents
+                    ? "Create the wedding events before configuring invitations, seating, check-in, and event files."
+                    : "Ask a Diginoces administrator to create the wedding events."
+                }
                 title="No events configured"
               />
             ) : (

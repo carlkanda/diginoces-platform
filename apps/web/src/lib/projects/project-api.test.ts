@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   hasEventPermission,
+  hasGlobalPermission,
   hasProjectPermission,
   hasProjectPermissions,
   jsonError,
@@ -9,6 +10,7 @@ import {
   redactEventDetailsForApi,
   redactProjectDetailsForApi,
   redactProjectForApi,
+  requireGlobalPermission,
   requireProjectPermission,
 } from "@/lib/projects/project-api";
 import type { ProjectApiContext } from "@/lib/projects/project-api";
@@ -206,5 +208,43 @@ describe("project API responses", () => {
       hasEventPermission(context, "scan", "events.read"),
     ).resolves.toBe(false);
     expect(rpcCalls).toBe(0);
+  });
+
+  it("checks global permissions through the shared permission RPC", async () => {
+    const calls: { args?: Record<string, unknown>; fn: string }[] = [];
+    const context = createProjectApiContext(async (fn, args) => {
+      calls.push({ args, fn });
+
+      return {
+        data: args?.p_permission === "projects.create",
+        error: null,
+      };
+    });
+
+    await expect(hasGlobalPermission(context, "projects.create")).resolves.toBe(
+      true,
+    );
+    await expect(
+      requireGlobalPermission(context, "projects.read"),
+    ).rejects.toMatchObject({
+      name: "ProjectAccessError",
+      status: 403,
+    } satisfies Partial<ProjectAccessError>);
+    expect(calls).toEqual([
+      {
+        args: {
+          p_permission: "projects.create",
+          p_scope: "global",
+        },
+        fn: "current_user_has_permission",
+      },
+      {
+        args: {
+          p_permission: "projects.read",
+          p_scope: "global",
+        },
+        fn: "current_user_has_permission",
+      },
+    ]);
   });
 });
